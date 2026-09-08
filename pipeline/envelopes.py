@@ -8,6 +8,7 @@ import trimesh
 from shapely.geometry import Polygon,Point,box
 from shapely.ops import unary_union
 from scipy.ndimage import gaussian_filter1d
+from .surface_evidence import admissible,resolve_material
 
 
 def matches(c,profile):
@@ -74,7 +75,7 @@ def resolved_nodes(profile,levels):
    x0,x1=d.get('span',[0,1]);z0,z1=[value(x,levels) for x in d['z']];rect=[x0,z0,x1,z1]
   if rect[2]<=rect[0] or rect[3]<=rect[1]:raise ValueError('Degenerate envelope node '+d['id'])
   d['rect']=rect;d['parentId']=parent['id'] if parent else None;d['parentDepthM']=parent.get('depthM',0) if parent else -profile.get('replaceDepthM',10)
-  d['material']=d.get('material',parent.get('material','stucco') if parent else 'stucco');d.setdefault('depthM',0)
+  d['material']=d.get('material',parent.get('material','stucco') if parent else 'stucco');d['material']=resolve_material(d);d.setdefault('depthM',0)
   nodes.append(d)
   for ch in d.get('children',[]):visit(ch,d)
  for node in profile['nodes']:visit(node)
@@ -160,9 +161,15 @@ def compile(ctx,c,z0,resolved):
       if [ix,iy] in group.get('omit',[]):continue
       ow=wid*(cc-a)/nx*s.get('widthRatio',.75);oh=H*(dd-b)/ny*s.get('heightRatio',.78);cx=x0+(a+x*(cc-a))*wid;cz=zmin+(b+y*(dd-b))*H
       shape=s.get('shape',[[0,0],[1,0],[1,1],[0,1]])
+      uv={'polygon':[((cx+(xx-.5)*ow-x0)/wid,(cz+(zz-.5)*oh-zmin)/H) for xx,zz in shape]}
+      if not admissible(uv,node):continue
       aperture=Polygon([(cx+(xx-.5)*ow,cz+(zz-.5)*oh) for xx,zz in shape]).intersection(visible)
       if aperture.area<.05:continue
       ops.extend((part,s,ix,iy) for part in _polys(aperture) if part.area>.05)
+   for op in node.get('openings',[]):
+    if not admissible(op,node,explicit=True):continue
+    a,b,cc,dd=op['rect'];aperture=box(x0+a*wid,zmin+b*H,x0+cc*wid,zmin+dd*H).intersection(visible)
+    ops.extend((part,op.get('style',{}),0,0) for part in _polys(aperture) if part.area>.05)
    skin=visible.difference(unary_union([o[0] for o in ops]));prism(skin,depth,.24,mat)
    # Returns at every step/outcrop are true perpendicular surfaces. Parent skin was cut away.
    return_depth=depth-node['parentDepthM']
@@ -249,6 +256,6 @@ def compile(ctx,c,z0,resolved):
      for z in [zhi-2,zhi]:beam([x-wid/2,z,dep],[x+wid/2,z,dep],.22,cm)
      for dx in np.linspace(-wid/2,wid/2,14):
       for z in [zhi-1.65,zhi-.45]:block(x+dx,z,.68,.58,.3,'lamp',dep+.05)
-  record={'buildingId':c['id'],'grammarId':p['id'],'status':'envelope-graph','sourceIds':p.get('sourceIds',[]),'midpoint':(u*(left+W/2)+n*plane).tolist(),'normal':n.tolist(),'lengthM':round(W,2),'heightM':round(max(d['rect'][3] for d in nodes),2),'streetFacing':True,'nodeCount':len(nodes),'depthPlanesM':sorted(set(d['depthM'] for d in nodes)),'levels':r['levelEvidence'],'cornerJoins':r['joins'],'nodes':[{'id':d['id'],'parent':d['parentId'],'rect':d['rect'],'depthM':d['depthM'],'material':d['material']} for d in nodes],'unresolved':p.get('unresolved',[])}
+  record={'buildingId':c['id'],'grammarId':p['id'],'status':'envelope-graph','sourceIds':p.get('sourceIds',[]),'midpoint':(u*(left+W/2)+n*plane).tolist(),'normal':n.tolist(),'lengthM':round(W,2),'heightM':round(max(d['rect'][3] for d in nodes),2),'streetFacing':True,'nodeCount':len(nodes),'depthPlanesM':sorted(set(d['depthM'] for d in nodes)),'levels':r['levelEvidence'],'cornerJoins':r['joins'],'nodes':[{'id':d['id'],'parent':d['parentId'],'rect':d['rect'],'depthM':d['depthM'],'material':d['material'],'surfaceEvidence':d.get('surfaceEvidence',[]),'explicitOpenings':len(d.get('openings',[]))} for d in nodes],'unresolved':p.get('unresolved',[])}
   records.append(record)
  return records,opening_count

@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 from trimesh.visual.material import PBRMaterial
 from pathlib import Path
+from . import material_recipes
 
 class Materials:
  def __init__(self,root,palette):
@@ -11,10 +12,12 @@ class Materials:
   self.manifest=json.load(open(self.root/'manifest.json'))
   self.scans={k:v for k,v in zip(['brick','asphalt','concrete'],self.manifest['materials'])}
  def get(self,key):
-  aliases={'brick2':'brick','stone':'concrete','sidewalk':'concrete','frame':'aluminum','rail':'steel','metal':'steel','dark':'recess','paint':'white','roof':'roofing'}
+  aliases={'brick2':'brick','sidewalk':'concrete','frame':'aluminum','rail':'steel','metal':'steel','dark':'recess','paint':'white','roof':'roofing'}
   key=aliases.get(key,key)
   if key in self.cache:return self.cache[key],self.scales.get(key,(2.,2.))
-  if key in self.scans:
+  if key in material_recipes.RECIPES:
+   m,scale=material_recipes.create(key);self.scales[key]=scale
+  elif key in self.scans:
    a=self.scans[key];color=Image.open(self.root/a['maps']['color']['path']);normal=Image.open(self.root/a['maps']['normal_gl']['path']);r=Image.open(self.root/a['maps']['roughness']['path']).convert('L');rr=np.asarray(r);mr=np.zeros((*rr.shape,3),np.uint8);mr[:,:,1]=rr
    m=PBRMaterial(name=key,baseColorTexture=color,normalTexture=normal,metallicRoughnessTexture=Image.fromarray(mr),metallicFactor=0.,roughnessFactor=1.,baseColorFactor=[255,255,255,255]);self.scales[key]=a['tile_size_m']
   else:
