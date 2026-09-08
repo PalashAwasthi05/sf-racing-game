@@ -17,7 +17,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.08;controls.minDistance=4;controls.maxDistance=700;controls.maxPolarAngle=Math.PI*.49;
  const sky=new Sky();sky.scale.setScalar(1600);sky.material.uniforms.turbidity.value=2.6;sky.material.uniforms.rayleigh.value=2;sky.material.uniforms.mieCoefficient.value=.003;sky.material.uniforms.mieDirectionalG.value=.8;
  const sunDirection=new THREE.Vector3(-.25,.55,.80).normalize();sky.material.uniforms.sunPosition.value.copy(sunDirection);scene.add(sky);
- const pmrem=new THREE.PMREMGenerator(renderer);const environmentScene=new THREE.Scene();environmentScene.add(sky.clone());const env=pmrem.fromScene(environmentScene,.08,.1,10000);scene.environment=env.texture;scene.environmentIntensity=.12;pmrem.dispose();
+ const pmrem=new THREE.PMREMGenerator(renderer);const environmentScene=new THREE.Scene();environmentScene.add(sky.clone());const env=pmrem.fromScene(environmentScene,.03,.1,10000);scene.environment=env.texture;scene.environmentIntensity=.12;pmrem.dispose();
  const hemi=new THREE.HemisphereLight('#d5e5ff','#75624c',.18);scene.add(hemi);
  const sun=new THREE.DirectionalLight('#fff2df',3.1);sun.position.copy(sunDirection).multiplyScalar(260);sun.castShadow=true;sun.shadow.mapSize.set(4096,4096);Object.assign(sun.shadow.camera,{left:-65,right:65,top:65,bottom:-65,near:1,far:500});sun.shadow.bias=-.00003;sun.shadow.normalBias=.018;scene.add(sun,sun.target);
  const composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));

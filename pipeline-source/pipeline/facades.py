@@ -29,6 +29,8 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
     u=u/length;n=np.array([u[1],-u[0]]);mid=(a+b)/2
     if g.contains(Point(*(mid+n*.2))):n=-n
     main_height=default_height
+    mask=ctx.get('envelopeMask')
+    if mask is not None and not mask.is_empty and mask.buffer(.12).contains(Point(*mid)):continue
     if c.get('elevationOffset',0)>0 and c.get('outerBoundary') is not None and c['outerBoundary'].distance(Point(*mid))<2.0:continue
     samples=ctx.get('roofSamples')
     if samples is not None and len(samples)>30:

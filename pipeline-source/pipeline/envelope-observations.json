@@ -1,0 +1,2156 @@
+{
+  "schemaVersion": 1,
+  "method": "Manual image hierarchy plus bounded LiDAR level fitting; generic compositional compiler",
+  "sources": [
+    {
+      "id": "third-king-2025",
+      "url": "https://www.google.com/maps/@37.7781797,-122.3919934,3a,100y,265h,110t/data=!3m4!1e1!3m2!1szpKsGNDss7FrpMAioZXjSw!2e0",
+      "captureDate": "2025-01",
+      "type": "street panorama",
+      "observed": "All three building identities and macro-form checked at headings265,190,85. Manual visual annotations; no source pixels embedded."
+    },
+    {
+      "id": "glassworks-perry",
+      "url": "https://www.perryarchitectsinc.com/glassworks",
+      "captureDate": null,
+      "type": "architect photographs",
+      "observed": "Detailed double-height openings, external frame, roof blade and terracotta core; historic imagery."
+    },
+    {
+      "id": "beacon-jll",
+      "url": "https://property.jll.com/listings/the-beacon-retail-200-298-king-st-south-of-market",
+      "captureDate": null,
+      "type": "retail brochure photograph",
+      "observed": "Third/King glass corner, lower wing, contrasting podium and cornices. Upload date is not capture date."
+    },
+    {
+      "id": "oracle-okurowski",
+      "url": "https://www.stadiumpage.com/stpages/att_ext.html",
+      "captureDate": null,
+      "type": "photographer street exterior",
+      "observed": "Masonry towers, clock faces, pyramidal crowns, narrow grouped windows, open bracing."
+    },
+    {
+      "id": "oracle-diversified",
+      "url": "https://onediversified.com/hubfs/Diversified_San%20Francisco%20Giants%20_Case%20Study.pdf?hsLang=en",
+      "captureDate": null,
+      "type": "stadium technology case study photograph",
+      "observed": "Tower section and cornice, open structure; historical capture."
+    },
+    {
+      "id": "oracle-operator",
+      "url": "https://www.mlb.com/giants/ballpark/information/guide",
+      "captureDate": null,
+      "type": "operator dimensions",
+      "observed": "Two122-foot towers with pyramid roofs and45-foot flagpoles."
+    }
+  ],
+  "profiles": [
+    {
+      "sourceIds": [
+        "third-king-2025",
+        "beacon-jll"
+      ],
+      "match": {
+        "osmWayId": "149253142"
+      },
+      "displayName": "The Beacon \u00b7 Third and King",
+      "replaceDepthM": 14,
+      "unresolved": [
+        "Envelope regions manually annotated from two oblique views; depths estimated, not triangulated.",
+        "Upper towers behind the street wing retain LiDAR massing and unverified facade priors.",
+        "Street tenant lettering and fine material color require current close-range photographs."
+      ],
+      "id": "stepped-corner-third",
+      "normal": [
+        0.707,
+        0.707
+      ],
+      "levels": {
+        "corner": {
+          "priorM": 35.1,
+          "span": [
+            0,
+            0.3
+          ],
+          "searchRadiusM": 2,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        },
+        "wing": {
+          "priorM": 24.2,
+          "span": [
+            0.36,
+            0.98
+          ],
+          "searchRadiusM": 2,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        },
+        "glassRoof": {
+          "priorM": 30.1,
+          "span": [
+            0,
+            0.28
+          ],
+          "searchRadiusM": 1.8,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "commercial-plinth",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            0,
+            10.4
+          ],
+          "material": "stone",
+          "depthM": -0.12,
+          "grids": [
+            {
+              "columns": 13,
+              "rows": 2,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.8,
+                "heightRatio": 0.9,
+                "frameMaterial": "charcoal",
+                "transoms": [
+                  0.74
+                ]
+              }
+            }
+          ],
+          "jointsM": [
+            2.5,
+            1.1
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "material": "charcoal",
+              "at": 1,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "tall-corner",
+          "span": [
+            0,
+            0.3
+          ],
+          "z": [
+            10.4,
+            "glassRoof"
+          ],
+          "material": "limestone",
+          "depthM": 0,
+          "children": [
+            {
+              "id": "corner-glass",
+              "rect": [
+                0,
+                0,
+                0.3,
+                1
+              ],
+              "material": "charcoal",
+              "offsetM": 0.55,
+              "grids": [
+                {
+                  "columns": 4,
+                  "rows": 7,
+                  "rect": [
+                    0,
+                    0,
+                    1,
+                    1
+                  ],
+                  "style": {
+                    "widthRatio": 0.97,
+                    "heightRatio": 0.97,
+                    "transoms": [
+                      0.23
+                    ],
+                    "mullions": [],
+                    "glassMaterial": "glass_blue"
+                  }
+                }
+              ],
+              "components": [
+                {
+                  "op": "frame",
+                  "material": "limestone",
+                  "thicknessM": 0.27
+                }
+              ]
+            },
+            {
+              "id": "vertical-glass-inset",
+              "rect": [
+                0.46,
+                0.0,
+                0.91,
+                0.88
+              ],
+              "material": "charcoal",
+              "offsetM": -0.5,
+              "grids": [
+                {
+                  "columns": 4,
+                  "rows": 7,
+                  "rect": [
+                    0,
+                    0,
+                    1,
+                    1
+                  ],
+                  "style": {
+                    "widthRatio": 0.96,
+                    "heightRatio": 0.96,
+                    "transoms": [
+                      0.25
+                    ],
+                    "mullions": [],
+                    "glassMaterial": "glass_blue"
+                  }
+                }
+              ],
+              "components": [
+                {
+                  "op": "frame",
+                  "material": "charcoal",
+                  "projectionM": 0.38,
+                  "thicknessM": 0.19
+                }
+              ]
+            }
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "material": "copper",
+              "at": 1,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            }
+          ],
+          "jointsM": [
+            2.6,
+            3.2
+          ]
+        },
+        {
+          "id": "lower-residential-wing",
+          "span": [
+            0.3,
+            1
+          ],
+          "z": [
+            10.4,
+            "wing"
+          ],
+          "material": "limestone",
+          "depthM": -0.45,
+          "grids": [
+            {
+              "columns": 13,
+              "rows": 4,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.47,
+                "heightRatio": 0.75,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.62
+                ],
+                "transoms": []
+              }
+            }
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "material": "copper",
+              "at": 1,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            }
+          ],
+          "jointsM": [
+            3.8,
+            3.3
+          ],
+          "children": [
+            {
+              "id": "wing-top-ribbon",
+              "rect": [
+                0,
+                0.89,
+                1,
+                0.995
+              ],
+              "offsetM": -0.12,
+              "material": "charcoal",
+              "grids": [
+                {
+                  "columns": 26,
+                  "rows": 1,
+                  "style": {
+                    "widthRatio": 0.98,
+                    "heightRatio": 0.9,
+                    "mullions": [],
+                    "transoms": []
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "raised-pale-spine",
+          "span": [
+            0.095,
+            0.3
+          ],
+          "z": [
+            "glassRoof",
+            "corner"
+          ],
+          "material": "limestone",
+          "depthM": -2.0,
+          "jointsM": [
+            2.5,
+            1.6
+          ]
+        }
+      ],
+      "shareLevels": [
+        "glassRoof",
+        "corner"
+      ],
+      "joins": [
+        {
+          "end": "start",
+          "profile": "stepped-corner-king",
+          "otherEnd": "end",
+          "maxAdjustmentM": 5
+        }
+      ]
+    },
+    {
+      "sourceIds": [
+        "third-king-2025",
+        "beacon-jll"
+      ],
+      "match": {
+        "osmWayId": "149253142"
+      },
+      "displayName": "The Beacon \u00b7 Third and King",
+      "replaceDepthM": 15,
+      "unresolved": [
+        "Envelope regions manually annotated from two oblique views; depths estimated, not triangulated.",
+        "Upper towers behind the street wing retain LiDAR massing and unverified facade priors.",
+        "Street tenant lettering and fine material color require current close-range photographs."
+      ],
+      "id": "stepped-corner-king",
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "levels": {
+        "corner": {
+          "priorM": 35.1,
+          "span": [
+            0.79,
+            1
+          ],
+          "searchRadiusM": 2,
+          "depthRangeM": [
+            -18,
+            0.5
+          ]
+        },
+        "wing": {
+          "priorM": 27.6,
+          "span": [
+            0,
+            0.62
+          ],
+          "searchRadiusM": 2,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        },
+        "glassRoof": {
+          "priorM": 30.1,
+          "span": [
+            0.76,
+            1
+          ],
+          "searchRadiusM": 1.8,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "shops",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            0,
+            10.4
+          ],
+          "material": "stone",
+          "depthM": -0.12,
+          "grids": [
+            {
+              "columns": 17,
+              "rows": 2,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.82,
+                "heightRatio": 0.88,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.66
+                ],
+                "transoms": [
+                  0.8
+                ]
+              }
+            }
+          ],
+          "jointsM": [
+            2.5,
+            1.1
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "material": "charcoal",
+              "at": 1,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "king-wing",
+          "span": [
+            0,
+            0.72
+          ],
+          "z": [
+            10.4,
+            "wing"
+          ],
+          "material": "limestone",
+          "depthM": -0.3,
+          "grids": [
+            {
+              "columns": 16,
+              "rows": 5,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.62,
+                "heightRatio": 0.75,
+                "mullions": [
+                  0.65
+                ],
+                "transoms": []
+              }
+            }
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "material": "copper",
+              "at": 1,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            }
+          ],
+          "jointsM": [
+            3.8,
+            3.2
+          ],
+          "children": [
+            {
+              "id": "wing-top-ribbon",
+              "rect": [
+                0,
+                0.9,
+                1,
+                0.995
+              ],
+              "offsetM": -0.12,
+              "material": "charcoal",
+              "grids": [
+                {
+                  "columns": 32,
+                  "rows": 1,
+                  "style": {
+                    "widthRatio": 0.98,
+                    "heightRatio": 0.9,
+                    "mullions": [],
+                    "transoms": []
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "corner-ribbon-block",
+          "span": [
+            0.72,
+            1
+          ],
+          "z": [
+            10.4,
+            "glassRoof"
+          ],
+          "material": "limestone",
+          "depthM": 0,
+          "grids": [
+            {
+              "columns": 3,
+              "rows": 7,
+              "rect": [
+                0,
+                0,
+                0.71,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.88,
+                "heightRatio": 0.74,
+                "mullions": [
+                  0.32,
+                  0.65
+                ],
+                "transoms": []
+              }
+            }
+          ],
+          "children": [
+            {
+              "id": "curtain-prow",
+              "rect": [
+                0.71,
+                0,
+                1,
+                1
+              ],
+              "material": "charcoal",
+              "offsetM": 0.55,
+              "grids": [
+                {
+                  "columns": 4,
+                  "rows": 7,
+                  "rect": [
+                    0,
+                    0,
+                    1,
+                    1
+                  ],
+                  "style": {
+                    "widthRatio": 0.97,
+                    "heightRatio": 0.97,
+                    "mullions": [],
+                    "transoms": [
+                      0.23
+                    ],
+                    "glassMaterial": "glass_blue"
+                  }
+                }
+              ]
+            }
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "material": "copper",
+              "at": 1,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            }
+          ],
+          "jointsM": [
+            3.4,
+            3.2
+          ]
+        }
+      ],
+      "shareLevels": [
+        "glassRoof",
+        "corner"
+      ]
+    },
+    {
+      "sourceIds": [
+        "third-king-2025",
+        "glassworks-perry"
+      ],
+      "match": {
+        "osmWayId": "679290110"
+      },
+      "displayName": "Glassworks \u00b7 201 King",
+      "replaceDepthM": 18,
+      "unresolved": [
+        "Image-derived hierarchy and window subdivisions; depths still estimated.",
+        "Historic architect photographs cross-checked against Jan2025 Street View for major form only.",
+        "Interiors and open awning selection are stable synthetic completion, not surveyed details."
+      ],
+      "id": "double-height-loft-third",
+      "normal": [
+        0.707,
+        0.707
+      ],
+      "levels": {
+        "loftRoof": {
+          "priorM": 25.8,
+          "span": [
+            0,
+            0.85
+          ],
+          "searchRadiusM": 2,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        },
+        "core": {
+          "priorM": 30.8,
+          "span": [
+            0.85,
+            1
+          ],
+          "searchRadiusM": 2,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        },
+        "shade": {
+          "priorM": 28.6,
+          "span": [
+            0,
+            0.8
+          ],
+          "searchRadiusM": 2,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "recessed-commercial-base",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            0,
+            12.2
+          ],
+          "material": "silver",
+          "depthM": -0.42,
+          "grids": [
+            {
+              "columns": 26,
+              "rows": 3,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.96,
+                "heightRatio": 0.91,
+                "mullions": [],
+                "transoms": [
+                  0.26
+                ],
+                "glassMaterial": "glass_clear"
+              }
+            }
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "material": "silver",
+              "at": 1,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "projecting-loft-ribbon",
+          "span": [
+            0,
+            0.81
+          ],
+          "z": [
+            12.2,
+            "loftRoof"
+          ],
+          "material": "silver",
+          "depthM": 0.68,
+          "grids": [
+            {
+              "columns": 23,
+              "rows": 2,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.98,
+                "heightRatio": 0.9,
+                "mullions": [],
+                "transoms": [
+                  0.26,
+                  0.43,
+                  0.75
+                ],
+                "awning": true,
+                "interior": true,
+                "glassMaterial": "glass_blue"
+              }
+            }
+          ],
+          "components": [
+            {
+              "op": "frame",
+              "material": "silver",
+              "thicknessM": 0.27,
+              "projectionM": 0.19
+            },
+            {
+              "op": "blade",
+              "material": "silver",
+              "raiseM": 2.0,
+              "projectionM": 2.1,
+              "postPitchM": 3.8,
+              "depthM": -0.65
+            }
+          ],
+          "jointsM": [
+            1.8,
+            6
+          ]
+        },
+        {
+          "id": "corner-lofts",
+          "span": [
+            0.81,
+            1
+          ],
+          "z": [
+            12.2,
+            "loftRoof"
+          ],
+          "material": "silver",
+          "depthM": 0.2,
+          "grids": [
+            {
+              "columns": 6,
+              "rows": 2,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.98,
+                "heightRatio": 0.9,
+                "mullions": [],
+                "transoms": [
+                  0.26,
+                  0.43,
+                  0.75
+                ],
+                "awning": true,
+                "interior": true,
+                "glassMaterial": "glass_blue"
+              }
+            }
+          ]
+        },
+        {
+          "id": "raised-end-core",
+          "span": [
+            0.81,
+            1
+          ],
+          "z": [
+            "loftRoof",
+            "core"
+          ],
+          "material": "terracotta",
+          "depthM": -0.55,
+          "jointsM": [
+            1.1,
+            0.32
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "material": "charcoal",
+              "at": 1,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            }
+          ]
+        }
+      ],
+      "shareLevels": [
+        "loftRoof",
+        "core"
+      ],
+      "joins": [
+        {
+          "end": "end",
+          "profile": "mixed-height-loft-king",
+          "otherEnd": "start",
+          "maxAdjustmentM": 3
+        }
+      ]
+    },
+    {
+      "sourceIds": [
+        "third-king-2025",
+        "glassworks-perry"
+      ],
+      "match": {
+        "osmWayId": "679290110"
+      },
+      "displayName": "Glassworks \u00b7 201 King",
+      "replaceDepthM": 10,
+      "unresolved": [
+        "Image-derived hierarchy and window subdivisions; depths still estimated.",
+        "Historic architect photographs cross-checked against Jan2025 Street View for major form only.",
+        "Interiors and open awning selection are stable synthetic completion, not surveyed details."
+      ],
+      "id": "mixed-height-loft-king",
+      "normal": [
+        -0.707,
+        0.707
+      ],
+      "levels": {
+        "loftRoof": {
+          "priorM": 25.8,
+          "span": [
+            0,
+            0.22
+          ],
+          "searchRadiusM": 2,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        },
+        "core": {
+          "priorM": 30.8,
+          "span": [
+            0,
+            0.15
+          ],
+          "searchRadiusM": 2,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        },
+        "wing": {
+          "priorM": 16.1,
+          "span": [
+            0.25,
+            0.95
+          ],
+          "searchRadiusM": 2,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "king-commercial-base",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            0,
+            4.5
+          ],
+          "material": "terracotta",
+          "depthM": -0.5,
+          "grids": [
+            {
+              "columns": 25,
+              "rows": 1,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.87,
+                "heightRatio": 0.96,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.5
+                ],
+                "transoms": [
+                  0.78
+                ]
+              }
+            }
+          ],
+          "jointsM": [
+            1.1,
+            0.32
+          ]
+        },
+        {
+          "id": "corner-end-block",
+          "span": [
+            0,
+            0.22
+          ],
+          "z": [
+            4.5,
+            "core"
+          ],
+          "material": "terracotta",
+          "depthM": 0,
+          "jointsM": [
+            1.1,
+            0.32
+          ],
+          "children": [
+            {
+              "id": "glazed-corner-return",
+              "rect": [
+                0,
+                0,
+                0.27,
+                0.82
+              ],
+              "material": "silver",
+              "offsetM": 0.85,
+              "grids": [
+                {
+                  "columns": 4,
+                  "rows": 4,
+                  "rect": [
+                    0,
+                    0,
+                    1,
+                    1
+                  ],
+                  "style": {
+                    "widthRatio": 0.98,
+                    "heightRatio": 0.92,
+                    "mullions": [],
+                    "transoms": [
+                      0.3,
+                      0.7
+                    ],
+                    "glassMaterial": "glass_blue"
+                  }
+                }
+              ]
+            },
+            {
+              "id": "projecting-end-bay",
+              "rect": [
+                0.55,
+                0.39,
+                0.96,
+                0.82
+              ],
+              "material": "silver",
+              "offsetM": 0.8,
+              "grids": [
+                {
+                  "columns": 5,
+                  "rows": 2,
+                  "rect": [
+                    0,
+                    0,
+                    1,
+                    1
+                  ],
+                  "style": {
+                    "widthRatio": 0.98,
+                    "heightRatio": 0.9,
+                    "mullions": [],
+                    "transoms": [
+                      0.3,
+                      0.7
+                    ],
+                    "glassMaterial": "glass_blue"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "low-king-wing",
+          "span": [
+            0.22,
+            1
+          ],
+          "z": [
+            4.5,
+            "wing"
+          ],
+          "material": "terracotta",
+          "depthM": -2.25,
+          "jointsM": [
+            1.1,
+            0.32
+          ],
+          "grids": [
+            {
+              "columns": 22,
+              "rows": 3,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.79,
+                "heightRatio": 0.86,
+                "transoms": [
+                  0.25
+                ],
+                "mullions": [
+                  0.65
+                ]
+              }
+            }
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "material": "silver",
+              "at": 1,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            }
+          ]
+        }
+      ],
+      "shareLevels": [
+        "loftRoof",
+        "core"
+      ]
+    },
+    {
+      "sourceIds": [
+        "third-king-2025",
+        "oracle-okurowski",
+        "oracle-diversified",
+        "oracle-operator"
+      ],
+      "match": {
+        "featureId": "sf_201006_0000003"
+      },
+      "displayName": "Oracle Park",
+      "replaceDepthM": 35,
+      "unresolved": [
+        "Masonry/steel topology annotated from actual photographs; depths and member sizes estimated.",
+        "Documented tower height excludes flagpole; clock hand positions are synthetic.",
+        "Stadium seating bowl, signage, sculpture and brick relief patterns remain incomplete."
+      ],
+      "id": "masonry-and-open-structure",
+      "normal": [
+        -0.707,
+        0.707
+      ],
+      "levels": {
+        "wall": {
+          "priorM": 21.4,
+          "span": [
+            0.25,
+            0.85
+          ],
+          "searchRadiusM": 2,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        },
+        "tower": {
+          "priorM": 31.7,
+          "span": [
+            0.94,
+            1
+          ],
+          "searchRadiusM": 0,
+          "depthRangeM": [
+            -8,
+            0.5
+          ],
+          "status": "document-constrained-estimate",
+          "basis": "Documented total tower height37.1856m minus visually estimated pyramidal roof rise5.48m; cornice height itself is not surveyed."
+        },
+        "deck": {
+          "priorM": 36.4,
+          "span": [
+            0.3,
+            0.7
+          ],
+          "searchRadiusM": 2,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        },
+        "lights": {
+          "priorM": 53.0,
+          "span": [
+            0.2,
+            0.6
+          ],
+          "searchRadiusM": 2,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "brick-long-wall",
+          "span": [
+            0.055,
+            0.945
+          ],
+          "z": [
+            0,
+            "wall"
+          ],
+          "material": "brick",
+          "depthM": 0,
+          "grids": [
+            {
+              "columns": 28,
+              "rows": 1,
+              "rect": [
+                0,
+                0,
+                1,
+                0.34
+              ],
+              "style": {
+                "widthRatio": 0.52,
+                "heightRatio": 0.74,
+                "frameMaterial": "verdigris",
+                "mullions": [
+                  0.33,
+                  0.66
+                ],
+                "transoms": [
+                  0.3,
+                  0.7
+                ]
+              }
+            },
+            {
+              "columns": 38,
+              "rows": 1,
+              "rect": [
+                0,
+                0.42,
+                1,
+                0.97
+              ],
+              "style": {
+                "widthRatio": 0.58,
+                "heightRatio": 0.74,
+                "frameMaterial": "verdigris",
+                "mullions": [
+                  0.5
+                ],
+                "transoms": [
+                  0.2,
+                  0.4,
+                  0.6,
+                  0.8
+                ]
+              }
+            }
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "material": "limestone",
+              "at": 1,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            },
+            {
+              "op": "cornice",
+              "material": "limestone",
+              "at": 0.39,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "north-clock-tower",
+          "span": [
+            0,
+            0.055
+          ],
+          "z": [
+            0,
+            "tower"
+          ],
+          "material": "brick",
+          "depthM": 0.4,
+          "grids": [
+            {
+              "columns": 1,
+              "rows": 1,
+              "rect": [
+                0.25,
+                0.27,
+                0.75,
+                0.73
+              ],
+              "style": {
+                "widthRatio": 0.68,
+                "heightRatio": 0.9,
+                "frameMaterial": "verdigris",
+                "mullions": [
+                  0.5
+                ],
+                "transoms": [
+                  0.13,
+                  0.29,
+                  0.47,
+                  0.66,
+                  0.83
+                ]
+              }
+            }
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "material": "limestone",
+              "at": 1,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            },
+            {
+              "op": "clock",
+              "at": 0.853,
+              "radiusM": 1.95
+            },
+            {
+              "op": "pyramid",
+              "material": "verdigris",
+              "riseM": 5.48,
+              "roofDepthM": 11,
+              "poleM": 13.72
+            }
+          ],
+          "children": [
+            {
+              "id": "north-clock-tower-left-pier",
+              "rect": [
+                0,
+                0,
+                0.12,
+                1
+              ],
+              "offsetM": 0.18,
+              "material": "brick"
+            },
+            {
+              "id": "north-clock-tower-right-pier",
+              "rect": [
+                0.88,
+                0,
+                1,
+                1
+              ],
+              "offsetM": 0.18,
+              "material": "brick"
+            }
+          ]
+        },
+        {
+          "id": "plaza-clock-tower",
+          "span": [
+            0.945,
+            1
+          ],
+          "z": [
+            0,
+            "tower"
+          ],
+          "material": "brick",
+          "depthM": 0.4,
+          "grids": [
+            {
+              "columns": 1,
+              "rows": 1,
+              "rect": [
+                0.25,
+                0.27,
+                0.75,
+                0.73
+              ],
+              "style": {
+                "widthRatio": 0.68,
+                "heightRatio": 0.9,
+                "frameMaterial": "verdigris",
+                "mullions": [
+                  0.5
+                ],
+                "transoms": [
+                  0.13,
+                  0.29,
+                  0.47,
+                  0.66,
+                  0.83
+                ]
+              }
+            }
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "material": "limestone",
+              "at": 1,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            },
+            {
+              "op": "clock",
+              "at": 0.853,
+              "radiusM": 1.95
+            },
+            {
+              "op": "pyramid",
+              "material": "verdigris",
+              "riseM": 5.48,
+              "roofDepthM": 11,
+              "poleM": 13.72
+            }
+          ],
+          "children": [
+            {
+              "id": "plaza-clock-tower-left-pier",
+              "rect": [
+                0,
+                0,
+                0.12,
+                1
+              ],
+              "offsetM": 0.18,
+              "material": "brick"
+            },
+            {
+              "id": "plaza-clock-tower-right-pier",
+              "rect": [
+                0.88,
+                0,
+                1,
+                1
+              ],
+              "offsetM": 0.18,
+              "material": "brick"
+            }
+          ]
+        }
+      ],
+      "assemblies": [
+        {
+          "op": "bracedFrame",
+          "span": [
+            0.055,
+            0.945
+          ],
+          "z": [
+            "wall",
+            "deck"
+          ],
+          "depthM": -2.5,
+          "rearDepthM": 17,
+          "pitchM": 7.2
+        },
+        {
+          "op": "lightBank",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            "deck",
+            "lights"
+          ],
+          "depthM": -5,
+          "centers": [
+            0.26,
+            0.6
+          ],
+          "widthM": 18
+        }
+      ]
+    },
+    {
+      "sourceIds": [
+        "third-king-2025",
+        "oracle-okurowski",
+        "oracle-diversified",
+        "oracle-operator"
+      ],
+      "match": {
+        "featureId": "sf_201006_0000003"
+      },
+      "displayName": "Oracle Park",
+      "replaceDepthM": 11,
+      "unresolved": [
+        "Masonry/steel topology annotated from actual photographs; depths and member sizes estimated.",
+        "Documented tower height excludes flagpole; clock hand positions are synthetic.",
+        "Stadium seating bowl, signage, sculpture and brick relief patterns remain incomplete."
+      ],
+      "id": "clock-tower-side",
+      "normal": [
+        -0.707,
+        -0.707
+      ],
+      "referenceLine": [
+        [
+          76.27,
+          -25.7
+        ],
+        [
+          84.17,
+          -33.7
+        ]
+      ],
+      "levels": {
+        "tower": {
+          "priorM": 31.7,
+          "span": [
+            0,
+            1
+          ],
+          "searchRadiusM": 0,
+          "depthRangeM": [
+            -8,
+            0.5
+          ],
+          "status": "document-constrained-estimate",
+          "basis": "Documented total tower height37.1856m minus visually estimated pyramidal roof rise5.48m; cornice height itself is not surveyed."
+        }
+      },
+      "nodes": [
+        {
+          "id": "clock-return",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            0,
+            "tower"
+          ],
+          "material": "brick",
+          "depthM": 0.4,
+          "grids": [
+            {
+              "columns": 1,
+              "rows": 1,
+              "rect": [
+                0.25,
+                0.27,
+                0.75,
+                0.73
+              ],
+              "style": {
+                "widthRatio": 0.68,
+                "heightRatio": 0.9,
+                "frameMaterial": "verdigris",
+                "mullions": [
+                  0.5
+                ],
+                "transoms": [
+                  0.13,
+                  0.29,
+                  0.47,
+                  0.66,
+                  0.83
+                ]
+              }
+            }
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "material": "limestone",
+              "at": 1,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            },
+            {
+              "op": "clock",
+              "at": 0.853,
+              "radiusM": 1.95
+            }
+          ],
+          "children": [
+            {
+              "id": "clock-return-left-pier",
+              "rect": [
+                0,
+                0,
+                0.12,
+                1
+              ],
+              "offsetM": 0.18,
+              "material": "brick"
+            },
+            {
+              "id": "clock-return-right-pier",
+              "rect": [
+                0.88,
+                0,
+                1,
+                1
+              ],
+              "offsetM": 0.18,
+              "material": "brick"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceIds": [
+        "third-king-2025",
+        "oracle-okurowski",
+        "oracle-diversified",
+        "oracle-operator"
+      ],
+      "match": {
+        "featureId": "sf_201006_0000003"
+      },
+      "displayName": "Oracle Park",
+      "replaceDepthM": 28,
+      "unresolved": [
+        "Masonry/steel topology annotated from actual photographs; depths and member sizes estimated.",
+        "Documented tower height excludes flagpole; clock hand positions are synthetic.",
+        "Stadium seating bowl, signage, sculpture and brick relief patterns remain incomplete."
+      ],
+      "id": "angled-plaza-wing",
+      "normal": [
+        -0.825,
+        0.565
+      ],
+      "referenceLine": [
+        [
+          89,
+          -38
+        ],
+        [
+          58.45,
+          -89.08
+        ]
+      ],
+      "levels": {
+        "wall": {
+          "priorM": 21.4,
+          "span": [
+            0,
+            1
+          ],
+          "searchRadiusM": 1.8,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        },
+        "deck": {
+          "priorM": 34.8,
+          "span": [
+            0,
+            1
+          ],
+          "searchRadiusM": 2.5,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "brick-plaza-elevation",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            0,
+            "wall"
+          ],
+          "material": "brick",
+          "depthM": 0,
+          "grids": [
+            {
+              "columns": 8,
+              "rows": 1,
+              "rect": [
+                0,
+                0,
+                1,
+                0.42
+              ],
+              "style": {
+                "widthRatio": 0.72,
+                "heightRatio": 0.92,
+                "frameMaterial": "verdigris",
+                "mullions": [
+                  0.33,
+                  0.66
+                ],
+                "transoms": [
+                  0.75
+                ]
+              }
+            },
+            {
+              "columns": 16,
+              "rows": 1,
+              "rect": [
+                0,
+                0.46,
+                1,
+                0.97
+              ],
+              "style": {
+                "widthRatio": 0.53,
+                "heightRatio": 0.84,
+                "frameMaterial": "verdigris",
+                "mullions": [
+                  0.5
+                ],
+                "transoms": [
+                  0.25,
+                  0.5,
+                  0.75
+                ]
+              }
+            }
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "material": "limestone",
+              "at": 1,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            },
+            {
+              "op": "cornice",
+              "material": "limestone",
+              "at": 0.44,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            }
+          ]
+        }
+      ],
+      "assemblies": [
+        {
+          "op": "bracedFrame",
+          "z": [
+            "wall",
+            "deck"
+          ],
+          "depthM": -2.5,
+          "rearDepthM": 15,
+          "pitchM": 7.5
+        }
+      ]
+    },
+    {
+      "sourceIds": [
+        "third-king-2025",
+        "oracle-okurowski",
+        "oracle-diversified",
+        "oracle-operator"
+      ],
+      "match": {
+        "featureId": "sf_201006_0000003"
+      },
+      "displayName": "Oracle Park",
+      "replaceDepthM": 15,
+      "unresolved": [
+        "Masonry/steel topology annotated from actual photographs; depths and member sizes estimated.",
+        "Documented tower height excludes flagpole; clock hand positions are synthetic.",
+        "Stadium seating bowl, signage, sculpture and brick relief patterns remain incomplete."
+      ],
+      "id": "low-glazed-plaza-pavilion",
+      "normal": [
+        -0.707,
+        -0.707
+      ],
+      "levels": {
+        "pavilion": {
+          "priorM": 13.3,
+          "span": [
+            0,
+            1
+          ],
+          "searchRadiusM": 2,
+          "depthRangeM": [
+            -8,
+            0.5
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "pavilion-base",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            0,
+            5.4
+          ],
+          "material": "brick",
+          "depthM": 0,
+          "grids": [
+            {
+              "columns": 9,
+              "rows": 1,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.76,
+                "heightRatio": 0.9,
+                "frameMaterial": "verdigris",
+                "transoms": [
+                  0.72
+                ],
+                "mullions": [
+                  0.33,
+                  0.66
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "pavilion-glass",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            5.4,
+            "pavilion"
+          ],
+          "material": "verdigris",
+          "depthM": 0.18,
+          "grids": [
+            {
+              "columns": 24,
+              "rows": 1,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.94,
+                "heightRatio": 0.94,
+                "frameMaterial": "verdigris",
+                "transoms": [
+                  0.2,
+                  0.4,
+                  0.6,
+                  0.8
+                ],
+                "mullions": []
+              }
+            }
+          ],
+          "children": [
+            {
+              "id": "end-pier",
+              "rect": [
+                0,
+                0,
+                0.035,
+                1
+              ],
+              "material": "brick",
+              "offsetM": 0.2
+            },
+            {
+              "id": "middle-pier",
+              "rect": [
+                0.485,
+                0,
+                0.515,
+                1
+              ],
+              "material": "brick",
+              "offsetM": 0.2
+            },
+            {
+              "id": "end-pier-two",
+              "rect": [
+                0.965,
+                0,
+                1,
+                1
+              ],
+              "material": "brick",
+              "offsetM": 0.2
+            }
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "material": "limestone",
+              "at": 1,
+              "section": [
+                [
+                  0,
+                  0.15,
+                  0.24
+                ],
+                [
+                  0.16,
+                  0.13,
+                  0.5
+                ],
+                [
+                  0.3,
+                  0.09,
+                  0.75
+                ]
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

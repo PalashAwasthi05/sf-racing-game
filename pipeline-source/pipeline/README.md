@@ -1,3 +1,21 @@
+# Street-first reconstruction pipeline v0.5
+
+`envelope-observations.json` stores building matches and image-derived hierarchical structure. `envelopes.py` fits bounded roof-family levels, joins explicitly corresponding corners/datums, resolves nested regions, and compiles replacement facade geometry. Geographic identifiers occur only in observation data. Source photos are research references and are not shipped as textures.
+
+The graph is assistant-annotated, not an automatic vision output. Signed depths, fine dimensions and many glazing details remain estimates. `validate_envelopes.py` checks geometry and structural invariants on a synthetic unfamiliar building. It does not certify photographic likeness. Reuse requires new observation data for new buildings; do not add building-specific compiler branches.
+
+Run from the bundle root with the geospatial Python requirements installed:
+
+```sh
+python work/validate_envelopes.py
+python work/build_world.py
+python work/validate_detail.py
+```
+
+The complete generator also needs the earlier geodata and LiDAR fetch steps below. Those cached source datasets are not included in the bundle.
+
+---
+
 # World compiler v0.4
 
 The compiler prioritizes street-visible layout and driver-height inspection. Location-specific evidence lives in data; geometry code does not select templates by address.
