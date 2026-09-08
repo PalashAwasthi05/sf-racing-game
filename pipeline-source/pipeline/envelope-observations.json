@@ -164,7 +164,16 @@
                 ]
               ]
             }
-          ]
+          ],
+          "materialEvidence": {
+            "family": "pale-trim",
+            "finish": "default",
+            "sourceIds": [
+              "third-king-2025",
+              "beacon-jll"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         },
         {
           "id": "tall-corner",
@@ -176,7 +185,7 @@
             10.4,
             "glassRoof"
           ],
-          "material": "stucco",
+          "material": "limestone",
           "depthM": 0,
           "children": [
             {
@@ -286,7 +295,16 @@
           "jointsM": [
             2.6,
             3.2
-          ]
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "default",
+            "sourceIds": [
+              "third-king-2025",
+              "beacon-jll"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         },
         {
           "id": "lower-residential-wing",
@@ -298,7 +316,7 @@
             10.4,
             "wing"
           ],
-          "material": "stucco",
+          "material": "limestone",
           "depthM": -0.45,
           "grids": [
             {
@@ -373,7 +391,16 @@
                 }
               ]
             }
-          ]
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "default",
+            "sourceIds": [
+              "third-king-2025",
+              "beacon-jll"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         },
         {
           "id": "raised-pale-spine",
@@ -385,12 +412,21 @@
             "glassRoof",
             "corner"
           ],
-          "material": "stucco",
+          "material": "limestone",
           "depthM": -2.0,
           "jointsM": [
             2.5,
             1.6
-          ]
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "default",
+            "sourceIds": [
+              "third-king-2025",
+              "beacon-jll"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         }
       ],
       "shareLevels": [
@@ -475,7 +511,7 @@
             0,
             10.4
           ],
-          "material": "stucco_red",
+          "material": "stone",
           "depthM": -0.12,
           "grids": [
             {
@@ -528,7 +564,16 @@
                 ]
               ]
             }
-          ]
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "red",
+            "sourceIds": [
+              "third-king-2025",
+              "beacon-jll"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         },
         {
           "id": "king-wing",
@@ -540,7 +585,7 @@
             10.4,
             "wing"
           ],
-          "material": "stucco",
+          "material": "limestone",
           "depthM": -0.3,
           "grids": [
             {
@@ -614,7 +659,16 @@
                 }
               ]
             }
-          ]
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "default",
+            "sourceIds": [
+              "third-king-2025",
+              "beacon-jll"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         },
         {
           "id": "corner-ribbon-block",
@@ -626,7 +680,7 @@
             10.4,
             "glassRoof"
           ],
-          "material": "stucco",
+          "material": "limestone",
           "depthM": 0,
           "grids": [
             {
@@ -710,7 +764,16 @@
           "jointsM": [
             3.4,
             3.2
-          ]
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "default",
+            "sourceIds": [
+              "third-king-2025",
+              "beacon-jll"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         }
       ],
       "shareLevels": [
@@ -942,7 +1005,7 @@
             "loftRoof",
             "core"
           ],
-          "material": "terracotta_ribbed",
+          "material": "terracotta",
           "depthM": -0.55,
           "jointsM": [
             1.1,
@@ -971,7 +1034,16 @@
                 ]
               ]
             }
-          ]
+          ],
+          "materialEvidence": {
+            "family": "terracotta",
+            "finish": "ribbed",
+            "sourceIds": [
+              "third-king-2025",
+              "glassworks-perry"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         }
       ],
       "shareLevels": [
@@ -1057,7 +1129,7 @@
             0,
             4.5
           ],
-          "material": "terracotta_ribbed",
+          "material": "terracotta",
           "depthM": -0.5,
           "grids": [
             {
@@ -1085,7 +1157,16 @@
           "jointsM": [
             1.1,
             0.32
-          ]
+          ],
+          "materialEvidence": {
+            "family": "terracotta",
+            "finish": "ribbed",
+            "sourceIds": [
+              "third-king-2025",
+              "glassworks-perry"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         },
         {
           "id": "corner-end-block",
@@ -1097,7 +1178,7 @@
             4.5,
             "core"
           ],
-          "material": "terracotta_ribbed",
+          "material": "terracotta",
           "depthM": 0,
           "jointsM": [
             1.1,
@@ -1196,9 +1277,27 @@
                   "boundaryStatus": "image-estimated",
                   "note": "Opaque jointed metal infill below projecting loft bay"
                 }
-              ]
+              ],
+              "materialEvidence": {
+                "family": "metal-panel",
+                "finish": "default",
+                "sourceIds": [
+                  "third-king-2025",
+                  "glassworks-perry"
+                ],
+                "status": "visually observed family; appearance parameters estimated"
+              }
             }
-          ]
+          ],
+          "materialEvidence": {
+            "family": "terracotta",
+            "finish": "ribbed",
+            "sourceIds": [
+              "third-king-2025",
+              "glassworks-perry"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         },
         {
           "id": "low-king-wing",
@@ -1210,7 +1309,7 @@
             4.5,
             "wing"
           ],
-          "material": "terracotta_ribbed",
+          "material": "terracotta",
           "depthM": -2.25,
           "jointsM": [
             1.1,
@@ -1261,7 +1360,16 @@
                 ]
               ]
             }
-          ]
+          ],
+          "materialEvidence": {
+            "family": "terracotta",
+            "finish": "ribbed",
+            "sourceIds": [
+              "third-king-2025",
+              "glassworks-perry"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         }
       ],
       "shareLevels": [
@@ -1355,7 +1463,7 @@
             0,
             "wall"
           ],
-          "material": "brick_modular",
+          "material": "brick",
           "depthM": 0,
           "grids": [
             {
@@ -1451,7 +1559,18 @@
                 ]
               ]
             }
-          ]
+          ],
+          "materialEvidence": {
+            "family": "brick",
+            "finish": "default",
+            "sourceIds": [
+              "third-king-2025",
+              "oracle-okurowski",
+              "oracle-diversified",
+              "oracle-operator"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         },
         {
           "id": "north-clock-tower",
@@ -1463,7 +1582,7 @@
             0,
             "tower"
           ],
-          "material": "brick_modular",
+          "material": "brick",
           "depthM": 0.4,
           "grids": [
             {
@@ -1538,7 +1657,18 @@
                 1
               ],
               "offsetM": 0.18,
-              "material": "brick_modular"
+              "material": "brick",
+              "materialEvidence": {
+                "family": "brick",
+                "finish": "default",
+                "sourceIds": [
+                  "third-king-2025",
+                  "oracle-okurowski",
+                  "oracle-diversified",
+                  "oracle-operator"
+                ],
+                "status": "visually observed family; appearance parameters estimated"
+              }
             },
             {
               "id": "north-clock-tower-right-pier",
@@ -1549,7 +1679,18 @@
                 1
               ],
               "offsetM": 0.18,
-              "material": "brick_modular"
+              "material": "brick",
+              "materialEvidence": {
+                "family": "brick",
+                "finish": "default",
+                "sourceIds": [
+                  "third-king-2025",
+                  "oracle-okurowski",
+                  "oracle-diversified",
+                  "oracle-operator"
+                ],
+                "status": "visually observed family; appearance parameters estimated"
+              }
             }
           ],
           "surfaceEvidence": [
@@ -1596,7 +1737,18 @@
                 "oracle-diversified"
               ]
             }
-          ]
+          ],
+          "materialEvidence": {
+            "family": "brick",
+            "finish": "default",
+            "sourceIds": [
+              "third-king-2025",
+              "oracle-okurowski",
+              "oracle-diversified",
+              "oracle-operator"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         },
         {
           "id": "plaza-clock-tower",
@@ -1608,7 +1760,7 @@
             0,
             "tower"
           ],
-          "material": "brick_modular",
+          "material": "brick",
           "depthM": 0.4,
           "grids": [
             {
@@ -1683,7 +1835,18 @@
                 1
               ],
               "offsetM": 0.18,
-              "material": "brick_modular"
+              "material": "brick",
+              "materialEvidence": {
+                "family": "brick",
+                "finish": "default",
+                "sourceIds": [
+                  "third-king-2025",
+                  "oracle-okurowski",
+                  "oracle-diversified",
+                  "oracle-operator"
+                ],
+                "status": "visually observed family; appearance parameters estimated"
+              }
             },
             {
               "id": "plaza-clock-tower-right-pier",
@@ -1694,7 +1857,18 @@
                 1
               ],
               "offsetM": 0.18,
-              "material": "brick_modular"
+              "material": "brick",
+              "materialEvidence": {
+                "family": "brick",
+                "finish": "default",
+                "sourceIds": [
+                  "third-king-2025",
+                  "oracle-okurowski",
+                  "oracle-diversified",
+                  "oracle-operator"
+                ],
+                "status": "visually observed family; appearance parameters estimated"
+              }
             }
           ],
           "surfaceEvidence": [
@@ -1741,7 +1915,18 @@
                 "oracle-diversified"
               ]
             }
-          ]
+          ],
+          "materialEvidence": {
+            "family": "brick",
+            "finish": "default",
+            "sourceIds": [
+              "third-king-2025",
+              "oracle-okurowski",
+              "oracle-diversified",
+              "oracle-operator"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         }
       ],
       "assemblies": [
@@ -1838,7 +2023,7 @@
             0,
             "tower"
           ],
-          "material": "brick_modular",
+          "material": "brick",
           "depthM": 0.4,
           "grids": [
             {
@@ -1906,7 +2091,18 @@
                 1
               ],
               "offsetM": 0.18,
-              "material": "brick_modular"
+              "material": "brick",
+              "materialEvidence": {
+                "family": "brick",
+                "finish": "default",
+                "sourceIds": [
+                  "third-king-2025",
+                  "oracle-okurowski",
+                  "oracle-diversified",
+                  "oracle-operator"
+                ],
+                "status": "visually observed family; appearance parameters estimated"
+              }
             },
             {
               "id": "clock-return-right-pier",
@@ -1917,7 +2113,18 @@
                 1
               ],
               "offsetM": 0.18,
-              "material": "brick_modular"
+              "material": "brick",
+              "materialEvidence": {
+                "family": "brick",
+                "finish": "default",
+                "sourceIds": [
+                  "third-king-2025",
+                  "oracle-okurowski",
+                  "oracle-diversified",
+                  "oracle-operator"
+                ],
+                "status": "visually observed family; appearance parameters estimated"
+              }
             }
           ],
           "surfaceEvidence": [
@@ -1964,7 +2171,18 @@
                 "oracle-diversified"
               ]
             }
-          ]
+          ],
+          "materialEvidence": {
+            "family": "brick",
+            "finish": "default",
+            "sourceIds": [
+              "third-king-2025",
+              "oracle-okurowski",
+              "oracle-diversified",
+              "oracle-operator"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         }
       ]
     },
@@ -2038,7 +2256,7 @@
             0,
             "wall"
           ],
-          "material": "brick_modular",
+          "material": "brick",
           "depthM": 0,
           "grids": [
             {
@@ -2132,7 +2350,18 @@
                 ]
               ]
             }
-          ]
+          ],
+          "materialEvidence": {
+            "family": "brick",
+            "finish": "default",
+            "sourceIds": [
+              "third-king-2025",
+              "oracle-okurowski",
+              "oracle-diversified",
+              "oracle-operator"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         }
       ],
       "assemblies": [
@@ -2196,7 +2425,7 @@
             0,
             5.4
           ],
-          "material": "brick_modular",
+          "material": "brick",
           "depthM": 0,
           "grids": [
             {
@@ -2221,7 +2450,18 @@
                 ]
               }
             }
-          ]
+          ],
+          "materialEvidence": {
+            "family": "brick",
+            "finish": "default",
+            "sourceIds": [
+              "third-king-2025",
+              "oracle-okurowski",
+              "oracle-diversified",
+              "oracle-operator"
+            ],
+            "status": "visually observed family; appearance parameters estimated"
+          }
         },
         {
           "id": "pavilion-glass",
@@ -2268,8 +2508,19 @@
                 0.035,
                 1
               ],
-              "material": "brick_modular",
-              "offsetM": 0.2
+              "material": "brick",
+              "offsetM": 0.2,
+              "materialEvidence": {
+                "family": "brick",
+                "finish": "default",
+                "sourceIds": [
+                  "third-king-2025",
+                  "oracle-okurowski",
+                  "oracle-diversified",
+                  "oracle-operator"
+                ],
+                "status": "visually observed family; appearance parameters estimated"
+              }
             },
             {
               "id": "middle-pier",
@@ -2279,8 +2530,19 @@
                 0.515,
                 1
               ],
-              "material": "brick_modular",
-              "offsetM": 0.2
+              "material": "brick",
+              "offsetM": 0.2,
+              "materialEvidence": {
+                "family": "brick",
+                "finish": "default",
+                "sourceIds": [
+                  "third-king-2025",
+                  "oracle-okurowski",
+                  "oracle-diversified",
+                  "oracle-operator"
+                ],
+                "status": "visually observed family; appearance parameters estimated"
+              }
             },
             {
               "id": "end-pier-two",
@@ -2290,8 +2552,19 @@
                 1,
                 1
               ],
-              "material": "brick_modular",
-              "offsetM": 0.2
+              "material": "brick",
+              "offsetM": 0.2,
+              "materialEvidence": {
+                "family": "brick",
+                "finish": "default",
+                "sourceIds": [
+                  "third-king-2025",
+                  "oracle-okurowski",
+                  "oracle-diversified",
+                  "oracle-operator"
+                ],
+                "status": "visually observed family; appearance parameters estimated"
+              }
             }
           ],
           "components": [

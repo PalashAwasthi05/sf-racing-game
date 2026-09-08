@@ -17,7 +17,7 @@
         "loft-architecture-report",
         "188-broker"
       ],
-      "material": "brick_modular",
+      "material": "brick",
       "panels": [
         {
           "rect": [
@@ -171,7 +171,8 @@
           },
           "sourceIds": [
             "king-2025-c"
-          ]
+          ],
+          "id": "garage"
         },
         {
           "rect": [
@@ -194,7 +195,8 @@
           },
           "sourceIds": [
             "king-2025-c"
-          ]
+          ],
+          "id": "residential-entry"
         }
       ],
       "surfaceEvidence": [
@@ -228,7 +230,18 @@
           "boundaryStatus": "image-estimated",
           "note": "Upper strip beyond photo coverage; classification is unresolved"
         }
-      ]
+      ],
+      "materialEvidence": {
+        "family": "brick",
+        "finish": "default",
+        "sourceIds": [
+          "king-2025-c",
+          "king-2025-b",
+          "loft-architecture-report",
+          "188-broker"
+        ],
+        "status": "visually observed family; appearance parameters estimated"
+      }
     },
     {
       "id": "brick-and-projecting-window-strips",
@@ -243,7 +256,7 @@
         "king-2025-a",
         "king-2025-d"
       ],
-      "material": "brick_modular",
+      "material": "brick",
       "groups": [
         {
           "region": [
@@ -413,7 +426,16 @@
           "boundaryStatus": "image-estimated",
           "note": "Opaque sculptural belt; no window row"
         }
-      ]
+      ],
+      "materialEvidence": {
+        "family": "brick",
+        "finish": "default",
+        "sourceIds": [
+          "king-2025-a",
+          "king-2025-d"
+        ],
+        "status": "visually observed family; appearance parameters estimated"
+      }
     },
     {
       "id": "brick-hotel-third",
@@ -427,7 +449,7 @@
       "sourceIds": [
         "hyatt-dusk"
       ],
-      "material": "brick_dark",
+      "material": "brick",
       "groups": [
         {
           "region": [
@@ -589,7 +611,15 @@
           "boundaryStatus": "image-estimated",
           "note": "Opaque floor spandrel above shopfronts"
         }
-      ]
+      ],
+      "materialEvidence": {
+        "family": "brick",
+        "finish": "dark",
+        "sourceIds": [
+          "hyatt-dusk"
+        ],
+        "status": "visually observed family; appearance parameters estimated"
+      }
     },
     {
       "id": "brick-hotel-townsend",
@@ -603,7 +633,7 @@
       "sourceIds": [
         "hyatt-dusk"
       ],
-      "material": "brick_dark",
+      "material": "brick",
       "groups": [
         {
           "region": [
@@ -788,7 +818,15 @@
           "boundaryStatus": "image-estimated",
           "note": "Opaque floor spandrel above shopfronts"
         }
-      ]
+      ],
+      "materialEvidence": {
+        "family": "brick",
+        "finish": "dark",
+        "sourceIds": [
+          "hyatt-dusk"
+        ],
+        "status": "visually observed family; appearance parameters estimated"
+      }
     },
     {
       "id": "terracotta-hotel-with-shades",
@@ -802,7 +840,7 @@
       "sourceIds": [
         "via-engineer"
       ],
-      "material": "terracotta_panel",
+      "material": "terracotta",
       "panels": [
         {
           "rect": [
@@ -934,7 +972,15 @@
         "Ten repeated rows are visual count estimate",
         "Ground storefront pattern inferred from completed alley entry photograph; frontage details unresolved",
         "Exact tile size and shade depth inferred"
-      ]
+      ],
+      "materialEvidence": {
+        "family": "terracotta",
+        "finish": "default",
+        "sourceIds": [
+          "via-engineer"
+        ],
+        "status": "visually observed family; appearance parameters estimated"
+      }
     }
   ]
 }

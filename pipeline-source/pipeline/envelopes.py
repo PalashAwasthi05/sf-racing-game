@@ -8,7 +8,7 @@ import trimesh
 from shapely.geometry import Polygon,Point,box
 from shapely.ops import unary_union
 from scipy.ndimage import gaussian_filter1d
-from .surface_evidence import admissible
+from .surface_evidence import admissible,resolve_material
 
 
 def matches(c,profile):
@@ -75,7 +75,7 @@ def resolved_nodes(profile,levels):
    x0,x1=d.get('span',[0,1]);z0,z1=[value(x,levels) for x in d['z']];rect=[x0,z0,x1,z1]
   if rect[2]<=rect[0] or rect[3]<=rect[1]:raise ValueError('Degenerate envelope node '+d['id'])
   d['rect']=rect;d['parentId']=parent['id'] if parent else None;d['parentDepthM']=parent.get('depthM',0) if parent else -profile.get('replaceDepthM',10)
-  d['material']=d.get('material',parent.get('material','stucco') if parent else 'stucco');d.setdefault('depthM',0)
+  d['material']=d.get('material',parent.get('material','stucco') if parent else 'stucco');d['material']=resolve_material(d);d.setdefault('depthM',0)
   nodes.append(d)
   for ch in d.get('children',[]):visit(ch,d)
  for node in profile['nodes']:visit(node)

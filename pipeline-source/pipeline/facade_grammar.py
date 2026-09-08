@@ -4,7 +4,7 @@ Profiles are data; no geographic IDs or addresses are interpreted here.
 import math
 import numpy as np
 from shapely.geometry import Point
-from .surface_evidence import admissible
+from .surface_evidence import admissible,resolve_material
 
 
 def openings(profile,fits):
@@ -46,7 +46,7 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
  if float(mid@n)<outward-profile.get('planeToleranceM',2.5):return None
  low,high=sorted([float(a@u-left),float(b@u-left)])
  if W<3 or high-low<.3:return None
- plane=float(mid@n);angle=math.atan2(u[1],u[0]);layer='buildings__'+c['id']+'__observed_'+profile['id'];detail='facades__'+c['id']+'__observed_'+profile['id'];cube=ctx['cube'];mat=profile.get('material','brick')
+ plane=float(mid@n);angle=math.atan2(u[1],u[0]);layer='buildings__'+c['id']+'__observed_'+profile['id'];detail='facades__'+c['id']+'__observed_'+profile['id'];cube=ctx['cube'];mat=resolve_material(profile)
  def block(x,z,w,h,d,material,depth=0,key=detail):
   if min(w,h,d)<=.002:return
   p=u*(left+x)+n*(plane+depth);cube([*p,z0+z],[w,d,h],key,material,angle)

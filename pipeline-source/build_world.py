@@ -13,7 +13,7 @@ from scipy.ndimage import median_filter, gaussian_filter, distance_transform_edt
 from rasterio.features import shapes
 from rasterio.transform import from_origin
 from pipeline.materials import Materials
-from pipeline import facades,streets,vegetation,signs,envelopes,lettering
+from pipeline import facades,streets,vegetation,signs,envelopes,lettering,surface_evidence
 from trimesh.visual.texture import TextureVisuals
 
 ROOT=pathlib.Path(__file__).parent;DATA=ROOT/'data';PUBLIC=ROOT/'king-street'/'public';PUBLIC.mkdir(parents=True,exist_ok=True)
@@ -356,11 +356,13 @@ world={'pipelineVersion':CONFIG['version'],'streetViews':street_views,'facadeCov
  {'name':'Hotel exterior photography','date':'Capture dates unknown','detail':'Operator and structural engineer photographs fit bay stacks, terracotta fields and external shades. Historical layouts need current independent checks.','url':'https://www.hyatt.com/hyatt-place/en-US/sfozs-hyatt-place-san-francisco-downtown/gallery'},
  {'name':'Mapillary coverage','date':'Coverage inspected Sep 2026','detail':'Dense capture coverage is visible around King and Third. Individual images and their capture dates have not been ingested in this pass.','url':'https://www.mapillary.com/app/?lat=37.7786&lng=-122.3918&z=18'},
  {'name':'Street-level reference','date':'January 2025','detail':'Sparse image landmarks and visual grammars distinguish loft terraces, continuous glazing and separate ground-floor patterns. Source pixels are not embedded.','url':'https://www.google.com/maps/@37.7786899,-122.3913452,3a,75y,315h,110t/data=!3m4!1e1!3m2!1sS4hs-Kyh3P14aRv9CWeTvg!2e0'}]}
+audit={'rules':surface_evidence.AUDIT,'signAttachments':[r['attachmentCheck'] for r in lettering_records],'unverifiedFacadeSections':sum(r['status']=='inferred' for r in facade_records),'independentAccuracyGate':'NOT PASSED'}
+(OUT/'king-street-rule-audit.json').write_text(json.dumps(audit,indent=2))
 glb=scene.export(file_type='glb');(PUBLIC/'king-street.glb').write_bytes(glb);(OUT/'king-street-pilot.glb').write_bytes(glb)
-(PUBLIC/'world.json').write_text(json.dumps(world,separators=(',',':')));(OUT/'king-street-evidence.json').write_text(json.dumps({'world':world,'unresolvedSigns':coarse_signs,'facadeWalls':facade_records,'signPlacements':sign_records,'envelopeGraphs':envelope_records,'observationSources':{**OBS['sources'],**{a['id']:a for a in ENVELOPE_DATA['sources']}},'footprintConsolidations':consolidations,'layoutFits':FITS,'profiles':PROFILES,'materials':{**material_bank.manifest,'appearanceRecipes':'pipeline/material_recipes.py; synthesized family appearance, not building-specific scans'},'boundaryFits':BOUNDARY_FITS,'facadeLettering':lettering_records,'surfaceSources':LETTERING_DATA['sources']},indent=2))
+(PUBLIC/'world.json').write_text(json.dumps(world,separators=(',',':')));(OUT/'king-street-evidence.json').write_text(json.dumps({'world':world,'unresolvedSigns':coarse_signs,'facadeWalls':facade_records,'signPlacements':sign_records,'envelopeGraphs':envelope_records,'observationSources':{**OBS['sources'],**{a['id']:a for a in ENVELOPE_DATA['sources']}},'footprintConsolidations':consolidations,'layoutFits':FITS,'profiles':PROFILES,'materials':{**material_bank.manifest,'appearanceRecipes':'pipeline/material_recipes.py; synthesized family appearance, not building-specific scans'},'boundaryFits':BOUNDARY_FITS,'facadeLettering':lettering_records,'surfaceSources':LETTERING_DATA['sources'],'ruleAudit':audit},indent=2))
 print('OUTPUT',len(glb),'bytes',dict(counts),'center',lat,lon,flush=True)
 
-(PUBLIC/'facade-evidence.json').write_text(json.dumps({'walls':facade_records,'signs':sign_records,'envelopes':envelope_records,'lettering':lettering_records,'boundaryFits':BOUNDARY_FITS,'surfaceSources':LETTERING_DATA['sources'],'sources':{**OBS['sources'],**{a['id']:a for a in ENVELOPE_DATA['sources']}}},separators=(',',':')))
+(PUBLIC/'facade-evidence.json').write_text(json.dumps({'walls':facade_records,'signs':sign_records,'envelopes':envelope_records,'lettering':lettering_records,'boundaryFits':BOUNDARY_FITS,'surfaceSources':LETTERING_DATA['sources'],'ruleAudit':audit,'sources':{**OBS['sources'],**{a['id']:a for a in ENVELOPE_DATA['sources']}}},separators=(',',':')))
 print('GENERATION_SECONDS',round(time.perf_counter()-START,2),flush=True)
 
 import gzip,hashlib

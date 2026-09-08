@@ -1,5 +1,7 @@
 # King Street reconstruction pipeline v0.6
 
+Every build writes `king-street-rule-audit.json`: rejected apertures, material corrections and semantic sign attachment corrections. `resolve_material` chooses an appearance recipe from source-linked family/finish evidence, including when a prior has the wrong material. `lettering.attachment` constrains signs to compiled supports and fails on missing support declarations. Names and addresses never choose these rules. Tests use unfamiliar names and deliberately incorrect inputs. Manual source annotation remains separate from automatic numeric inference.
+
 `surface_evidence.py` applies observed solid/opaque masks before aperture creation. Unknown is distinct from solid. `fit_boundaries.py` rectifies four manually selected edges for each explicit opening; `boundary-layouts.json` is generated data. Repeat grids cannot overwrite explicit apertures or cross negative regions. Source conflicts still need review; the current compiler veto is not a source-arbitration model.
 
 `material_recipes.py` separates small-joint brick, terracotta panels/ribs, stucco, pale smooth trim and metal panels. These are deterministic synthesized material families, not scanned materials from the buildings. CC0 road/concrete scans remain under `material-assets`.

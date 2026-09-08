@@ -23,7 +23,20 @@
       "material": "silver",
       "font": "Arial Bold.ttf",
       "depthM": 0.45,
-      "captureDate": "2025-01"
+      "captureDate": "2025-01",
+      "attachment": {
+        "kind": "opening-canopy",
+        "profileId": "deep-framed-loft",
+        "openingId": "residential-entry"
+      },
+      "carrierEvidence": {
+        "type": "entrance-canopy",
+        "sourceIds": [
+          "king-2025-c",
+          "188-broker"
+        ],
+        "status": "visually classified; dimensions estimated"
+      }
     },
     {
       "id": "glassworks-king-flagship",
@@ -45,7 +58,18 @@
       "profileId": "mixed-height-loft-king",
       "depthM": 0.36,
       "captureDate": "2025-01",
-      "font": "Arial.ttf"
+      "font": "Arial.ttf",
+      "attachment": {
+        "kind": "glazing",
+        "nodeId": "king-commercial-base"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "third-king-2025"
+        ],
+        "status": "visually classified; dimensions estimated"
+      }
     },
     {
       "id": "glassworks-third-flagship",
@@ -67,7 +91,18 @@
       "profileId": "double-height-loft-third",
       "depthM": 0.05,
       "captureDate": "2025-01",
-      "font": "Arial.ttf"
+      "font": "Arial.ttf",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "recessed-commercial-base"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "third-king-2025"
+        ],
+        "status": "visually classified; dimensions estimated"
+      }
     },
     {
       "id": "glassworks-bank",
@@ -89,7 +124,18 @@
       "profileId": "mixed-height-loft-king",
       "depthM": -0.06,
       "captureDate": "2025-01",
-      "font": "Georgia Bold.ttf"
+      "font": "Georgia Bold.ttf",
+      "attachment": {
+        "kind": "glazing",
+        "nodeId": "king-commercial-base"
+      },
+      "carrierEvidence": {
+        "type": "glass",
+        "sourceIds": [
+          "third-king-2025"
+        ],
+        "status": "visually classified; dimensions estimated"
+      }
     },
     {
       "id": "hyatt-entry",
@@ -113,6 +159,16 @@
       "font": "Arial.ttf",
       "canopy": {
         "projectionM": 1.4
+      },
+      "attachment": {
+        "kind": "generated-canopy"
+      },
+      "carrierEvidence": {
+        "type": "freestanding-canopy",
+        "sourceIds": [
+          "hyatt-dusk"
+        ],
+        "status": "visually classified; dimensions estimated"
       }
     },
     {
@@ -137,6 +193,16 @@
       "font": "Arial.ttf",
       "canopy": {
         "projectionM": 1.4
+      },
+      "attachment": {
+        "kind": "generated-canopy"
+      },
+      "carrierEvidence": {
+        "type": "freestanding-canopy",
+        "sourceIds": [
+          "via-entry"
+        ],
+        "status": "visually classified; dimensions estimated"
       }
     },
     {
@@ -161,7 +227,19 @@
       "depthM": 0.16,
       "material": "#c79e54",
       "archM": 0.22,
-      "captureDate": null
+      "captureDate": null,
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "plaza-clock-tower"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "oracle-diversified",
+          "third-king-2025"
+        ],
+        "status": "visually classified; dimensions estimated"
+      }
     },
     {
       "id": "oracle-tower-clock-tower-side",
@@ -185,7 +263,19 @@
       "depthM": 0.16,
       "material": "#c79e54",
       "archM": 0.22,
-      "captureDate": null
+      "captureDate": null,
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "clock-return"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "oracle-diversified",
+          "third-king-2025"
+        ],
+        "status": "visually classified; dimensions estimated"
+      }
     },
     {
       "id": "oracle-number",
@@ -208,7 +298,18 @@
       "depthM": 0.14,
       "material": "charcoal",
       "captureDate": null,
-      "font": "Arial Bold.ttf"
+      "font": "Arial Bold.ttf",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "clock-return"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "oracle-diversified"
+        ],
+        "status": "visually classified; dimensions estimated"
+      }
     }
   ],
   "excluded": [
