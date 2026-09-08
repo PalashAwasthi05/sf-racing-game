@@ -1,0 +1,12 @@
+from pathlib import Path
+p=Path('work/king-street/app/world-view.ts');s=p.read_text()
+s=s.replace("let mode='orbit',yaw=.785,pitch=0,drag=false,previousX=0,previousY=0,startX=0,startY=0;", "let mode='street',yaw=.785,pitch=0,drag=false,previousX=0,previousY=0,startX=0,startY=0,station=0;")
+s=s.replace("if(v==='street'){targetPosition=null;targetLook=null;camera.position.set(37,groundAt(37,38)+1.8,38);yaw=.785;pitch=.08;camera.rotation.order='YXZ';camera.rotation.set(pitch,yaw,0);}","if(v==='street'){targetPosition=null;targetLook=null;const p=data.streetViews?.[station];const x=p?.position[0]??37,z=-(p?.position[1]??-38);camera.position.set(x,groundAt(x,z)+1.25,z);camera.rotation.order='YXZ';if(p){camera.lookAt(p.lookAt[0],groundAt(p.lookAt[0],-p.lookAt[1])+p.lookAt[2],-p.lookAt[1]);yaw=camera.rotation.y;pitch=camera.rotation.x;}else{yaw=-.785;pitch=.025;camera.rotation.set(pitch,yaw,0);}highlight.visible=false;}")
+s=s.replace("camera.position.set(102,74,125);", "function nextStreet(){station=(station+1)%Math.max(1,data.streetViews?.length||1);view('street');}\n camera.position.set(102,74,125);")
+s=s.replace("if(target)highlightId(target.id);", "if(target)highlightId(target.id);view('street');")
+s=s.replace("renderer.setSize(w,h)}", "renderer.setSize(w,h);composer.setSize(w,h);ao.setSize(Math.round(w*renderer.getPixelRatio()*.75),Math.round(h*renderer.getPixelRatio()*.75))}")
+s=s.replace("groundAt(camera.position.x,camera.position.z)+1.8", "groundAt(camera.position.x,camera.position.z)+1.25")
+s=s.replace("renderer.render(scene,camera);", "const anchor=mode==='street'?camera.position:controls.target;sun.target.position.set(Math.round(anchor.x/2)*2,0,Math.round(anchor.z/2)*2);sun.position.copy(sun.target.position).addScaledVector(sunDirection,260);sun.target.updateMatrixWorld();\n  composer.render(dt);")
+s=s.replace("return {downloadUrl,view,select,layer:","return {downloadUrl,view,select,lighting,nextStreet,layer:")
+s=s.replace("env.dispose();sky.geometry.dispose();", "ao.dispose();output.dispose();composer.dispose();env.dispose();ring.geometry.dispose();(ring.material as THREE.Material).dispose();highlight.geometry.dispose();(highlight.material as THREE.Material).dispose();sky.geometry.dispose();")
+p.write_text(s)

@@ -2,6 +2,7 @@
 import math
 import numpy as np
 from shapely.geometry import Point,LineString
+from . import facade_grammar
 
 DEFAULTS={
  'masonry':dict(material='brick',archetype='masonry',floorHeightM=3.65,groundHeightM=4.3,bayWidthM=3.4,openingRatio=.56,openingHeightRatio=.66,frameProjectionM=.03,frameWidthM=.065,mullions=1,transomRatio=.66,ground='shopfront'),
@@ -17,6 +18,7 @@ def prior(tags,height,area):
 
 def compile(ctx,c,z0,main_height,height,tags,observations):
  default_height=main_height;g=c['g'].simplify(.18,preserve_topology=True);fid=c['id'];cube=ctx['cube'];cylinder=ctx['cylinder'];records=[];components=0
+ profiles=ctx.get('PROFILES',[]);fits=ctx.get('FITS',[])
  matches=[o for o in observations if str(o['match'].get('osmWayId'))==str(c['osm']['id'] if c['osm'] else '')]
  for poly in ctx['polys'](g):
   for ring in [poly.exterior]+list(poly.interiors):
@@ -33,7 +35,19 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
      delta=samples[:,:2]-a;along=delta@u;away=np.abs(delta@n);near=samples[(along>=0)&(along<=length)&(away<2.0)]
      if len(near)>20:main_height=max(default_height,min(height,float(np.quantile(near[:,2],.96)-z0)))
     angle=math.atan2(u[1],u[0]);style=prior(tags,height,c['full_area'])
-    obs=next((o for o in matches if np.dot(n,o['normal'])>.82),None)
+    profile=next((p for p in profiles if c['osm'] and str(p['match'].get('osmWayId'))==str(c['osm']['id']) and np.dot(n,p['normal'])>.95),None)
+    if profile and c.get('elevationOffset',0)<.5:
+     profile_height=main_height
+     if samples is not None and len(samples)>30:
+      delta=samples[:,:2]-a;along=delta@u;away=np.abs(delta@n);near=samples[(along>=-1)&(along<=length+1)&(away<3.5)&(samples[:,2]>z0+height*.65)]
+      if len(near)>15:
+       bins=np.arange(z0+height*.65,z0+height+1,.5);hist,edges=np.histogram(near[:,2],bins);peak=int(np.argmax(hist));cluster=near[(near[:,2]>=edges[peak]-.5)&(near[:,2]<edges[peak]+1)]
+       profile_height=min(height,float(np.quantile(cluster[:,2],.85)-z0+.12)) if len(cluster) else height
+      else:profile_height=height
+     fitted=facade_grammar.compile_wall(ctx,c,a,b,z0,profile_height,profile,fits)
+     if fitted:
+      records.append(fitted['record']);components+=fitted['components'];continue
+    obs=None if profile else next((o for o in matches if np.dot(n,o['normal'])>.82),None)
     if obs:style.update(obs)
     visible=length>=3.5 and not ctx['all_buildings'].contains(Point(*(mid+n*.8))) and ctx['boundary'].boundary.distance(Point(*mid))>.5
     mat=style['material'];layer='buildings__'+fid;detail='facades__'+fid

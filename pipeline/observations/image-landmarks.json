@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 1,
+  "annotationMethod": "One assistant visual pass per source image. Pixel landmarks are approximate observations; rectification, grid search and completion run numerically. Source pixels are not redistributed.",
+  "packets": [
+    {
+      "id": "loft-projecting-frame-bank",
+      "match": {
+        "osmWayId": "149167949"
+      },
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "sourceIds": [
+        "king-2025-c"
+      ],
+      "imageSize": [
+        1280,
+        720
+      ],
+      "quadPx": [
+        [
+          377,
+          242
+        ],
+        [
+          752,
+          -12
+        ],
+        [
+          848,
+          314
+        ],
+        [
+          285,
+          445
+        ]
+      ],
+      "region": [
+        0,
+        0.31,
+        1,
+        0.84
+      ],
+      "openingCentersPx": [
+        [
+          325,
+          392
+        ],
+        [
+          382,
+          365
+        ],
+        [
+          468,
+          338
+        ],
+        [
+          738,
+          248
+        ],
+        [
+          360,
+          320
+        ],
+        [
+          415,
+          291
+        ],
+        [
+          581,
+          209
+        ],
+        [
+          711,
+          138
+        ],
+        [
+          394,
+          265
+        ],
+        [
+          444,
+          237
+        ],
+        [
+          510,
+          188
+        ],
+        [
+          588,
+          142
+        ],
+        [
+          694,
+          58
+        ]
+      ],
+      "holdoutCentersPx": [
+        [
+          572,
+          298
+        ],
+        [
+          491,
+          251
+        ]
+      ],
+      "maxColumns": 9,
+      "maxRows": 7,
+      "style": {
+        "kind": "terrace_frame",
+        "material": "brick",
+        "frameMaterial": "silver",
+        "openingRatio": 0.84,
+        "openingHeightRatio": 0.87,
+        "frameWidthM": 0.15,
+        "projectionM": 0.254,
+        "recessM": 0.95,
+        "mullionFractions": [
+          0.33,
+          0.67
+        ],
+        "transomFractions": [
+          0.38,
+          0.83
+        ]
+      },
+      "uncertainty": [
+        "Top-right region corner slightly outside image; approximate projective annotation",
+        "Region-to-wall height fractions inferred; not surveyed",
+        "0.254 m frame projection from original architecture reporting; terrace depth inferred",
+        "Holdouts are same-image annotations, not independent photographs"
+      ]
+    },
+    {
+      "id": "hotel-bay-bank",
+      "match": {
+        "osmWayId": "573287814"
+      },
+      "normal": [
+        -0.707,
+        -0.707
+      ],
+      "sourceIds": [
+        "hyatt-dusk"
+      ],
+      "imageSize": [
+        1824,
+        1368
+      ],
+      "quadPx": [
+        [
+          978,
+          487
+        ],
+        [
+          1382,
+          662
+        ],
+        [
+          1396,
+          1138
+        ],
+        [
+          978,
+          1120
+        ]
+      ],
+      "region": [
+        0.16,
+        0.17,
+        0.86,
+        0.75
+      ],
+      "openingCentersPx": [
+        [
+          1040,
+          552
+        ],
+        [
+          1044,
+          653
+        ],
+        [
+          1045,
+          742
+        ],
+        [
+          1045,
+          828
+        ],
+        [
+          1045,
+          908
+        ],
+        [
+          1045,
+          984
+        ],
+        [
+          1045,
+          1068
+        ],
+        [
+          1200,
+          620
+        ],
+        [
+          1200,
+          713
+        ],
+        [
+          1200,
+          866
+        ],
+        [
+          1200,
+          936
+        ],
+        [
+          1200,
+          1009
+        ],
+        [
+          1200,
+          1078
+        ],
+        [
+          1340,
+          685
+        ],
+        [
+          1340,
+          762
+        ],
+        [
+          1340,
+          841
+        ],
+        [
+          1340,
+          975
+        ],
+        [
+          1340,
+          1039
+        ],
+        [
+          1340,
+          1100
+        ]
+      ],
+      "holdoutCentersPx": [
+        [
+          1200,
+          795
+        ],
+        [
+          1340,
+          907
+        ]
+      ],
+      "maxColumns": 7,
+      "maxRows": 12,
+      "style": {
+        "kind": "projected_bay",
+        "material": "zinc",
+        "frameMaterial": "charcoal",
+        "openingRatio": 0.74,
+        "openingHeightRatio": 0.66,
+        "frameWidthM": 0.065,
+        "projectionM": 0.5,
+        "recessM": 0.13,
+        "mullionFractions": [
+          0.22,
+          0.78
+        ],
+        "transomFractions": [
+          0.7
+        ]
+      },
+      "uncertainty": [
+        "Unknown photo capture date",
+        "Projection depth and metric scale not surveyed",
+        "Annotated grid region excludes brick margins",
+        "Wall association is Third Street; frontage extent still approximate"
+      ]
+    }
+  ]
+}
