@@ -339,14 +339,14 @@ print('OUTPUT',len(glb),'bytes',dict(counts),'center',lat,lon,flush=True)
 (PUBLIC/'facade-evidence.json').write_text(json.dumps({'walls':facade_records,'signs':sign_records,'sources':OBS['sources']},separators=(',',':')))
 print('GENERATION_SECONDS',round(time.perf_counter()-START,2),flush=True)
 
-import gzip
+import gzip,hashlib
 with gzip.GzipFile(PUBLIC/'king-street.glb.gz','wb',compresslevel=7,mtime=0) as stream:stream.write(glb)
 (PUBLIC/'king-street.glb').unlink()
 # Bounded transfer chunks; raw GLB is retained only as a local interchange artifact.
-packed=(PUBLIC/'king-street.glb.gz').read_bytes();chunks=[]
+packed=(PUBLIC/'king-street.glb.gz').read_bytes();chunks=[];digest=hashlib.sha256(glb).hexdigest()[:12]
 for i in range(0,len(packed),4*1024*1024):
- name=f'king-street-{i//(4*1024*1024):02d}.bin';(PUBLIC/name).write_bytes(packed[i:i+4*1024*1024]);chunks.append('/'+name)
+ name=f'king-street-{digest}-{i//(4*1024*1024):02d}.bin';(PUBLIC/name).write_bytes(packed[i:i+4*1024*1024]);chunks.append('/'+name)
 for old in PUBLIC.glob('king-street-*.bin'):
  if '/'+old.name not in chunks:old.unlink()
-(PUBLIC/'model.json').write_text(json.dumps({'compression':'gzip','chunks':chunks,'compressedBytes':len(packed),'uncompressedBytes':len(glb)}))
+(PUBLIC/'model.json').write_text(json.dumps({'compression':'gzip','contentHash':digest,'chunks':chunks,'compressedBytes':len(packed),'uncompressedBytes':len(glb)}))
 (PUBLIC/'king-street.glb.gz').unlink()

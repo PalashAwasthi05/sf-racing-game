@@ -23,7 +23,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  const composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));
  const ao=new GTAOPass(scene,camera,1,1);ao.updateGtaoMaterial({radius:1.25,distanceExponent:1.5,thickness:.8,samples:12});ao.blendIntensity=.7;composer.addPass(ao);const output=new OutputPass();composer.addPass(output);
  function lighting(overcast:boolean){sun.intensity=overcast?.55:3.1;scene.environmentIntensity=overcast?.22:.12;hemi.intensity=overcast?.3:.18;renderer.toneMappingExposure=overcast?1.05:.85;sky.material.uniforms.turbidity.value=overcast?10:2.6;}
- const manifest=await fetch('/model.json').then(r=>{if(!r.ok)throw new Error('Scene manifest unavailable');return r.json() as Promise<{chunks:string[];compressedBytes:number}>});
+ const manifest=await fetch('/model.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw new Error('Scene manifest unavailable');return r.json() as Promise<{chunks:string[];compressedBytes:number}>});
  let loaded=0;
  const packed=new ReadableStream<BufferSource>({async start(controller){try{for(const path of manifest.chunks){const response=await fetch(path);if(!response.ok||!response.body)throw new Error('Scene download failed');const reader=response.body.getReader();while(true){const {done,value}=await reader.read();if(done)break;loaded+=value.byteLength;onProgress('Loading detailed scene… '+Math.round(loaded/manifest.compressedBytes*100)+'%');controller.enqueue(value)}}controller.close()}catch(e){controller.error(e)}}});
  const buffer=await new Response(packed.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();onProgress('Preparing materials and geometry…');
