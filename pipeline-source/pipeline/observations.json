@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "description": "Observation records are input data. The compiler contains no address-specific rendering branches. Measurements below are visual fits, not surveyed values.",
+  "sources": {
+    "king-2025-a": {
+      "url": "https://www.google.com/maps/@37.7786899,-122.3913452,3a,75y,300h,95t/data=!3m4!1e1!3m2!1sS4hs-Kyh3P14aRv9CWeTvg!2e0",
+      "capturedAt": "2025-01",
+      "provider": "Google Street View",
+      "use": "visual inspection; no pixels embedded"
+    },
+    "king-2025-b": {
+      "url": "https://www.google.com/maps/@37.7785447,-122.3915291,3a,100y,300h,130t/data=!3m4!1e1!3m2!1sZEaDxnfTqji-aGZgIx9ffg!2e0",
+      "capturedAt": "2025-01",
+      "provider": "Google Street View",
+      "use": "visual inspection; no pixels embedded"
+    },
+    "street-2024": {
+      "url": "https://www.sfmta.com/projects/3rd-street-quick-build-project",
+      "capturedAt": null,
+      "provider": "SFMTA",
+      "use": "installed project context; plan geometry is not treated as surveyed current paint"
+    }
+  },
+  "facades": [
+    {
+      "match": {
+        "osmWayId": "149167949"
+      },
+      "normal": [
+        0.71,
+        -0.7
+      ],
+      "material": "brick",
+      "archetype": "framed_loft",
+      "floorHeightM": 5.15,
+      "groundHeightM": 4.2,
+      "bayWidthM": 5.25,
+      "openingRatio": 0.78,
+      "openingHeightRatio": 0.82,
+      "frameProjectionM": 0.3,
+      "frameWidthM": 0.16,
+      "mullions": 2,
+      "transomRatio": 0.73,
+      "ground": "canopy_entry",
+      "sourceIds": [
+        "king-2025-b"
+      ],
+      "confidence": "visual-fit",
+      "observed": [
+        "brick wall",
+        "projecting rectangular metal frames",
+        "large multi-pane loft glazing",
+        "glass entrance canopies",
+        "setback glazed upper floor"
+      ],
+      "unresolved": [
+        "complete bay count",
+        "surveyed opening dimensions",
+        "rear facade",
+        "side facade",
+        "penthouse dimensions"
+      ]
+    },
+    {
+      "match": {
+        "osmWayId": "149167937"
+      },
+      "normal": [
+        0.71,
+        -0.7
+      ],
+      "material": "brick",
+      "archetype": "residential_bay",
+      "floorHeightM": 3.05,
+      "groundHeightM": 4.3,
+      "bayWidthM": 4.15,
+      "openingRatio": 0.72,
+      "openingHeightRatio": 0.69,
+      "frameProjectionM": 0.32,
+      "frameWidthM": 0.075,
+      "mullions": 2,
+      "transomRatio": 0.72,
+      "ground": "canopy_entry",
+      "stoneBands": true,
+      "sourceIds": [
+        "king-2025-a",
+        "king-2025-b"
+      ],
+      "confidence": "visual-fit",
+      "observed": [
+        "red brick",
+        "projecting metal bay windows",
+        "white base and horizontal stone bands",
+        "glazed entrance canopy"
+      ],
+      "unresolved": [
+        "ornamental sculpted frieze",
+        "full window arrangement",
+        "surveyed opening dimensions",
+        "non-front facades"
+      ]
+    }
+  ],
+  "footprintDecisions": [
+    {
+      "osmWayId": "573287814",
+      "selectedSource": "OSM",
+      "reason": "Prior pilot reconciliation: modern outline replaces small older municipal structures; 2023 LiDAR supports the taller replacement. Boundary accuracy is not independently surveyed.",
+      "status": "reconciled-candidate"
+    }
+  ]
+}

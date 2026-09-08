@@ -1,62 +1,69 @@
-# 188 King Street — pilot 01
+# 188 King Street — detail pilot 02
 
-A generated 3D study around 188 King Street, San Francisco. Created September 8, 2026.
+[Open the rebuilt private viewer](https://king-street-world-pilot.reflex-4683.chatgpt.site).
 
-The study radius is 200 m (about 12.6 hectares), with context to 265 m. Buildings crossing the context boundary are cut there. This is the first geometry-and-evidence baseline for iterative refinement. It is not yet a verified 1:1 visual replica or a complete racing game.
+This rebuild applies heuristic v0.3 across the same 200 m study radius, with context to 265 m. It improves the detail pipeline while retaining the evidence boundary: it does **not yet meet the supplied game image's realism or the requested 1:1 facade accuracy**.
 
-## Explore
+## What changed everywhere
 
-Use Orbit to inspect the neighborhood, Street to move at eye level, or Plan for an overhead view. Click a building to inspect its estimated height and data sources. Focus building moves the camera closer. In Street mode, drag to look and use W/A/S/D to move; Shift increases speed. Movement follows the sampled terrain but does not yet collide with buildings.
+The compiler now builds walls around recessed openings rather than drawing flat window rectangles on opaque massing. Shared components generate metal frames, mullions, transoms, sills, canopies, handles, vents, coping and downpipes. Upper roof/setback walls use the same system. No address selects custom architectural geometry in the compiler; geographic observation records supply parameters.
 
-Turn facade details, trees, street objects, and markings on or off. Evidence colors distinguish LiDAR-derived shape, mapped placement, and inferred surface detail. Sources & remaining gaps gives the provenance inside the viewer.
+Scanned CC0 brick, asphalt and concrete supply color, normal and roughness maps at physical scale. Glazing and metal have separate surface response. Sidewalks now have height, curb edges, joints, tree pits and tactile panels. Street semantics generate selected bus-lane treatments and turn markings. Inventory records supply candidate sign panels with readable legends; their curb snaps remain explicitly inferred. Shared tree templates generate branches, foliage and palm fronds instead of simple canopy lumps.
 
-## What was generated
+The viewer preserves the source inspector, layer controls and evidence colors. Green identifies meshes associated with a partial visual fit; it does not mean every opening on that mesh was measured. Amber identifies inferred detail. Cyan identifies terrain/roof fits. Material texture can be realistic while its assignment to a particular wall is still wrong.
 
-- 64 building features, including 188 King Street and the edge of Oracle Park.
-- Building roof tiers and terrain fitted from 4,624,404 LiDAR points.
-- 96 mapped road segments, 45 mapped crossing features, and 4 rail segments. These are data features, not counts of unique streets, intersections, or rail lines.
-- 174 inventory-based tree placements with reusable species-inspired geometry.
-- 12 mapped signal nodes and 19 mapped lamp nodes, with approximate pole and fixture shapes.
-- 247 nearby municipal sign records retained in the evidence file; exact sign positions and orientation remain unresolved.
+## Generated result
 
-The model is approximately 10.7 MB, with 202 meshes and 520,963 triangles. It uses vertex colors and procedural facade geometry; photographic facade textures are not included.
+| Item | This run |
+| --- | ---: |
+| Building features | 64 |
+| Window assemblies | 15,702 |
+| Fitted roof sections | 122 |
+| Tree placements | 174 |
+| Candidate sign panels | 20 |
+| Generated sidewalk area | 15,219 m² |
+| Wall sections, including setback sections | 996 |
+| Sections with partial direct visual fits | 8 |
+| Independently verified facade sections | 0 |
+| Raw GLB | 207.0 MB |
+| Compressed transfer | 52.8 MB |
+| Triangles | 4,195,912 |
+| Material/feature meshes | 677 |
+| Cached generation before export/compression | 90.4 s |
 
-## Data and evidence
+Window assemblies and wall sections are compiler components, not surveyed counts of real windows or unique building facades. More subdivision creates more wall sections; the count alone is not an accuracy measure.
 
-| Attribute | Source and method | Remaining uncertainty |
-| --- | --- | --- |
-| Address identity | [OpenStreetMap way 149167949](https://www.openstreetmap.org/way/149167949), tagged 188/190 King Street | Main footprint and adjacent annex remain separate features. |
-| Building outlines | [DataSF footprints](https://data.sfgov.org/d/ynuv-fyni), reconciled with newer OSM footprints | Much municipal geometry derives from older mapping; changes since capture require checks. |
-| Ground and roofs | [2023 San Francisco LiDAR](https://www.fisheries.noaa.gov/inport/item/73386/full-list), sampled through the [USGS public EPT index](https://s3-us-west-2.amazonaws.com/usgs-lidar-public/CA_SanFrancisco_1_B23/ept.json) | Roof heights are percentile fits; vegetation, fixtures, misalignment, and regularization can produce errors. |
-| Roads, crossings and rail | [OpenStreetMap](https://www.openstreetmap.org/copyright), retrieved September 2026 | Lane counts where tagged; widths, stripe spacing, gauge placement, and many fixture dimensions are inferred. |
-| Trees | [DataSF street-tree inventory](https://data.sfgov.org/d/tkzw-k3nq) | Inventory positions/species guide placement; exact height, canopy, age, and survival are unverified. |
-| Signs | [DataSF sign inventory](https://data.sfgov.org/d/m48z-6ji4) | Coarse locations are retained as unresolved records, not rendered as exact signs. |
-| Street-level reference | [Google Street View on the King Street frontage](https://www.google.com/maps/@37.7786899,-122.3913452,3a,75y,315h,110t/data=!3m4!1e1!3m2!1sS4hs-Kyh3P14aRv9CWeTvg!2e0), capture labeled January 2025 | Targeted visual inspection informed the frontage/median treatment. No Google pixels are embedded as textures. |
-| Additional imagery | [Mapillary around King and Third](https://www.mapillary.com/app/?lat=37.7786&lng=-122.3918&z=18) | Dense capture coverage was observed. Individual captures, dates, and image-derived measurements have not been ingested. |
+Generation uses cached point clouds, GIS and compact observation records with no language-model calls. The timing excludes research, source downloads, manual observation, asset preparation, export/compression, development, validation and publishing. It is not an end-to-end city-generation benchmark. The raw model is much heavier than pilot 01; transfer compression does not reduce GPU geometry or draw calls.
 
-Google imagery is one targeted reference among the inputs. The entire neighborhood has not been checked against that January 2025 capture. A retrieval date does not mean every mapped feature is current as of that date.
+## Observed versus inferred
 
-## Coordinates and interchange
+The two dated Google Street View viewpoints on King Street informed the projecting loft frames and adjoining bay-window/stone-band facade families. Source IDs, dates and observed/unknown attributes are recorded separately in `work/pipeline/observations.json`. No Google image textures are embedded. Most other wall layouts and attachment positions use architectural priors, and dimensions in the visual-fit records have not been independently calibrated.
 
-`king-street-pilot.glb` is in meters. X points east, Y points up, and Z points south. The horizontal origin is the centroid of the OSM address footprint, approximately latitude 37.7786228425823, longitude -122.39182032784258. The underlying projected coordinates use UTM zone 10N. Vertical values are relative to the median nearby ground sample; the absolute source offset is recorded as `verticalOrigin` in the evidence file. This is not a surveyed vertical control point.
+The PBR material maps come from [ambientCG Bricks085](https://ambientcg.com/a/Bricks085), [Asphalt033](https://ambientcg.com/a/Asphalt033), and [Concrete034](https://ambientcg.com/a/Concrete034), under CC0. Those scans are reusable examples, not photographs of these exact surfaces. Tree branches and blind variations are synthetic.
 
-Mesh names retain semantic layers and building IDs so later passes can replace facades, roofs, or props independently. The JSON records per-building sources and sample counts, terrain samples, source links, and unresolved sign records. Small terrain triangles can extend about 2 m beyond the nominal context edge.
+Sign evidence retains the original inventory coordinate, curb-snap distance, direction text, date and an `imageVerified: false` flag. The 20 rendered candidates are not a complete or verified sign inventory. Original coarse records remain in the evidence JSON. The [SFMTA Third Street project](https://www.sfmta.com/projects/3rd-street-quick-build-project) supplies installed-project context; the compiler does not present a proposed drawing as exact current paint.
 
-## Refinement priorities
+## Heuristic changes and portability
 
-1. Calibrate 188 King Street against several dated street captures: building edges, window counts, projecting frames, penthouse setbacks, and material appearance. The current fitted height is about 36.0 m and should be checked against the architectural envelope rather than accepted as a survey measurement.
-2. Fit the King/Third intersection: curb boundaries, transit platforms, lane widths, stop lines, turn arrows, crossing geometry, signal placement, and sign orientation.
-3. Replace the most visible neighboring facades and simplify noisy roof tiers. Oracle Park especially needs a dedicated architectural treatment.
-4. Compare measured errors on this small area, then rerun the same pipeline on another block before estimating citywide time and cost.
+Read `world-generation-blueprint.md` for the revised heuristic. The bundle includes shared facade/street/material/vegetation/sign compilers, region settings, observation inputs, a future observation-packet schema and a missing-view planner. The Mapillary metadata adapter requires authorized local configuration and has not been run in this pass.
 
-Water geometry is included only where mapped water intersects this area. Bridges and distant waterfront features outside the study are not modeled. No interiors, vehicles, crowds, exact sign lettering, or race physics are included.
+Geometry code is separate from evidence. New areas should add source data and observation records through the same schema, not address-specific code. The source adapters are still configured for this San Francisco pilot; a second-region run remains necessary to validate portability. The current GLB bakes repeated components, and the download chunks are not spatial streaming/HLOD. Both instancing and rendering budgets remain city-scale work.
 
-## What this says about the heuristic
+## Remaining gates
 
-The geometric bulk came from cached data processing rather than asking a language model to describe every object. Stable feature IDs and separate facade/road-detail layers make targeted revision possible without regenerating the entire neighborhood. This pass used public data without paid purchases or a separate model API. It does not establish that full visual fidelity across San Francisco is achievable in a month; street-level reconstruction and measured error checks remain the work needed to test that target.
+- Sufficient dated images and independent views for every street-visible facade.
+- Measured window positions/counts, frame depth, material identity and distinctive ornament.
+- Calibrated curb geometry, lane/paint positions and sign poses.
+- Cleaner roof reconstruction where the height fit still produces terrace artifacts.
+- Engine-side spatial streaming, instancing, collision, and measured frame time/memory.
+- Held-out image comparisons against the supplied quality target.
 
-## Validation
+The v0.3 accuracy gate remains **not passed**. This prevents the more detailed but partly inferred model from being called a current 1:1 replica. The next bottleneck is observing and fitting the missing facade structure, followed by measured rendering optimization.
 
-The GLB was reloaded and checked for finite coordinates and valid triangle indices. A separate software projection was used to inspect the geometry. The viewer passed TypeScript checking and its production build. Interactive browser behavior and game-engine performance have not been comprehensively tested.
+## Interchange and validation
 
-Attribution: © OpenStreetMap contributors, DataSF / City and County of San Francisco, and USGS. The evidence links preserve source attribution for subsequent review and refinement.
+GLB units are meters: X east, Y up, Z south. The horizontal origin is approximately 37.7786228425823, -122.39182032784258 in a local UTM zone 10N frame. Vertical values use the recorded local ground offset. These coordinate conventions match pilot 01.
+
+The exported geometry and texture coordinates were checked for finite values and valid triangle indices. Compressed transfer chunks were reconstructed and compared byte-for-byte with the raw GLB. A CPU projection inspected geometry and texture scaling; this is not a browser or game-engine performance test. Type checking and the production build are recorded separately in the task.
+
+Attribution: OpenStreetMap contributors; DataSF / City and County of San Francisco; USGS; ambientCG. All detailed source links and dates are retained in the evidence and material manifests.

@@ -36,3 +36,7 @@ next-env.d.ts
 /.wrangler/
 /outputs/
 /work/
+
+# Python generator cache
+__pycache__/
+*.pyc
