@@ -4,6 +4,7 @@ Profiles are data; no geographic IDs or addresses are interpreted here.
 import math
 import numpy as np
 from shapely.geometry import Point
+from .surface_evidence import admissible
 
 
 def openings(profile,fits):
@@ -11,7 +12,7 @@ def openings(profile,fits):
  for group in profile.get('groups',[]):
   g=dict(group);fit=next((f for f in fits if f['id']==g.get('fitId')),None)
   if fit:
-   region=fit['region'];style=dict(fit['style']);style.update(g.get('style',{}));xs=fit['columns']['centers'];ys=fit['rows']['centers'];dx=fit['columns']['spacing'];dy=fit['rows']['spacing'];cells={(round(c['x'],5),round(c['y'],5)):c['evidence'] for c in fit['cells']}
+   region=g.get('region',fit['region']);style=dict(fit['style']);style.update(g.get('style',{}));xs=fit['columns']['centers'];ys=fit['rows']['centers'];dx=fit['columns']['spacing'];dy=fit['rows']['spacing'];cells={(round(c['x'],5),round(c['y'],5)):c['evidence'] for c in fit['cells']}
   else:
    region=g['region'];style=g.get('style',{});nx=g.get('columns',1);ny=g.get('rows',1);xs=g.get('xCenters',[(i+.5)/nx for i in range(nx)]);ys=g.get('yCenters',[(i+.5)/ny for i in range(ny)]);dx=g.get('spacingX',1/nx);dy=g.get('spacingY',1/ny);cells={}
   x0,y0,x1,y1=region
@@ -21,7 +22,9 @@ def openings(profile,fits):
     ow=dx*(x1-x0)*style.get('openingRatio',.7);oh=dy*(y1-y0)*style.get('openingHeightRatio',.7)
     cx=x0+x*(x1-x0);cy=y0+y*(y1-y0)
     result.append(dict(rect=[cx-ow/2,cy-oh/2,cx+ow/2,cy+oh/2],style=style,evidence=cells.get((round(x,5),round(y,5)),'visual-grammar' if profile.get('sourceIds') else 'inferred'),ix=ix,iy=iy,fitId=g.get('fitId')))
- for opening in profile.get('openings',[]):result.append(dict(opening,evidence='visual-grammar',ix=0,iy=0))
+ result=[op for op in result if admissible(op,profile)]
+ for opening in profile.get('openings',[]):
+  if admissible(opening,profile,explicit=True):result.append(dict(opening,evidence=opening.get('evidence','observed-boundary'),ix=0,iy=0))
  return result
 
 
@@ -77,7 +80,7 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
    continue
   # Deep interior backing, perimeter reveals and glazing use real, distinct planes.
   block(cx,cy,w,h,.035,'interior',-recess-.18)
-  glass='glass_dark' if j%4==0 else 'glass'
+  glass=s.get('glassMaterial','glass')
   block(cx,cy,w-.025,h-.025,.025,glass,-recess)
   for x in [x1+fw/2,x2-fw/2]:block(x,cy,fw,h,recess+proj,frame,(proj-recess)/2)
   for y in [y1+fw/2,y2-fw/2]:block(cx,y,w,fw,recess+proj,frame,(proj-recess)/2)
@@ -113,4 +116,4 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
   z=band['height']*H;block((low+high)/2,z,high-low,band.get('thicknessM',.16),band.get('depthM',.2),band.get('material','stone'),band.get('projectionM',.05))
  block((low+high)/2,.16,high-low,.32,.1,'stone',.045)
  block((low+high)/2,H+.025,high-low,.10,.4,profile.get('copingMaterial','charcoal'),.015)
- return dict(record={'buildingId':c['id'],'midpoint':mid.tolist(),'normal':n.tolist(),'lengthM':round(high-low,2),'heightM':round(H,2),'edge':'grammar','floors':None,'columns':None,'archetype':profile['id'],'material':mat,'sourceIds':profile['sourceIds'],'status':('image-layout-fit' if any(o.get('fitId') for o in ops) else 'visual-grammar'),'grammarId':profile['id'],'openingCount':len(ops),'fitIds':list(set(o['fitId'] for o in ops if o.get('fitId'))),'unresolved':profile.get('unresolved',[]),'streetFacing':True},components=len(ops))
+ return dict(record={'buildingId':c['id'],'midpoint':mid.tolist(),'normal':n.tolist(),'lengthM':round(high-low,2),'heightM':round(H,2),'edge':'grammar','floors':None,'columns':None,'archetype':profile['id'],'material':mat,'sourceIds':profile['sourceIds'],'status':('image-layout-fit' if any(o.get('fitId') for o in ops) else 'visual-grammar'),'grammarId':profile['id'],'openingCount':len(ops),'openingEvidence':{'explicitBoundaries':sum(o.get('evidence')=='observed-boundary' for o in ops),'negativeRegions':len(profile.get('surfaceEvidence',[]))},'fitIds':list(set(o['fitId'] for o in ops if o.get('fitId'))),'unresolved':profile.get('unresolved',[]),'streetFacing':True},components=len(ops))

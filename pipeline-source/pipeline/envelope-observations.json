@@ -59,7 +59,7 @@
       "unresolved": [
         "Envelope regions manually annotated from two oblique views; depths estimated, not triangulated.",
         "Upper towers behind the street wing retain LiDAR massing and unverified facade priors.",
-        "Street tenant lettering and fine material color require current close-range photographs."
+        "Opening counts outside direct boundary annotations remain visual estimates; no independent validation."
       ],
       "id": "stepped-corner-third",
       "normal": [
@@ -176,7 +176,7 @@
             10.4,
             "glassRoof"
           ],
-          "material": "limestone",
+          "material": "stucco",
           "depthM": 0,
           "children": [
             {
@@ -298,7 +298,7 @@
             10.4,
             "wing"
           ],
-          "material": "limestone",
+          "material": "stucco",
           "depthM": -0.45,
           "grids": [
             {
@@ -385,7 +385,7 @@
             "glassRoof",
             "corner"
           ],
-          "material": "limestone",
+          "material": "stucco",
           "depthM": -2.0,
           "jointsM": [
             2.5,
@@ -419,7 +419,7 @@
       "unresolved": [
         "Envelope regions manually annotated from two oblique views; depths estimated, not triangulated.",
         "Upper towers behind the street wing retain LiDAR massing and unverified facade priors.",
-        "Street tenant lettering and fine material color require current close-range photographs."
+        "Opening counts outside direct boundary annotations remain visual estimates; no independent validation."
       ],
       "id": "stepped-corner-king",
       "normal": [
@@ -475,7 +475,7 @@
             0,
             10.4
           ],
-          "material": "stone",
+          "material": "stucco_red",
           "depthM": -0.12,
           "grids": [
             {
@@ -540,7 +540,7 @@
             10.4,
             "wing"
           ],
-          "material": "limestone",
+          "material": "stucco",
           "depthM": -0.3,
           "grids": [
             {
@@ -626,7 +626,7 @@
             10.4,
             "glassRoof"
           ],
-          "material": "limestone",
+          "material": "stucco",
           "depthM": 0,
           "grids": [
             {
@@ -731,7 +731,8 @@
       "unresolved": [
         "Image-derived hierarchy and window subdivisions; depths still estimated.",
         "Historic architect photographs cross-checked against Jan2025 Street View for major form only.",
-        "Interiors and open awning selection are stable synthetic completion, not surveyed details."
+        "Interiors and open awning selection are stable synthetic completion, not surveyed details.",
+        "Opening counts outside direct boundary annotations remain visual estimates; no independent validation."
       ],
       "id": "double-height-loft-third",
       "normal": [
@@ -941,7 +942,7 @@
             "loftRoof",
             "core"
           ],
-          "material": "terracotta",
+          "material": "terracotta_ribbed",
           "depthM": -0.55,
           "jointsM": [
             1.1,
@@ -999,7 +1000,8 @@
       "unresolved": [
         "Image-derived hierarchy and window subdivisions; depths still estimated.",
         "Historic architect photographs cross-checked against Jan2025 Street View for major form only.",
-        "Interiors and open awning selection are stable synthetic completion, not surveyed details."
+        "Interiors and open awning selection are stable synthetic completion, not surveyed details.",
+        "Opening counts outside direct boundary annotations remain visual estimates; no independent validation."
       ],
       "id": "mixed-height-loft-king",
       "normal": [
@@ -1055,7 +1057,7 @@
             0,
             4.5
           ],
-          "material": "terracotta",
+          "material": "terracotta_ribbed",
           "depthM": -0.5,
           "grids": [
             {
@@ -1095,7 +1097,7 @@
             4.5,
             "core"
           ],
-          "material": "terracotta",
+          "material": "terracotta_ribbed",
           "depthM": 0,
           "jointsM": [
             1.1,
@@ -1167,6 +1169,34 @@
                   }
                 }
               ]
+            },
+            {
+              "id": "opaque-recessed-infill",
+              "rect": [
+                0.55,
+                0.04,
+                0.96,
+                0.38
+              ],
+              "offsetM": -0.48,
+              "material": "panel_silver",
+              "surfaceEvidence": [
+                {
+                  "rect": [
+                    0,
+                    0,
+                    1,
+                    1
+                  ],
+                  "label": "opaque-panel",
+                  "sourceIds": [
+                    "glassworks-perry"
+                  ],
+                  "confidence": "visual",
+                  "boundaryStatus": "image-estimated",
+                  "note": "Opaque jointed metal infill below projecting loft bay"
+                }
+              ]
             }
           ]
         },
@@ -1180,7 +1210,7 @@
             4.5,
             "wing"
           ],
-          "material": "terracotta",
+          "material": "terracotta_ribbed",
           "depthM": -2.25,
           "jointsM": [
             1.1,
@@ -1254,7 +1284,8 @@
       "unresolved": [
         "Masonry/steel topology annotated from actual photographs; depths and member sizes estimated.",
         "Documented tower height excludes flagpole; clock hand positions are synthetic.",
-        "Stadium seating bowl, signage, sculpture and brick relief patterns remain incomplete."
+        "Stadium seating bowl, signage, sculpture and brick relief patterns remain incomplete.",
+        "Opening counts outside direct boundary annotations remain visual estimates; no independent validation."
       ],
       "id": "masonry-and-open-structure",
       "normal": [
@@ -1324,7 +1355,7 @@
             0,
             "wall"
           ],
-          "material": "brick",
+          "material": "brick_modular",
           "depthM": 0,
           "grids": [
             {
@@ -1432,7 +1463,7 @@
             0,
             "tower"
           ],
-          "material": "brick",
+          "material": "brick_modular",
           "depthM": 0.4,
           "grids": [
             {
@@ -1507,7 +1538,7 @@
                 1
               ],
               "offsetM": 0.18,
-              "material": "brick"
+              "material": "brick_modular"
             },
             {
               "id": "north-clock-tower-right-pier",
@@ -1518,7 +1549,52 @@
                 1
               ],
               "offsetM": 0.18,
-              "material": "brick"
+              "material": "brick_modular"
+            }
+          ],
+          "surfaceEvidence": [
+            {
+              "rect": [
+                0.12,
+                0.36,
+                0.88,
+                0.94
+              ],
+              "label": "solid",
+              "sourceIds": [
+                "oracle-diversified"
+              ],
+              "confidence": "visual",
+              "boundaryStatus": "image-estimated",
+              "note": "Brick clock/sign/banner field above the actual low opening"
+            }
+          ],
+          "openings": [
+            {
+              "rect": [
+                0.31,
+                0.03,
+                0.69,
+                0.34
+              ],
+              "style": {
+                "widthRatio": 1,
+                "mullions": [
+                  0.25,
+                  0.5,
+                  0.75
+                ],
+                "transoms": [
+                  0.24,
+                  0.49,
+                  0.74
+                ],
+                "glassMaterial": "glass_dark",
+                "frameMaterial": "verdigris"
+              },
+              "sourceIds": [
+                "oracle-diversified"
+              ]
             }
           ]
         },
@@ -1532,7 +1608,7 @@
             0,
             "tower"
           ],
-          "material": "brick",
+          "material": "brick_modular",
           "depthM": 0.4,
           "grids": [
             {
@@ -1607,7 +1683,7 @@
                 1
               ],
               "offsetM": 0.18,
-              "material": "brick"
+              "material": "brick_modular"
             },
             {
               "id": "plaza-clock-tower-right-pier",
@@ -1618,7 +1694,52 @@
                 1
               ],
               "offsetM": 0.18,
-              "material": "brick"
+              "material": "brick_modular"
+            }
+          ],
+          "surfaceEvidence": [
+            {
+              "rect": [
+                0.12,
+                0.36,
+                0.88,
+                0.94
+              ],
+              "label": "solid",
+              "sourceIds": [
+                "oracle-diversified"
+              ],
+              "confidence": "visual",
+              "boundaryStatus": "image-estimated",
+              "note": "Brick clock/sign/banner field above the actual low opening"
+            }
+          ],
+          "openings": [
+            {
+              "rect": [
+                0.31,
+                0.03,
+                0.69,
+                0.34
+              ],
+              "style": {
+                "widthRatio": 1,
+                "mullions": [
+                  0.25,
+                  0.5,
+                  0.75
+                ],
+                "transoms": [
+                  0.24,
+                  0.49,
+                  0.74
+                ],
+                "glassMaterial": "glass_dark",
+                "frameMaterial": "verdigris"
+              },
+              "sourceIds": [
+                "oracle-diversified"
+              ]
             }
           ]
         }
@@ -1672,7 +1793,8 @@
       "unresolved": [
         "Masonry/steel topology annotated from actual photographs; depths and member sizes estimated.",
         "Documented tower height excludes flagpole; clock hand positions are synthetic.",
-        "Stadium seating bowl, signage, sculpture and brick relief patterns remain incomplete."
+        "Stadium seating bowl, signage, sculpture and brick relief patterns remain incomplete.",
+        "Opening counts outside direct boundary annotations remain visual estimates; no independent validation."
       ],
       "id": "clock-tower-side",
       "normal": [
@@ -1716,7 +1838,7 @@
             0,
             "tower"
           ],
-          "material": "brick",
+          "material": "brick_modular",
           "depthM": 0.4,
           "grids": [
             {
@@ -1784,7 +1906,7 @@
                 1
               ],
               "offsetM": 0.18,
-              "material": "brick"
+              "material": "brick_modular"
             },
             {
               "id": "clock-return-right-pier",
@@ -1795,7 +1917,52 @@
                 1
               ],
               "offsetM": 0.18,
-              "material": "brick"
+              "material": "brick_modular"
+            }
+          ],
+          "surfaceEvidence": [
+            {
+              "rect": [
+                0.12,
+                0.36,
+                0.88,
+                0.94
+              ],
+              "label": "solid",
+              "sourceIds": [
+                "oracle-diversified"
+              ],
+              "confidence": "visual",
+              "boundaryStatus": "image-estimated",
+              "note": "Brick clock/sign/banner field above the actual low opening"
+            }
+          ],
+          "openings": [
+            {
+              "rect": [
+                0.31,
+                0.03,
+                0.69,
+                0.34
+              ],
+              "style": {
+                "widthRatio": 1,
+                "mullions": [
+                  0.25,
+                  0.5,
+                  0.75
+                ],
+                "transoms": [
+                  0.24,
+                  0.49,
+                  0.74
+                ],
+                "glassMaterial": "glass_dark",
+                "frameMaterial": "verdigris"
+              },
+              "sourceIds": [
+                "oracle-diversified"
+              ]
             }
           ]
         }
@@ -1816,7 +1983,8 @@
       "unresolved": [
         "Masonry/steel topology annotated from actual photographs; depths and member sizes estimated.",
         "Documented tower height excludes flagpole; clock hand positions are synthetic.",
-        "Stadium seating bowl, signage, sculpture and brick relief patterns remain incomplete."
+        "Stadium seating bowl, signage, sculpture and brick relief patterns remain incomplete.",
+        "Opening counts outside direct boundary annotations remain visual estimates; no independent validation."
       ],
       "id": "angled-plaza-wing",
       "normal": [
@@ -1870,7 +2038,7 @@
             0,
             "wall"
           ],
-          "material": "brick",
+          "material": "brick_modular",
           "depthM": 0,
           "grids": [
             {
@@ -1995,7 +2163,8 @@
       "unresolved": [
         "Masonry/steel topology annotated from actual photographs; depths and member sizes estimated.",
         "Documented tower height excludes flagpole; clock hand positions are synthetic.",
-        "Stadium seating bowl, signage, sculpture and brick relief patterns remain incomplete."
+        "Stadium seating bowl, signage, sculpture and brick relief patterns remain incomplete.",
+        "Opening counts outside direct boundary annotations remain visual estimates; no independent validation."
       ],
       "id": "low-glazed-plaza-pavilion",
       "normal": [
@@ -2027,7 +2196,7 @@
             0,
             5.4
           ],
-          "material": "brick",
+          "material": "brick_modular",
           "depthM": 0,
           "grids": [
             {
@@ -2099,7 +2268,7 @@
                 0.035,
                 1
               ],
-              "material": "brick",
+              "material": "brick_modular",
               "offsetM": 0.2
             },
             {
@@ -2110,7 +2279,7 @@
                 0.515,
                 1
               ],
-              "material": "brick",
+              "material": "brick_modular",
               "offsetM": 0.2
             },
             {
@@ -2121,7 +2290,7 @@
                 1,
                 1
               ],
-              "material": "brick",
+              "material": "brick_modular",
               "offsetM": 0.2
             }
           ],

@@ -13,12 +13,16 @@ from scipy.ndimage import median_filter, gaussian_filter, distance_transform_edt
 from rasterio.features import shapes
 from rasterio.transform import from_origin
 from pipeline.materials import Materials
-from pipeline import facades,streets,vegetation,signs,envelopes
+from pipeline import facades,streets,vegetation,signs,envelopes,lettering
 from trimesh.visual.texture import TextureVisuals
 
 ROOT=pathlib.Path(__file__).parent;DATA=ROOT/'data';PUBLIC=ROOT/'king-street'/'public';PUBLIC.mkdir(parents=True,exist_ok=True)
 OUT=ROOT.parent/'outputs';OUT.mkdir(exist_ok=True)
 PROFILES=json.load(open(ROOT/'pipeline/facade-profiles.json'))['profiles'];FITS=json.load(open(ROOT/'pipeline/facade-layouts.json'))['fits']
+BOUNDARY_FITS=json.load(open(ROOT/'pipeline/boundary-layouts.json'))['fits']
+for fit in BOUNDARY_FITS:
+ profile=next(p for p in PROFILES if p['id']==fit['profileId']);profile.setdefault('openings',[]).extend(fit['openings'])
+LETTERING_DATA=json.load(open(ROOT/'pipeline/lettering-observations.json'));lettering_records=[]
 ENVELOPE_DATA=json.load(open(ROOT/'pipeline/envelope-observations.json'));ENVELOPES=ENVELOPE_DATA['profiles'];envelope_records=[];envelope_frontages=[]
 CONFIG=json.load(open(ROOT/'pipeline/config.json'));OBS=json.load(open(ROOT/'pipeline/observations.json'));facade_records=[];sign_records=[]
 ll=Transformer.from_crs(4326,32610,always_xy=True);inv=Transformer.from_crs(32610,4326,always_xy=True)
@@ -201,6 +205,7 @@ for c in candidates:
  outer_ctx=dict(globals());outer_ctx['roofSamples']=roof;outer_ctx['envelopeMask']=envelope_mask
  records,component_count=facades.compile(outer_ctx,c,z0,base_roof-z0,height,tags,OBS['facades']);facade_records.extend(records);counts['windowAssemblies']+=component_count
  er,ec=envelopes.compile(globals(),c,z0,resolved);envelope_records.extend(er);facade_records.extend(er);records.extend(er);counts['windowAssemblies']+=ec
+ lettering_records.extend(lettering.compile(globals(),c,z0,LETTERING_DATA['signs'],resolved))
  for r in resolved:envelope_frontages.append({'frame':r['frame'],'label':r['profile'].get('displayName',name)+' / '+r['profile']['id']})
  observed_count=sum(r['status'] in ['visual-fit','image-layout-fit','visual-grammar','envelope-graph'] for r in records)
  if er:height=max(height,max(r['heightM'] for r in er))
@@ -317,6 +322,7 @@ for profile in PROFILES:
  if ranked:
   _,pos,w=min(ranked,key=lambda v:v[0]);tangent=(u if np.dot(u,focus-pos)>0 else -u);look=focus+tangent*8
   street_views.append({'position':np.round(pos,2).tolist(),'lookAt':[round(float(look[0]),2),round(float(look[1]),2),3.8],'label':w['tags'].get('name','Street')+' / '+profile['id']})
+street_views.sort(key=lambda v:0 if 'deep-framed-loft' in v['label'] else 1)
 # One mesh per material and feature; image payloads are shared by glTF.
 for key,(v,f,uv,normals) in batches.items():
  if not v:continue
@@ -339,21 +345,22 @@ counts['facadeWalls']=len(facade_records);counts['imageFittedWalls']=sum(r['stat
 counts['numericalFacadeFits']=len(FITS);counts['profileFrontages']=len(PROFILES);counts['inferredRepeatCells']=sum(f['completedCells'] for f in FITS)
 counts['envelopeFrontages']=len(envelope_records);counts['envelopeNodes']=sum(r['nodeCount'] for r in envelope_records);counts['boundedLidarLevels']=sum(e['status']=='bounded-lidar-fit' for r in envelope_records for e in r['levels'])
 counts['generationSeconds']=round(time.perf_counter()-START,2)
+counts['facadeLetteringPlacements']=len(lettering_records);counts['directBoundaryOpenings']=sum(len(f['openings']) for f in BOUNDARY_FITS)
 world={'pipelineVersion':CONFIG['version'],'streetViews':street_views,'facadeCoverage':{'walls':len(facade_records),'visuallyFittedWalls':counts['imageFittedWalls'],'numericalFits':len(FITS),'currentStreetImageryBuildings':5,'photoAgeUnknownBuildings':2,'independentlyVerifiedWalls':0,'accuracyGate':'NOT PASSED'},'studyRadiusM':200,'contextRadiusM':265,'center':{'lat':lat,'lon':lon},'coordinateSystem':'Local UTM zone 10N meters; GLB X east, Y up, Z south','verticalOrigin':base,'buildings':features,'counts':dict(counts),'ground':np.round(grid,3).ravel().tolist(),'grid':{'min':MIN,'step':STEP,'n':N},'sources':[
  {'name':'Articulated building envelopes','date':'Jan 2025 street view + historic detail photos','detail':'Beacon, Glassworks and Oracle Park decomposed into separate wings, projecting surfaces, cores, roof profiles and open structures. Image annotations constrain bounded LiDAR level fits; depth is still estimated.','url':'https://www.perryarchitectsinc.com/glassworks'},
  {'name':'USGS LiDAR','date':'April 2023','detail':'4.6 million sampled points; ground elevations and fitted roof tiers. Absolute accuracy has not been independently tested.','url':'https://www.fisheries.noaa.gov/inport/item/73386/full-list'},
  {'name':'DataSF building footprints','date':'2010-derived geometry','detail':'Building outlines reconciled against current OpenStreetMap identities and newer LiDAR heights.','url':'https://data.sfgov.org/d/ynuv-fyni'},
  {'name':'OpenStreetMap','date':'Retrieved Sep 2026','detail':'Address identity, newer buildings, road topology, lane counts, crossings and transit tracks. Capture age varies.','url':'https://www.openstreetmap.org/copyright'},
  {'name':'DataSF street trees','date':'Inventory; dates vary','detail':'Mapped tree positions and species. Canopies and branches are procedural.','url':'https://data.sfgov.org/d/tkzw-k3nq'},
- {'name':'Reusable PBR surfaces','date':'CC0 scans','detail':'Scanned brick, asphalt and concrete at physical texture scale; material identity remains inferred on unobserved walls.','url':'https://ambientcg.com/'},
+ {'name':'Distinct facade surface families','date':'Observed family; synthesized appearance','detail':'Fine-jointed brick, smooth trim, stucco, ribbed terracotta and opaque metal panels use separate metric recipes. Asphalt/concrete retain CC0 scans. Exact colors and wear remain approximate.','url':'https://ambientcg.com/'},
  {'name':'Hotel exterior photography','date':'Capture dates unknown','detail':'Operator and structural engineer photographs fit bay stacks, terracotta fields and external shades. Historical layouts need current independent checks.','url':'https://www.hyatt.com/hyatt-place/en-US/sfozs-hyatt-place-san-francisco-downtown/gallery'},
  {'name':'Mapillary coverage','date':'Coverage inspected Sep 2026','detail':'Dense capture coverage is visible around King and Third. Individual images and their capture dates have not been ingested in this pass.','url':'https://www.mapillary.com/app/?lat=37.7786&lng=-122.3918&z=18'},
  {'name':'Street-level reference','date':'January 2025','detail':'Sparse image landmarks and visual grammars distinguish loft terraces, continuous glazing and separate ground-floor patterns. Source pixels are not embedded.','url':'https://www.google.com/maps/@37.7786899,-122.3913452,3a,75y,315h,110t/data=!3m4!1e1!3m2!1sS4hs-Kyh3P14aRv9CWeTvg!2e0'}]}
 glb=scene.export(file_type='glb');(PUBLIC/'king-street.glb').write_bytes(glb);(OUT/'king-street-pilot.glb').write_bytes(glb)
-(PUBLIC/'world.json').write_text(json.dumps(world,separators=(',',':')));(OUT/'king-street-evidence.json').write_text(json.dumps({'world':world,'unresolvedSigns':coarse_signs,'facadeWalls':facade_records,'signPlacements':sign_records,'envelopeGraphs':envelope_records,'observationSources':{**OBS['sources'],**{a['id']:a for a in ENVELOPE_DATA['sources']}},'footprintConsolidations':consolidations,'layoutFits':FITS,'profiles':PROFILES,'materials':material_bank.manifest},indent=2))
+(PUBLIC/'world.json').write_text(json.dumps(world,separators=(',',':')));(OUT/'king-street-evidence.json').write_text(json.dumps({'world':world,'unresolvedSigns':coarse_signs,'facadeWalls':facade_records,'signPlacements':sign_records,'envelopeGraphs':envelope_records,'observationSources':{**OBS['sources'],**{a['id']:a for a in ENVELOPE_DATA['sources']}},'footprintConsolidations':consolidations,'layoutFits':FITS,'profiles':PROFILES,'materials':{**material_bank.manifest,'appearanceRecipes':'pipeline/material_recipes.py; synthesized family appearance, not building-specific scans'},'boundaryFits':BOUNDARY_FITS,'facadeLettering':lettering_records,'surfaceSources':LETTERING_DATA['sources']},indent=2))
 print('OUTPUT',len(glb),'bytes',dict(counts),'center',lat,lon,flush=True)
 
-(PUBLIC/'facade-evidence.json').write_text(json.dumps({'walls':facade_records,'signs':sign_records,'envelopes':envelope_records,'sources':{**OBS['sources'],**{a['id']:a for a in ENVELOPE_DATA['sources']}}},separators=(',',':')))
+(PUBLIC/'facade-evidence.json').write_text(json.dumps({'walls':facade_records,'signs':sign_records,'envelopes':envelope_records,'lettering':lettering_records,'boundaryFits':BOUNDARY_FITS,'surfaceSources':LETTERING_DATA['sources'],'sources':{**OBS['sources'],**{a['id']:a for a in ENVELOPE_DATA['sources']}}},separators=(',',':')))
 print('GENERATION_SECONDS',round(time.perf_counter()-START,2),flush=True)
 
 import gzip,hashlib

@@ -14,15 +14,16 @@
       "sourceIds": [
         "king-2025-c",
         "king-2025-b",
-        "loft-architecture-report"
+        "loft-architecture-report",
+        "188-broker"
       ],
-      "material": "brick",
+      "material": "brick_modular",
       "panels": [
         {
           "rect": [
             0,
             0.845,
-            1,
+            0.82,
             1
           ],
           "material": "charcoal"
@@ -33,7 +34,7 @@
           "region": [
             0,
             0,
-            1,
+            0.82,
             0.13
           ],
           "columns": 5,
@@ -56,6 +57,10 @@
             [
               3,
               0
+            ],
+            [
+              4,
+              0
             ]
           ]
         },
@@ -63,7 +68,7 @@
           "region": [
             0,
             0.13,
-            1,
+            0.82,
             0.3
           ],
           "columns": 5,
@@ -82,13 +87,19 @@
           }
         },
         {
-          "fitId": "loft-projecting-frame-bank"
+          "fitId": "loft-projecting-frame-bank",
+          "region": [
+            0,
+            0.31,
+            0.82,
+            0.84
+          ]
         },
         {
           "region": [
             0,
             0.87,
-            1,
+            0.82,
             1
           ],
           "columns": 10,
@@ -101,6 +112,27 @@
             "mullionFractions": [],
             "transomFractions": [
               0.28
+            ]
+          }
+        },
+        {
+          "region": [
+            0.928,
+            0.13,
+            1,
+            0.93
+          ],
+          "columns": 1,
+          "rows": 8,
+          "style": {
+            "openingRatio": 0.95,
+            "openingHeightRatio": 0.86,
+            "frameMaterial": "silver",
+            "mullionFractions": [
+              0.48
+            ],
+            "transomFractions": [
+              0.77
             ]
           }
         }
@@ -120,22 +152,81 @@
         }
       ],
       "unresolved": [
-        "Facade region metric fractions and penthouse setback remain approximate",
-        "Garage and shopfront details only partially observed",
-        "Recess depth inferred; frame projection historically reported",
-        "Bay location errors from same-image fit are not ground-truth accuracy"
+        "Main-bank facade width and absolute region heights are image estimates; not survey dimensions.",
+        "Seven small-window boundaries and the narrow entry are rectified from an undated broker photograph, checked for topology against Jan2025 street view.",
+        "Penthouse and far-right glazing repeats remain estimates.",
+        "Ground retail window films/artwork remain unresolved; historical TOTO campaign text excluded.",
+        "No independent street-photo accuracy evaluation has passed."
       ],
       "openings": [
         {
           "rect": [
-            0.63,
-            0.005,
-            0.77,
-            0.125
+            0.507,
+            0.006,
+            0.641,
+            0.12
           ],
           "style": {
             "kind": "rollup"
-          }
+          },
+          "sourceIds": [
+            "king-2025-c"
+          ]
+        },
+        {
+          "rect": [
+            0.676,
+            0.005,
+            0.797,
+            0.128
+          ],
+          "style": {
+            "kind": "entry",
+            "recessM": 0.65,
+            "canopy": true,
+            "frameMaterial": "silver",
+            "mullionFractions": [
+              0.5
+            ],
+            "transomFractions": [
+              0.82
+            ]
+          },
+          "sourceIds": [
+            "king-2025-c"
+          ]
+        }
+      ],
+      "surfaceEvidence": [
+        {
+          "rect": [
+            0.817,
+            0.13,
+            0.829,
+            0.84
+          ],
+          "label": "solid",
+          "sourceIds": [
+            "king-2025-c"
+          ],
+          "confidence": "visual",
+          "boundaryStatus": "image-estimated",
+          "note": "Brick boundary between broad loft bank and independent small-window stack"
+        },
+        {
+          "rect": [
+            0.821,
+            0.84,
+            0.922,
+            1
+          ],
+          "label": "unknown",
+          "sourceIds": [
+            "188-broker"
+          ],
+          "confidence": "visual",
+          "boundaryStatus": "image-estimated",
+          "note": "Upper strip beyond photo coverage; classification is unresolved"
         }
       ]
     },
@@ -152,7 +243,7 @@
         "king-2025-a",
         "king-2025-d"
       ],
-      "material": "brick",
+      "material": "brick_modular",
       "groups": [
         {
           "region": [
@@ -305,6 +396,23 @@
         "Eight upper rows and five bays are visual grammar estimates, not numerical landmark fits",
         "Figurative sculptural frieze not reconstructed; continuous base band only",
         "No material scan tied to this exact building"
+      ],
+      "surfaceEvidence": [
+        {
+          "rect": [
+            0,
+            0.235,
+            1,
+            0.256
+          ],
+          "label": "solid",
+          "sourceIds": [
+            "king-2025-a"
+          ],
+          "confidence": "visual",
+          "boundaryStatus": "image-estimated",
+          "note": "Opaque sculptural belt; no window row"
+        }
       ]
     },
     {
@@ -319,7 +427,7 @@
       "sourceIds": [
         "hyatt-dusk"
       ],
-      "material": "brick",
+      "material": "brick_dark",
       "groups": [
         {
           "region": [
@@ -464,6 +572,23 @@
         "Depth estimated from oblique imagery",
         "Townsend pattern transferred from same photographed building; not independently fitted",
         "Entrance portal and lower wing silhouette need further fitting"
+      ],
+      "surfaceEvidence": [
+        {
+          "rect": [
+            0.096,
+            0.105,
+            0.985,
+            0.121
+          ],
+          "label": "solid",
+          "sourceIds": [
+            "hyatt-dusk"
+          ],
+          "confidence": "visual",
+          "boundaryStatus": "image-estimated",
+          "note": "Opaque floor spandrel above shopfronts"
+        }
       ]
     },
     {
@@ -478,7 +603,7 @@
       "sourceIds": [
         "hyatt-dusk"
       ],
-      "material": "brick",
+      "material": "brick_dark",
       "groups": [
         {
           "region": [
@@ -513,7 +638,7 @@
           "rows": 7,
           "style": {
             "kind": "projected_bay",
-            "material": "zinc",
+            "material": "panel_dark",
             "frameMaterial": "charcoal",
             "openingRatio": 0.74,
             "openingHeightRatio": 0.66,
@@ -646,6 +771,23 @@
         "Depth estimated from oblique imagery",
         "Townsend pattern transferred from same photographed building; not independently fitted",
         "Entrance portal and lower wing silhouette need further fitting"
+      ],
+      "surfaceEvidence": [
+        {
+          "rect": [
+            0.096,
+            0.105,
+            0.985,
+            0.121
+          ],
+          "label": "solid",
+          "sourceIds": [
+            "hyatt-dusk"
+          ],
+          "confidence": "visual",
+          "boundaryStatus": "image-estimated",
+          "note": "Opaque floor spandrel above shopfronts"
+        }
       ]
     },
     {
@@ -660,7 +802,7 @@
       "sourceIds": [
         "via-engineer"
       ],
-      "material": "terracotta",
+      "material": "terracotta_panel",
       "panels": [
         {
           "rect": [

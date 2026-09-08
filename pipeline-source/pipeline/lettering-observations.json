@@ -1,0 +1,364 @@
+{
+  "schemaVersion": 1,
+  "method": "Literal photographed text, manual attachment estimate; reusable contour extrusion",
+  "signs": [
+    {
+      "id": "loft-address",
+      "text": "188",
+      "match": {
+        "osmWayId": "149167949"
+      },
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "centerU": 0.736,
+      "bottomM": 4.7,
+      "widthM": 2.0,
+      "heightM": 0.8,
+      "sourceIds": [
+        "king-2025-c",
+        "188-broker"
+      ],
+      "material": "silver",
+      "font": "Arial Bold.ttf",
+      "depthM": 0.45,
+      "captureDate": "2025-01"
+    },
+    {
+      "id": "glassworks-king-flagship",
+      "text": "FLAGSHIP",
+      "match": {
+        "osmWayId": "679290110"
+      },
+      "normal": [
+        -0.707,
+        0.707
+      ],
+      "centerU": 0.035,
+      "bottomM": 3.85,
+      "widthM": 4.4,
+      "heightM": 0.62,
+      "sourceIds": [
+        "third-king-2025"
+      ],
+      "profileId": "mixed-height-loft-king",
+      "depthM": 0.36,
+      "captureDate": "2025-01",
+      "font": "Arial.ttf"
+    },
+    {
+      "id": "glassworks-third-flagship",
+      "text": "FLAGSHIP",
+      "match": {
+        "osmWayId": "679290110"
+      },
+      "normal": [
+        0.707,
+        0.707
+      ],
+      "centerU": 0.945,
+      "bottomM": 3.85,
+      "widthM": 4.4,
+      "heightM": 0.62,
+      "sourceIds": [
+        "third-king-2025"
+      ],
+      "profileId": "double-height-loft-third",
+      "depthM": 0.05,
+      "captureDate": "2025-01",
+      "font": "Arial.ttf"
+    },
+    {
+      "id": "glassworks-bank",
+      "text": "WELLS\nFARGO",
+      "match": {
+        "osmWayId": "679290110"
+      },
+      "normal": [
+        -0.707,
+        0.707
+      ],
+      "centerU": 0.1,
+      "bottomM": 2.25,
+      "widthM": 1.4,
+      "heightM": 0.9,
+      "sourceIds": [
+        "third-king-2025"
+      ],
+      "profileId": "mixed-height-loft-king",
+      "depthM": -0.06,
+      "captureDate": "2025-01",
+      "font": "Georgia Bold.ttf"
+    },
+    {
+      "id": "hyatt-entry",
+      "text": "HYATT PLACE",
+      "match": {
+        "osmWayId": "573287814"
+      },
+      "normal": [
+        -0.707,
+        -0.707
+      ],
+      "centerU": 0.86,
+      "bottomM": 3.8,
+      "widthM": 3.8,
+      "heightM": 0.43,
+      "sourceIds": [
+        "hyatt-dusk"
+      ],
+      "depthM": 0.5,
+      "captureDate": null,
+      "font": "Arial.ttf",
+      "canopy": {
+        "projectionM": 1.4
+      }
+    },
+    {
+      "id": "via-alley-entry",
+      "text": "HOTEL VIA",
+      "match": {
+        "osmWayId": "148547438"
+      },
+      "normal": [
+        -0.707,
+        -0.707
+      ],
+      "centerU": 0.85,
+      "bottomM": 4.4,
+      "widthM": 5.0,
+      "heightM": 0.85,
+      "sourceIds": [
+        "via-entry"
+      ],
+      "depthM": 1.25,
+      "captureDate": null,
+      "font": "Arial.ttf",
+      "canopy": {
+        "projectionM": 1.4
+      }
+    },
+    {
+      "id": "oracle-tower-masonry-and-open-structure",
+      "text": "ORACLE PARK",
+      "match": {
+        "featureId": "sf_201006_0000003"
+      },
+      "normal": [
+        -0.707,
+        0.707
+      ],
+      "centerU": 0.9725,
+      "bottomM": 28.7,
+      "widthM": 7.3,
+      "heightM": 1.4,
+      "sourceIds": [
+        "oracle-diversified",
+        "third-king-2025"
+      ],
+      "profileId": "masonry-and-open-structure",
+      "depthM": 0.16,
+      "material": "#c79e54",
+      "archM": 0.22,
+      "captureDate": null
+    },
+    {
+      "id": "oracle-tower-clock-tower-side",
+      "text": "ORACLE PARK",
+      "match": {
+        "featureId": "sf_201006_0000003"
+      },
+      "normal": [
+        -0.707,
+        -0.707
+      ],
+      "centerU": 0.5,
+      "bottomM": 28.7,
+      "widthM": 7.3,
+      "heightM": 1.4,
+      "sourceIds": [
+        "oracle-diversified",
+        "third-king-2025"
+      ],
+      "profileId": "clock-tower-side",
+      "depthM": 0.16,
+      "material": "#c79e54",
+      "archM": 0.22,
+      "captureDate": null
+    },
+    {
+      "id": "oracle-number",
+      "text": "24",
+      "match": {
+        "featureId": "sf_201006_0000003"
+      },
+      "normal": [
+        -0.707,
+        -0.707
+      ],
+      "centerU": 0.5,
+      "bottomM": 22.1,
+      "widthM": 1.35,
+      "heightM": 1.05,
+      "sourceIds": [
+        "oracle-diversified"
+      ],
+      "profileId": "clock-tower-side",
+      "depthM": 0.14,
+      "material": "charcoal",
+      "captureDate": null,
+      "font": "Arial Bold.ttf"
+    }
+  ],
+  "excluded": [
+    "Historical TOTO retail campaign; Jan2025 artwork differs",
+    "Historical MISSION BAY MARKETING CENTER",
+    "BEACON brochure page typography",
+    "Unreadable current 170 frontage text"
+  ],
+  "sources": {
+    "188-broker": {
+      "page": "https://gregglynn.com/properties/188-king-505",
+      "image_url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/tz8t7gihohmxbd4hp1c8",
+      "image_size": [
+        1280,
+        853
+      ],
+      "source_role": "Listing broker Gregg Lynn Team; MLS423719890",
+      "capture_date": null,
+      "date_limit": "Listing is sold; MLS identifier suggests 2023 listing but that is not capture proof. No image capture date established.",
+      "visually_inspected_by": "facade_references"
+    },
+    "188-balcony-view": {
+      "page": "https://gregglynn.com/properties/188-king-505",
+      "image_url": "https://media-production.lp-cdn.com/cdn-cgi/image/format=auto,quality=85,fit=scale-down,width=1280/https://media-production.lp-cdn.com/media/jm094xoc1ql2ryt3p2on",
+      "image_size": [
+        1280,
+        853
+      ],
+      "capture_date": null,
+      "date_limit": "Same undated broker gallery; actual elevated Oracle exterior view.",
+      "visually_inspected_by": "facade_references"
+    },
+    "via-entry": {
+      "page": "https://imegcorp.com/project/new-12-story-hotel/",
+      "image_url": "https://imegcorp.com/wp-content/uploads/2020/02/Hotel_Entry-730x478.jpg",
+      "image_size": [
+        730,
+        478
+      ],
+      "capture_date": null,
+      "date_limit": "Completed entrance. 2020/02 URL is upload folder, not capture date.",
+      "visually_inspected_by": "facade_references"
+    },
+    "via-wall": {
+      "page": "https://imegcorp.com/project/new-12-story-hotel/",
+      "image_url": "https://imegcorp.com/wp-content/uploads/2020/02/IMG_2450.jpg",
+      "image_size": [
+        800,
+        1000
+      ],
+      "capture_date": null,
+      "date_limit": "Construction era, Coming2016 visible. Material/plane evidence only; no historical signs treated as current.",
+      "visually_inspected_by": "facade_references"
+    },
+    "via-material": {
+      "page": "https://www.hotelviasf.com/wp-content/uploads/Hotel-VIA-SF-Chronicle-June-2017.pdf",
+      "source_role": "Operator-hosted original Chronicle reporting",
+      "capture_date": "2017-06-27",
+      "date_limit": "Photo captions date June27,2017; reporting June30,2017. Text material observations only for this revision."
+    },
+    "hyatt-dusk": {
+      "page": "https://www.hyatt.com/hyatt-place/en-US/sfozs-hyatt-place-san-francisco-downtown/gallery",
+      "image_url": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2019/03/25/1010/Hyatt-Place-San-Francisco-Downtown-P012-Exterior-Dusk.jpg/Hyatt-Place-San-Francisco-Downtown-P012-Exterior-Dusk.4x3.jpg",
+      "image_size": [
+        2560,
+        1920
+      ],
+      "capture_date": null,
+      "date_limit": "2019/03/25 in asset URL is not exposure proof. Actual completed photograph, unlike excluded daytime rendering.",
+      "visually_inspected_by": "facade_references"
+    },
+    "beacon-cover": {
+      "page": "https://property.jll.com/listings/the-beacon-retail-200-298-king-st-south-of-market",
+      "pdf_url": "https://res.cloudinary.com/jll-global-sandbox/image/upload/v1786050550/MyListing/public/prod/property-626253/the-beacon-brochure-8-2026-compressed.pdf",
+      "image_size": [
+        1600,
+        1237
+      ],
+      "pdf_page": 1,
+      "capture_date": null,
+      "date_limit": "August2026 brochure filename is not date of cover exposure.",
+      "visually_inspected_by": "facade_references"
+    },
+    "beacon-material": {
+      "page": "https://www.sfgate.com/bayarea/place/article/SAN-FRANCISCO-The-shape-of-things-to-come-2670976.php",
+      "source_role": "Original Chronicle architectural reporting, John King, with SOM architect interview",
+      "publication_date": "2005-05-16",
+      "capture_date": "2005-05-11",
+      "date_limit": "Original material family evidence; no claim every current base/trim part uses identical material."
+    },
+    "glassworks-entry": {
+      "page": "https://www.perryarchitectsinc.com/glassworks",
+      "image_url": "https://images.squarespace-cdn.com/content/v1/53273c68e4b0c44d90aca84b/1409325189169-B8JT6ASZ3VYG3I0ROD6B/MB_MKTC_903_745.jpg",
+      "image_size": [
+        2500,
+        3757
+      ],
+      "capture_date": null,
+      "date_limit": "Historical archive photo, EXIF DateTime2008:12:03 is not DateTimeOriginal. Address sign only, not present-day tenant evidence.",
+      "visually_inspected_by": "facade_references"
+    },
+    "glassworks-wall": {
+      "page": "https://www.perryarchitectsinc.com/glassworks",
+      "image_url": "https://images.squarespace-cdn.com/content/v1/53273c68e4b0c44d90aca84b/1409325088373-P81DSNUYKPWVAQ0D1SHD/MB_MKTC_903_598.jpg",
+      "image_size": [
+        2500,
+        3757
+      ],
+      "capture_date": null,
+      "date_limit": "Historical architect archive. Exact material family glass/terracotta supported by WZ Architecture.",
+      "visually_inspected_by": "facade_references"
+    },
+    "oracle-entry": {
+      "page": "https://www.nlslimo.com/fifa-world-cup-brand-activation-vehicles.html",
+      "image_url": "https://www.nlslimo.com/gallery/images/motorized-cable-car/product-activation-branding/oracle-park-willie-mays-plaza-2025-03.jpg",
+      "image_size": [
+        640,
+        436
+      ],
+      "capture_date": null,
+      "date_limit": "2025-03 is a filename clue only; actual ORACLE branding visible.",
+      "visually_inspected_by": "facade_references"
+    },
+    "oracle-tower": {
+      "page": "https://onediversified.com/hubfs/Diversified_San%20Francisco%20Giants%20_Case%20Study.pdf?hsLang=en",
+      "image_size": [
+        1533,
+        2559
+      ],
+      "pdf_page": 2,
+      "capture_date": null,
+      "date_limit": "2024 is document copyright, not capture. Posey banner is historical and excluded from current tenant/sign inventory.",
+      "visually_inspected_by": "facade_references"
+    },
+    "glassworks-google-2025": {
+      "page": "https://www.google.com/maps/@?api=1&map_action=pano&pano=zpKsGNDss7FrpMAioZXjSw&heading=170&fov=40",
+      "pano_id": "zpKsGNDss7FrpMAioZXjSw",
+      "capture_date": "2025-01",
+      "heading": 170,
+      "fov": 40,
+      "parent_pitch_raw": 94,
+      "visually_inspected_by": "root, supplied observations; not independently seen by this subagent",
+      "date_limit": "Parent read January2025 panorama label."
+    },
+    "170-hoa": {
+      "page": "https://170offthirdoa.com/DefaultSignIn.aspx",
+      "image_url": "https://170offthirdoa.com/Images/170OffThird_960x174.jpg",
+      "capture_date": null,
+      "date_limit": "Public header contains small entrance/courtyard thumbnails; no legible exterior sign. Website title and graphic logo must not be used as facade signage.",
+      "visually_inspected_by": "facade_references"
+    }
+  }
+}

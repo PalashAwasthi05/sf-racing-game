@@ -1,4 +1,20 @@
-# Street-first reconstruction pipeline v0.5
+# King Street reconstruction pipeline v0.6
+
+`surface_evidence.py` applies observed solid/opaque masks before aperture creation. Unknown is distinct from solid. `fit_boundaries.py` rectifies four manually selected edges for each explicit opening; `boundary-layouts.json` is generated data. Repeat grids cannot overwrite explicit apertures or cross negative regions. Source conflicts still need review; the current compiler veto is not a source-arbitration model.
+
+`material_recipes.py` separates small-joint brick, terracotta panels/ribs, stucco, pale smooth trim and metal panels. These are deterministic synthesized material families, not scanned materials from the buildings. CC0 road/concrete scans remain under `material-assets`.
+
+`lettering-observations.json` contains literal photographed text and facade attachment estimates. `lettering.py` traces font contours into raised geometry. Arial/Georgia system fonts are used when installed, otherwise Pillow's bundled font is used; exact custom brand letterforms are not reproduced. No font files or source-photo pixels are embedded in the bundle.
+
+Run boundary fitting before the scene build:
+
+```sh
+PYTHONPATH=work python -m pipeline.fit_boundaries
+python work/build_world.py
+python work/validate_surfaces.py
+python work/validate_detail.py
+```
+
 
 `envelope-observations.json` stores building matches and image-derived hierarchical structure. `envelopes.py` fits bounded roof-family levels, joins explicitly corresponding corners/datums, resolves nested regions, and compiles replacement facade geometry. Geographic identifiers occur only in observation data. Source photos are research references and are not shipped as textures.
 

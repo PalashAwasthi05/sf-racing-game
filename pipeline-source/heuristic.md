@@ -1,6 +1,6 @@
 # Evidence-based world generation: San Francisco pilot
 
-Version 0.5 · September 8, 2026 · Building form before window repetition
+Version 0.6 · September 8, 2026 · Surface evidence before opening completion
 
 Build a reusable pipeline that reconstructs a racing-game environment from observations, with language models used primarily to develop the pipeline and diagnose exceptions. The user's benchmark is one person, one existing AI subscription, and one calendar month for all of San Francisco. Paid data is acceptable; the initial use is a private prototype.
 
@@ -8,7 +8,29 @@ Build a reusable pipeline that reconstructs a racing-game environment from obser
 
 The main unknown is the availability of recent, sufficiently detailed, licensed street-level observations across the entire requested area. Another is the labor required to turn those observations into clean, drivable game assets. The first-week pilot must measure both.
 
-**Revision 0.5: infer a connected building envelope before its details**
+**Revision 0.6: classify surfaces and fit opening edges before completing repetitions**
+
+The previous hierarchy still overproduced windows: a region labeled as a facade could acquire a grid even where a photograph showed brick, an opaque spandrel, a garage door or a sign. Repeated window centers also left width and height at generic ratios. Those are identity errors, not details that better lighting can repair.
+
+The reusable observation unit is now a **surface patch with an evidence ledger**. Each patch records its attachment plane, bounds, material family, capture date, source and uncertainty. Within it, record explicit opening boundaries, solid masonry, opaque panels, sign carriers and unknown/occluded regions. An unknown region is not evidence of a blank wall. One panorama may support layout while a dated close-up supports lettering; keep those claims separate.
+
+1. Identify the connected envelope and its depth changes, then rectify each approximately planar patch separately. Never rectify projecting frames, recesses and return walls as a single plane.
+2. Annotate opening edges and non-window regions together. Fit all four edges against the wall frame; infer repeat spacing only inside the same observed surface/material region. A repeated module may not cross a masonry pier, opaque panel, facade transition or roof gap.
+3. Give observed solid regions priority over generated openings. If an opening conflicts with solid evidence, reject the complete candidate and queue the conflict; do not clip it into a novel window shape. Explicit opening boundaries supersede nearby repeat guesses. Contradictory sources require another view rather than silent averaging.
+4. Separate glazing from frames, opaque spandrels, roll-up doors and terrace voids. A dark rectangle alone is insufficient evidence of a window. Require visible reveals/mullions, multiview agreement or a confidently observed continuous glass field.
+5. Resolve material identity per patch before synthesis. Record brick bond and joint width, terracotta panel size/ribbing, smooth render, metal-panel seams and pale trim separately. Use metric albedo, normal and roughness maps with shallow relief. A family-matched synthesized texture remains an approximation; it is not a scan of the building. Do not reuse form-tied concrete as stone.
+6. Read signs as literal text observations. Store the photographed words, face, attachment carrier, approximate rectangle, font family, capture date and confidence. Exclude reflections, website/brochure typography and historical tenant campaigns. Compile text with ordinary font contours or atlases, retaining counters and letter spacing. Never ask an image generator to invent text for an unreadable sign.
+7. Evaluate from independent driver-height views. Penalize false windows, wrong opening extent, wrong material identity and displaced signs more heavily than a missing tiny prop. Report precision as well as recall; report errors by visible area and projected size, not by how many objects were generated. Use neutral daylight as well as intended game lighting.
+
+**Implemented in this pilot:** generic positive/negative aperture admission shared by both facade compilers; explicit rectangular opening support within envelope nodes; a numeric four-edge rectifier; separate material recipes; and source-linked raised lettering. Eight openings in 188's narrow stack are fitted from individually annotated boundaries. The main loft bank stops before that stack, garage and residential entry have distinct openings, Glassworks receives a separate opaque metal infill patch, and Oracle clock/sign fields reject the previous giant window. Nine photographed lettering placements are attached through generic facade coordinates. Broad Beacon wall fields use stucco rather than stone; VIA/Glassworks use terracotta families distinct from small-joint brick.
+
+**Not implemented or proved:** automatic dense image segmentation, calibrated multiview depth recovery, automated negative-mask extraction, exhaustive storefront transcription or citywide facade correctness. Most repeating windows still use manual visual estimates or priors. The eight boundary annotations have a mean same-image corner residual of approximately 0.85 pixels; this checks consistency with the annotated image, not real-world positional accuracy. Region extents and sign poses remain manually estimated. No independent facade accuracy gate has passed.
+
+For low token cost, cache a compact evidence packet per changed patch: source identifiers, quadrilateral, material label, repeated motif plus explicit exceptions, negative masks and literal strings. Compile every repeated member numerically. Reuse geometry operators and material families across cities, but never transfer one building's arrangement to an unseen facade. Spend additional vision calls only on high-visibility conflicts, stale signs or missing planes. Log image selections, annotation minutes, correction passes, token usage and compute time separately. This pass measured cached generation time only; it does not establish the one-month San Francisco goal.
+
+Detailed source observations include the [188 broker photograph](https://gregglynn.com/properties/188-king-505), the [January 2025 King Street panorama](https://www.google.com/maps/@37.7785447,-122.3915291,3a,70y,302h,103t/data=!3m4!1e1!3m2!1sZEaDxnfTqji-aGZgIx9ffg!2e0), [Glassworks architect photographs](https://www.perryarchitectsinc.com/glassworks), and [original Beacon architectural reporting](https://www.sfgate.com/bayarea/place/article/SAN-FRANCISCO-The-shape-of-things-to-come-2670976.php). January 2025 is the visible panorama capture label, not a claim that all details are current in September 2026. Undated photographs remain undated. No source photograph is embedded as a facade texture.
+
+**Previous structural foundation (0.5): infer a connected building envelope before its details**
 
 The previous representation was too weak: it could vary window grids and colors inside a flat wall, but still flattened projecting blocks, lower wings, separate roof cores and open structure. More windows could not fix that. A building must be represented by a hierarchy of surfaces and attached assemblies, with changing height and depth. “Floors” are not a universal division: two double-height loft bands may contain many transoms and mezzanines.
 
@@ -33,7 +55,7 @@ The implementation deliberately distinguishes **manual image interpretation**, *
 
 The [January 2025 Street View panorama at Third and King](https://www.google.com/maps/@37.7781797,-122.3919934,3a,100y,265h,110t/data=!3m4!1e1!3m2!1szpKsGNDss7FrpMAioZXjSw!2e0) was inspected at headings 265°, 190° and 85° for the three building identities and major form. Source pixels are not embedded as textures. This panorama and the historic detail photographs are evidence of different ages, not an all-current photographic survey.
 
-**What revision 0.5 actually implements**
+**Structural implementation retained from 0.5**
 
 | Stage | Pilot status |
 |---|---|
