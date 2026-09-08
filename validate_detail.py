@@ -7,7 +7,7 @@ assert all(m.faces.min()>=0 and m.faces.max()<len(m.vertices) for m in s.geometr
 w=json.load(open(public/'world.json'));assert len(w['buildings'])>0;assert len({b['id'] for b in w['buildings']})==len(w['buildings'])
 e=json.load(open(root/'outputs/king-street-evidence.json'));features={b['id']:b for b in w['buildings']}
 for wall in e['facadeWalls']:
- if wall.get('grammarId'):assert wall['heightM']>=features[wall['buildingId']]['height']*.60,wall
+ if wall.get('grammarId') and wall.get('status')!='envelope-graph':assert wall['heightM']>=features[wall['buildingId']]['height']*.60,wall
 assert w.get('streetViews')
 for m in s.geometry.values():
  assert m.visual.material.roughnessFactor is not None

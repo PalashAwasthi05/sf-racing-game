@@ -18,7 +18,7 @@ class Materials:
    a=self.scans[key];color=Image.open(self.root/a['maps']['color']['path']);normal=Image.open(self.root/a['maps']['normal_gl']['path']);r=Image.open(self.root/a['maps']['roughness']['path']).convert('L');rr=np.asarray(r);mr=np.zeros((*rr.shape,3),np.uint8);mr[:,:,1]=rr
    m=PBRMaterial(name=key,baseColorTexture=color,normalTexture=normal,metallicRoughnessTexture=Image.fromarray(mr),metallicFactor=0.,roughnessFactor=1.,baseColorFactor=[255,255,255,255]);self.scales[key]=a['tile_size_m']
   else:
-   colors={'silver':'#aab1b1','charcoal':'#333b3d','zinc':'#4c5359','stucco':'#c2c4bf','terracotta':'#b36f49','interior':'#111719','aluminum':'#829093','steel':'#51595c','recess':'#171d20','glass':'#526975','glass_dark':'#263e49','glass_light':'#75858b','curtain':'#aaa698','roofing':'#696d6a','white':'#dfdfd5','joint':'#686967','soil':'#494536','redpaint':'#983d36','greenpaint':'#477d6b','bark':'#807163','leaf1':'#547b38','leaf2':'#366024','leaf3':'#729249'}
+   colors={'limestone':'#c3c1b5','copper':'#73452f','verdigris':'#294342','lamp':'#c5cbc5','glass_blue':'#466579','glass_clear':'#748280','silver':'#aab1b1','charcoal':'#333b3d','zinc':'#4c5359','stucco':'#c2c4bf','terracotta':'#b36f49','interior':'#111719','aluminum':'#829093','steel':'#51595c','recess':'#171d20','glass':'#526975','glass_dark':'#263e49','glass_light':'#75858b','curtain':'#aaa698','roofing':'#696d6a','white':'#dfdfd5','joint':'#686967','soil':'#494536','redpaint':'#983d36','greenpaint':'#477d6b','bark':'#807163','leaf1':'#547b38','leaf2':'#366024','leaf3':'#729249'}
    c=colors.get(key,self.palette.get(key,key));c=c.lstrip('#');rgba=[int(c[i:i+2],16) for i in (0,2,4)]+[255]
    rough=.9;metal=0.
    if key.startswith('glass'):rough=.20;metal=0.
