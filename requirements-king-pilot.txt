@@ -1,0 +1,15 @@
+affine==3.0.1
+attrs==26.1.0
+certifi==2026.7.22
+click==8.5.0
+laspy==2.7.0
+lazrs==0.8.2
+mapbox_earcut==2.0.0
+numpy==2.5.3
+pillow==12.3.0
+pyparsing==3.3.2
+pyproj==3.8.0
+rasterio==1.5.1
+scipy==1.18.1
+shapely==2.1.2
+trimesh==5.1.0
