@@ -6,9 +6,9 @@ import numpy as np
 import trimesh
 from shapely.geometry import shape, Polygon, Point, LineString, box
 from shapely.ops import transform, unary_union
-from shapely import contains_xy, make_valid
+from shapely import contains_xy, make_valid, segmentize, polygons as polygon_array, covered_by
 from pyproj import Transformer
-from scipy.spatial import cKDTree
+from scipy.spatial import cKDTree, Delaunay
 from scipy.ndimage import median_filter, gaussian_filter, distance_transform_edt
 from rasterio.features import shapes
 from rasterio.transform import from_origin
@@ -18,6 +18,7 @@ from trimesh.visual.texture import TextureVisuals
 
 ROOT=pathlib.Path(__file__).parent;DATA=ROOT/'data';PUBLIC=ROOT/'king-street'/'public';PUBLIC.mkdir(parents=True,exist_ok=True)
 OUT=ROOT.parent/'outputs';OUT.mkdir(exist_ok=True)
+PROFILES=json.load(open(ROOT/'pipeline/facade-profiles.json'))['profiles'];FITS=json.load(open(ROOT/'pipeline/facade-layouts.json'))['fits']
 CONFIG=json.load(open(ROOT/'pipeline/config.json'));OBS=json.load(open(ROOT/'pipeline/observations.json'));facade_records=[];sign_records=[]
 ll=Transformer.from_crs(4326,32610,always_xy=True);inv=Transformer.from_crs(32610,4326,always_xy=True)
 web=Transformer.from_crs(3857,32610,always_xy=True)
@@ -59,8 +60,9 @@ gx,gy=np.meshgrid(np.arange(N)*STEP+MIN,np.arange(N)*STEP+MIN)
 dist,idx=tree.query(np.c_[gx.ravel(),gy.ravel()],k=8)
 grid=np.median(ground[idx,2],axis=1).reshape(N,N);grid=gaussian_filter(grid,.8)
 def elev(x,y):
- ix=np.clip(np.rint((np.asarray(x)-MIN)/STEP).astype(int),0,N-1);iy=np.clip(np.rint((np.asarray(y)-MIN)/STEP).astype(int),0,N-1)
- return grid[iy,ix]
+ fx=np.clip((np.asarray(x)-MIN)/STEP,0,N-1.00001);fy=np.clip((np.asarray(y)-MIN)/STEP,0,N-1.00001);ix=np.floor(fx).astype(int);iy=np.floor(fy).astype(int);fx=fx-ix;fy=fy-iy
+ a,b,c,d=grid[iy,ix],grid[iy,ix+1],grid[iy+1,ix],grid[iy+1,ix+1]
+ return np.where(fx+fy<=1,a+(b-a)*fx+(c-a)*fy,d+(c-d)*(1-fx)+(b-d)*(1-fy))
 
 scene=trimesh.Scene();features=[];batches=collections.defaultdict(lambda:[[],[],[]]);counts=collections.Counter();materials={}
 palette={'asphalt':'#41484b','sidewalk':'#b4b5ac','brick':'#97604b','brick2':'#b4795d','stone':'#c5beb0','dark':'#283c42','glass':'#4b7686','frame':'#c4d0d1','roof':'#737b79','grass':'#566e4b','trunk':'#75644d','leaf':'#425e48','metal':'#546661','paint':'#e4e5d8','yellow':'#d7b351','rail':'#87918e','water':'#386c7a'}
@@ -99,9 +101,16 @@ def extrude(p,z,h,key,color):
 def surface(p,key,color,offset=.03):
  for a in polys(p):
   if a.area<.02:continue
-  try:
-   v,f=trimesh.creation.triangulate_polygon(a,engine='earcut');vv=np.c_[v,elev(v[:,0],v[:,1])+offset];put(trimesh.Trimesh(vv,f,process=False),key,color)
-  except:pass
+  if a.area<4:
+   v,f=trimesh.creation.triangulate_polygon(a,engine='earcut')
+  else:
+   dense=segmentize(a,1.5);coords=np.concatenate([np.array(r.coords)[:-1] for r in [dense.exterior]+list(dense.interiors)])
+   xmin,ymin,xmax,ymax=a.bounds;xx,yy=np.meshgrid(np.arange(math.ceil((xmin-MIN)/STEP),math.floor((xmax-MIN)/STEP)+1)*STEP+MIN,np.arange(math.ceil((ymin-MIN)/STEP),math.floor((ymax-MIN)/STEP)+1)*STEP+MIN)
+   inside=contains_xy(a,xx.ravel(),yy.ravel());inner=np.c_[xx.ravel()[inside],yy.ravel()[inside]];v=np.unique(np.r_[coords,inner],axis=0)
+   if len(v)<3:continue
+   f=Delaunay(v).simplices;triangles=polygon_array(v[f]);f=f[covered_by(triangles,a.buffer(.002))]
+  vv=np.c_[v,elev(v[:,0],v[:,1])+offset];put(trimesh.Trimesh(vv,f,process=False),key,color)
+
 def cylinder(a,b,r,key,color,sections=8):
  v=np.asarray(b)-a;l=np.linalg.norm(v)
  if l<.001:return
@@ -133,6 +142,16 @@ for w in osm_b:
  if overlap/w['g'].area<.55:
   candidates.append({'id':'osm_'+w['id'],'g':w['g'],'old':{},'osm':w,'fp':'OSM footprint'})
 
+grouped=collections.defaultdict(list)
+for c in candidates:
+ if c['osm']:grouped[c['osm']['id']].append(c)
+consolidations=[]
+for oid,parts in grouped.items():
+ if len(parts)<2:continue
+ w=parts[0]['osm'];old_union=unary_union([p['g'] for p in parts]);coverage=old_union.intersection(w['g']).area/max(1,w['g'].area);agreement=old_union.intersection(w['g']).area/max(1,old_union.area)
+ if coverage>.55 and agreement>.60:
+  candidates=[c for c in candidates if c not in parts];candidates.append({'id':'osm_'+oid,'g':w['g'],'old':{},'osm':w,'fp':'OSM; fragmented municipal identity reconciled'})
+  consolidations.append({'osmWayId':oid,'municipalParts':len(parts),'coverage':round(coverage,3),'agreement':round(agreement,3),'decision':'one OSM identity envelope; source disagreement retained'})
 for c in candidates:
  c['full_area']=c['g'].area;c['clipped']=not boundary.covers(c['g']);c['g']=c['g'].intersection(boundary)
 all_buildings=unary_union([c['g'] for c in candidates]);ground_kd=cKDTree(ground[:,:2])
@@ -178,8 +197,8 @@ for c in candidates:
    extrude(part,base_roof+float(val),.13,'roofs__'+id,'roof');roofparts+=1
  outer_ctx=dict(globals());outer_ctx['roofSamples']=roof
  records,component_count=facades.compile(outer_ctx,c,z0,base_roof-z0,height,tags,OBS['facades']);facade_records.extend(records);counts['windowAssemblies']+=component_count
- observed_count=sum(r['status']=='visual-fit' for r in records)
- features.append({'id':id,'name':name,'height':round(height,2),'heightSource':source,'footprintSource':c['fp'],'roofParts':roofparts,'center':[round(g.centroid.x,2),round(g.centroid.y,2),round(z0,2)],'area':round(g.area,1),'clippedAtBoundary':c['clipped'],'pointCount':len(roof),'facade':'Image-informed facade components; remaining walls use unverified priors.' if observed_count else 'Detailed facade generated from an unverified architectural prior.','facadeEvidence':'Partial visual fit' if observed_count else 'Unverified prior','fittedWalls':observed_count,'totalWalls':len(records),'sourceUrl':'https://data.sfgov.org/d/ynuv-fyni' if c['fp'].startswith('Data') else 'https://www.openstreetmap.org/way/'+c['osm']['id']})
+ observed_count=sum(r['status'] in ['visual-fit','image-layout-fit','visual-grammar'] for r in records)
+ features.append({'id':id,'name':name,'height':round(height,2),'heightSource':source,'footprintSource':c['fp'],'roofParts':roofparts,'center':[round(g.centroid.x,2),round(g.centroid.y,2),round(z0,2)],'area':round(g.area,1),'clippedAtBoundary':c['clipped'],'pointCount':len(roof),'facade':'Street-facing wall regions use observation-derived layouts; unseen walls remain inferred.' if observed_count else 'Detailed facade generated from an unverified architectural prior.','facadeEvidence':'Image layout / visual grammar' if observed_count else 'Unverified prior','fittedWalls':observed_count,'totalWalls':len(records),'sourceUrl':'https://data.sfgov.org/d/ynuv-fyni' if c['fp'].startswith('Data') else 'https://www.openstreetmap.org/way/'+c['osm']['id']})
  print(name,round(height,1),len(roof),roofparts,flush=True)
 
 # Paved carriageways use OSM centerlines and lane counts; widths are inferred.
@@ -270,6 +289,19 @@ for w in ways:
 
 # Street compiler uses source topology and ROW; every snap remains an uncertain record.
 make_sign=signs.install(globals());sign_records,sidewalk_geometry=streets.compile(globals())
+street_views=[]
+for profile in PROFILES:
+ matches=[c for c in candidates if c['osm'] and c['osm']['id']==profile['match']['osmWayId']]
+ if not matches:continue
+ c=matches[0];n=np.asarray(profile['normal']);n=n/np.linalg.norm(n);u=np.array([-n[1],n[0]]);coord=np.concatenate([np.array(p.exterior.coords) for p in polys(c['g'])]);d=np.max(coord@n);front=coord[(coord@n)>d-3];focus=front.mean(axis=0) if len(front) else np.array(c['g'].centroid.coords[0]);desired=Point(*(focus+n*20))
+ ranked=[]
+ for w,width,lanes in roads:
+  q=w['g'].interpolate(w['g'].project(desired));pos=np.array(q.coords[0]);v=pos-focus
+  if np.dot(v,n)<4 or np.linalg.norm(v)>60 or all_buildings.contains(q):continue
+  ranked.append((desired.distance(q),pos,w))
+ if ranked:
+  _,pos,w=min(ranked,key=lambda v:v[0]);tangent=(u if np.dot(u,focus-pos)>0 else -u);look=focus+tangent*8
+  street_views.append({'position':np.round(pos,2).tolist(),'lookAt':[round(float(look[0]),2),round(float(look[1]),2),3.8],'label':w['tags'].get('name','Street')+' / '+profile['id']})
 # One mesh per material and feature; image payloads are shared by glTF.
 for key,(v,f,uv,normals) in batches.items():
  if not v:continue
@@ -277,7 +309,7 @@ for key,(v,f,uv,normals) in batches.items():
  mesh=trimesh.Trimesh(np.concatenate(v),np.concatenate(f),vertex_normals=np.concatenate(normals),visual=TextureVisuals(uv=np.concatenate(uv),material=mat),process=False)
  mesh.merge_vertices(merge_tex=False,merge_norm=False)
  layer=semantic.split('__')[0];fid=semantic.split('__')[1] if '__' in semantic else None
- status='measured-fit' if layer in ['terrain','roofs'] else 'visual-fit' if fid and any(r['buildingId']==fid and r['status']=='visual-fit' for r in facade_records) else 'inferred'
+ status='measured-fit' if layer in ['terrain','roofs'] else 'visual-fit' if '__observed_' in semantic else 'inferred'
  mesh.metadata={'layer':layer,'featureId':fid,'evidence':status,'material':material_name}
  scene.add_geometry(mesh,node_name=key,geom_name=key,metadata=mesh.metadata)
 scene.apply_transform(np.array([[1,0,0,0],[0,0,1,0],[0,-1,0,0],[0,0,0,1]],float))
@@ -288,18 +320,20 @@ for s in json.load(open(DATA/'signs.json')):
  except:continue
  if math.hypot(x,y)<200:coarse_signs.append({'id':s.get('asset_id'),'legend':s.get('legend'),'x':round(x,2),'y':round(y,2),'precision':'municipal approximate location; not rendered as surveyed placement'})
 counts['unresolvedSigns']=len(coarse_signs)
-counts['facadeWalls']=len(facade_records);counts['imageFittedWalls']=sum(r['status']=='visual-fit' for r in facade_records);counts['pbrMaterials']=len(material_bank.cache)
+counts['facadeWalls']=len(facade_records);counts['imageFittedWalls']=sum(r['status'] in ['visual-fit','image-layout-fit','visual-grammar'] for r in facade_records);counts['pbrMaterials']=len(material_bank.cache)
+counts['numericalFacadeFits']=len(FITS);counts['profileFrontages']=len(PROFILES);counts['inferredRepeatCells']=sum(f['completedCells'] for f in FITS)
 counts['generationSeconds']=round(time.perf_counter()-START,2)
-world={'pipelineVersion':CONFIG['version'],'facadeCoverage':{'walls':len(facade_records),'visuallyFittedWalls':counts['imageFittedWalls'],'independentlyVerifiedWalls':0,'accuracyGate':'NOT PASSED'},'studyRadiusM':200,'contextRadiusM':265,'center':{'lat':lat,'lon':lon},'coordinateSystem':'Local UTM zone 10N meters; GLB X east, Y up, Z south','verticalOrigin':base,'buildings':features,'counts':dict(counts),'ground':np.round(grid,3).ravel().tolist(),'grid':{'min':MIN,'step':STEP,'n':N},'sources':[
+world={'pipelineVersion':CONFIG['version'],'streetViews':street_views,'facadeCoverage':{'walls':len(facade_records),'visuallyFittedWalls':counts['imageFittedWalls'],'numericalFits':len(FITS),'currentStreetImageryBuildings':2,'photoAgeUnknownBuildings':2,'independentlyVerifiedWalls':0,'accuracyGate':'NOT PASSED'},'studyRadiusM':200,'contextRadiusM':265,'center':{'lat':lat,'lon':lon},'coordinateSystem':'Local UTM zone 10N meters; GLB X east, Y up, Z south','verticalOrigin':base,'buildings':features,'counts':dict(counts),'ground':np.round(grid,3).ravel().tolist(),'grid':{'min':MIN,'step':STEP,'n':N},'sources':[
  {'name':'USGS LiDAR','date':'April 2023','detail':'4.6 million sampled points; ground elevations and fitted roof tiers. Absolute accuracy has not been independently tested.','url':'https://www.fisheries.noaa.gov/inport/item/73386/full-list'},
  {'name':'DataSF building footprints','date':'2010-derived geometry','detail':'Building outlines reconciled against current OpenStreetMap identities and newer LiDAR heights.','url':'https://data.sfgov.org/d/ynuv-fyni'},
  {'name':'OpenStreetMap','date':'Retrieved Sep 2026','detail':'Address identity, newer buildings, road topology, lane counts, crossings and transit tracks. Capture age varies.','url':'https://www.openstreetmap.org/copyright'},
  {'name':'DataSF street trees','date':'Inventory; dates vary','detail':'Mapped tree positions and species. Canopies and branches are procedural.','url':'https://data.sfgov.org/d/tkzw-k3nq'},
  {'name':'Reusable PBR surfaces','date':'CC0 scans','detail':'Scanned brick, asphalt and concrete at physical texture scale; material identity remains inferred on unobserved walls.','url':'https://ambientcg.com/'},
+ {'name':'Hotel exterior photography','date':'Capture dates unknown','detail':'Operator and structural engineer photographs fit bay stacks, terracotta fields and external shades. Historical layouts need current independent checks.','url':'https://www.hyatt.com/hyatt-place/en-US/sfozs-hyatt-place-san-francisco-downtown/gallery'},
  {'name':'Mapillary coverage','date':'Coverage inspected Sep 2026','detail':'Dense capture coverage is visible around King and Third. Individual images and their capture dates have not been ingested in this pass.','url':'https://www.mapillary.com/app/?lat=37.7786&lng=-122.3918&z=18'},
- {'name':'Street-level reference','date':'January 2025','detail':'Dated frontage observations fit reusable window/frame/canopy parameters. No Google image textures are embedded; most facades remain unobserved.','url':'https://www.google.com/maps/@37.7786899,-122.3913452,3a,75y,315h,110t/data=!3m4!1e1!3m2!1sS4hs-Kyh3P14aRv9CWeTvg!2e0'}]}
+ {'name':'Street-level reference','date':'January 2025','detail':'Sparse image landmarks and visual grammars distinguish loft terraces, continuous glazing and separate ground-floor patterns. Source pixels are not embedded.','url':'https://www.google.com/maps/@37.7786899,-122.3913452,3a,75y,315h,110t/data=!3m4!1e1!3m2!1sS4hs-Kyh3P14aRv9CWeTvg!2e0'}]}
 glb=scene.export(file_type='glb');(PUBLIC/'king-street.glb').write_bytes(glb);(OUT/'king-street-pilot.glb').write_bytes(glb)
-(PUBLIC/'world.json').write_text(json.dumps(world,separators=(',',':')));(OUT/'king-street-evidence.json').write_text(json.dumps({'world':world,'unresolvedSigns':coarse_signs,'facadeWalls':facade_records,'signPlacements':sign_records,'observationSources':OBS['sources'],'materials':material_bank.manifest},indent=2))
+(PUBLIC/'world.json').write_text(json.dumps(world,separators=(',',':')));(OUT/'king-street-evidence.json').write_text(json.dumps({'world':world,'unresolvedSigns':coarse_signs,'facadeWalls':facade_records,'signPlacements':sign_records,'observationSources':OBS['sources'],'footprintConsolidations':consolidations,'layoutFits':FITS,'profiles':PROFILES,'materials':material_bank.manifest},indent=2))
 print('OUTPUT',len(glb),'bytes',dict(counts),'center',lat,lon,flush=True)
 
 (PUBLIC/'facade-evidence.json').write_text(json.dumps({'walls':facade_records,'signs':sign_records,'sources':OBS['sources']},separators=(',',':')))
@@ -312,5 +346,7 @@ with gzip.GzipFile(PUBLIC/'king-street.glb.gz','wb',compresslevel=7,mtime=0) as 
 packed=(PUBLIC/'king-street.glb.gz').read_bytes();chunks=[]
 for i in range(0,len(packed),4*1024*1024):
  name=f'king-street-{i//(4*1024*1024):02d}.bin';(PUBLIC/name).write_bytes(packed[i:i+4*1024*1024]);chunks.append('/'+name)
+for old in PUBLIC.glob('king-street-*.bin'):
+ if '/'+old.name not in chunks:old.unlink()
 (PUBLIC/'model.json').write_text(json.dumps({'compression':'gzip','chunks':chunks,'compressedBytes':len(packed),'uncompressedBytes':len(glb)}))
 (PUBLIC/'king-street.glb.gz').unlink()

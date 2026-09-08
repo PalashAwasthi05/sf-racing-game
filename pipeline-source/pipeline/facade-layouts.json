@@ -1,0 +1,346 @@
+{
+  "schemaVersion": 1,
+  "fits": [
+    {
+      "id": "loft-projecting-frame-bank",
+      "match": {
+        "osmWayId": "149167949"
+      },
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "region": [
+        0,
+        0.31,
+        1,
+        0.84
+      ],
+      "style": {
+        "kind": "terrace_frame",
+        "material": "brick",
+        "frameMaterial": "silver",
+        "openingRatio": 0.84,
+        "openingHeightRatio": 0.87,
+        "frameWidthM": 0.15,
+        "projectionM": 0.254,
+        "recessM": 0.95,
+        "mullionFractions": [
+          0.33,
+          0.67
+        ],
+        "transomFractions": [
+          0.38,
+          0.83
+        ]
+      },
+      "columns": {
+        "count": 5,
+        "centers": [
+          0.12298673048110226,
+          0.32338180673694905,
+          0.5237768829927958,
+          0.7241719592486426,
+          0.9245670355044893
+        ],
+        "rmse": 0.02290513082139437,
+        "score": 1.5779031362157439,
+        "spacing": 0.20039507625584677
+      },
+      "rows": {
+        "count": 3,
+        "centers": [
+          0.19380009097690937,
+          0.4781030620030552,
+          0.7624060330292011
+        ],
+        "rmse": 0.031205324910388927,
+        "score": 1.3586076892268373,
+        "spacing": 0.2843029710261458
+      },
+      "cells": [
+        {
+          "x": 0.12298673048110226,
+          "y": 0.19380009097690937,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.12298673048110226,
+          "y": 0.4781030620030552,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.12298673048110226,
+          "y": 0.7624060330292011,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.32338180673694905,
+          "y": 0.19380009097690937,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.32338180673694905,
+          "y": 0.4781030620030552,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.32338180673694905,
+          "y": 0.7624060330292011,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.5237768829927958,
+          "y": 0.19380009097690937,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.5237768829927958,
+          "y": 0.4781030620030552,
+          "evidence": "inferred-repeat"
+        },
+        {
+          "x": 0.5237768829927958,
+          "y": 0.7624060330292011,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.7241719592486426,
+          "y": 0.19380009097690937,
+          "evidence": "inferred-repeat"
+        },
+        {
+          "x": 0.7241719592486426,
+          "y": 0.4781030620030552,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.7241719592486426,
+          "y": 0.7624060330292011,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.9245670355044893,
+          "y": 0.19380009097690937,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.9245670355044893,
+          "y": 0.4781030620030552,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.9245670355044893,
+          "y": 0.7624060330292011,
+          "evidence": "observed-center"
+        }
+      ],
+      "sourceIds": [
+        "king-2025-c"
+      ],
+      "inputSha256": "4e95502bf2c9e7247022d4bb333728a3ec2ebb530f00d3c3924d8f7edb12ee2e",
+      "method": "sparse image landmarks, projective rectification, robust lattice search",
+      "status": "image-layout-fit",
+      "directCenterSamples": 13,
+      "completedCells": 2,
+      "holdoutPixelErrors": [
+        4.598343642688949,
+        9.414200785159451
+      ],
+      "independentValidation": false,
+      "fitSeconds": 0.0145,
+      "uncertainty": [
+        "Top-right region corner slightly outside image; approximate projective annotation",
+        "Region-to-wall height fractions inferred; not surveyed",
+        "0.254 m frame projection from original architecture reporting; terrace depth inferred",
+        "Holdouts are same-image annotations, not independent photographs"
+      ]
+    },
+    {
+      "id": "hotel-bay-bank",
+      "match": {
+        "osmWayId": "573287814"
+      },
+      "normal": [
+        -0.707,
+        -0.707
+      ],
+      "region": [
+        0.16,
+        0.17,
+        0.86,
+        0.75
+      ],
+      "style": {
+        "kind": "projected_bay",
+        "material": "zinc",
+        "frameMaterial": "charcoal",
+        "openingRatio": 0.74,
+        "openingHeightRatio": 0.66,
+        "frameWidthM": 0.065,
+        "projectionM": 0.5,
+        "recessM": 0.13,
+        "mullionFractions": [
+          0.22,
+          0.78
+        ],
+        "transomFractions": [
+          0.7
+        ]
+      },
+      "columns": {
+        "count": 3,
+        "centers": [
+          0.12121845929177483,
+          0.4795049124628367,
+          0.8377913656338987
+        ],
+        "rmse": 0.01164457657256293,
+        "score": 0.8347476022214259,
+        "spacing": 0.3582864531710619
+      },
+      "rows": {
+        "count": 7,
+        "centers": [
+          0.06826619117648837,
+          0.20694860496808426,
+          0.3456310187596801,
+          0.484313432551276,
+          0.6229958463428719,
+          0.7616782601344677,
+          0.9003606739260637
+        ],
+        "rmse": 0.017963591294803953,
+        "score": 1.9516816326292228,
+        "spacing": 0.13868241379159588
+      },
+      "cells": [
+        {
+          "x": 0.12121845929177483,
+          "y": 0.06826619117648837,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.12121845929177483,
+          "y": 0.20694860496808426,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.12121845929177483,
+          "y": 0.3456310187596801,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.12121845929177483,
+          "y": 0.484313432551276,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.12121845929177483,
+          "y": 0.6229958463428719,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.12121845929177483,
+          "y": 0.7616782601344677,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.12121845929177483,
+          "y": 0.9003606739260637,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.4795049124628367,
+          "y": 0.06826619117648837,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.4795049124628367,
+          "y": 0.20694860496808426,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.4795049124628367,
+          "y": 0.3456310187596801,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.4795049124628367,
+          "y": 0.484313432551276,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.4795049124628367,
+          "y": 0.6229958463428719,
+          "evidence": "inferred-repeat"
+        },
+        {
+          "x": 0.4795049124628367,
+          "y": 0.7616782601344677,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.4795049124628367,
+          "y": 0.9003606739260637,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.8377913656338987,
+          "y": 0.06826619117648837,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.8377913656338987,
+          "y": 0.20694860496808426,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.8377913656338987,
+          "y": 0.3456310187596801,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.8377913656338987,
+          "y": 0.484313432551276,
+          "evidence": "inferred-repeat"
+        },
+        {
+          "x": 0.8377913656338987,
+          "y": 0.6229958463428719,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.8377913656338987,
+          "y": 0.7616782601344677,
+          "evidence": "observed-center"
+        },
+        {
+          "x": 0.8377913656338987,
+          "y": 0.9003606739260637,
+          "evidence": "observed-center"
+        }
+      ],
+      "sourceIds": [
+        "hyatt-dusk"
+      ],
+      "inputSha256": "cac98ee3f2ae4301a8063f10b2ae244f7c977f3c3186a4283cee2c3603973b96",
+      "method": "sparse image landmarks, projective rectification, robust lattice search",
+      "status": "image-layout-fit",
+      "directCenterSamples": 19,
+      "completedCells": 2,
+      "holdoutPixelErrors": [
+        11.226433688332563,
+        16.111012115580802
+      ],
+      "independentValidation": false,
+      "fitSeconds": 0.0147,
+      "uncertainty": [
+        "Unknown photo capture date",
+        "Projection depth and metric scale not surveyed",
+        "Annotated grid region excludes brick margins",
+        "Wall association is Third Street; frontage extent still approximate"
+      ]
+    }
+  ]
+}

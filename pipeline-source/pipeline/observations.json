@@ -19,6 +19,37 @@
       "capturedAt": null,
       "provider": "SFMTA",
       "use": "installed project context; plan geometry is not treated as surveyed current paint"
+    },
+    "king-2025-c": {
+      "url": "https://www.google.com/maps/@37.7785447,-122.3915291,3a,110y,285h,120t/data=!3m4!1e1!3m2!1sZEaDxnfTqji-aGZgIx9ffg!2e0",
+      "capturedAt": "2025-01",
+      "provider": "Google Street View",
+      "use": "Visual landmark annotation at 1280 x 720; pixels not embedded"
+    },
+    "king-2025-d": {
+      "url": "https://www.google.com/maps/@37.7786899,-122.3913452,3a,110y,320h,135t/data=!3m4!1e1!3m2!1sS4hs-Kyh3P14aRv9CWeTvg!2e0",
+      "capturedAt": "2025-01",
+      "provider": "Google Street View",
+      "use": "Visual grammar annotation; pixels not embedded; palm occlusion remains"
+    },
+    "loft-architecture-report": {
+      "url": "https://www.sfgate.com/entertainment/article/Belles-of-the-ballpark-neighborhood-two-2549100.php",
+      "capturedAt": "2006-10-19",
+      "provider": "Original architecture reporting",
+      "use": "Historical projection dimension (10 inches) and terrace/crown description; current silhouette cross-checked visually"
+    },
+    "hyatt-dusk": {
+      "url": "https://www.hyatt.com/hyatt-place/en-US/sfozs-hyatt-place-san-francisco-downtown/gallery",
+      "imageUrl": "https://assets.hyatt.com/content/dam/hyatt/hyattdam/images/2019/03/25/1010/Hyatt-Place-San-Francisco-Downtown-P012-Exterior-Dusk.jpg/Hyatt-Place-San-Francisco-Downtown-P012-Exterior-Dusk.4x3.jpg",
+      "capturedAt": null,
+      "provider": "Hyatt operator photography",
+      "use": "Sparse image landmarks; pixels not embedded; date unknown, historical fit"
+    },
+    "via-engineer": {
+      "url": "https://imegcorp.com/project/new-12-story-hotel/",
+      "capturedAt": null,
+      "provider": "Project structural engineer",
+      "use": "Historical exterior and completed entry photographs; no pixels embedded; current upper layout needs independent view"
     }
   },
   "facades": [
