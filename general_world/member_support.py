@@ -27,7 +27,8 @@ def _components(mesh: trimesh.Trimesh):
     cols = np.r_[adjacency[:, 1], adjacency[:, 0]]
     graph = coo_matrix((np.ones(len(rows)), (rows, cols)), shape=(len(faces), len(faces)))
     count, labels = connected_components(graph.tocsr(), directed=False)
-    return [np.flatnonzero(labels == i) for i in range(count)]
+    order=np.argsort(labels,kind="stable")
+    return np.split(order,np.flatnonzero(np.diff(labels[order]))+1)
 
 
 def _welded_copy(mesh: trimesh.Trimesh):
@@ -38,23 +39,6 @@ def _welded_copy(mesh: trimesh.Trimesh):
     )
     out.merge_vertices(digits_vertex=8)
     return out
-
-
-def _original_face_map(source: trimesh.Trimesh, welded: trimesh.Trimesh):
-    """Map welded triangle rows back to source face indices by XYZ coordinates."""
-    def key(tri):
-        return tri[np.lexsort((tri[:, 2], tri[:, 1], tri[:, 0]))].tobytes()
-
-    source_map = {}
-    source_vertices = np.asarray(source.vertices)
-    for index, face in enumerate(np.asarray(source.faces)):
-        source_map.setdefault(key(source_vertices[face]), []).append(index)
-    welded_vertices = np.asarray(welded.vertices)
-    result = []
-    for face in np.asarray(welded.faces):
-        values = source_map.get(key(welded_vertices[face]), [])
-        result.append(values.pop(0) if values else None)
-    return result
 
 
 def _max_overreach(points, footprint):
@@ -69,7 +53,9 @@ def _max_overreach(points, footprint):
 def _candidate(component, footprint):
     bounds = np.asarray(component.bounds)
     dims = bounds[1] - bounds[0]
-    horizontal = np.sort(dims[:2])
+    points=np.unique(component.vertices[:,:2],axis=0)
+    _,axes=np.linalg.eigh(np.cov(points.T))
+    horizontal=np.sort(np.ptp(points@axes,axis=0))
     return {
         "elevated": bool(bounds[0, 2] > 5.0),
         "long": bool(horizontal[1] > 12.0),
@@ -92,7 +78,8 @@ def clip_long_members(
 
     Returns ``(replacements, report)``.  Each replacement has the source face
     indices and a geometry-only mesh.  Components that fail the closed,
-    positive-volume and dimensional gates are returned unchanged.  The input
+    positive-volume and dimensional gates are left unchanged; only attempted
+    replacements are returned.  The input
     mesh and its UV/material arrays are never modified.
     """
     if margin_m < 0:
@@ -103,7 +90,8 @@ def clip_long_members(
 
     source = mesh
     welded = _welded_copy(source)
-    face_map = _original_face_map(source, welded)
+    assert len(source.faces)==len(welded.faces)
+    face_map = np.arange(len(source.faces))
     replacements = []
     report = {"changed": False, "reason": "audited", "components": 0, "offending": 0, "failedClips": 0}
 
@@ -113,22 +101,26 @@ def clip_long_members(
             faces=np.asarray(welded.faces)[component_faces],
             process=False,
         )
+        component.remove_unreferenced_vertices()
         report["components"] += 1
         source_indices = [face_map[i] for i in component_faces if face_map[i] is not None]
+        if component.bounds is None:continue
+        bounds=component.bounds
+        if bounds[0,2]<=5 or bounds[1,2]-bounds[0,2]>=.30 or np.max(bounds[1,:2]-bounds[0,:2])<8:continue
         metrics = _candidate(component, footprint)
         closed_positive = bool(component.is_watertight and component.is_volume and component.volume > 0)
         offending = closed_positive and all(metrics[k] for k in ("elevated", "long", "thin", "narrow")) and metrics["overreachM"] > 5.0
         if not offending:
-            replacements.append({"originalFaceIndices": source_indices, "mesh": component, "changed": False, "metrics": metrics})
             continue
         report["offending"] += 1
         z0, z1 = component.bounds[:, 2]
         support_parts = extruded(footprint.buffer(margin_m), z0 - 0.01, z1 + 0.01)
         try:
-            clipped = trimesh.boolean.intersection([component, *support_parts], engine="manifold", check_volume=True)
+            support=trimesh.boolean.union(support_parts,engine="manifold",check_volume=True) if len(support_parts)>1 else support_parts[0]
+            clipped = trimesh.boolean.intersection([component, support], engine="manifold", check_volume=True)
             if isinstance(clipped, list):
                 clipped = trimesh.util.concatenate(clipped)
-            if clipped is None or len(clipped.faces) == 0 or not clipped.is_volume:
+            if clipped is None or (len(clipped.faces)>0 and not clipped.is_volume):
                 raise ValueError("intersection did not produce a positive solid")
             replacements.append({"originalFaceIndices": source_indices, "mesh": clipped, "changed": True, "metrics": metrics})
             report["changed"] = True

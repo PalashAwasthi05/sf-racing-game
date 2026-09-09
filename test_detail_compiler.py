@@ -59,3 +59,12 @@ def test_boolean_replaces_proxy_before_returning_measured_parts():
         proxy, measured)
     assert out["proxy"].is_watertight and out["proxy"].is_volume
     assert any("glazing" in part["label"] for part in out["wall_parts"])
+
+
+def test_envelope_uses_wall_depth_axis_and_removes_correct_volume():
+    from general_world.detail_compiler import replace_measured_panel
+    proxy=trimesh.creation.box([6,4,4]);proxy.apply_translation([3,2,2])
+    r=record(coordinate_frame={"origin":[0,0,0],"horizontal":[1,0,0],"inward":[0,1,0],"vertical":[0,0,1]})
+    result=replace_measured_panel(proxy,r)
+    assert result['proxy'].volume==pytest.approx(96-6*4*.15,abs=1e-5)
+    assert result['proxy'].bounds[0,1]==pytest.approx(.15)

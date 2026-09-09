@@ -26,7 +26,7 @@ def test_supported_strip_is_retained_when_overreach_is_small():
     strip = _strip(((-1, 4, 10), (21, 5, 10.2)))
     replacements, report = clip_long_members(strip, footprint, missingSupportEvidence=True)
     assert not report["changed"] and report["offending"] == 0
-    assert replacements[0]["changed"] is False
+    assert replacements == []
 
 
 def test_measured_cantilever_is_exempt():
@@ -43,3 +43,20 @@ def test_missing_support_evidence_is_required():
     replacements, report = clip_long_members(strip, footprint)
     assert replacements == []
     assert report["reason"] == "missing-support-evidence-required"
+
+
+def test_rotated_strip_and_unrelated_component_do_not_change_detection():
+    from shapely.affinity import rotate
+    footprint=rotate(box(0,0,20,10),45,origin=(0,0))
+    strip=_strip(((-10,4,10),(30,5,10.2)));strip.apply_transform(trimesh.transformations.rotation_matrix(np.pi/4,[0,0,1]))
+    unrelated=_strip(((100,100,0),(101,101,1)))
+    _,r=clip_long_members(trimesh.util.concatenate([strip,unrelated]),footprint,missingSupportEvidence=True)
+    assert r['offending']==1 and r['changed']
+
+def test_disconnected_support_polygons_are_unioned():
+    from shapely.ops import unary_union
+    footprint=unary_union([box(0,0,5,10),box(15,0,20,10)])
+    strip=_strip(((-10,4,10),(30,5,10.2)))
+    parts,r=clip_long_members(strip,footprint,margin_m=0,missingSupportEvidence=True)
+    assert r['changed'] and r['failedClips']==0
+    assert parts[0]['mesh'].volume==__import__('pytest').approx(2,abs=.001)

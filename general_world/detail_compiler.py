@@ -132,11 +132,9 @@ def replace_measured_panel(proxy_mesh: trimesh.Trimesh, record: Mapping) -> dict
             raise DetailCompilerError("open_passage replacement requires full passage depth measurement")
     compiled = compile_detail_records([record])[0]
     frame = _frame(record["coordinate_frame"])
-    envelope_parts = extruded(Polygon(record["wall_polygon"]), -float(record["wall_thickness_m"]) / 2,
-                              float(record["wall_thickness_m"]) / 2)
-    if len(envelope_parts) != 1:
-        raise DetailCompilerError("wall envelope must be one connected polygon")
-    envelope = envelope_parts[0]
+    from .opening_mesh import _solid
+    t=float(record["wall_thickness_m"])
+    envelope = _solid(Polygon(record["wall_polygon"]), -t/2, t/2, "replacement-envelope")
     _worldize({"parts": [{"mesh": envelope}]}, frame)
     try:
         common = trimesh.boolean.intersection([proxy_mesh, envelope], engine="manifold", check_volume=True)

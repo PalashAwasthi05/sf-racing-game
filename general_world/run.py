@@ -17,14 +17,14 @@ def execute(input_path,output_dir,policy=None):
  ground=np.load(path.parent/d['groundFile'])['points'];tree=cKDTree(ground[:,:2])
  def terrain(x,y):
   x,y=np.broadcast_arrays(x,y);p=np.c_[x.ravel(),y.ravel()];dist,idx=tree.query(p,k=min(8,len(ground)));z=np.median(ground[idx,2],axis=-1) if idx.ndim>1 else ground[idx,2];return z.reshape(x.shape)
- cloud=np.load(path.parent/d['surfacePointsFile'])['points'];scene=trimesh.Scene();records=[];queue=[];stair_records=[];source_index=d.get('images',{});detailed=0
+ cloud=np.load(path.parent/d['surfacePointsFile'])['points'];scene=trimesh.Scene();host_meshes={};records=[];queue=[];stair_records=[];source_index=d.get('images',{});detailed=0
  for item in d['buildings']:
   g=shape(item['geometry']);a,b,c,e=g.bounds;mask=(cloud[:,0]>=a)&(cloud[:,0]<=c)&(cloud[:,1]>=b)&(cloud[:,1]<=e)
   from shapely import contains_xy
   p=cloud[mask];p=p[contains_xy(g,p[:,0],p[:,1])]
   mesh,record=reconstruct_building(g,p,terrain,policy,item.get('heightM'));record['key']=item['key'];records.append(record)
   if mesh is not None:
-   mesh.visual=trimesh.visual.ColorVisuals(mesh,vertex_colors=[164,171,176,255]);mesh.metadata={'layer':'buildings','featureId':item['key'],'evidence':'unresolved-appearance'};scene.add_geometry(mesh,node_name='solid_'+item['key'])
+   mesh.visual=trimesh.visual.ColorVisuals(mesh,vertex_colors=[164,171,176,255]);mesh.metadata={'layer':'buildings','featureId':item['key'],'evidence':'unresolved-appearance'};host_meshes[item['key']]=mesh;scene.add_geometry(mesh,node_name='solid_'+item['key'],geom_name='solid_'+item['key'])
   for i,frame in enumerate(contiguous_frames(g)):
    # The same request schema is emitted for every boundary, without a name lookup.
    mid=(np.array(frame['a'])+frame['b'])/2;n=np.array(frame['normal']);visible=not frame['courtyard'];area=frame['lengthM']*min(12,item.get('heightM') or 12)
@@ -39,11 +39,30 @@ def execute(input_path,output_dir,policy=None):
   made,r=supported_stairs(LineString(item['path']),item.get('widthM',2),item['count'],terrain,rail=item.get('handrail',False));stair_records.append({'key':item['key'],**r})
   for j,m in enumerate(made):
    component=m.metadata.get('component','tread');m.visual=trimesh.visual.ColorVisuals(m,vertex_colors=[65,70,73,255] if component=='handrail' else [172,176,174,255]);m.metadata={'layer':'steps','component':component,'evidence':'terrain-derived-approximation'};scene.add_geometry(m,node_name=item['key']+':'+str(j))
- # Detail compiler is deliberately not replaced with a plausible template when image inference is absent.
- verdicts=[inspect_record(r,source_index,policy,d['snapshotDate']) for r in d.get('derivedDetails',[])]
- if any(r['accepted'] for r in verdicts):raise RuntimeError('Accepted automatic details require the image-surface mesher; no placeholder detail renderer is substituted')
+ # Approved observations replace the host panel; they are never overlaid on an intact proxy.
+ from .detail_compiler import replace_measured_panel,DetailCompilerError
+ verdicts=[]
+ for index,detail in enumerate(d.get('derivedDetails',[])):
+  verdict=inspect_record(detail,source_index,policy,d['snapshotDate']);verdicts.append(verdict)
+  if not verdict['accepted']:continue
+  host_key=detail.get('hostKey');host=host_meshes.get(host_key)
+  if host is None:
+   verdict.update(accepted=False,reasons=['missing-host-solid']);continue
+  try:
+   result=replace_measured_panel(host,{**detail,'evidence_approved':True})
+  except (DetailCompilerError,ValueError) as exc:
+   verdict.update(accepted=False,reasons=[str(exc)]);continue
+  replacement=result['proxy'];replacement.metadata=dict(host.metadata)
+  replacement.visual=trimesh.visual.ColorVisuals(replacement,vertex_colors=[164,171,176,255])
+  scene.geometry['solid_'+host_key]=replacement;host_meshes[host_key]=replacement
+  for number,part in enumerate(result['wall_parts']):
+   mesh=part['mesh'];mesh.metadata={'layer':'facades','featureId':host_key,'component':part['label'],'evidence':'approved-measured-boundary','appearance':'unresolved'}
+   scene.add_geometry(mesh,node_name='measured_'+str(index)+'_'+str(number))
+  verdict['compiled']=True;detailed+=1
+ from .mesh_hygiene import remove_empty_faces
+ hygiene=[remove_empty_faces(m) for m in scene.geometry.values()]
  scene.apply_transform(np.array([[1,0,0,0],[0,0,1,0],[0,-1,0,0],[0,0,0,1]],float));glb=scene.export(file_type='glb');(out/'candidate.glb').write_bytes(glb)
- report={'schema':'generation-report/v1','allFeaturesUseSameRules':True,'manualProfilesRead':0,'buildingsAttempted':len(records),'closedBuildings':sum(r.get('watertight',False) for r in records),'buildingsUnresolved':sum(r.get('status')!='closed-proxy-solid' for r in records),'facadesReconstructedFromImages':detailed,'inventedWindows':0,'inventedFacadeMaterials':0,'inventedSignage':0,'strayDecorativeObjectsGenerated':0,'records':records,'stairs':stair_records,'detailVerdicts':verdicts,'appearanceGate':'FAIL: automatic image reconstruction not connected','publicationApprovedByQualityGate':False,'inputHash':hashlib.sha256(path.read_bytes()).hexdigest(),'outputHash':hashlib.sha256(glb).hexdigest(),'elapsedSeconds':round(time.perf_counter()-start,2),'triangles':sum(len(m.faces) for m in scene.geometry.values())}
+ report={'schema':'generation-report/v1','emptyFacesRemoved':sum(r['emptyFacesRemoved'] for r in hygiene),'allFeaturesUseSameRules':True,'manualProfilesRead':0,'buildingsAttempted':len(records),'closedBuildings':sum(r.get('watertight',False) for r in records),'buildingsUnresolved':sum(r.get('status')!='closed-proxy-solid' for r in records),'facadesReconstructedFromImages':detailed,'inventedWindows':0,'inventedFacadeMaterials':0,'inventedSignage':0,'strayDecorativeObjectsGenerated':0,'records':records,'stairs':stair_records,'detailVerdicts':verdicts,'appearanceGate':'FAIL: complete image-derived facade coverage and materials not verified','publicationApprovedByQualityGate':False,'inputHash':hashlib.sha256(path.read_bytes()).hexdigest(),'outputHash':hashlib.sha256(glb).hexdigest(),'elapsedSeconds':round(time.perf_counter()-start,2),'triangles':sum(len(m.faces) for m in scene.geometry.values())}
  (out/'report.json').write_text(json.dumps(report,indent=2));(out/'acquisition-queue.json').write_text(json.dumps({'surfaces':queue,'automaticQueue':True,'manualBuildingInstructions':False},indent=2));print(json.dumps({k:v for k,v in report.items() if k not in ['records','stairs','detailVerdicts']}));return report
 
 if __name__=='__main__':
