@@ -23,7 +23,11 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 import math
 import numpy as np
+import trimesh
+from shapely.geometry import Polygon
 
+from .evidence import contains_authored_override
+from .geometry import extruded
 from .opening_mesh import ApertureError, compile_wall
 
 
@@ -56,6 +60,8 @@ def _frame(value):
             raise DetailCompilerError(f"coordinate_frame.{key} must be unit length")
     if any(abs(float(np.dot(a, b))) > 1e-6 for i, a in enumerate(axes) for b in axes[i + 1:]):
         raise DetailCompilerError("coordinate_frame axes must be perpendicular")
+    if float(np.linalg.det(np.column_stack(axes))) <= 0:
+        raise DetailCompilerError("coordinate_frame must be right-handed")
     return origin, axes
 
 
@@ -84,8 +90,10 @@ def compile_detail_records(records: Iterable[Mapping]) -> list[dict]:
     for index, record in enumerate(records):
         if not isinstance(record, Mapping):
             raise DetailCompilerError(f"record {index} must be an object")
-        if record.get("evidence_approved") is not True and record.get("accepted") is not True:
+        if record.get("evidence_approved") is not True:
             raise DetailCompilerError(f"record {index} is not evidence-approved")
+        if contains_authored_override(record):
+            raise DetailCompilerError(f"record {index} contains authored identity or override")
         missing = [key for key in _REQUIRED if key not in record]
         if missing:
             raise DetailCompilerError(f"record {index} missing required fields: {', '.join(missing)}")
@@ -105,3 +113,41 @@ def compile_detail_records(records: Iterable[Mapping]) -> list[dict]:
 
 compile_details = compile_detail_records
 
+
+def replace_measured_panel(proxy_mesh: trimesh.Trimesh, record: Mapping) -> dict:
+    """Boolean-replace a measured wall panel in a closed proxy solid.
+
+    The complete wall envelope is removed first, then the measured wall and
+    opening parts are returned for attachment.  A wall with an open passage
+    is refused until a full through-depth passage measurement is supported.
+    Boolean or support failures are explicit errors; this helper never overlays
+    a wall on an uncut proxy.
+    """
+    if not isinstance(proxy_mesh, trimesh.Trimesh) or not proxy_mesh.is_watertight or not proxy_mesh.is_volume:
+        raise DetailCompilerError("proxy_mesh must be a closed positive-volume solid")
+    if not isinstance(record, Mapping):
+        raise DetailCompilerError("record must be an object")
+    for aperture in record.get("apertures", []):
+        if aperture.get("kind") == "open_passage":
+            raise DetailCompilerError("open_passage replacement requires full passage depth measurement")
+    compiled = compile_detail_records([record])[0]
+    frame = _frame(record["coordinate_frame"])
+    envelope_parts = extruded(Polygon(record["wall_polygon"]), -float(record["wall_thickness_m"]) / 2,
+                              float(record["wall_thickness_m"]) / 2)
+    if len(envelope_parts) != 1:
+        raise DetailCompilerError("wall envelope must be one connected polygon")
+    envelope = envelope_parts[0]
+    _worldize({"parts": [{"mesh": envelope}]}, frame)
+    try:
+        common = trimesh.boolean.intersection([proxy_mesh, envelope], engine="manifold", check_volume=True)
+        common_volume = float(common.volume) if common is not None else 0.0
+        if common_volume <= 1e-8:
+            raise DetailCompilerError("wall envelope does not intersect proxy solid")
+        replacement = trimesh.boolean.difference([proxy_mesh, envelope], engine="manifold", check_volume=True)
+    except DetailCompilerError:
+        raise
+    except Exception as exc:
+        raise DetailCompilerError(f"proxy boolean replacement failed: {exc}") from exc
+    if replacement is None or not replacement.is_watertight or not replacement.is_volume:
+        raise DetailCompilerError("proxy boolean replacement is not a closed positive solid")
+    return {"proxy": replacement, "wall_parts": compiled["parts"], "checks": compiled["checks"]}
