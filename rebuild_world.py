@@ -1,22 +1,22 @@
-"""Full-region release wrapper: snapshot inputs, rebuild all geometry, reject drift."""
-import hashlib,json,subprocess,sys,time
+"""Full-area rebuild with source fingerprints, uniform rules and explicit release gates."""
+import argparse,hashlib,json,sys,time
 from pathlib import Path
-root=Path(__file__).resolve().parent
+from general_world.run import execute
 
-def snapshot():
- files=[root/'build_world.py',Path(__file__)]+[p for p in (root/'pipeline').rglob('*') if p.suffix in ['.py','.json']]+[p for p in (root/'data').iterdir() if p.is_file()]+[p for p in (root/'material-assets').rglob('*') if p.is_file()]
- out={}
- for p in sorted(files):
-  h=hashlib.sha256()
-  with p.open('rb') as f:
-   for chunk in iter(lambda:f.read(4*1024*1024),b''):h.update(chunk)
-  out[str(p.relative_to(root))]=h.hexdigest()
- return out
-before=snapshot();start=time.time();subprocess.run([sys.executable,str(root/'build_world.py')],check=True);after=snapshot()
-if before!=after:raise RuntimeError('Generation inputs changed during rebuild; output cannot be released')
-world=json.load(open(root/'king-street/public/world.json'));glb=root.parent/'outputs/king-street-pilot.glb';ids=sorted(b['id'] for b in world['buildings']);e=json.load(open(root.parent/'outputs/king-street-evidence.json'))
-assert len(ids)==len(set(ids))==len(e['foundations'])
-assert all(x['maximumUnfilledGapM']<=.001 for x in e['foundations'])
-manifest={'pipelineVersion':world['pipelineVersion'],'fullRegionRebuild':True,'inputFingerprint':hashlib.sha256(json.dumps(before,sort_keys=True).encode()).hexdigest(),'sourceFiles':before,'outputSha256':hashlib.sha256(glb.read_bytes()).hexdigest(),'regeneratedBuildingIds':ids,'foundationChecks':len(e['foundations']),'elapsedSecondsIncludingExport':round(time.time()-start,2),'inputDrift':False,'independentRealismGate':'NOT PASSED'}
-(root.parent/'outputs/king-street-generation-manifest.json').write_text(json.dumps(manifest,indent=2));(root/'king-street/public/generation.json').write_text(json.dumps(manifest,separators=(',',':')))
-print('FULL_REGION_MANIFEST',len(ids),manifest['inputFingerprint'])
+
+def digest(p):
+ h=hashlib.sha256()
+ with Path(p).open('rb') as f:
+  for b in iter(lambda:f.read(4*1024*1024),b''):h.update(b)
+ return h.hexdigest()
+
+def rebuild(input_path,output):
+ p=Path(input_path).resolve();root=Path(__file__).resolve().parent;d=json.load(open(p));files=[p,p.parent/d['groundFile'],p.parent/d['surfacePointsFile'],root/'build_world.py',Path(__file__).resolve(),*sorted((root/'general_world').glob('*.py'))]
+ def snapshot():return {str(f.relative_to(root)) if f.is_relative_to(root) else f.name:digest(f) for f in files}
+ before=snapshot();report=execute(p,output);after=snapshot()
+ if before!=after:raise RuntimeError('Inputs changed while rebuilding; candidate is invalid')
+ manifest={'fullAreaRebuild':True,'manualProfileDependencies':0,'inputDrift':False,'inputFingerprint':hashlib.sha256(json.dumps(before,sort_keys=True).encode()).hexdigest(),'sourceFiles':before,'outputHash':report['outputHash'],'appearanceGate':report['appearanceGate'],'releaseAllowed':report['publicationApprovedByQualityGate']}
+ (Path(output)/'generation-manifest.json').write_text(json.dumps(manifest,indent=2));return manifest
+
+if __name__=='__main__':
+ p=argparse.ArgumentParser();p.add_argument('--input',required=True);p.add_argument('--output',required=True);a=p.parse_args();print(json.dumps(rebuild(a.input,a.output)))

@@ -1,0 +1,9 @@
+numpy==2.5.3
+scipy==1.18.1
+shapely==2.1.2
+trimesh==5.1.0
+manifold3d==3.5.3
+rasterio==1.5.1
+pyproj==3.8.0
+pillow==12.3.0
+mapbox-earcut==2.0.0
