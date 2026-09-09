@@ -43,6 +43,148 @@
       "captureDate": null,
       "type": "operator dimensions",
       "observed": "Two122-foot towers with pyramid roofs and45-foot flagpoles."
+    },
+    {
+      "id": "128-king-google-2025",
+      "url": "https://www.google.com/maps/@37.7793599,-122.3904598,6a,75y,315.04h,90t/data=!3m7!1e1!3m5!1sYUo9WVYcHfh8a7_sknvWRw!2e0!6shttps:%2F%2Fstreetviewpixels-pa.googleapis.com%2Fv1%2Fthumbnail%3Fcb_client%3Dmaps_sv.tactile%26w%3D900%26h%3D600%26pitch%3D0%26panoid%3DYUo9WVYcHfh8a7_sknvWRw%26yaw%3D315.03754!7i16384!8i8192",
+      "captureDate": "2025-01",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Street View screenshot, ground view then zoomed out and tilted up; upper-left edge partly cropped"
+    },
+    {
+      "id": "128-king-noehill-2004",
+      "url": "https://noehill.com/sf/landmarks/sf229.asp",
+      "imageUrl": "https://noehill.com/sf/landmarks/soma/garcia_and_maggini_warehouse.jpg",
+      "captureDate": "2004-03-27",
+      "captureDateBasis": "Photo caption",
+      "limitation": "Archival oblique photograph; tenant details outdated"
+    },
+    {
+      "id": "200-townsend-google-2025",
+      "url": "https://www.google.com/maps/@37.7786884,-122.3930088,3a,95y,315h,108t/data=!3m1!1e1",
+      "panoId": "PHPlqCRQ3qu2IwEMPkM1dQ",
+      "captureDate": "2025-05",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Full front photographed from opposite sidewalk. Initial Maps photo shortcut faced the other side of street; corrected heading and visually verified address 200."
+    },
+    {
+      "id": "224-townsend-google-2025",
+      "url": "https://www.google.com/maps/@37.7782849,-122.3934633,8a,75y,329.94h,90t/data=!3m7!1e1!3m5!1sB0MYq1LOg-to0s4kCfJA6w!2e0!6shttps:%2F%2Fstreetviewpixels-pa.googleapis.com%2Fv1%2Fthumbnail%3Fcb_client%3Dmaps_sv.tactile%26w%3D900%26h%3D600%26pitch%3D0%26panoid%3DB0MYq1LOg-to0s4kCfJA6w%26yaw%3D329.9408!7i16384!8i8192",
+      "captureDate": "2025-05",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Whole five-bay front visible; parked pickup obscures lower part of one right-hand bay"
+    },
+    {
+      "id": "224-townsend-pq-2020",
+      "url": "https://poetsandquants.com/2020/02/27/first-peek-inseads-new-san-francisco-campus/2/",
+      "imageUrl": "https://poetsandquants.com/wp-content/uploads/sites/5/2020/02/INSEADbuilding.jpg",
+      "captureDate": null,
+      "publishedDate": "2020-02-27",
+      "limitation": "Publication date, not shutter date. Actual completed exterior photograph."
+    },
+    {
+      "id": "139-townsend-sks",
+      "url": "https://sksre.com/project/139-townsend/",
+      "imageUrl": "https://sksre.com/wp-content/uploads/2017/11/02_139Townsend_SKS-1600x1067.jpg",
+      "captureDate": null,
+      "limitation": "Image URL has 2017/11 upload path; capture date is not established. Completed building, full frontal photo."
+    },
+    {
+      "id": "139-townsend-transwestern",
+      "url": "https://transwestern.com/property/139-townsend-st",
+      "imageUrl": "https://s3.amazonaws.com/transwestern-property/Images/63133540-343e-ea11-80f5-caa232701e1a_t.jpg",
+      "captureDate": null,
+      "limitation": "Undated listing photograph. Shows front and west alley wall obliquely."
+    },
+    {
+      "id": "135-townsend-google-2025",
+      "url": "https://www.google.com/maps/@37.7800453,-122.3912162,9a,85.2y,135.22h,116.61t/data=!3m7!1e1!3m5!1sfBYARMHKHcVPLJZjHiHNtg!2e0!6shttps:%2F%2Fstreetviewpixels-pa.googleapis.com%2Fv1%2Fthumbnail%3Fcb_client%3Dmaps_sv.tactile%26w%3D900%26h%3D600%26pitch%3D-26.613347295165767%26panoid%3DfBYARMHKHcVPLJZjHiHNtg%26yaw%3D135.21666!7i16384!8i8192",
+      "captureDate": "2025-05",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Street camera UI says 130 Townsend; camera faces 133/135 across street. Address 133 is visible vertically on left door. Rightmost upper pair partly cropped."
+    },
+    {
+      "id": "101-townsend-google-2025",
+      "url": "https://www.google.com/maps/@37.7804515,-122.3907693,3a,95y,137.21h,108t/data=!3m1!1e1",
+      "panoId": "yRzdEUo66i-HJ98vT4_mfg",
+      "captureDate": "2025-05",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Ground detail plus upper facade. Left end not fully covered; at least four broad window groups per upper row visible."
+    },
+    {
+      "id": "101-townsend-dahlin",
+      "url": "https://www.dahlingroup.com/projects/101-Townsend",
+      "captureDate": null,
+      "imageUrl": "https://d3e83vdvp96zm2.cloudfront.net/images/project/525/08_img_101townsend.jpg",
+      "limitation": "Undated alley photograph only. Architecture text identifies painted stucco/concrete and 9 by 15 inch pane replication; do not treat as exact scene-wide window size."
+    },
+    {
+      "id": "china-basin-mccarthy-1",
+      "url": "https://www.mccarthycook.com/portfolio-item/china-basin/",
+      "imageUrl": "https://www.mccarthycook.com/wp-content/uploads/1-01-2.jpg",
+      "captureDate": null,
+      "limitation": "Undated owner/developer exterior photograph at dusk. Berry building left/end and courtyard steps; not a current capture guarantee."
+    },
+    {
+      "id": "china-basin-mccarthy-2",
+      "url": "https://www.mccarthycook.com/portfolio-item/china-basin/",
+      "imageUrl": "https://www.mccarthycook.com/wp-content/uploads/1-02-2.jpg",
+      "captureDate": null,
+      "limitation": "Undated owner/developer daytime exterior. Shows Berry corner/end and adjacent Wharfside end. Long frontage recedes; cannot count all bays."
+    },
+    {
+      "id": "china-wharfside-mhp",
+      "url": "https://www.mhpse.com/portfolio-items/china-basin-wharfside-building/",
+      "imageUrl": "https://www.mhpse.com/wp-content/uploads/2023/01/Website-1-4.jpg",
+      "captureDate": null,
+      "publishedDate": "2023-05-30",
+      "limitation": "Page/update and upload dates are 2023; photograph itself is undated. Waterfront side is mostly outside immediate road-visible area."
+    },
+    {
+      "id": "25-lusk-psd",
+      "url": "https://psdnyc.com/work/25-lusk/",
+      "imageUrl": "https://psdnyc.com/wp-content/uploads/2018/09/25-Lusk-Signage-Design-Branding-PSD-NYC-01-1-1580x1598.jpg",
+      "captureDate": null,
+      "limitation": "2018/09 upload path, capture date unknown. Close photograph covers two upper windows and main entrance, not full six-bay building."
+    },
+    {
+      "id": "45-lusk-google-2023",
+      "url": "https://www.google.com/maps/@37.7782909,-122.3942944,3a,95y,46h,99t/data=!3m1!1e1",
+      "panoId": "FGiJW1tc9S1nbhtkoumi-Q",
+      "captureDate": "2023-01",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Camera UI label 47 Lusk. Corrected view faces 45 left and 47 right, with 25 Lusk sign fragment at far left."
+    },
+    {
+      "id": "third-king-google-2025",
+      "url": "https://www.google.com/maps/@37.7782801,-122.3920846,3a,95y,10h,98t/data=!3m1!1e1",
+      "panoId": "i13sPEyEorELNUJQjjuQXQ",
+      "captureDate": "2025-03",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Corner and adjacent single-storey shops, and separate taller background walls. Closer view was at 42.38 degrees heading."
+    },
+    {
+      "id": "761-third-chronicle-2026",
+      "url": "https://www.sfchronicle.com/realestate/article/sf-tom-brady-sports-card-21282250.php",
+      "publishedDate": "2026-01-07",
+      "captureDate": null,
+      "evidenceKind": "Text-only continuity and tenant-change evidence; not used to read sign pixels",
+      "finding": "Reports CardVault leasing the existing one-storey 2400-sq-ft commercial building at 761 Third, formerly Baseballism."
+    },
+    {
+      "id": "761-third-kron-2026",
+      "url": "https://sports.yahoo.com/articles/nfl-great-tom-brady-channels-190359663.html",
+      "publishedDate": "2026-02",
+      "captureDate": null,
+      "evidenceKind": "Text-only opening report",
+      "finding": "KRON report syndicated by Yahoo describes CardVault store opening at Third and King ahead of Super Bowl LX."
+    },
+    {
+      "id": "180-townsend-google-2025",
+      "url": "https://www.google.com/maps/@37.779073,-122.39217,3a,95y,290h,105t/data=!3m1!1e1",
+      "captureDate": "2025-05",
+      "captureDateBasis": "Visible Street View label; camera 177 Townsend",
+      "inspection": "Five arched bays on each of three storeys. Dark ground, brick upper two, pale belts/dentils, observed 180 and andreessen horowitz."
     }
   ],
   "profiles": [
@@ -2592,6 +2734,2463 @@
             }
           ]
         }
+      ]
+    },
+    {
+      "id": "warehouse-painted-belt",
+      "observationBatch": "v7",
+      "match": {
+        "featureId": "sf_201006_0001817"
+      },
+      "displayName": "128 King \u00b7 Garcia & Maggini",
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "replaceDepthM": 3.0,
+      "levels": {
+        "roof": {
+          "priorM": 18.9,
+          "searchRadiusM": 1.2,
+          "depthRangeM": [
+            -4,
+            0.3
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "retail-piers",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            0,
+            6.2
+          ],
+          "material": "brick_modular",
+          "depthM": 0,
+          "grids": [
+            {
+              "columns": 7,
+              "rows": 1,
+              "rect": [
+                0.17,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.76,
+                "heightRatio": 0.86,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.25,
+                  0.75
+                ],
+                "recessM": 0.35
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "brick",
+            "finish": "default",
+            "sourceIds": [
+              "128-king-google-2025",
+              "128-king-noehill-2004"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        },
+        {
+          "id": "painted-belt",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            6.2,
+            7.5
+          ],
+          "material": "brick_modular",
+          "depthM": 0,
+          "materialEvidence": {
+            "family": "brick",
+            "finish": "default",
+            "sourceIds": [
+              "128-king-google-2025",
+              "128-king-noehill-2004"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        },
+        {
+          "id": "upper-brick",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            7.5,
+            "roof"
+          ],
+          "material": "brick_modular",
+          "depthM": 0,
+          "components": [
+            {
+              "op": "cornice",
+              "at": 1,
+              "material": "brick_modular",
+              "section": [
+                [
+                  0,
+                  0.18,
+                  0.28
+                ],
+                [
+                  0.15,
+                  0.12,
+                  0.4
+                ]
+              ]
+            }
+          ],
+          "grids": [
+            {
+              "columns": 7,
+              "rows": 2,
+              "rect": [
+                0.17,
+                0,
+                1,
+                0.94
+              ],
+              "style": {
+                "widthRatio": 0.72,
+                "heightRatio": 0.72,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.25,
+                  0.75
+                ]
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "brick",
+            "finish": "default",
+            "sourceIds": [
+              "128-king-google-2025",
+              "128-king-noehill-2004"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        }
+      ],
+      "sourceIds": [
+        "128-king-google-2025",
+        "128-king-noehill-2004"
+      ],
+      "unresolved": [
+        "Manually transcribed from photographs; metric bounds and depths are estimates.",
+        "Capture age is tracked separately from source publication and OSM edit date.",
+        "Unimaged regions and independent validation remain unresolved.",
+        "Only seven visible upper bays rendered in bounded right region; cropped left end has no claimed opening count."
+      ]
+    },
+    {
+      "id": "articulated-loft-corner",
+      "observationBatch": "v7",
+      "match": {
+        "featureId": "sf_201006_0002210"
+      },
+      "displayName": "200 Townsend",
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "replaceDepthM": 3.0,
+      "levels": {
+        "roof": {
+          "priorM": 22.4,
+          "searchRadiusM": 1.2,
+          "depthRangeM": [
+            -4,
+            0.3
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "ground-gray",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            0,
+            4.8
+          ],
+          "material": "panel_silver",
+          "depthM": 0,
+          "openings": [
+            {
+              "rect": [
+                0.04,
+                0.05,
+                0.25,
+                0.79
+              ],
+              "style": {
+                "frameMaterial": "charcoal",
+                "glassMaterial": "panel_dark"
+              }
+            },
+            {
+              "rect": [
+                0.4,
+                0.03,
+                0.51,
+                0.83
+              ],
+              "style": {
+                "frameMaterial": "charcoal"
+              }
+            },
+            {
+              "rect": [
+                0.64,
+                0.05,
+                0.96,
+                0.78
+              ],
+              "style": {
+                "frameMaterial": "charcoal"
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "metal-panel",
+            "finish": "default",
+            "sourceIds": [
+              "200-townsend-google-2025"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        },
+        {
+          "id": "salmon-wall",
+          "span": [
+            0,
+            0.78
+          ],
+          "z": [
+            4.8,
+            "roof"
+          ],
+          "material": "render_salmon",
+          "depthM": 0,
+          "components": [
+            {
+              "op": "cornice",
+              "at": 1,
+              "material": "panel_dark",
+              "section": [
+                [
+                  0,
+                  0.18,
+                  0.28
+                ],
+                [
+                  0.15,
+                  0.12,
+                  0.4
+                ]
+              ]
+            }
+          ],
+          "grids": [
+            {
+              "columns": 1,
+              "rows": 3,
+              "rect": [
+                0.4,
+                0.03,
+                0.62,
+                0.97
+              ],
+              "style": {
+                "widthRatio": 0.82,
+                "heightRatio": 0.75,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.25,
+                  0.75
+                ]
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "salmon",
+            "sourceIds": [
+              "200-townsend-google-2025"
+            ],
+            "status": "observed family; synthesized appearance"
+          },
+          "children": [
+            {
+              "id": "left-projecting-bays",
+              "material": "panel_dark",
+              "depthM": 0.42,
+              "grids": [
+                {
+                  "columns": 1,
+                  "rows": 3,
+                  "rect": [
+                    0,
+                    0,
+                    1,
+                    1
+                  ],
+                  "style": {
+                    "widthRatio": 0.9,
+                    "heightRatio": 0.81,
+                    "frameMaterial": "charcoal",
+                    "mullions": [
+                      0.33,
+                      0.67
+                    ],
+                    "transoms": [
+                      0.25,
+                      0.75
+                    ]
+                  }
+                }
+              ],
+              "materialEvidence": {
+                "family": "metal-panel",
+                "finish": "dark",
+                "sourceIds": [
+                  "200-townsend-google-2025"
+                ],
+                "status": "observed family; synthesized appearance"
+              },
+              "rect": [
+                0.04487179487179487,
+                0.017045454545454537,
+                0.3141025641025641,
+                0.9431818181818181
+              ],
+              "offsetM": 0.42
+            },
+            {
+              "id": "right-projecting-bays",
+              "material": "panel_dark",
+              "depthM": 0.42,
+              "grids": [
+                {
+                  "columns": 1,
+                  "rows": 3,
+                  "rect": [
+                    0,
+                    0,
+                    1,
+                    1
+                  ],
+                  "style": {
+                    "widthRatio": 0.9,
+                    "heightRatio": 0.81,
+                    "frameMaterial": "charcoal",
+                    "mullions": [
+                      0.33,
+                      0.67
+                    ],
+                    "transoms": [
+                      0.25,
+                      0.75
+                    ]
+                  }
+                }
+              ],
+              "materialEvidence": {
+                "family": "metal-panel",
+                "finish": "dark",
+                "sourceIds": [
+                  "200-townsend-google-2025"
+                ],
+                "status": "observed family; synthesized appearance"
+              },
+              "rect": [
+                0.717948717948718,
+                0.017045454545454537,
+                0.967948717948718,
+                0.9431818181818181
+              ],
+              "offsetM": 0.42
+            }
+          ]
+        },
+        {
+          "id": "silver-corner",
+          "span": [
+            0.78,
+            1
+          ],
+          "z": [
+            4.8,
+            "roof"
+          ],
+          "material": "panel_silver",
+          "depthM": 0.05,
+          "components": [
+            {
+              "op": "canopy",
+              "projectionM": 1.7,
+              "thicknessM": 0.16,
+              "material": "charcoal"
+            }
+          ],
+          "grids": [
+            {
+              "columns": 1,
+              "rows": 3,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.84,
+                "heightRatio": 0.8,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.25,
+                  0.75
+                ]
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "metal-panel",
+            "finish": "default",
+            "sourceIds": [
+              "200-townsend-google-2025"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        }
+      ],
+      "sourceIds": [
+        "200-townsend-google-2025"
+      ],
+      "unresolved": [
+        "Manually transcribed from photographs; metric bounds and depths are estimates.",
+        "Capture age is tracked separately from source publication and OSM edit date.",
+        "Unimaged regions and independent validation remain unresolved."
+      ]
+    },
+    {
+      "id": "five-bay-decorated-front",
+      "observationBatch": "v7",
+      "match": {
+        "featureId": "sf_201006_0002834"
+      },
+      "displayName": "224 Townsend \u00b7 INSEAD",
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "replaceDepthM": 3.0,
+      "levels": {
+        "roof": {
+          "priorM": 9.2,
+          "searchRadiusM": 1.2,
+          "depthRangeM": [
+            -4,
+            0.3
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "five-bay-wall",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            0,
+            8.35
+          ],
+          "material": "render_white",
+          "depthM": 0,
+          "surfaceEvidence": [
+            {
+              "label": "solid",
+              "rect": [
+                0,
+                0.84,
+                1,
+                1
+              ]
+            }
+          ],
+          "components": [
+            {
+              "op": "pilasters",
+              "count": 6,
+              "widthM": 0.3,
+              "projectionM": 0.3,
+              "material": "verdigris"
+            },
+            {
+              "op": "cornice",
+              "at": 1,
+              "material": "verdigris",
+              "section": [
+                [
+                  0,
+                  0.18,
+                  0.28
+                ],
+                [
+                  0.15,
+                  0.12,
+                  0.4
+                ]
+              ]
+            }
+          ],
+          "grids": [
+            {
+              "columns": 5,
+              "rows": 1,
+              "rect": [
+                0,
+                0.49,
+                1,
+                0.83
+              ],
+              "style": {
+                "widthRatio": 0.85,
+                "heightRatio": 0.9,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.25,
+                  0.75
+                ]
+              }
+            },
+            {
+              "columns": 5,
+              "rows": 1,
+              "rect": [
+                0,
+                0,
+                1,
+                0.47
+              ],
+              "style": {
+                "widthRatio": 0.85,
+                "heightRatio": 0.9,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.25,
+                  0.75
+                ]
+              },
+              "omit": [
+                [
+                  2,
+                  0
+                ]
+              ]
+            }
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "white",
+            "sourceIds": [
+              "224-townsend-google-2025",
+              "224-townsend-pq-2020"
+            ],
+            "status": "observed family; synthesized appearance"
+          },
+          "openings": [
+            {
+              "rect": [
+                0.426,
+                0.01,
+                0.574,
+                0.445
+              ],
+              "style": {
+                "frameMaterial": "charcoal",
+                "recessM": 0.5
+              }
+            }
+          ]
+        },
+        {
+          "id": "center-crown",
+          "span": [
+            0.37,
+            0.63
+          ],
+          "z": [
+            8.35,
+            10.1
+          ],
+          "material": "render_white",
+          "depthM": 0,
+          "shape": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              0
+            ],
+            [
+              1,
+              0.6
+            ],
+            [
+              0.5,
+              1
+            ],
+            [
+              0,
+              0.6
+            ]
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "white",
+            "sourceIds": [
+              "224-townsend-google-2025",
+              "224-townsend-pq-2020"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        }
+      ],
+      "sourceIds": [
+        "224-townsend-google-2025",
+        "224-townsend-pq-2020"
+      ],
+      "unresolved": [
+        "Manually transcribed from photographs; metric bounds and depths are estimates.",
+        "Capture age is tracked separately from source publication and OSM edit date.",
+        "Unimaged regions and independent validation remain unresolved."
+      ]
+    },
+    {
+      "id": "brick-six-bay-industrial",
+      "observationBatch": "v7",
+      "match": {
+        "featureId": "sf_201006_0002604"
+      },
+      "displayName": "139 Townsend",
+      "normal": [
+        -0.707,
+        0.707
+      ],
+      "replaceDepthM": 3.0,
+      "levels": {
+        "roof": {
+          "priorM": 27.2,
+          "searchRadiusM": 1.2,
+          "depthRangeM": [
+            -4,
+            0.3
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "ground-front",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            0,
+            5.4
+          ],
+          "material": "brick_dark",
+          "depthM": 0,
+          "components": [
+            {
+              "op": "cornice",
+              "at": 1,
+              "material": "verdigris",
+              "section": [
+                [
+                  0,
+                  0.18,
+                  0.28
+                ],
+                [
+                  0.15,
+                  0.12,
+                  0.4
+                ]
+              ]
+            },
+            {
+              "op": "canopy",
+              "span": [
+                0.21,
+                0.37
+              ],
+              "at": 0.8,
+              "projectionM": 1.05,
+              "material": "verdigris"
+            },
+            {
+              "op": "canopy",
+              "span": [
+                0.39,
+                0.64
+              ],
+              "at": 0.8,
+              "projectionM": 1.05,
+              "material": "verdigris"
+            },
+            {
+              "op": "canopy",
+              "span": [
+                0.66,
+                0.82
+              ],
+              "at": 0.8,
+              "projectionM": 1.05,
+              "material": "verdigris"
+            }
+          ],
+          "grids": [
+            {
+              "columns": 6,
+              "rows": 1,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.8,
+                "heightRatio": 0.82,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.25,
+                  0.75
+                ]
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "brick",
+            "finish": "dark",
+            "sourceIds": [
+              "139-townsend-sks",
+              "139-townsend-transwestern"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        },
+        {
+          "id": "upper-front",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            5.4,
+            "roof"
+          ],
+          "material": "brick_dark",
+          "depthM": 0,
+          "components": [
+            {
+              "op": "cornice",
+              "at": 1,
+              "material": "brick_dark",
+              "section": [
+                [
+                  0,
+                  0.18,
+                  0.28
+                ],
+                [
+                  0.15,
+                  0.12,
+                  0.4
+                ]
+              ]
+            }
+          ],
+          "grids": [
+            {
+              "columns": 6,
+              "rows": 4,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.63,
+                "heightRatio": 0.66,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.5
+                ],
+                "transoms": [
+                  0.28
+                ]
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "brick",
+            "finish": "dark",
+            "sourceIds": [
+              "139-townsend-sks",
+              "139-townsend-transwestern"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        }
+      ],
+      "sourceIds": [
+        "139-townsend-sks",
+        "139-townsend-transwestern"
+      ],
+      "unresolved": [
+        "Manually transcribed from photographs; metric bounds and depths are estimates.",
+        "Capture age is tracked separately from source publication and OSM edit date.",
+        "Unimaged regions and independent validation remain unresolved."
+      ]
+    },
+    {
+      "id": "paired-industrial-fire-escapes",
+      "observationBatch": "v7",
+      "match": {
+        "featureId": "sf_201006_0002920"
+      },
+      "displayName": "133 / 135 Townsend",
+      "normal": [
+        -0.707,
+        0.707
+      ],
+      "replaceDepthM": 3.0,
+      "levels": {
+        "roof": {
+          "priorM": 26.5,
+          "searchRadiusM": 1.2,
+          "depthRangeM": [
+            -4,
+            0.3
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "five-ground-bays",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            0,
+            5.3
+          ],
+          "material": "render_gray",
+          "depthM": 0,
+          "components": [
+            {
+              "op": "cornice",
+              "at": 1,
+              "material": "stone",
+              "section": [
+                [
+                  0,
+                  0.18,
+                  0.28
+                ],
+                [
+                  0.15,
+                  0.12,
+                  0.4
+                ]
+              ]
+            }
+          ],
+          "grids": [
+            {
+              "columns": 5,
+              "rows": 1,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.78,
+                "heightRatio": 0.76,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.25,
+                  0.75
+                ]
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "gray",
+            "sourceIds": [
+              "135-townsend-google-2025"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        },
+        {
+          "id": "paired-upper",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            5.3,
+            "roof"
+          ],
+          "material": "render_white",
+          "depthM": 0,
+          "jointsM": [
+            1.2,
+            0.6
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "at": 1,
+              "material": "stone",
+              "section": [
+                [
+                  0,
+                  0.18,
+                  0.28
+                ],
+                [
+                  0.15,
+                  0.12,
+                  0.4
+                ]
+              ]
+            },
+            {
+              "op": "fireEscape",
+              "span": [
+                0.025,
+                0.175
+              ],
+              "levelsM": [
+                6.2,
+                11.3,
+                16.4,
+                21.4
+              ],
+              "material": "charcoal"
+            },
+            {
+              "op": "fireEscape",
+              "span": [
+                0.825,
+                0.975
+              ],
+              "levelsM": [
+                6.2,
+                11.3,
+                16.4,
+                21.4
+              ],
+              "material": "charcoal"
+            }
+          ],
+          "grids": [
+            {
+              "columns": 10,
+              "rows": 4,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.6,
+                "heightRatio": 0.69,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.25,
+                  0.5,
+                  0.75
+                ],
+                "transoms": [
+                  0.2,
+                  0.4,
+                  0.6,
+                  0.8
+                ],
+                "x": "unused"
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "white",
+            "sourceIds": [
+              "135-townsend-google-2025"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        }
+      ],
+      "sourceIds": [
+        "135-townsend-google-2025"
+      ],
+      "unresolved": [
+        "Manually transcribed from photographs; metric bounds and depths are estimates.",
+        "Capture age is tracked separately from source publication and OSM edit date.",
+        "Unimaged regions and independent validation remain unresolved."
+      ]
+    },
+    {
+      "id": "industrial-small-pane-front",
+      "observationBatch": "v7",
+      "match": {
+        "featureId": "sf_201006_0002572"
+      },
+      "displayName": "101 Townsend",
+      "normal": [
+        -0.707,
+        0.707
+      ],
+      "replaceDepthM": 3.0,
+      "levels": {
+        "roof": {
+          "priorM": 16.3,
+          "searchRadiusM": 1.2,
+          "depthRangeM": [
+            -4,
+            0.3
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "dark-shop-bases",
+          "span": [
+            0,
+            0.7
+          ],
+          "z": [
+            0,
+            4.9
+          ],
+          "material": "panel_dark",
+          "depthM": 0,
+          "openings": [
+            {
+              "rect": [
+                0.08,
+                0.08,
+                0.4,
+                0.86
+              ],
+              "style": {
+                "frameMaterial": "charcoal"
+              }
+            },
+            {
+              "rect": [
+                0.58,
+                0.05,
+                0.68,
+                0.83
+              ],
+              "style": {
+                "frameMaterial": "charcoal"
+              }
+            },
+            {
+              "rect": [
+                0.73,
+                0.08,
+                0.92,
+                0.83
+              ],
+              "style": {
+                "frameMaterial": "charcoal"
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "metal-panel",
+            "finish": "dark",
+            "sourceIds": [
+              "101-townsend-google-2025",
+              "101-townsend-dahlin"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        },
+        {
+          "id": "entry-gray",
+          "span": [
+            0.7,
+            1
+          ],
+          "z": [
+            0,
+            4.9
+          ],
+          "material": "render_gray",
+          "depthM": 0,
+          "openings": [
+            {
+              "rect": [
+                0.14,
+                0.02,
+                0.85,
+                0.68
+              ],
+              "style": {
+                "frameMaterial": "charcoal"
+              }
+            }
+          ],
+          "components": [
+            {
+              "op": "canopy",
+              "at": 0.7,
+              "span": [
+                0.05,
+                0.95
+              ],
+              "projectionM": 1.1,
+              "braces": true,
+              "material": "charcoal"
+            }
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "gray",
+            "sourceIds": [
+              "101-townsend-google-2025",
+              "101-townsend-dahlin"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        },
+        {
+          "id": "two-industrial-rows",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            4.9,
+            "roof"
+          ],
+          "material": "render_gray",
+          "depthM": 0,
+          "components": [
+            {
+              "op": "cornice",
+              "at": 1,
+              "material": "render_gray",
+              "section": [
+                [
+                  0,
+                  0.18,
+                  0.28
+                ],
+                [
+                  0.15,
+                  0.12,
+                  0.4
+                ]
+              ]
+            }
+          ],
+          "grids": [
+            {
+              "columns": 4,
+              "rows": 2,
+              "rect": [
+                0.3,
+                0,
+                1,
+                0.98
+              ],
+              "style": {
+                "widthRatio": 0.8,
+                "heightRatio": 0.75,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.14,
+                  0.28,
+                  0.42,
+                  0.57,
+                  0.71,
+                  0.85
+                ],
+                "transoms": [
+                  0.2,
+                  0.4,
+                  0.6,
+                  0.8
+                ],
+                "awning": true
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "gray",
+            "sourceIds": [
+              "101-townsend-google-2025",
+              "101-townsend-dahlin"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        }
+      ],
+      "sourceIds": [
+        "101-townsend-google-2025",
+        "101-townsend-dahlin"
+      ],
+      "unresolved": [
+        "Manually transcribed from photographs; metric bounds and depths are estimates.",
+        "Capture age is tracked separately from source publication and OSM edit date.",
+        "Unimaged regions and independent validation remain unresolved."
+      ]
+    },
+    {
+      "id": "stacked-glass-addition",
+      "observationBatch": "v7",
+      "match": {
+        "featureId": "sf_201006_0000115"
+      },
+      "displayName": "China Basin \u00b7 Berry building",
+      "normal": [
+        -0.707,
+        0.707
+      ],
+      "replaceDepthM": 3.0,
+      "levels": {
+        "roof": {
+          "priorM": 26.2,
+          "searchRadiusM": 1.2,
+          "depthRangeM": [
+            -4,
+            0.3
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "lower-three-levels",
+          "span": [
+            0,
+            0.77
+          ],
+          "z": [
+            0,
+            15.8
+          ],
+          "material": "render_white",
+          "depthM": 0,
+          "components": [
+            {
+              "op": "cornice",
+              "at": 1,
+              "material": "stone",
+              "section": [
+                [
+                  0,
+                  0.18,
+                  0.28
+                ],
+                [
+                  0.15,
+                  0.12,
+                  0.4
+                ]
+              ]
+            }
+          ],
+          "grids": [
+            {
+              "columns": 6,
+              "rows": 3,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.8,
+                "heightRatio": 0.68,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.25,
+                  0.75
+                ]
+              },
+              "layoutStatus": "pitch-estimated on incomplete long view"
+            }
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "white",
+            "sourceIds": [
+              "china-basin-mccarthy-1",
+              "china-basin-mccarthy-2"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        },
+        {
+          "id": "arched-end",
+          "span": [
+            0.77,
+            1
+          ],
+          "z": [
+            0,
+            15.8
+          ],
+          "material": "render_white",
+          "depthM": 0,
+          "grids": [
+            {
+              "columns": 1,
+              "rows": 1,
+              "rect": [
+                0.05,
+                0.03,
+                0.95,
+                0.98
+              ],
+              "style": {
+                "widthRatio": 0.84,
+                "heightRatio": 0.88,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.33,
+                  0.66
+                ],
+                "shapeKind": "arch",
+                "springRatio": 0.62
+              },
+              "layoutStatus": "pitch-estimated on incomplete long view"
+            }
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "white",
+            "sourceIds": [
+              "china-basin-mccarthy-1",
+              "china-basin-mccarthy-2"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        },
+        {
+          "id": "louver-belt",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            15.8,
+            17.2
+          ],
+          "material": "panel_dark",
+          "depthM": 0,
+          "components": [
+            {
+              "op": "fins",
+              "count": 8,
+              "projectionM": 0.16,
+              "material": "charcoal"
+            }
+          ],
+          "materialEvidence": {
+            "family": "metal-panel",
+            "finish": "dark",
+            "sourceIds": [
+              "china-basin-mccarthy-1",
+              "china-basin-mccarthy-2"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        },
+        {
+          "id": "upper-addition",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            17.2,
+            "roof"
+          ],
+          "material": "panel_silver",
+          "depthM": -0.55,
+          "components": [
+            {
+              "op": "cornice",
+              "at": 1,
+              "material": "stone",
+              "section": [
+                [
+                  0,
+                  0.18,
+                  0.28
+                ],
+                [
+                  0.15,
+                  0.12,
+                  0.4
+                ]
+              ]
+            },
+            {
+              "op": "fins",
+              "count": 2,
+              "projectionM": 0.35,
+              "material": "charcoal"
+            }
+          ],
+          "grids": [
+            {
+              "columns": 9,
+              "rows": 2,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.94,
+                "heightRatio": 0.85,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.25,
+                  0.75
+                ],
+                "glassMaterial": "glass_blue"
+              },
+              "layoutStatus": "pitch-estimated on incomplete long view"
+            }
+          ],
+          "materialEvidence": {
+            "family": "metal-panel",
+            "finish": "default",
+            "sourceIds": [
+              "china-basin-mccarthy-1",
+              "china-basin-mccarthy-2"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        }
+      ],
+      "sourceIds": [
+        "china-basin-mccarthy-1",
+        "china-basin-mccarthy-2"
+      ],
+      "unresolved": [
+        "Manually transcribed from photographs; metric bounds and depths are estimates.",
+        "Capture age is tracked separately from source publication and OSM edit date.",
+        "Unimaged regions and independent validation remain unresolved.",
+        "Long facade bay counts estimated from visible module pitch; not fully counted. Courtyard CHINA BASIN words excluded until retaining-wall attachment is established."
+      ]
+    },
+    {
+      "id": "wharfside-grid-end",
+      "observationBatch": "v7",
+      "match": {
+        "featureId": "osm_46264108"
+      },
+      "displayName": "China Basin \u00b7 Wharfside",
+      "normal": [
+        -0.707,
+        0.707
+      ],
+      "replaceDepthM": 3.0,
+      "levels": {
+        "roof": {
+          "priorM": 26.4,
+          "searchRadiusM": 1.2,
+          "depthRangeM": [
+            -4,
+            0.3
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "promenade-base",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            0,
+            4.2
+          ],
+          "material": "render_gray",
+          "depthM": 0,
+          "grids": [
+            {
+              "columns": 4,
+              "rows": 1,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.75,
+                "heightRatio": 0.82,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.25,
+                  0.75
+                ]
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "gray",
+            "sourceIds": [
+              "china-basin-mccarthy-2",
+              "china-wharfside-mhp"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        },
+        {
+          "id": "white-upper-frame",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            4.2,
+            "roof"
+          ],
+          "material": "render_white",
+          "depthM": 0,
+          "components": [
+            {
+              "op": "cornice",
+              "at": 1,
+              "material": "stone",
+              "section": [
+                [
+                  0,
+                  0.18,
+                  0.28
+                ],
+                [
+                  0.15,
+                  0.12,
+                  0.4
+                ]
+              ]
+            }
+          ],
+          "grids": [
+            {
+              "columns": 4,
+              "rows": 5,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.84,
+                "heightRatio": 0.73,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.76
+                ]
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "white",
+            "sourceIds": [
+              "china-basin-mccarthy-2",
+              "china-wharfside-mhp"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        }
+      ],
+      "sourceIds": [
+        "china-basin-mccarthy-2",
+        "china-wharfside-mhp"
+      ],
+      "unresolved": [
+        "Manually transcribed from photographs; metric bounds and depths are estimates.",
+        "Capture age is tracked separately from source publication and OSM edit date.",
+        "Unimaged regions and independent validation remain unresolved.",
+        "Near-end counts are estimated; long waterfront wall retains priors."
+      ]
+    },
+    {
+      "id": "brick-entry-sign-panel",
+      "observationBatch": "v7",
+      "match": {
+        "featureId": "sf_201006_0006801"
+      },
+      "displayName": "25 Lusk",
+      "normal": [
+        -0.707,
+        -0.707
+      ],
+      "replaceDepthM": 3.0,
+      "levels": {
+        "roof": {
+          "priorM": 11.8,
+          "searchRadiusM": 1.2,
+          "depthRangeM": [
+            -4,
+            0.3
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "ground-brick",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            0,
+            5.0
+          ],
+          "material": "brick_modular",
+          "depthM": 0,
+          "openings": [
+            {
+              "rect": [
+                0.4,
+                0.03,
+                0.66,
+                0.86
+              ],
+              "style": {
+                "frameMaterial": "charcoal"
+              }
+            }
+          ],
+          "components": [
+            {
+              "op": "canopy",
+              "span": [
+                0.38,
+                0.84
+              ],
+              "at": 0.92,
+              "projectionM": 1.25,
+              "material": "white"
+            }
+          ],
+          "materialEvidence": {
+            "family": "brick",
+            "finish": "default",
+            "sourceIds": [
+              "25-lusk-psd",
+              "45-lusk-google-2023"
+            ],
+            "status": "observed family; synthesized appearance"
+          },
+          "children": [
+            {
+              "id": "opaque-entry-sign",
+              "material": "render_white",
+              "depthM": 0.05,
+              "materialEvidence": {
+                "family": "render",
+                "finish": "white",
+                "sourceIds": [
+                  "25-lusk-psd",
+                  "45-lusk-google-2023"
+                ],
+                "status": "observed family; synthesized appearance"
+              },
+              "rect": [
+                0.67,
+                0.04,
+                0.84,
+                0.89
+              ],
+              "offsetM": 0.05
+            }
+          ]
+        },
+        {
+          "id": "upper-two-observed",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            5,
+            "roof"
+          ],
+          "material": "brick_modular",
+          "depthM": 0,
+          "components": [
+            {
+              "op": "cornice",
+              "at": 1,
+              "material": "brick_modular",
+              "section": [
+                [
+                  0,
+                  0.18,
+                  0.28
+                ],
+                [
+                  0.15,
+                  0.12,
+                  0.4
+                ]
+              ]
+            },
+            {
+              "op": "dentils",
+              "at": 0.92,
+              "material": "brick_modular"
+            }
+          ],
+          "grids": [
+            {
+              "columns": 2,
+              "rows": 1,
+              "rect": [
+                0.4,
+                0.1,
+                0.85,
+                0.85
+              ],
+              "style": {
+                "widthRatio": 0.76,
+                "heightRatio": 0.74,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.166,
+                  0.33,
+                  0.5,
+                  0.66,
+                  0.83
+                ],
+                "transoms": [
+                  0.25,
+                  0.5,
+                  0.75
+                ]
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "brick",
+            "finish": "default",
+            "sourceIds": [
+              "25-lusk-psd",
+              "45-lusk-google-2023"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        }
+      ],
+      "sourceIds": [
+        "25-lusk-psd",
+        "45-lusk-google-2023"
+      ],
+      "unresolved": [
+        "Manually transcribed from photographs; metric bounds and depths are estimates.",
+        "Capture age is tracked separately from source publication and OSM edit date.",
+        "Unimaged regions and independent validation remain unresolved."
+      ]
+    },
+    {
+      "id": "low-timber-raised-entry",
+      "observationBatch": "v7",
+      "match": {
+        "featureId": "sf_201006_0005190"
+      },
+      "displayName": "45 / 47 Lusk",
+      "normal": [
+        -0.707,
+        -0.707
+      ],
+      "replaceDepthM": 3.0,
+      "levels": {
+        "roof": {
+          "priorM": 5.6,
+          "searchRadiusM": 0,
+          "depthRangeM": [
+            -4,
+            0.3
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "timber-front",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            0,
+            "roof"
+          ],
+          "material": "timber_dark",
+          "depthM": 0,
+          "openings": [
+            {
+              "rect": [
+                0.04,
+                0.21,
+                0.28,
+                0.79
+              ],
+              "style": {
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.25,
+                  0.5,
+                  0.75
+                ],
+                "transoms": [
+                  0.2,
+                  0.4,
+                  0.6,
+                  0.8
+                ]
+              }
+            },
+            {
+              "rect": [
+                0.35,
+                0.14,
+                0.49,
+                0.68
+              ],
+              "style": {
+                "frameMaterial": "charcoal"
+              }
+            },
+            {
+              "rect": [
+                0.55,
+                0.21,
+                0.76,
+                0.79
+              ],
+              "style": {
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.25,
+                  0.5,
+                  0.75
+                ],
+                "transoms": [
+                  0.2,
+                  0.4,
+                  0.6,
+                  0.8
+                ]
+              }
+            }
+          ],
+          "components": [
+            {
+              "op": "cornice",
+              "at": 1,
+              "material": "timber_dark",
+              "section": [
+                [
+                  0,
+                  0.18,
+                  0.28
+                ],
+                [
+                  0.15,
+                  0.12,
+                  0.4
+                ]
+              ]
+            },
+            {
+              "op": "entrySteps",
+              "span": [
+                0.35,
+                0.49
+              ],
+              "topM": 0.7,
+              "runM": 1.4,
+              "count": 4,
+              "handrail": true,
+              "material": "stone"
+            }
+          ],
+          "materialEvidence": {
+            "family": "timber",
+            "finish": "dark",
+            "sourceIds": [
+              "45-lusk-google-2023"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        }
+      ],
+      "sourceIds": [
+        "45-lusk-google-2023"
+      ],
+      "unresolved": [
+        "Manually transcribed from photographs; metric bounds and depths are estimates.",
+        "Capture age is tracked separately from source publication and OSM edit date.",
+        "Unimaged regions and independent validation remain unresolved.",
+        "Photographed 45 region spans estimated part of aggregated footprint. 47 tenant words excluded pending parcel correspondence."
+      ]
+    },
+    {
+      "id": "independent-low-shop-zones",
+      "observationBatch": "v7",
+      "match": {
+        "featureId": "sf_201006_0007874"
+      },
+      "displayName": "Third Street \u00b7 low shop row",
+      "normal": [
+        -0.707,
+        -0.707
+      ],
+      "replaceDepthM": 3.0,
+      "levels": {
+        "roof": {
+          "priorM": 7.2,
+          "searchRadiusM": 1.2,
+          "depthRangeM": [
+            -4,
+            0.3
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "corner-storefront",
+          "span": [
+            0,
+            0.34
+          ],
+          "z": [
+            0,
+            3.6
+          ],
+          "material": "charcoal",
+          "depthM": 0,
+          "grids": [
+            {
+              "columns": 3,
+              "rows": 1,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.9,
+                "heightRatio": 0.95,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.25,
+                  0.75
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "corner-high-fascia",
+          "span": [
+            0,
+            0.34
+          ],
+          "z": [
+            3.6,
+            6.4
+          ],
+          "material": "timber_tan",
+          "depthM": 0,
+          "materialEvidence": {
+            "family": "timber",
+            "finish": "tan",
+            "sourceIds": [
+              "third-king-google-2025",
+              "761-third-chronicle-2026",
+              "761-third-kron-2026"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        },
+        {
+          "id": "sports-bar-front",
+          "span": [
+            0.34,
+            0.67
+          ],
+          "z": [
+            0,
+            5.9
+          ],
+          "material": "render_white",
+          "depthM": 0,
+          "components": [
+            {
+              "op": "cornice",
+              "at": 1,
+              "material": "charcoal",
+              "section": [
+                [
+                  0,
+                  0.18,
+                  0.28
+                ],
+                [
+                  0.15,
+                  0.12,
+                  0.4
+                ]
+              ]
+            }
+          ],
+          "grids": [
+            {
+              "columns": 3,
+              "rows": 1,
+              "rect": [
+                0,
+                0.1,
+                1,
+                0.61
+              ],
+              "style": {
+                "widthRatio": 0.69,
+                "heightRatio": 0.85,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.25,
+                  0.75
+                ]
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "white",
+            "sourceIds": [
+              "third-king-google-2025",
+              "761-third-chronicle-2026",
+              "761-third-kron-2026"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        },
+        {
+          "id": "northern-low-shops",
+          "span": [
+            0.67,
+            1
+          ],
+          "z": [
+            0,
+            "roof"
+          ],
+          "material": "render_white",
+          "depthM": 0,
+          "openings": [
+            {
+              "rect": [
+                0.1,
+                0.05,
+                0.4,
+                0.59
+              ],
+              "style": {
+                "frameMaterial": "charcoal"
+              }
+            },
+            {
+              "rect": [
+                0.56,
+                0.05,
+                0.91,
+                0.59
+              ],
+              "style": {
+                "frameMaterial": "charcoal"
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "render",
+            "finish": "white",
+            "sourceIds": [
+              "third-king-google-2025",
+              "761-third-chronicle-2026",
+              "761-third-kron-2026"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        }
+      ],
+      "sourceIds": [
+        "third-king-google-2025",
+        "761-third-chronicle-2026",
+        "761-third-kron-2026"
+      ],
+      "unresolved": [
+        "Manually transcribed from photographs; metric bounds and depths are estimates.",
+        "Capture age is tracked separately from source publication and OSM edit date.",
+        "Unimaged regions and independent validation remain unresolved."
+      ]
+    },
+    {
+      "id": "arched-three-storey-brick",
+      "observationBatch": "v7",
+      "match": {
+        "featureId": "sf_201006_0003782"
+      },
+      "displayName": "180 Townsend",
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "replaceDepthM": 3.0,
+      "levels": {
+        "roof": {
+          "priorM": 16.1,
+          "searchRadiusM": 1.2,
+          "depthRangeM": [
+            -4,
+            0.3
+          ]
+        }
+      },
+      "nodes": [
+        {
+          "id": "arched-ground",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            0,
+            5.1
+          ],
+          "material": "panel_dark",
+          "depthM": 0,
+          "grids": [
+            {
+              "columns": 5,
+              "rows": 1,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.76,
+                "heightRatio": 0.91,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.64
+                ],
+                "shapeKind": "arch",
+                "springRatio": 0.65
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "metal-panel",
+            "finish": "dark",
+            "sourceIds": [
+              "180-townsend-google-2025"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        },
+        {
+          "id": "name-belt",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            5.1,
+            6.2
+          ],
+          "material": "stone",
+          "depthM": 0,
+          "materialEvidence": {
+            "family": "pale-trim",
+            "finish": "default",
+            "sourceIds": [
+              "180-townsend-google-2025"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        },
+        {
+          "id": "middle-arches",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            6.2,
+            11.1
+          ],
+          "material": "brick_modular",
+          "depthM": 0,
+          "components": [
+            {
+              "op": "cornice",
+              "at": 1,
+              "material": "stone",
+              "section": [
+                [
+                  0,
+                  0.18,
+                  0.28
+                ],
+                [
+                  0.15,
+                  0.12,
+                  0.4
+                ]
+              ]
+            },
+            {
+              "op": "dentils",
+              "at": 1,
+              "material": "stone"
+            }
+          ],
+          "grids": [
+            {
+              "columns": 5,
+              "rows": 1,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.6,
+                "heightRatio": 0.77,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.25,
+                  0.75
+                ],
+                "shapeKind": "arch",
+                "springRatio": 0.74
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "brick",
+            "finish": "default",
+            "sourceIds": [
+              "180-townsend-google-2025"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        },
+        {
+          "id": "top-arches",
+          "span": [
+            0,
+            1
+          ],
+          "z": [
+            11.1,
+            "roof"
+          ],
+          "material": "brick_modular",
+          "depthM": 0,
+          "components": [
+            {
+              "op": "cornice",
+              "at": 1,
+              "material": "stone",
+              "section": [
+                [
+                  0,
+                  0.18,
+                  0.28
+                ],
+                [
+                  0.15,
+                  0.12,
+                  0.4
+                ]
+              ]
+            }
+          ],
+          "grids": [
+            {
+              "columns": 5,
+              "rows": 1,
+              "rect": [
+                0,
+                0,
+                1,
+                1
+              ],
+              "style": {
+                "widthRatio": 0.5,
+                "heightRatio": 0.71,
+                "frameMaterial": "charcoal",
+                "mullions": [
+                  0.33,
+                  0.67
+                ],
+                "transoms": [
+                  0.25,
+                  0.75
+                ],
+                "shapeKind": "arch",
+                "springRatio": 0.67
+              }
+            }
+          ],
+          "materialEvidence": {
+            "family": "brick",
+            "finish": "default",
+            "sourceIds": [
+              "180-townsend-google-2025"
+            ],
+            "status": "observed family; synthesized appearance"
+          }
+        }
+      ],
+      "sourceIds": [
+        "180-townsend-google-2025"
+      ],
+      "unresolved": [
+        "Manually transcribed from photographs; metric bounds and depths are estimates.",
+        "Capture age is tracked separately from source publication and OSM edit date.",
+        "Unimaged regions and independent validation remain unresolved."
       ]
     }
   ]

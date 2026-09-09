@@ -6,6 +6,11 @@ from PIL import Image
 from trimesh.visual.material import PBRMaterial
 
 RECIPES={
+ 'render_salmon':{'scale':[2,2],'color':[182,123,107],'rough':.82,'noise':.8},
+ 'render_gray':{'scale':[2,2],'color':[163,166,161],'rough':.87,'noise':.8},
+ 'render_white':{'scale':[2,2],'color':[218,216,204],'rough':.87,'noise':.8},
+ 'timber_dark':{'scale':[2.4,1.2],'cell':[2.4,.15],'joint':.003,'color':[60,69,75],'mortar':[38,44,47],'relief':.001,'rough':.84,'variation':2},
+ 'timber_tan':{'scale':[2.4,1.2],'cell':[.10,1.2],'joint':.003,'color':[151,128,96],'mortar':[94,78,56],'relief':.001,'rough':.85,'variation':2},
  'brick_modular':{'scale':[1.8,.6],'cell':[.225,.075],'joint':.006,'color':[145, 70,49],'mortar':[139,128,108],'relief':.0018,'variation':5,'rough':.82},
  'brick_dark':{'scale':[1.8,.6],'cell':[.225,.075],'joint':.006,'color':[112, 65,48],'mortar':[120,112,98],'relief':.0018,'variation':4,'rough':.85},
  'terracotta_panel':{'scale':[2.4,1.2],'cell':[.6,.3],'joint':.004,'color':[174,92, 61],'mortar':[ 90,66, 50],'relief':.001,'variation':2,'rough':.67},

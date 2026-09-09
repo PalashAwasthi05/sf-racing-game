@@ -13,7 +13,7 @@ from scipy.ndimage import median_filter, gaussian_filter, distance_transform_edt
 from rasterio.features import shapes
 from rasterio.transform import from_origin
 from pipeline.materials import Materials
-from pipeline import facades,streets,vegetation,signs,envelopes,lettering,surface_evidence
+from pipeline import facades,streets,vegetation,signs,envelopes,lettering,surface_evidence,spatial_rules,mobility,freshness
 from trimesh.visual.texture import TextureVisuals
 
 ROOT=pathlib.Path(__file__).parent;DATA=ROOT/'data';PUBLIC=ROOT/'king-street'/'public';PUBLIC.mkdir(parents=True,exist_ok=True)
@@ -29,7 +29,7 @@ ll=Transformer.from_crs(4326,32610,always_xy=True);inv=Transformer.from_crs(3261
 web=Transformer.from_crs(3857,32610,always_xy=True)
 osm=ET.parse(DATA/'osm.xml').getroot()
 nodes={n.attrib['id']:(float(n.attrib['lon']),float(n.attrib['lat'])) for n in osm.findall('node')}
-raw_ways=[]
+raw_ways=[];way_metadata={w.attrib['id']:{'editedAt':w.attrib.get('timestamp'),'version':w.attrib.get('version'),'captureAgeKnown':False} for w in osm.findall('way')}
 for w in osm.findall('way'):
  tags={a.attrib['k']:a.attrib['v'] for a in w.findall('tag')}
  pts=[nodes[n.attrib['ref']] for n in w.findall('nd') if n.attrib['ref'] in nodes]
@@ -55,7 +55,7 @@ for id,t,p in raw_ways:
  x,y=local(*zip(*p));coords=list(zip(x,y))
  g=Polygon(coords) if coords[0]==coords[-1] and len(coords)>=4 else LineString(coords)
  if not g.is_valid:g=make_valid(g)
- if g.intersects(boundary):ways.append({'id':id,'tags':t,'g':g})
+ if g.intersects(boundary):ways.append({'id':id,'tags':t,'g':g,'metadata':way_metadata[id]})
 
 pts=np.load(DATA/'points.npz')['points'];px,py=web.transform(pts[:,0],pts[:,1]);pts[:,0]=px-cx;pts[:,1]=py-cy
 ground=pts[pts[:,3]==2];ground=ground[(ground[:,2]>-5)&(ground[:,2]<20)]
@@ -157,6 +157,8 @@ for oid,parts in grouped.items():
  if coverage>.55 and agreement>.60:
   candidates=[c for c in candidates if c not in parts];candidates.append({'id':'osm_'+oid,'g':w['g'],'old':{},'osm':w,'fp':'OSM; fragmented municipal identity reconciled'})
   consolidations.append({'osmWayId':oid,'municipalParts':len(parts),'coverage':round(coverage,3),'agreement':round(agreement,3),'decision':'one OSM identity envelope; source disagreement retained'})
+candidates,spatial_audit=spatial_rules.reconcile(candidates)
+foundation_records=[];mobility_records=[];duplicate_triangles=0
 for c in candidates:
  c['full_area']=c['g'].area;c['clipped']=not boundary.covers(c['g']);c['g']=c['g'].intersection(boundary)
 all_buildings=unary_union([c['g'] for c in candidates]);ground_kd=cKDTree(ground[:,:2])
@@ -174,7 +176,9 @@ for c in candidates:
   try:height=float(tags.get('height',og.get('hgt_median_m','12')).split()[0])
   except:height=12.
   lo=z0+height;top=lo;source='Catalog estimate'
+ foundation_records.append(spatial_rules.foundation(globals(),c,z0))
  resolved=envelopes.prepare(globals(),c,z0,sample,ENVELOPES);envelope_mask=envelopes.replacement_mask(resolved);roof_g=g.difference(envelope_mask) if resolved else g
+ profile_strip=spatial_rules.perimeter_strip(globals(),c,PROFILES);tier_mask=envelope_mask.union(profile_strip)
  if resolved:name=resolved[0]['profile'].get('displayName',name)
  style=facades.prior(tags,height,c['full_area']);color=style['material']
  roof_step=2.0 if stadium else 1.5
@@ -192,16 +196,20 @@ for c in candidates:
   else:base_roof=max(z0+4,min(base_roof,lo))
  else:base_roof=z0+height;rr=None
  # Facade compiler builds walls with real openings; no opaque block behind glazing.
- extrude(roof_g,base_roof,.15,'roofs__'+id,'roof')
+ # Roof caps are emitted only where a higher envelope does not own the surface.
  if rr is not None:
   # Planar roof tiers come from the measured height raster, regularized to 1 m levels.
   step=CONFIG['defaults']['roofRegularizationM'];quant=(np.round((rr-base_roof)/step)*step).astype(np.int16);quant[quant<3]=0;quant[quant>max(height+3,5)]=0
-  for geo,val in shapes(quant.astype('int16'),mask=quant>0,transform=from_origin(xmin,ymax,roof_step,roof_step)):
-   part=shape(geo).buffer(.8).buffer(-.8).simplify(.45).intersection(roof_g)
-   if part.area<max(25,g.area*.012):continue
-   tier=dict(c);tier['g']=part;tier['elevationOffset']=base_roof-z0;tier['outerBoundary']=g.boundary;tier_ctx=dict(globals());tier_ctx['all_buildings']=all_buildings.difference(g);tier_ctx['envelopeMask']=envelope_mask
-   rr_records,rr_components=facades.compile(tier_ctx,tier,base_roof,float(val),height,tags,OBS['facades']);facade_records.extend(rr_records);counts['windowAssemblies']+=rr_components
-   extrude(part,base_roof+float(val),.13,'roofs__'+id,'roof');roofparts+=1
+  roof_bands=spatial_rules.roof_bands(quant,from_origin(xmin,ymax,roof_step,roof_step),roof_g,max(25,g.area*.012))
+  base_cap=roof_g.difference(roof_bands[0]['geometry']) if roof_bands else roof_g
+  extrude(base_cap,base_roof,.10,'roofs__'+id,'roof')
+  for band in roof_bands:
+   part=band['geometry'].difference(profile_strip)
+   tier=dict(c);tier['g']=part;tier['elevationOffset']=base_roof+band['bottom']-z0;tier['roofBand']=True;tier['outerBoundary']=g.boundary
+   tier_ctx=dict(globals());tier_ctx['all_buildings']=all_buildings.difference(g);tier_ctx['envelopeMask']=tier_mask
+   rr_records,rr_components=facades.compile(tier_ctx,tier,base_roof+band['bottom'],float(band['top']-band['bottom']),height,tags,OBS['facades']);facade_records.extend(rr_records);counts['windowAssemblies']+=rr_components
+   extrude(band['cap'],base_roof+band['top'],.10,'roofs__'+id,'roof');roofparts+=1
+ if rr is None:extrude(roof_g,base_roof,.10,'roofs__'+id,'roof')
  outer_ctx=dict(globals());outer_ctx['roofSamples']=roof;outer_ctx['envelopeMask']=envelope_mask
  records,component_count=facades.compile(outer_ctx,c,z0,base_roof-z0,height,tags,OBS['facades']);facade_records.extend(records);counts['windowAssemblies']+=component_count
  er,ec=envelopes.compile(globals(),c,z0,resolved);envelope_records.extend(er);facade_records.extend(er);records.extend(er);counts['windowAssemblies']+=ec
@@ -209,26 +217,22 @@ for c in candidates:
  for r in resolved:envelope_frontages.append({'frame':r['frame'],'label':r['profile'].get('displayName',name)+' / '+r['profile']['id']})
  observed_count=sum(r['status'] in ['visual-fit','image-layout-fit','visual-grammar','envelope-graph'] for r in records)
  if er:height=max(height,max(r['heightM'] for r in er))
- features.append({'id':id,'name':name,'height':round(height,2),'heightSource':source,'footprintSource':c['fp'],'roofParts':roofparts,'center':[round(g.centroid.x,2),round(g.centroid.y,2),round(z0,2)],'area':round(g.area,1),'clippedAtBoundary':c['clipped'],'pointCount':len(roof),'facade':'Image-derived envelope parts capture changing heights, materials and depth. Windows belong to individual surfaces; measurements still need independent checking.' if resolved else 'Street-facing wall regions use observation-derived layouts; unseen walls remain inferred.' if observed_count else 'Detailed facade generated from an unverified architectural prior.','facadeEvidence':'Image hierarchy + LiDAR levels' if resolved else 'Image layout / visual grammar' if observed_count else 'Unverified prior','fittedWalls':observed_count,'totalWalls':len(records),'sourceUrl':'https://data.sfgov.org/d/ynuv-fyni' if c['fp'].startswith('Data') else 'https://www.openstreetmap.org/way/'+c['osm']['id']})
+ features.append({'id':id,'name':name,'height':round(height,2),'heightSource':source,'footprintSource':c['fp'],'outlineMetadata':c['osm'].get('metadata',{}) if c['osm'] else {'captureAgeKnown':False},'roofParts':roofparts,'center':[round(g.centroid.x,2),round(g.centroid.y,2),round(z0,2)],'area':round(g.area,1),'clippedAtBoundary':c['clipped'],'pointCount':len(roof),'facade':'Image-derived envelope parts capture changing heights, materials and depth. Windows belong to individual surfaces; measurements still need independent checking.' if resolved else 'Street-facing wall regions use observation-derived layouts; unseen walls remain inferred.' if observed_count else 'Detailed facade generated from an unverified architectural prior.','facadeEvidence':'Image hierarchy + LiDAR levels' if resolved else 'Image layout / visual grammar' if observed_count else 'Unverified prior','fittedWalls':observed_count,'totalWalls':len(records),'sourceUrl':'https://data.sfgov.org/d/ynuv-fyni' if c['fp'].startswith('Data') else 'https://www.openstreetmap.org/way/'+c['osm']['id']})
  print(name,round(height,1),len(roof),roofparts,flush=True)
 
 # Paved carriageways use OSM centerlines and lane counts; widths are inferred.
-roads=[];rails=[];footpaths=[]
+roads=[];rails=[];footpaths=[];road_specs={};road_polygons=[]
 for w in ways:
  t,g=w['tags'],w['g'];h=t.get('highway')
  if h in ['primary','secondary','tertiary','unclassified','residential','living_street','service'] and g.geom_type=='LineString':
-  try:lanes=int(t.get('lanes','2'))
-  except:lanes=2
-  width=lanes*CONFIG['defaults']['laneWidthM']+(2.2 if 'parking:lane:right' in t or 'parking:lane:both' in t else 0)+(1.5 if t.get('cycleway:right')=='lane' else 0)
-  if h=='service':width=4.5
-  width=min(width,23)
-  road=g.buffer(width/2,cap_style=2,join_style=2).intersection(boundary).difference(all_buildings)
-  surface(road,'roads','asphalt',.09);roads.append((w,width,lanes))
+  road_spec=mobility.spec(t);road_specs[w['id']]=road_spec;lanes=road_spec['lanes'];width=road_spec['leftM']+road_spec['rightM']
+  road=mobility.road_polygon(g,road_spec).intersection(boundary).difference(all_buildings)
+  surface(road,'roads','asphalt',.09);road_polygons.append(road);roads.append((w,width,lanes))
  elif h in ['footway','pedestrian','path','cycleway']:
   footpaths.append(w)
  if t.get('railway') in ['light_rail','tram','rail'] and g.geom_type=='LineString':rails.append(w)
 
-road_area=unary_union([r[0]['g'].buffer(r[1]/2,cap_style=2) for r in roads]);counts['roadSegments']=len(roads)
+road_area=unary_union(road_polygons);counts['roadSegments']=len(roads)
 for w in footpaths:
  g=w['g'];t=w['tags']
  if t.get('footway')=='crossing':
@@ -239,21 +243,6 @@ for w in footpaths:
     cube([pt.x,pt.y,float(elev(pt.x,pt.y))+.14],[.45,2.6,.025],'markings','paint',angle)
   counts['crosswalks']+=1
  elif g.geom_type in ['Polygon','MultiPolygon']:surface(g.intersection(boundary).difference(all_buildings),'paths','sidewalk',.12)
-
-for w,width,lanes in roads:
- g=w['g'];t=w['tags']
- for k in range(1,lanes):
-  offset=(k-lanes/2)*3.15
-  for l in lines(g.offset_curve(offset).intersection(boundary)):
-   for s in np.arange(7,l.length-5,9):
-    a=l.interpolate(s);b=l.interpolate(min(s+3,l.length-3));v=np.array([b.x-a.x,b.y-a.y]);le=np.linalg.norm(v)
-    if le>.5:cube([(a.x+b.x)/2,(a.y+b.y)/2,float(elev(a.x,a.y))+.14],[le,.12,.02],'markings','paint',math.atan2(v[1],v[0]))
- # A continuous divider is only synthesized for mapped two-way roads.
- if t.get('oneway')!='yes' and lanes>=2:
-  for l in lines(g.intersection(boundary)):
-   for a,b in zip(l.coords,list(l.coords)[1:]):
-    a,b=np.array(a),np.array(b);v=b-a
-    cube([*(a+b)/2,float(elev(*(a+b)/2))+.13],[np.linalg.norm(v),.15,.02],'markings','yellow',math.atan2(v[1],v[0]))
 
 for w in rails:
  g=w['g'];surface(g.buffer(1.5,cap_style=2).intersection(boundary),'transit','stone',.11)
@@ -284,22 +273,14 @@ for node in osm.findall('node'):
   cylinder([x,y,z+h],[x+1.6,y,z+h],.06,'street_objects','metal');cube([x+1.6,y,z+h],[.9,.4,.14],'street_objects','frame')
  counts['signals' if tags['highway']=='traffic_signals' else 'lamps']+=1
 
-# Median barriers along mapped tram/light-rail tracks; inferred dimensions.
-for w in rails:
- if w['tags'].get('railway') not in ['tram','light_rail']:continue
- for l in lines(w['g'].offset_curve(1.7).intersection(study)):
-  if l.length<15:continue
-  for s in np.arange(5,l.length-5,3):
-   a=l.interpolate(s);b=l.interpolate(min(s+3,l.length-5));z=float(elev(a.x,a.y))
-   cylinder([a.x,a.y,z+.1],[a.x,a.y,z+1.05],.035,'street_objects','metal',6)
-   for hh in [.55,1.0]:cylinder([a.x,a.y,z+hh],[b.x,b.y,float(elev(b.x,b.y))+hh],.025,'street_objects','metal',5)
-
+# Barriers are generated only from mapped barrier or explicit handrail evidence.
 for w in ways:
  t=w['tags'];g=w['g']
  if t.get('leisure')=='pitch' and g.geom_type in ['Polygon','MultiPolygon']:surface(g.intersection(boundary),'landscape','grass',.2)
 
 # Street compiler uses source topology and ROW; every snap remains an uncertain record.
 make_sign=signs.install(globals());sign_records,sidewalk_geometry=streets.compile(globals())
+mobility_records=mobility.compile(globals())
 street_views=[]
 # New envelope viewpoints lead the street route. Positions snap to mapped road centers.
 for item in envelope_frontages:
@@ -322,13 +303,14 @@ for profile in PROFILES:
  if ranked:
   _,pos,w=min(ranked,key=lambda v:v[0]);tangent=(u if np.dot(u,focus-pos)>0 else -u);look=focus+tangent*8
   street_views.append({'position':np.round(pos,2).tolist(),'lookAt':[round(float(look[0]),2),round(float(look[1]),2),3.8],'label':w['tags'].get('name','Street')+' / '+profile['id']})
-street_views.sort(key=lambda v:0 if 'deep-framed-loft' in v['label'] else 1)
+street_views.sort(key=lambda v:sum(float(x)**2 for x in v['position'][:2]))
 # One mesh per material and feature; image payloads are shared by glTF.
 for key,(v,f,uv,normals) in batches.items():
  if not v:continue
  semantic,material_name=key.split('___',1);mat,_=material_bank.get(material_name)
  mesh=trimesh.Trimesh(np.concatenate(v),np.concatenate(f),vertex_normals=np.concatenate(normals),visual=TextureVisuals(uv=np.concatenate(uv),material=mat),process=False)
  mesh.merge_vertices(merge_tex=False,merge_norm=False)
+ duplicate_triangles+=spatial_rules.remove_duplicate_triangles(mesh)
  layer=semantic.split('__')[0];fid=semantic.split('__')[1] if '__' in semantic else None
  status='measured-fit' if layer in ['terrain','roofs'] else 'visual-fit' if '__observed_' in semantic else 'inferred'
  mesh.metadata={'layer':layer,'featureId':fid,'evidence':status,'material':material_name}
@@ -344,9 +326,13 @@ counts['unresolvedSigns']=len(coarse_signs)
 counts['facadeWalls']=len(facade_records);counts['imageFittedWalls']=sum(r['status'] in ['visual-fit','image-layout-fit','visual-grammar','envelope-graph'] for r in facade_records);counts['pbrMaterials']=len(material_bank.cache)
 counts['numericalFacadeFits']=len(FITS);counts['profileFrontages']=len(PROFILES);counts['inferredRepeatCells']=sum(f['completedCells'] for f in FITS)
 counts['envelopeFrontages']=len(envelope_records);counts['envelopeNodes']=sum(r['nodeCount'] for r in envelope_records);counts['boundedLidarLevels']=sum(e['status']=='bounded-lidar-fit' for r in envelope_records for e in r['levels'])
+counts['foundationChecks']=len(foundation_records);counts['removedDuplicateTriangles']=duplicate_triangles;counts['spatialCorrections']=len(spatial_audit)
 counts['generationSeconds']=round(time.perf_counter()-START,2)
 counts['facadeLetteringPlacements']=len(lettering_records);counts['directBoundaryOpenings']=sum(len(f['openings']) for f in BOUNDARY_FITS)
-world={'pipelineVersion':CONFIG['version'],'streetViews':street_views,'facadeCoverage':{'walls':len(facade_records),'visuallyFittedWalls':counts['imageFittedWalls'],'numericalFits':len(FITS),'currentStreetImageryBuildings':5,'photoAgeUnknownBuildings':2,'independentlyVerifiedWalls':0,'accuracyGate':'NOT PASSED'},'studyRadiusM':200,'contextRadiusM':265,'center':{'lat':lat,'lon':lon},'coordinateSystem':'Local UTM zone 10N meters; GLB X east, Y up, Z south','verticalOrigin':base,'buildings':features,'counts':dict(counts),'ground':np.round(grid,3).ravel().tolist(),'grid':{'min':MIN,'step':STEP,'n':N},'sources':[
+source_ledger={**OBS['sources'],**{a['id']:a for a in ENVELOPE_DATA['sources']}}
+freshness_records=freshness.ledger(ENVELOPES,source_ledger,CONFIG['asOfDate'],CONFIG['defaults']['maxFacadeSampleAgeMonths'])
+world={'pipelineVersion':CONFIG['version'],'streetViews':street_views,'facadeCoverage':{'walls':len(facade_records),'visuallyFittedWalls':counts['imageFittedWalls'],'numericalFits':len(FITS),'datedImageFrontages':sum(r['hasDatedStreetEvidence'] for r in freshness_records),'freshCaptureNeededFrontages':sum(r['needsFreshCapture'] for r in freshness_records),'independentlyVerifiedWalls':0,'accuracyGate':'NOT PASSED'},'studyRadiusM':200,'contextRadiusM':265,'center':{'lat':lat,'lon':lon},'coordinateSystem':'Local UTM zone 10N meters; GLB X east, Y up, Z south','verticalOrigin':base,'buildings':features,'counts':dict(counts),'ground':np.round(grid,3).ravel().tolist(),'grid':{'min':MIN,'step':STEP,'n':N},'sources':[
+ {'name':'Broader frontage evidence','date':'Street captures Jan/Mar/May 2025; Lusk Jan 2023','detail':'Twelve additional frontages use region-specific openings, material transitions, raised entries, arched glazing, projecting bays and observed lettering. Undated owner photographs and estimated long-wall counts remain marked as uncertain.','url':'https://www.google.com/maps/@37.7786884,-122.3930088,3a,95y,315h,108t/data=!3m1!1e1'},
  {'name':'Articulated building envelopes','date':'Jan 2025 street view + historic detail photos','detail':'Beacon, Glassworks and Oracle Park decomposed into separate wings, projecting surfaces, cores, roof profiles and open structures. Image annotations constrain bounded LiDAR level fits; depth is still estimated.','url':'https://www.perryarchitectsinc.com/glassworks'},
  {'name':'USGS LiDAR','date':'April 2023','detail':'4.6 million sampled points; ground elevations and fitted roof tiers. Absolute accuracy has not been independently tested.','url':'https://www.fisheries.noaa.gov/inport/item/73386/full-list'},
  {'name':'DataSF building footprints','date':'2010-derived geometry','detail':'Building outlines reconciled against current OpenStreetMap identities and newer LiDAR heights.','url':'https://data.sfgov.org/d/ynuv-fyni'},
@@ -356,10 +342,10 @@ world={'pipelineVersion':CONFIG['version'],'streetViews':street_views,'facadeCov
  {'name':'Hotel exterior photography','date':'Capture dates unknown','detail':'Operator and structural engineer photographs fit bay stacks, terracotta fields and external shades. Historical layouts need current independent checks.','url':'https://www.hyatt.com/hyatt-place/en-US/sfozs-hyatt-place-san-francisco-downtown/gallery'},
  {'name':'Mapillary coverage','date':'Coverage inspected Sep 2026','detail':'Dense capture coverage is visible around King and Third. Individual images and their capture dates have not been ingested in this pass.','url':'https://www.mapillary.com/app/?lat=37.7786&lng=-122.3918&z=18'},
  {'name':'Street-level reference','date':'January 2025','detail':'Sparse image landmarks and visual grammars distinguish loft terraces, continuous glazing and separate ground-floor patterns. Source pixels are not embedded.','url':'https://www.google.com/maps/@37.7786899,-122.3913452,3a,75y,315h,110t/data=!3m4!1e1!3m2!1sS4hs-Kyh3P14aRv9CWeTvg!2e0'}]}
-audit={'rules':surface_evidence.AUDIT,'signAttachments':[r['attachmentCheck'] for r in lettering_records],'unverifiedFacadeSections':sum(r['status']=='inferred' for r in facade_records),'independentAccuracyGate':'NOT PASSED'}
+audit={'freshness':freshness_records,'spatialCorrections':spatial_audit,'foundations':foundation_records,'mobility':mobility_records,'removedDuplicateTriangles':duplicate_triangles,'rules':surface_evidence.AUDIT,'signAttachments':[r['attachmentCheck'] for r in lettering_records],'unverifiedFacadeSections':sum(r['status']=='inferred' for r in facade_records),'independentAccuracyGate':'NOT PASSED'}
 (OUT/'king-street-rule-audit.json').write_text(json.dumps(audit,indent=2))
 glb=scene.export(file_type='glb');(PUBLIC/'king-street.glb').write_bytes(glb);(OUT/'king-street-pilot.glb').write_bytes(glb)
-(PUBLIC/'world.json').write_text(json.dumps(world,separators=(',',':')));(OUT/'king-street-evidence.json').write_text(json.dumps({'world':world,'unresolvedSigns':coarse_signs,'facadeWalls':facade_records,'signPlacements':sign_records,'envelopeGraphs':envelope_records,'observationSources':{**OBS['sources'],**{a['id']:a for a in ENVELOPE_DATA['sources']}},'footprintConsolidations':consolidations,'layoutFits':FITS,'profiles':PROFILES,'materials':{**material_bank.manifest,'appearanceRecipes':'pipeline/material_recipes.py; synthesized family appearance, not building-specific scans'},'boundaryFits':BOUNDARY_FITS,'facadeLettering':lettering_records,'surfaceSources':LETTERING_DATA['sources'],'ruleAudit':audit},indent=2))
+(PUBLIC/'world.json').write_text(json.dumps(world,separators=(',',':')));(OUT/'king-street-evidence.json').write_text(json.dumps({'world':world,'unresolvedSigns':coarse_signs,'freshness':freshness_records,'facadeWalls':facade_records,'signPlacements':sign_records,'envelopeGraphs':envelope_records,'observationSources':{**OBS['sources'],**{a['id']:a for a in ENVELOPE_DATA['sources']}},'footprintConsolidations':consolidations,'spatialCorrections':spatial_audit,'foundations':foundation_records,'mobility':mobility_records,'layoutFits':FITS,'profiles':PROFILES,'materials':{**material_bank.manifest,'appearanceRecipes':'pipeline/material_recipes.py; synthesized family appearance, not building-specific scans'},'boundaryFits':BOUNDARY_FITS,'facadeLettering':lettering_records,'surfaceSources':LETTERING_DATA['sources'],'ruleAudit':audit},indent=2))
 print('OUTPUT',len(glb),'bytes',dict(counts),'center',lat,lon,flush=True)
 
 (PUBLIC/'facade-evidence.json').write_text(json.dumps({'walls':facade_records,'signs':sign_records,'envelopes':envelope_records,'lettering':lettering_records,'boundaryFits':BOUNDARY_FITS,'surfaceSources':LETTERING_DATA['sources'],'ruleAudit':audit,'sources':{**OBS['sources'],**{a['id']:a for a in ENVELOPE_DATA['sources']}}},separators=(',',':')))

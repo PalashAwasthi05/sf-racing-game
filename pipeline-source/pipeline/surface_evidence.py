@@ -14,7 +14,8 @@ def resolve_material(surface):
  if not ev.get('sourceIds'):raise ValueError('Material evidence needs a source')
  families={'brick':{'default':'brick_modular','dark':'brick_dark'},
            'terracotta':{'default':'terracotta_panel','ribbed':'terracotta_ribbed'},
-           'render':{'default':'stucco','red':'stucco_red'},
+           'render':{'default':'stucco','red':'stucco_red','salmon':'render_salmon','gray':'render_gray','white':'render_white'},
+           'timber':{'default':'timber_dark','dark':'timber_dark','tan':'timber_tan'},
            'pale-trim':{'default':'stone'},
            'metal-panel':{'default':'panel_silver','dark':'panel_dark'}}
  if ev['family'] not in families:raise ValueError('Unresolved material family: '+ev['family'])

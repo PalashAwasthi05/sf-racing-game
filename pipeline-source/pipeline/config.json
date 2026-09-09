@@ -1,5 +1,5 @@
 {
-  "version": "0.6",
+  "version": "0.7",
   "region": {
     "addressWayId": "149167949",
     "label": "188 King Street",
@@ -22,5 +22,6 @@
     "signPositionToleranceM": 0.3,
     "unobservedDetailStatus": "inferred",
     "priority": "driver-view visible error"
-  }
+  },
+  "asOfDate": "2026-09-08"
 }

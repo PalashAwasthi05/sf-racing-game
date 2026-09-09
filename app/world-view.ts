@@ -10,7 +10,7 @@ import type {World} from './king-pilot';
 
 export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(id:string)=>void,onProgress:(message:string)=>void){
  const scene=new THREE.Scene();scene.background=new THREE.Color('#91b8d7');scene.fog=new THREE.Fog('#a9c3d4',650,1700);
- const camera=new THREE.PerspectiveCamera(58,1,.08,1800);
+ const camera=new THREE.PerspectiveCamera(58,1,.18,1100);
  const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
  renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.5));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.AgXToneMapping;renderer.toneMappingExposure=.85;
  host.appendChild(renderer.domElement);renderer.domElement.setAttribute('aria-label','3D neighborhood. Use the camera controls to explore.');
@@ -21,7 +21,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  const hemi=new THREE.HemisphereLight('#d5e5ff','#75624c',.18);scene.add(hemi);
  const sun=new THREE.DirectionalLight('#fff2df',3.1);sun.position.copy(sunDirection).multiplyScalar(260);sun.castShadow=true;sun.shadow.mapSize.set(4096,4096);Object.assign(sun.shadow.camera,{left:-65,right:65,top:65,bottom:-65,near:1,far:500});sun.shadow.bias=-.00003;sun.shadow.normalBias=.018;scene.add(sun,sun.target);
  const composer=new EffectComposer(renderer);composer.addPass(new RenderPass(scene,camera));
- const ao=new GTAOPass(scene,camera,1,1);ao.updateGtaoMaterial({radius:1.25,distanceExponent:1.5,thickness:.8,samples:12});ao.blendIntensity=.7;composer.addPass(ao);const output=new OutputPass();composer.addPass(output);
+ const ao=new GTAOPass(scene,camera,1,1);ao.updateGtaoMaterial({radius:.65,distanceExponent:1.5,thickness:.25,samples:16});ao.blendIntensity=.45;composer.addPass(ao);const output=new OutputPass();composer.addPass(output);
  function lighting(overcast:boolean){sun.intensity=overcast?.55:3.1;scene.environmentIntensity=overcast?.22:.12;hemi.intensity=overcast?.3:.18;renderer.toneMappingExposure=overcast?1.05:.85;sky.material.uniforms.turbidity.value=overcast?10:2.6;}
  const manifest=await fetch('/model.json',{cache:'no-cache'}).then(r=>{if(!r.ok)throw new Error('Scene manifest unavailable');return r.json() as Promise<{chunks:string[];compressedBytes:number}>});
  let loaded=0;
@@ -68,7 +68,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
    if(keys.has('KeyW')||keys.has('ArrowUp'))camera.position.addScaledVector(forward,speed);if(keys.has('KeyS')||keys.has('ArrowDown'))camera.position.addScaledVector(forward,-speed);if(keys.has('KeyD')||keys.has('ArrowRight'))camera.position.addScaledVector(right,speed);if(keys.has('KeyA')||keys.has('ArrowLeft'))camera.position.addScaledVector(right,-speed);
    const len=Math.hypot(camera.position.x,camera.position.z);if(len>255){camera.position.x*=255/len;camera.position.z*=255/len;}camera.position.y=groundAt(camera.position.x,camera.position.z)+1.25;
   }else{if(targetPosition&&targetLook){camera.position.lerp(targetPosition,.07);controls.target.lerp(targetLook,.07);if(camera.position.distanceTo(targetPosition)<.05){targetPosition=null;targetLook=null;}}controls.update();}
-  const anchor=mode==='street'?camera.position:controls.target;sun.target.position.set(Math.round(anchor.x/2)*2,0,Math.round(anchor.z/2)*2);sun.position.copy(sun.target.position).addScaledVector(sunDirection,260);sun.target.updateMatrixWorld();
+  const anchor=mode==='street'?camera.position:controls.target;sun.target.position.set(Math.round(anchor.x/(130/4096))*(130/4096),0,Math.round(anchor.z/(130/4096))*(130/4096));sun.position.copy(sun.target.position).addScaledVector(sunDirection,260);sun.target.updateMatrixWorld();
   composer.render(dt);
  }
  frame=requestAnimationFrame(animate);

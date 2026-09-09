@@ -310,13 +310,599 @@
         ],
         "status": "visually classified; dimensions estimated"
       }
+    },
+    {
+      "id": "warehouse-painted-name",
+      "observationBatch": "v7",
+      "text": "GARCIA & MAGGINI CO",
+      "match": {
+        "featureId": "sf_201006_0001817"
+      },
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "profileId": "warehouse-painted-belt",
+      "centerU": 0.56,
+      "bottomM": 6.55,
+      "widthM": 14,
+      "heightM": 0.55,
+      "material": "white",
+      "sourceIds": [
+        "128-king-google-2025",
+        "128-king-noehill-2004"
+      ],
+      "captureDate": "2025-01",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "painted-belt"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "128-king-google-2025",
+          "128-king-noehill-2004"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
+    },
+    {
+      "id": "warehouse-dried-fruits",
+      "observationBatch": "v7",
+      "text": "DRIED FRUITS",
+      "match": {
+        "featureId": "sf_201006_0001817"
+      },
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "profileId": "warehouse-painted-belt",
+      "centerU": 0.2,
+      "bottomM": 6.6,
+      "widthM": 6,
+      "heightM": 0.45,
+      "material": "white",
+      "sourceIds": [
+        "128-king-google-2025",
+        "128-king-noehill-2004"
+      ],
+      "captureDate": "2025-01",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "painted-belt"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "128-king-google-2025",
+          "128-king-noehill-2004"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
+    },
+    {
+      "id": "warehouse-nuts",
+      "observationBatch": "v7",
+      "text": "NUTS HONEY",
+      "match": {
+        "featureId": "sf_201006_0001817"
+      },
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "profileId": "warehouse-painted-belt",
+      "centerU": 0.83,
+      "bottomM": 6.6,
+      "widthM": 5,
+      "heightM": 0.45,
+      "material": "white",
+      "sourceIds": [
+        "128-king-google-2025",
+        "128-king-noehill-2004"
+      ],
+      "captureDate": "2025-01",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "painted-belt"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "128-king-google-2025",
+          "128-king-noehill-2004"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
+    },
+    {
+      "id": "warehouse-number",
+      "observationBatch": "v7",
+      "text": "128",
+      "match": {
+        "featureId": "sf_201006_0001817"
+      },
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "profileId": "warehouse-painted-belt",
+      "centerU": 0.96,
+      "bottomM": 6.5,
+      "widthM": 1.4,
+      "heightM": 0.65,
+      "material": "white",
+      "sourceIds": [
+        "128-king-google-2025",
+        "128-king-noehill-2004"
+      ],
+      "captureDate": "2025-01",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "painted-belt"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "128-king-google-2025",
+          "128-king-noehill-2004"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
+    },
+    {
+      "id": "townsend-bank",
+      "observationBatch": "v7",
+      "text": "FIRST REPUBLIC BANK",
+      "match": {
+        "featureId": "sf_201006_0002210"
+      },
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "profileId": "articulated-loft-corner",
+      "centerU": 0.8,
+      "bottomM": 4.0,
+      "widthM": 8,
+      "heightM": 0.44,
+      "material": "white",
+      "sourceIds": [
+        "200-townsend-google-2025"
+      ],
+      "captureDate": "2025-05",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "ground-gray"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "200-townsend-google-2025"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
+    },
+    {
+      "id": "townsend-200",
+      "observationBatch": "v7",
+      "text": "200",
+      "match": {
+        "featureId": "sf_201006_0002210"
+      },
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "profileId": "articulated-loft-corner",
+      "centerU": 0.53,
+      "bottomM": 1.6,
+      "widthM": 0.9,
+      "heightM": 0.4,
+      "material": "white",
+      "sourceIds": [
+        "200-townsend-google-2025"
+      ],
+      "captureDate": "2025-05",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "ground-gray"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "200-townsend-google-2025"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
+    },
+    {
+      "id": "insead-front",
+      "observationBatch": "v7",
+      "text": "INSEAD",
+      "match": {
+        "featureId": "sf_201006_0002834"
+      },
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "profileId": "five-bay-decorated-front",
+      "centerU": 0.5,
+      "bottomM": 7.6,
+      "widthM": 2.8,
+      "heightM": 0.45,
+      "material": "verdigris",
+      "sourceIds": [
+        "224-townsend-google-2025",
+        "224-townsend-pq-2020"
+      ],
+      "captureDate": "2025-05",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "five-bay-wall"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "224-townsend-google-2025",
+          "224-townsend-pq-2020"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
+    },
+    {
+      "id": "sap-sign",
+      "observationBatch": "v7",
+      "text": "SAP",
+      "match": {
+        "featureId": "sf_201006_0002920"
+      },
+      "normal": [
+        -0.707,
+        0.707
+      ],
+      "profileId": "paired-industrial-fire-escapes",
+      "centerU": 0.3,
+      "bottomM": 4.45,
+      "widthM": 2.4,
+      "heightM": 0.6,
+      "material": "glass_blue",
+      "sourceIds": [
+        "135-townsend-google-2025"
+      ],
+      "captureDate": "2025-05",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "five-ground-bays"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "135-townsend-google-2025"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
+    },
+    {
+      "id": "entry-133",
+      "observationBatch": "v7",
+      "text": "1\n3\n3",
+      "match": {
+        "featureId": "sf_201006_0002920"
+      },
+      "normal": [
+        -0.707,
+        0.707
+      ],
+      "profileId": "paired-industrial-fire-escapes",
+      "centerU": 0.075,
+      "bottomM": 1.1,
+      "widthM": 0.3,
+      "heightM": 1.3,
+      "material": "white",
+      "sourceIds": [
+        "135-townsend-google-2025"
+      ],
+      "captureDate": "2025-05",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "five-ground-bays"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "135-townsend-google-2025"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
+    },
+    {
+      "id": "cloudflare-name",
+      "observationBatch": "v7",
+      "text": "CLOUDFLARE",
+      "match": {
+        "featureId": "sf_201006_0002572"
+      },
+      "normal": [
+        -0.707,
+        0.707
+      ],
+      "profileId": "industrial-small-pane-front",
+      "centerU": 0.85,
+      "bottomM": 4.02,
+      "widthM": 5,
+      "heightM": 0.45,
+      "material": "charcoal",
+      "sourceIds": [
+        "101-townsend-google-2025",
+        "101-townsend-dahlin"
+      ],
+      "captureDate": "2025-05",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "entry-gray"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "101-townsend-google-2025",
+          "101-townsend-dahlin"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
+    },
+    {
+      "id": "address-101",
+      "observationBatch": "v7",
+      "text": "101 TOWNSEND",
+      "match": {
+        "featureId": "sf_201006_0002572"
+      },
+      "normal": [
+        -0.707,
+        0.707
+      ],
+      "profileId": "industrial-small-pane-front",
+      "centerU": 0.85,
+      "bottomM": 3.55,
+      "widthM": 3,
+      "heightM": 0.25,
+      "material": "white",
+      "sourceIds": [
+        "101-townsend-google-2025",
+        "101-townsend-dahlin"
+      ],
+      "captureDate": "2025-05",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "entry-gray"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "101-townsend-google-2025",
+          "101-townsend-dahlin"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
+    },
+    {
+      "id": "25-lusk-panel",
+      "observationBatch": "v7",
+      "text": "25\nLUSK",
+      "match": {
+        "featureId": "sf_201006_0006801"
+      },
+      "normal": [
+        -0.707,
+        -0.707
+      ],
+      "profileId": "brick-entry-sign-panel",
+      "centerU": 0.755,
+      "bottomM": 1.05,
+      "widthM": 2.4,
+      "heightM": 2.3,
+      "material": "charcoal",
+      "sourceIds": [
+        "25-lusk-psd",
+        "45-lusk-google-2023"
+      ],
+      "captureDate": "2023-01",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "opaque-entry-sign"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "25-lusk-psd",
+          "45-lusk-google-2023"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
+    },
+    {
+      "id": "lusk-45-number",
+      "observationBatch": "v7",
+      "text": "45",
+      "match": {
+        "featureId": "sf_201006_0005190"
+      },
+      "normal": [
+        -0.707,
+        -0.707
+      ],
+      "profileId": "low-timber-raised-entry",
+      "centerU": 0.53,
+      "bottomM": 1.6,
+      "widthM": 0.55,
+      "heightM": 0.45,
+      "material": "white",
+      "sourceIds": [
+        "45-lusk-google-2023"
+      ],
+      "captureDate": "2023-01",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "timber-front"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "45-lusk-google-2023"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
+    },
+    {
+      "id": "sports-bar-name",
+      "observationBatch": "v7",
+      "text": "CANDLESTICK PARK",
+      "match": {
+        "featureId": "sf_201006_0007874"
+      },
+      "normal": [
+        -0.707,
+        -0.707
+      ],
+      "profileId": "independent-low-shop-zones",
+      "centerU": 0.5,
+      "bottomM": 4.45,
+      "widthM": 9,
+      "heightM": 0.4,
+      "material": "white",
+      "sourceIds": [
+        "third-king-google-2025",
+        "761-third-chronicle-2026",
+        "761-third-kron-2026"
+      ],
+      "captureDate": "2025-03",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "sports-bar-front"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "third-king-google-2025",
+          "761-third-chronicle-2026",
+          "761-third-kron-2026"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
+    },
+    {
+      "id": "sports-bar-subtitle",
+      "observationBatch": "v7",
+      "text": "SPORTS BAR",
+      "match": {
+        "featureId": "sf_201006_0007874"
+      },
+      "normal": [
+        -0.707,
+        -0.707
+      ],
+      "profileId": "independent-low-shop-zones",
+      "centerU": 0.5,
+      "bottomM": 4.03,
+      "widthM": 4,
+      "heightM": 0.25,
+      "material": "white",
+      "sourceIds": [
+        "third-king-google-2025",
+        "761-third-chronicle-2026",
+        "761-third-kron-2026"
+      ],
+      "captureDate": "2025-03",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "sports-bar-front"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "third-king-google-2025",
+          "761-third-chronicle-2026",
+          "761-third-kron-2026"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
+    },
+    {
+      "id": "a16z-physical-name",
+      "observationBatch": "v7",
+      "text": "andreessen\nhorowitz",
+      "match": {
+        "featureId": "sf_201006_0003782"
+      },
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "profileId": "arched-three-storey-brick",
+      "centerU": 0.5,
+      "bottomM": 5.2,
+      "widthM": 5,
+      "heightM": 0.9,
+      "material": "charcoal",
+      "sourceIds": [
+        "180-townsend-google-2025"
+      ],
+      "captureDate": "2025-05",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "name-belt"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "180-townsend-google-2025"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
+    },
+    {
+      "id": "a16z-number",
+      "observationBatch": "v7",
+      "text": "180",
+      "match": {
+        "featureId": "sf_201006_0003782"
+      },
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "profileId": "arched-three-storey-brick",
+      "centerU": 0.5,
+      "bottomM": 3.1,
+      "widthM": 0.9,
+      "heightM": 0.45,
+      "material": "white",
+      "sourceIds": [
+        "180-townsend-google-2025"
+      ],
+      "captureDate": "2025-05",
+      "attachment": {
+        "kind": "envelope-surface",
+        "nodeId": "arched-ground"
+      },
+      "carrierEvidence": {
+        "type": "opaque-surface",
+        "sourceIds": [
+          "180-townsend-google-2025"
+        ],
+        "status": "visually observed carrier; pose estimated"
+      }
     }
   ],
   "excluded": [
     "Historical TOTO retail campaign; Jan2025 artwork differs",
     "Historical MISSION BAY MARKETING CENTER",
     "BEACON brochure page typography",
-    "Unreadable current 170 frontage text"
+    "Unreadable current 170 frontage text",
+    "BASEBALLISM March2025 observed sign superseded by January/February2026 tenant-change evidence; CardVault sign pixels not verified. No replacement text invented."
   ],
   "sources": {
     "188-broker": {
@@ -460,6 +1046,129 @@
       "capture_date": null,
       "date_limit": "Public header contains small entrance/courtyard thumbnails; no legible exterior sign. Website title and graphic logo must not be used as facade signage.",
       "visually_inspected_by": "facade_references"
+    },
+    "128-king-google-2025": {
+      "url": "https://www.google.com/maps/@37.7793599,-122.3904598,6a,75y,315.04h,90t/data=!3m7!1e1!3m5!1sYUo9WVYcHfh8a7_sknvWRw!2e0!6shttps:%2F%2Fstreetviewpixels-pa.googleapis.com%2Fv1%2Fthumbnail%3Fcb_client%3Dmaps_sv.tactile%26w%3D900%26h%3D600%26pitch%3D0%26panoid%3DYUo9WVYcHfh8a7_sknvWRw%26yaw%3D315.03754!7i16384!8i8192",
+      "captureDate": "2025-01",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Street View screenshot, ground view then zoomed out and tilted up; upper-left edge partly cropped"
+    },
+    "128-king-noehill-2004": {
+      "url": "https://noehill.com/sf/landmarks/sf229.asp",
+      "imageUrl": "https://noehill.com/sf/landmarks/soma/garcia_and_maggini_warehouse.jpg",
+      "captureDate": "2004-03-27",
+      "captureDateBasis": "Photo caption",
+      "limitation": "Archival oblique photograph; tenant details outdated"
+    },
+    "200-townsend-google-2025": {
+      "url": "https://www.google.com/maps/@37.7786884,-122.3930088,3a,95y,315h,108t/data=!3m1!1e1",
+      "panoId": "PHPlqCRQ3qu2IwEMPkM1dQ",
+      "captureDate": "2025-05",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Full front photographed from opposite sidewalk. Initial Maps photo shortcut faced the other side of street; corrected heading and visually verified address 200."
+    },
+    "224-townsend-google-2025": {
+      "url": "https://www.google.com/maps/@37.7782849,-122.3934633,8a,75y,329.94h,90t/data=!3m7!1e1!3m5!1sB0MYq1LOg-to0s4kCfJA6w!2e0!6shttps:%2F%2Fstreetviewpixels-pa.googleapis.com%2Fv1%2Fthumbnail%3Fcb_client%3Dmaps_sv.tactile%26w%3D900%26h%3D600%26pitch%3D0%26panoid%3DB0MYq1LOg-to0s4kCfJA6w%26yaw%3D329.9408!7i16384!8i8192",
+      "captureDate": "2025-05",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Whole five-bay front visible; parked pickup obscures lower part of one right-hand bay"
+    },
+    "224-townsend-pq-2020": {
+      "url": "https://poetsandquants.com/2020/02/27/first-peek-inseads-new-san-francisco-campus/2/",
+      "imageUrl": "https://poetsandquants.com/wp-content/uploads/sites/5/2020/02/INSEADbuilding.jpg",
+      "captureDate": null,
+      "publishedDate": "2020-02-27",
+      "limitation": "Publication date, not shutter date. Actual completed exterior photograph."
+    },
+    "139-townsend-sks": {
+      "url": "https://sksre.com/project/139-townsend/",
+      "imageUrl": "https://sksre.com/wp-content/uploads/2017/11/02_139Townsend_SKS-1600x1067.jpg",
+      "captureDate": null,
+      "limitation": "Image URL has 2017/11 upload path; capture date is not established. Completed building, full frontal photo."
+    },
+    "139-townsend-transwestern": {
+      "url": "https://transwestern.com/property/139-townsend-st",
+      "imageUrl": "https://s3.amazonaws.com/transwestern-property/Images/63133540-343e-ea11-80f5-caa232701e1a_t.jpg",
+      "captureDate": null,
+      "limitation": "Undated listing photograph. Shows front and west alley wall obliquely."
+    },
+    "135-townsend-google-2025": {
+      "url": "https://www.google.com/maps/@37.7800453,-122.3912162,9a,85.2y,135.22h,116.61t/data=!3m7!1e1!3m5!1sfBYARMHKHcVPLJZjHiHNtg!2e0!6shttps:%2F%2Fstreetviewpixels-pa.googleapis.com%2Fv1%2Fthumbnail%3Fcb_client%3Dmaps_sv.tactile%26w%3D900%26h%3D600%26pitch%3D-26.613347295165767%26panoid%3DfBYARMHKHcVPLJZjHiHNtg%26yaw%3D135.21666!7i16384!8i8192",
+      "captureDate": "2025-05",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Street camera UI says 130 Townsend; camera faces 133/135 across street. Address 133 is visible vertically on left door. Rightmost upper pair partly cropped."
+    },
+    "101-townsend-google-2025": {
+      "url": "https://www.google.com/maps/@37.7804515,-122.3907693,3a,95y,137.21h,108t/data=!3m1!1e1",
+      "panoId": "yRzdEUo66i-HJ98vT4_mfg",
+      "captureDate": "2025-05",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Ground detail plus upper facade. Left end not fully covered; at least four broad window groups per upper row visible."
+    },
+    "101-townsend-dahlin": {
+      "url": "https://www.dahlingroup.com/projects/101-Townsend",
+      "captureDate": null,
+      "imageUrl": "https://d3e83vdvp96zm2.cloudfront.net/images/project/525/08_img_101townsend.jpg",
+      "limitation": "Undated alley photograph only. Architecture text identifies painted stucco/concrete and 9 by 15 inch pane replication; do not treat as exact scene-wide window size."
+    },
+    "china-basin-mccarthy-1": {
+      "url": "https://www.mccarthycook.com/portfolio-item/china-basin/",
+      "imageUrl": "https://www.mccarthycook.com/wp-content/uploads/1-01-2.jpg",
+      "captureDate": null,
+      "limitation": "Undated owner/developer exterior photograph at dusk. Berry building left/end and courtyard steps; not a current capture guarantee."
+    },
+    "china-basin-mccarthy-2": {
+      "url": "https://www.mccarthycook.com/portfolio-item/china-basin/",
+      "imageUrl": "https://www.mccarthycook.com/wp-content/uploads/1-02-2.jpg",
+      "captureDate": null,
+      "limitation": "Undated owner/developer daytime exterior. Shows Berry corner/end and adjacent Wharfside end. Long frontage recedes; cannot count all bays."
+    },
+    "china-wharfside-mhp": {
+      "url": "https://www.mhpse.com/portfolio-items/china-basin-wharfside-building/",
+      "imageUrl": "https://www.mhpse.com/wp-content/uploads/2023/01/Website-1-4.jpg",
+      "captureDate": null,
+      "publishedDate": "2023-05-30",
+      "limitation": "Page/update and upload dates are 2023; photograph itself is undated. Waterfront side is mostly outside immediate road-visible area."
+    },
+    "25-lusk-psd": {
+      "url": "https://psdnyc.com/work/25-lusk/",
+      "imageUrl": "https://psdnyc.com/wp-content/uploads/2018/09/25-Lusk-Signage-Design-Branding-PSD-NYC-01-1-1580x1598.jpg",
+      "captureDate": null,
+      "limitation": "2018/09 upload path, capture date unknown. Close photograph covers two upper windows and main entrance, not full six-bay building."
+    },
+    "45-lusk-google-2023": {
+      "url": "https://www.google.com/maps/@37.7782909,-122.3942944,3a,95y,46h,99t/data=!3m1!1e1",
+      "panoId": "FGiJW1tc9S1nbhtkoumi-Q",
+      "captureDate": "2023-01",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Camera UI label 47 Lusk. Corrected view faces 45 left and 47 right, with 25 Lusk sign fragment at far left."
+    },
+    "third-king-google-2025": {
+      "url": "https://www.google.com/maps/@37.7782801,-122.3920846,3a,95y,10h,98t/data=!3m1!1e1",
+      "panoId": "i13sPEyEorELNUJQjjuQXQ",
+      "captureDate": "2025-03",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Corner and adjacent single-storey shops, and separate taller background walls. Closer view was at 42.38 degrees heading."
+    },
+    "761-third-chronicle-2026": {
+      "url": "https://www.sfchronicle.com/realestate/article/sf-tom-brady-sports-card-21282250.php",
+      "publishedDate": "2026-01-07",
+      "captureDate": null,
+      "evidenceKind": "Text-only continuity and tenant-change evidence; not used to read sign pixels",
+      "finding": "Reports CardVault leasing the existing one-storey 2400-sq-ft commercial building at 761 Third, formerly Baseballism."
+    },
+    "761-third-kron-2026": {
+      "url": "https://sports.yahoo.com/articles/nfl-great-tom-brady-channels-190359663.html",
+      "publishedDate": "2026-02",
+      "captureDate": null,
+      "evidenceKind": "Text-only opening report",
+      "finding": "KRON report syndicated by Yahoo describes CardVault store opening at Third and King ahead of Super Bowl LX."
+    },
+    "180-townsend-google-2025": {
+      "url": "https://www.google.com/maps/@37.779073,-122.39217,3a,95y,290h,105t/data=!3m1!1e1",
+      "captureDate": "2025-05",
+      "captureDateBasis": "Visible Street View label; camera 177 Townsend",
+      "inspection": "Five arched bays on each of three storeys. Dark ground, brick upper two, pale belts/dentils, observed 180 and andreessen horowitz."
     }
   }
 }

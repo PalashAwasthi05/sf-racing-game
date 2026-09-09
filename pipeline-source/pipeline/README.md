@@ -1,4 +1,10 @@
-# King Street reconstruction pipeline v0.6
+# King Street reconstruction pipeline v0.7
+
+`spatial_rules.py` resolves overlapping outlines, sampled foundations, nested roof volumes and duplicate faces across the entire study. `mobility.py` owns cycleways, side-specific lanes, mapped stairs and source-backed barriers. `freshness.py` keeps capture age separate from edit/publication dates and excludes superseded or nonvisual sign text. Adjacent envelope faces generate only their exposed depth difference. New reusable components include arched apertures, pilasters, fire escapes and raised entry steps.
+
+Twelve additional frontage observation packets are recorded under `broader-observations.json` and compiled by the common envelope grammar. They are manually interpreted observations with estimated dimensions, not an automatic vision result. Major heuristic updates regenerate the entire study.
+
+Run `python work/validate_spatial.py` for unfamiliar-input physical/freshness regressions. The full generator needs all other checks listed below.
 
 Every build writes `king-street-rule-audit.json`: rejected apertures, material corrections and semantic sign attachment corrections. `resolve_material` chooses an appearance recipe from source-linked family/finish evidence, including when a prior has the wrong material. `lettering.attachment` constrains signs to compiled supports and fails on missing support declarations. Names and addresses never choose these rules. Tests use unfamiliar names and deliberately incorrect inputs. Manual source annotation remains separate from automatic numeric inference.
 

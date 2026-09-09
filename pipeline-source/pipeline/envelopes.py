@@ -5,11 +5,35 @@ No address-, landmark- or architectural-style-specific code is permitted here.
 import math,re,copy
 import numpy as np
 import trimesh
-from shapely.geometry import Polygon,Point,box
+from shapely.geometry import Polygon,Point,box,LineString
 from shapely.ops import unary_union
 from scipy.ndimage import gaussian_filter1d
 from .surface_evidence import admissible,resolve_material
 
+
+def aperture_shape(style):
+ if style.get('shapeKind')=='arch':
+  spring=style.get('springRatio',.68)
+  return [[0,0],[1,0],[1,spring]]+[[.5+.5*math.cos(a),spring+(1-spring)*math.sin(a)] for a in np.linspace(0,math.pi,17)]+[[0,0]]
+ return style.get('shape',[[0,0],[1,0],[1,1],[0,1]])
+
+def return_edges(node,region,nodes,shapes):
+ """Adjacent patches own only their exposed depth difference, not two buried walls."""
+ for aa,bb in zip(region.exterior.coords,list(region.exterior.coords)[1:]):
+  edge=LineString([aa,bb]);remaining=edge
+  for other in nodes:
+   if other['id']==node['id'] or other['parentId']!=node['parentId']:continue
+   shared=edge.intersection(shapes[other['id']].boundary)
+   if shared.length<.001:continue
+   remaining=remaining.difference(shared)
+   if node['depthM']>other['depthM']+.002:
+    for line in _lines(shared):yield line.coords[0],line.coords[-1],other['depthM']
+  for line in _lines(remaining):yield line.coords[0],line.coords[-1],node['parentDepthM']
+
+def _lines(g):
+ if g.is_empty:return []
+ if g.geom_type=='LineString':return [g]
+ return [p for q in getattr(g,'geoms',[]) for p in _lines(q)]
 
 def matches(c,profile):
  m=profile['match']
@@ -160,7 +184,7 @@ def compile(ctx,c,z0,resolved):
      for iy,y in enumerate(ys):
       if [ix,iy] in group.get('omit',[]):continue
       ow=wid*(cc-a)/nx*s.get('widthRatio',.75);oh=H*(dd-b)/ny*s.get('heightRatio',.78);cx=x0+(a+x*(cc-a))*wid;cz=zmin+(b+y*(dd-b))*H
-      shape=s.get('shape',[[0,0],[1,0],[1,1],[0,1]])
+      shape=aperture_shape(s)
       uv={'polygon':[((cx+(xx-.5)*ow-x0)/wid,(cz+(zz-.5)*oh-zmin)/H) for xx,zz in shape]}
       if not admissible(uv,node):continue
       aperture=Polygon([(cx+(xx-.5)*ow,cz+(zz-.5)*oh) for xx,zz in shape]).intersection(visible)
@@ -168,16 +192,16 @@ def compile(ctx,c,z0,resolved):
       ops.extend((part,s,ix,iy) for part in _polys(aperture) if part.area>.05)
    for op in node.get('openings',[]):
     if not admissible(op,node,explicit=True):continue
-    a,b,cc,dd=op['rect'];aperture=box(x0+a*wid,zmin+b*H,x0+cc*wid,zmin+dd*H).intersection(visible)
+    a,b,cc,dd=op['rect'];shape=aperture_shape(op.get('style',{}));aperture=Polygon([(x0+(a+xx*(cc-a))*wid,zmin+(b+zz*(dd-b))*H) for xx,zz in shape]).intersection(visible)
     ops.extend((part,op.get('style',{}),0,0) for part in _polys(aperture) if part.area>.05)
    skin=visible.difference(unary_union([o[0] for o in ops]));prism(skin,depth,.24,mat)
    # Returns at every step/outcrop are true perpendicular surfaces. Parent skin was cut away.
    return_depth=depth-node['parentDepthM']
    if abs(return_depth)>.02:
-    for a,b in zip(region.exterior.coords,list(region.exterior.coords)[1:]):
+    for a,b,back_depth in return_edges(node,region,nodes,node_shapes):
      aa=np.array(a);bb=np.array(b);v=bb-aa
      if np.linalg.norm(v)<.002:continue
-     verts=[point(*aa,depth),point(*bb,depth),point(*bb,node['parentDepthM']),point(*aa,node['parentDepthM'])]
+     verts=[point(*aa,depth),point(*bb,depth),point(*bb,back_depth),point(*aa,back_depth)]
      mesh=trimesh.Trimesh(verts,[[0,1,2],[0,2,3]],process=False);ctx['put'](mesh,wallkey,mat)
    for op,s,ix,iy in ops:
     xa,za,xb,zb=op.bounds;ow=xb-xa;oh=zb-za;cx=(xa+xb)/2;cz=(za+zb)/2;recess=s.get('recessM',.16);fw=s.get('frameWidthM',.055);frame_mat=s.get('frameMaterial','silver');gd=depth-recess
@@ -185,8 +209,10 @@ def compile(ctx,c,z0,resolved):
     for a,b in zip(op.exterior.coords,list(op.exterior.coords)[1:]):
      beam([a[0],a[1],gd+.02],[b[0],b[1],gd+.02],fw,frame_mat)
      verts=[point(*a,depth),point(*b,depth),point(*b,gd),point(*a,gd)];ctx['put'](trimesh.Trimesh(verts,[[0,1,2],[0,2,3]],process=False),detail,s.get('revealMaterial',mat))
-    for frac in s.get('mullions',[.5]):block(xa+ow*frac,cz,.043,oh,.055,frame_mat,gd+.025)
-    for frac in s.get('transoms',[.76]):block(cx,za+oh*frac,ow,.043,.055,frame_mat,gd+.025)
+    for frac in s.get('mullions',[.5]):
+     for ln in _lines(LineString([(xa+ow*frac,za),(xa+ow*frac,zb)]).intersection(op)):beam([*ln.coords[0],gd+.025],[*ln.coords[-1],gd+.025],.043,frame_mat)
+    for frac in s.get('transoms',[.76]):
+     for ln in _lines(LineString([(xa,za+oh*frac),(xb,za+oh*frac)]).intersection(op)):beam([*ln.coords[0],gd+.025],[*ln.coords[-1],gd+.025],.043,frame_mat)
     if s.get('awning') and (ix+2*iy)%4==1:
      aw=ow*.75;ah=min(.66,oh*.23);bot=za+oh*.47;top=bot+ah;proj=.19
      for xx in [cx-aw/2,cx+aw/2]:beam([xx,top,gd+.025],[xx,bot,gd+proj],.035,frame_mat)
@@ -208,6 +234,34 @@ def compile(ctx,c,z0,resolved):
     if typ=='cornice':
      # Stacked section sweep. Width/depth changes produce the profile, not a painted band.
      for rise,hh,projection in component.get('section',[[0,.16,.35]]):block((xa+xb)/2,zz+rise,xb-xa,hh,projection,cm,dep+projection/2)
+    elif typ=='canopy':
+     projection=component.get('projectionM',1);thickness=component.get('thicknessM',.12)
+     block((xa+xb)/2,zz,xb-xa,thickness,projection,cm,dep+projection/2)
+     if component.get('braces'):
+      for xx in [xa+.15,xb-.15]:beam([xx,zz+.75,dep],[xx,zz,dep+projection*.9],.035,cm)
+    elif typ=='pilasters':
+     for xx in np.linspace(xa,xb,component.get('count',6)):
+      block(xx,(zmin+zmax)/2,component.get('widthM',.25),H,component.get('projectionM',.25),cm,dep+.10)
+    elif typ=='dentils':
+     for xx in np.arange(xa,xb,component.get('pitchM',.32)):block(xx,zz,.14,.22,.24,cm,dep+.1)
+    elif typ=='fireEscape':
+     # Observed platforms and alternating open stair flights are anchored to floor datums.
+     zs=component['levelsM'];projection=component.get('projectionM',1.1)
+     for hh in zs:
+      block((xa+xb)/2,hh,xb-xa,.1,projection,cm,dep+projection/2)
+      for xx in np.arange(xa,xb,.15):beam([xx,hh,dep+projection],[xx,hh+1.0,dep+projection],.022,cm)
+      beam([xa,hh+1,dep+projection],[xb,hh+1,dep+projection],.035,cm)
+     for i,(lo,hi) in enumerate(zip(zs,zs[1:])):
+      xx1,xx2=(xa,xb) if i%2==0 else (xb,xa);steps=max(5,round((hi-lo)/.19))
+      for j in range(steps):block(xx1+(xx2-xx1)*(j+.5)/steps,lo+(hi-lo)*(j+1)/steps,abs(xx2-xx1)/steps+.02,.045,projection*.75,cm,dep+projection/2)
+      for d in [dep+.1,dep+projection-.1]:beam([xx1,lo+1,d],[xx2,hi+1,d],.035,cm)
+    elif typ=='entrySteps':
+     # A photographed raised entrance supplies rise. Ground supplies the lower support.
+     top=component.get('topM',.65);run=component.get('runM',1.4);steps=component.get('count',4)
+     for j in range(steps):
+      h=top*(j+1)/steps;d=run*(1-(j+.5)/steps);block((xa+xb)/2,h/2,xb-xa,h+.05,run/steps+.02,cm,dep+d)
+     if component.get('handrail'):
+      for xx in [xa,xb]:beam([xx,1,dep+run],[xx,top+1,dep],.035,'charcoal')
     elif typ=='blade':
      projection=component.get('projectionM',1.5);raise_m=component.get('raiseM',1.3);post_pitch=component.get('postPitchM',3.5)
      block((xa+xb)/2,zz+raise_m,xb-xa,component.get('thicknessM',.13),projection,cm,dep+projection/2)
