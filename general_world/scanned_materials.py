@@ -1,7 +1,7 @@
 """Evidence driven loader for generic ambientCG material inventory."""
 from __future__ import annotations
 from dataclasses import dataclass
-import hashlib, json
+import hashlib, json, os
 from pathlib import Path
 from typing import Any, Mapping
 import numpy as np
@@ -27,7 +27,7 @@ def inventory(manifest_path: str | Path = ROOT / "manifest.json") -> list[dict[s
     return list(data.get("assets", []))
 
 def _find(asset_root: Path, token: str) -> Path | None:
-    hits = sorted(p for p in asset_root.rglob("*") if p.is_file() and token in p.name.lower())
+    hits = sorted(p for p in asset_root.rglob("*") if p.is_file() and p.suffix.lower() in {".jpg", ".jpeg", ".png", ".tif", ".tiff"} and token in p.stem.lower())
     return hits[0] if hits else None
 
 def _unresolved(record, reason, override=None):
@@ -42,18 +42,23 @@ def load_asset(record: Mapping[str, Any], root: str | Path = ROOT, measured_scal
     if scale is None: return _unresolved(rec, "tile_size_m unknown; measured override required", measured_scale_m)
     try: scale = tuple(float(x) for x in scale)
     except (TypeError, ValueError): return _unresolved(rec, "invalid tile_size_m", measured_scale_m)
-    if len(scale) != 2 or min(scale) <= 0: return _unresolved(rec, "invalid tile_size_m", measured_scale_m)
-    root = Path(root); base = root / str(category) / str(aid)
+    if len(scale) != 2 or not np.all(np.isfinite(scale)) or min(scale) <= 0: return _unresolved(rec, "invalid tile_size_m", measured_scale_m)
+    root = Path(root).resolve(); base = (root / str(category) / str(aid)).resolve()
+    try: base.relative_to(root)
+    except ValueError: return _unresolved(rec, "asset path escapes supplied root", measured_scale_m)
     color, normal, rough = _find(base, "color"), _find(base, "normalgl"), _find(base, "roughness")
     if not color or not rough: return _unresolved(rec, "missing color or roughness map", measured_scale_m)
     if not normal: return _unresolved(rec, "missing OpenGL normal map", measured_scale_m)
     try:
         c, n, r = Image.open(color).convert("RGB"), Image.open(normal).convert("RGB"), Image.open(rough).convert("L")
-        if c.width < 1024 or n.width < 1024 or r.width < 1024: return _unresolved(rec, "maps are below 1K", measured_scale_m)
+        sizes = {c.size, n.size, r.size}
+        if len(sizes) != 1 or any(max(width, height) < 1024 for width, height in sizes): return _unresolved(rec, "maps are below 1K or dimensions differ", measured_scale_m)
     except Exception as exc: return _unresolved(rec, f"invalid image: {exc}", measured_scale_m)
     metal_path = _find(base, "metalness") or _find(base, "metallic")
     metal = Image.open(metal_path).convert("L") if metal_path else Image.new("L", r.size, 0)
-    key = (rec.get("archive_sha256") or "", str(base.resolve()))
+    if metal.size != r.size: return _unresolved(rec, "metalness dimensions differ", measured_scale_m)
+    fingerprint = tuple((str(p), p.stat().st_size, p.stat().st_mtime_ns) for p in (color, normal, rough, metal_path) if p)
+    key = (rec.get("archive_sha256") or "", str(base.resolve()), scale, fingerprint)
     if key in _CACHE: return _CACHE[key]
     mr = Image.merge("RGB", (Image.new("L", r.size, 0), r, metal))
     mat = PBRMaterial(name=str(aid), baseColorTexture=c, normalTexture=n, metallicRoughnessTexture=mr, metallicFactor=1.0 if metal_path else 0.0, roughnessFactor=1.0, baseColorFactor=[255,255,255,255])
@@ -65,5 +70,8 @@ def candidates(category: str, records=None, observed: Mapping[str, float] | None
     rows = [dict(x) for x in (records if records is not None else inventory()) if x.get("category") == category]
     if not observed: return rows
     def score(row):
-        d = row.get("descriptors", {}); return sum((float(d.get(k, 0))-float(v))**2 for k,v in observed.items())
+        d = row.get("descriptors") or {}
+        missing = sum(k not in d for k in observed)
+        distance = sum((float(d[k])-float(v))**2 for k,v in observed.items() if k in d)
+        return (missing, distance)
     return sorted(rows, key=score)

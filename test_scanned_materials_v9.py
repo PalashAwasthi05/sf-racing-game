@@ -11,7 +11,7 @@ def _fixture(tmp_path, *, normal=True, scale=(2.0, 1.0), metal=False):
     if normal: Image.new("RGB", (1024, 1024), (128, 128, 255)).save(base / "Sample_1K_NormalGL.jpg")
     Image.new("L", (1024, 1024), 180).save(base / "Sample_1K_Roughness.jpg")
     if metal: Image.new("L", (1024, 1024), 255).save(base / "Sample_1K_Metalness.jpg")
-    return root, {"asset_id":"sample", "category":"brick", "tile_size_m":list(scale), "source_url":"https://example.invalid/a/sample", "download_url":"https://example.invalid/get/sample", "license":"CC0-1.0", "archive_sha256":"fixture"}
+    return root, {"asset_id":"sample", "category":"brick", "tile_size_m":list(scale) if scale is not None else None, "source_url":"https://example.invalid/a/sample", "download_url":"https://example.invalid/get/sample", "license":"CC0-1.0", "archive_sha256":"fixture"}
 
 def test_load_valid_asset_and_roughness_channel(tmp_path):
     root, rec = _fixture(tmp_path)
@@ -25,6 +25,22 @@ def test_unknown_scale_requires_measured_override(tmp_path):
     assert not load_asset(rec, root).resolved
     assert load_asset(rec, root, measured_scale_m=(.5,.5)).resolved
 
+def test_cache_key_includes_measured_scale(tmp_path):
+    _CACHE.clear(); root, rec = _fixture(tmp_path, scale=None)
+    rec["tile_size_m"] = None
+    assert load_asset(rec, root, measured_scale_m=(.5,.5)).uv_scale_m == (.5,.5)
+    assert load_asset(rec, root, measured_scale_m=(.7,.7)).uv_scale_m == (.7,.7)
+
+def test_nan_scale_is_unresolved(tmp_path):
+    root, rec = _fixture(tmp_path, scale=(float("nan"), 1.0))
+    assert not load_asset(rec, root).resolved
+
+def test_map_height_mismatch_is_unresolved(tmp_path):
+    root, rec = _fixture(tmp_path)
+    Image.new("L", (900, 900), 180).save(root / "brick" / "sample" / "maps" / "Sample_1K_Roughness.jpg")
+    result = load_asset(rec, root)
+    assert not result.resolved and "dimensions" in result.reason
+
 def test_missing_normal_is_unresolved(tmp_path):
     root, rec = _fixture(tmp_path, normal=False)
     result = load_asset(rec, root)
@@ -37,8 +53,8 @@ def test_metalness_is_used_only_when_source_map_exists(tmp_path):
     b = load_asset(rec2, root2); assert b.resolved and b.material.metallicFactor == 0.0
 
 def test_category_candidates_do_not_assign_or_use_building_rules():
-    rows = [{"category":"brick", "asset_id":"a", "descriptors":{"roughness":.8}}, {"category":"brick", "asset_id":"b", "descriptors":{"roughness":.2}}, {"category":"metal", "asset_id":"c"}]
-    assert [x["asset_id"] for x in candidates("brick", rows, {"roughness":.2})] == ["b", "a"]
+    rows = [{"category":"brick", "asset_id":"a", "descriptors":{"roughness":.8}}, {"category":"brick", "asset_id":"b", "descriptors":{"roughness":.2}}, {"category":"brick", "asset_id":"missing"}, {"category":"metal", "asset_id":"c"}]
+    assert [x["asset_id"] for x in candidates("brick", rows, {"roughness":.2})] == ["b", "a", "missing"]
     assert candidates("masonry", rows) == []
 
 def test_shared_cache_reuses_loaded_material(tmp_path):
