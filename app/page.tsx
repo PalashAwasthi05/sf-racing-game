@@ -1,2 +1,2 @@
-import GeometryPreview from './geometry-preview';
-export default function Home(){return <GeometryPreview/>}
+import KingPilot from './king-pilot';
+export default function Home(){return <KingPilot/>}
