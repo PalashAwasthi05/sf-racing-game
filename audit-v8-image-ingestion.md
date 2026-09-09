@@ -1,0 +1,29 @@
+# Audit v8: location-independent street-imagery ingestion and reconstruction
+
+Scope: private driving-world prototype; no location-specific research and no per-building manual annotations. This is an API/model capability audit, not a claim that screenshots are calibrated multiview data.
+
+## 1. Mapillary: best fit for automated area ingestion
+
+**Supported capability.** The Mapillary API v4/Python SDK exposes area queries such as `images_in_bbox` (west/south/east/north), filters for capture date, image type (`flat`/`pano`/`all`), compass angle, sequence, and organization, and returns GeoJSON. Image fields include geometry, `computed_geometry`, altitude, `captured_at`, compass/computed compass angle, `camera_type`, `camera_parameters`, image dimensions, sequence/SfM-cluster identifiers, and thumbnail URLs. The SDK also exposes sequence-in-bbox queries and image thumbnails. See the [official Mapillary SDK interface documentation](https://mapillary.github.io/mapillary-python-sdk/docs/mapillary/mapillary.interface/) and [client/authentication documentation](https://mapillary.github.io/mapillary-python-sdk/docs/mapillary.models/mapillary.models.client/).
+
+**Prerequisites.** Register an application and obtain a Mapillary client access token from the [Mapillary developer dashboard](https://www.mapillary.com/dashboard/developers); send it as an OAuth token/header (the SDK examples use `MLY|...`). Requests to `graph.mapillary.com` require authorization. The ingestion worker can: query a target area, filter by date/type, group by sequence, fetch metadata, download permitted thumbnails, and retain the returned pose/date/intrinsic fields as reconstruction inputs.
+
+**Material limitations.** Coverage, viewpoints, camera models, and metadata quality vary by contributor and sequence; `compass_angle` is orientation metadata, not a complete calibrated 6-DoF trajectory. `camera_parameters` may be absent or camera-type dependent, so the pipeline must validate fields and allow model-estimated pose. API availability does not guarantee coverage for every road or consistent temporal capture. Respect Mapillary’s applicable terms, attribution, privacy, and image-use/license requirements.
+
+## 2. Google Street View / Map Tiles: technically rich, policy-blocked for this use
+
+**Supported capability.** The [official Street View Tiles API](https://developers.google.com/maps/documentation/tile/streetview) supports bulk `panoIds` lookup for up to 100 geographic locations, Street View metadata (including camera position-related metadata, adjacent panoramas, and copyright), thumbnails, and panorama tiles. The documented flow is API key → Street View session token (`mapType=streetview`) → pano IDs → metadata/thumbnails/tiles. The [Map Tiles overview](https://developers.google.com/maps/documentation/tile/overview) also documents Google Photorealistic 3D Tiles (textured 3D mesh), which use an API key but no session token.
+
+**Prerequisites.** A Google Cloud project with billing/API access and a restricted API key; for Street View imagery/2D tiles, create and use a session token. Display the required Google Maps/copyright attribution and the panorama `reportProblemLink` where required.
+
+**Critical limitation for this prototype.** Google’s [Map Tiles API policies](https://developers.google.com/maps/documentation/tile/policies) say applications are for map visualizations and prohibit pre-fetching/indexing/storing/caching content except under contractual exceptions, plus non-visualization uses including **image analysis, machine interpretation, object detection/identification, geodata extraction/resale, and offline uses**. Automatic ingestion of Street View images into a reconstruction pipeline is therefore not an approved design under the published policy; obtain explicit contractual authorization or exclude Google imagery from the reconstruction dataset. Pano screenshots/tiles are not automatically calibrated multiview data.
+
+## 3. Practical open-source reconstruction model
+
+**DUSt3R (official repository).** [naver/dust3r](https://github.com/naver/dust3r) accepts a list of images or a directory, builds image pairs, and produces dense 3D point predictions; its example retrieves focal estimates, camera poses, point clouds, and confidence masks after global alignment. This supports an automatic batch stage without building per-building annotations and without requiring pre-supplied camera calibration/poses. Feed it Mapillary image batches after metadata-based filtering and sequence/overlap selection.
+
+**Hardware and limitations.** The official demo defaults to `device="cuda"`, `batch_size=1`, and 512-pixel inference; the repository documents Docker runs with NVIDIA CUDA and also a CPU Docker mode. It does not document a minimum GPU/RAM specification, so size hardware empirically and expect CPU to be slower. DUSt3R needs multiple overlapping views of the same scene for useful reconstruction; arbitrary unrelated street images will not produce a coherent model. Outputs are learned estimates with confidence masks and require quality gates, overlap checks, scale/georeferencing, and temporal handling. The repository’s checkpoint is CC-BY-NC-SA 4.0 and also requires accepting licenses for public training datasets/base checkpoints.
+
+## Recommended pipeline decision
+
+Use Mapillary as the primary automated area source: bbox/sequence discovery → metadata validation (date, geometry, camera type/intrinsics, heading) → thumbnail retrieval → overlap/quality filtering → DUSt3R batch inference → confidence filtering and georeferencing against available poses/road geometry. Treat Google Street View as visualization/reference only unless a separate agreement explicitly authorizes machine interpretation, extraction, storage, and reconstruction. Do not treat screenshots as calibrated multiview captures.
