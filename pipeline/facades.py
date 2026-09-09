@@ -5,10 +5,10 @@ from shapely.geometry import Point,LineString
 from . import facade_grammar
 
 DEFAULTS={
- 'masonry':dict(material='brick',archetype='masonry',floorHeightM=3.65,groundHeightM=4.3,bayWidthM=3.4,openingRatio=.56,openingHeightRatio=.66,frameProjectionM=.03,frameWidthM=.065,mullions=1,transomRatio=.66,ground='shopfront'),
- 'residential':dict(material='concrete',archetype='residential',floorHeightM=3.15,groundHeightM=4.0,bayWidthM=3.4,openingRatio=.62,openingHeightRatio=.7,frameProjectionM=.05,frameWidthM=.07,mullions=1,transomRatio=.72,ground='entry'),
- 'commercial':dict(material='concrete',archetype='commercial',floorHeightM=3.8,groundHeightM=4.5,bayWidthM=3.0,openingRatio=.81,openingHeightRatio=.76,frameProjectionM=.035,frameWidthM=.065,mullions=2,transomRatio=.73,ground='shopfront'),
- 'venue':dict(material='brick',archetype='venue',floorHeightM=4.8,groundHeightM=4.5,bayWidthM=6.,openingRatio=.65,openingHeightRatio=.66,frameProjectionM=.04,frameWidthM=.1,mullions=3,transomRatio=.72,ground='entry')}
+ 'masonry':dict(material='brick_modular',archetype='masonry',floorHeightM=3.65,groundHeightM=4.3,bayWidthM=3.4,openingRatio=.56,openingHeightRatio=.66,frameProjectionM=.03,frameWidthM=.065,mullions=1,transomRatio=.66,ground='shopfront'),
+ 'residential':dict(material='stucco',archetype='residential',floorHeightM=3.15,groundHeightM=4.0,bayWidthM=3.4,openingRatio=.62,openingHeightRatio=.7,frameProjectionM=.05,frameWidthM=.07,mullions=1,transomRatio=.72,ground='entry'),
+ 'commercial':dict(material='stucco',archetype='commercial',floorHeightM=3.8,groundHeightM=4.5,bayWidthM=3.0,openingRatio=.81,openingHeightRatio=.76,frameProjectionM=.035,frameWidthM=.065,mullions=2,transomRatio=.73,ground='shopfront'),
+ 'venue':dict(material='brick_modular',archetype='venue',floorHeightM=4.8,groundHeightM=4.5,bayWidthM=6.,openingRatio=.65,openingHeightRatio=.66,frameProjectionM=.04,frameWidthM=.1,mullions=3,transomRatio=.72,ground='entry')}
 
 def prior(tags,height,area):
  if tags.get('leisure')=='stadium' or area>18000:return DEFAULTS['venue'].copy()
@@ -22,8 +22,11 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
  matches=[o for o in observations if str(o['match'].get('osmWayId'))==str(c['osm']['id'] if c['osm'] else '')]
  for poly in ctx['polys'](g):
   for ring in [poly.exterior]+list(poly.interiors):
-   coords=list(ring.coords)
-   for edge,(aa,bb) in enumerate(zip(coords,coords[1:])):
+   coords=list(ring.coords);segments=[];cut=ctx.get('envelopeMask')
+   for aa,bb in zip(coords,coords[1:]):
+    line=LineString([aa,bb]);remaining=line.difference(cut.buffer(.015)) if cut is not None and not cut.is_empty else line
+    for part in ctx['lines'](remaining):segments.extend(zip(part.coords,list(part.coords)[1:]))
+   for edge,(aa,bb) in enumerate(segments):
     a,b=np.asarray(aa),np.asarray(bb);u=b-a;length=np.linalg.norm(u)
     if length<.3:continue
     u=u/length;n=np.array([u[1],-u[0]]);mid=(a+b)/2
@@ -31,9 +34,9 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
     main_height=default_height
     mask=ctx.get('envelopeMask')
     if mask is not None and not mask.is_empty and mask.buffer(.12).contains(Point(*mid)):continue
-    if c.get('elevationOffset',0)>0 and c.get('outerBoundary') is not None and c['outerBoundary'].distance(Point(*mid))<2.0:continue
+    if c.get('elevationOffset',0)>0 and c.get('outerBoundary') is not None and c['outerBoundary'].distance(Point(*mid))<.18:continue
     samples=ctx.get('roofSamples')
-    if samples is not None and len(samples)>30:
+    if samples is not None and len(samples)>30 and not c.get('roofBand'):
      delta=samples[:,:2]-a;along=delta@u;away=np.abs(delta@n);near=samples[(along>=0)&(along<=length)&(away<2.0)]
      if len(near)>20:main_height=max(default_height,min(height,float(np.quantile(near[:,2],.96)-z0)))
     angle=math.atan2(u[1],u[0]);style=prior(tags,height,c['full_area'])
@@ -56,12 +59,15 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
     def block(s,z,w,h,d,material,depth=0,key=detail):
      if w<=.001 or h<=.001:return
      pos=a+u*s+n*depth;cube([pos[0],pos[1],z0+z],[w,d,h],key,material,angle)
+    if c.get('roofBand'):
+     # Roof height bands are opaque envelope risers, never invented window floors.
+     block(length/2,main_height/2,length,main_height,.24,mat,-.12,layer);continue
     if not visible:
      block(length/2,main_height/2,length,main_height,.38,mat,-.19,layer);continue
     cols=max(1,round(length/style['bayWidthM']));bay=length/cols;ground_level=c.get('elevationOffset',0)<.5;gh=min(style['groundHeightM'],main_height*.42) if ground_level else 0
     rows=max(1,round((main_height-gh)/style['floorHeightM']));fh=(main_height-gh)/rows
     wid=bay*style['openingRatio'];opening_h=fh*style['openingHeightRatio'];fw=style['frameWidthM'];projection=style['frameProjectionM'];recess=.18
-    records.append({'buildingId':fid,'edge':edge,'midpoint':mid.tolist(),'normal':n.tolist(),'lengthM':round(length,2),'heightM':round(main_height,2),'floors':rows+1,'columns':cols,'archetype':style['archetype'],'material':mat,'sourceIds':obs.get('sourceIds',[]) if obs else [],'status':'visual-fit' if obs else 'inferred','unresolved':obs.get('unresolved',[]) if obs else ['complete facade has no direct image fit']})
+    records.append({'buildingId':fid,'edge':edge,'midpoint':mid.tolist(),'normal':n.tolist(),'lengthM':round(length,2),'heightM':round(main_height,2),'floors':rows+1,'columns':cols,'archetype':style['archetype'],'material':mat,'sourceIds':obs.get('sourceIds',[]) if obs else [],'status':'visual-fit' if obs else 'inferred','unresolved':obs.get('unresolved',[]) if obs else ['complete facade has no direct image fit; material and openings remain unverified priors']})
     for row in range(0 if ground_level else 1,rows+1):
      low=0 if row==0 else gh+(row-1)*fh;rh=gh if row==0 else fh
      ow=bay*(.74 if row==0 else style['openingRatio']);oh=rh*(.77 if row==0 else style['openingHeightRatio']);bottom=low+(.15 if row==0 else (rh-oh)*.48);top=bottom+oh
@@ -94,19 +100,9 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
          block(s,top+.20,ow+.2,.045,1.65,'glass_light',.68)
          for dx in [-ow*.4,ow*.4]:
           p=a+u*(s+dx);cylinder([*(p+n*.03),z0+top+.8],[*(p+n*1.35),z0+top+.2],.023,detail,'steel',6)
-       # Plinth, wall light and service vent use common anchored components.
-       for dx in [-bay*.42,bay*.42]:
-        block(s+dx,1.6,.15,.36,.10,'aluminum',.06)
-       if col%3==0:
-        block(s+bay*.42,3.25,.23,.21,.045,'steel',.03)
-        for zz in np.linspace(3.18,3.32,5):block(s+bay*.42,zz,.2,.012,.04,'recess',.06)
       components+=1
     # Continuous base, cornice and coping; stone bands only where observed.
     for zz,hh,dd in [(0.22,.44,.10),(main_height-.22,.15,.15),(main_height+.10,.18,.48)]:block(length/2,zz,length,hh,dd,'concrete',.05)
     if style.get('stoneBands'):
      for zz in [gh-.1,gh+fh*1.2]:block(length/2,zz,length,.32,.20,'concrete',.12)
-    # Downpipes: location is inferred; generated only at ends with free exposed space.
-    for ss in [.18,length-.18]:
-     p=a+u*ss+n*.1;cylinder([*p,z0+.3],[*p,z0+main_height-.3],.037,detail,'steel',7)
-     for zz in np.arange(1,main_height,2.1):block(ss,zz,.12,.045,.15,'steel',.08)
  return records,components

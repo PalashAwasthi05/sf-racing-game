@@ -11,6 +11,7 @@ from rasterio.features import shapes
 from shapely.geometry import shape
 from shapely.ops import unary_union
 from .envelopes import matches,frame,_polys
+from .freshness import sign_allowed
 
 def attachment(a,ctx,c,resolved):
  """Resolve text from its supporting component, using the compiler's dimensions."""
@@ -50,7 +51,7 @@ def contours(text,font='Arial Narrow Bold.ttf'):
 def compile(ctx,c,z0,observations,resolved):
  records=[]
  for a in observations:
-  if not matches(c,a):continue
+  if not matches(c,a) or not sign_allowed(a):continue
   if not a.get('sourceIds') or not a.get('text'):raise ValueError('Lettering requires literal observed text and source IDs')
   r=next((r for r in resolved if r['profile']['id']==a.get('profileId')),None)
   f=r['frame'] if r else frame(c,a);u,n=f['tangent'],f['normal'];key='facades__'+c['id']+'__observed_lettering'

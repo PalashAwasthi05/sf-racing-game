@@ -1,12 +1,13 @@
 """Street detail from topology, ROW and inventories; inferred positions remain explicit."""
 import math,re
 import numpy as np
+import trimesh
 from shapely.geometry import Point,LineString,box
 from shapely.ops import unary_union,nearest_points
 
 def compile(ctx):
  surface,cube,cyl=ctx['surface'],ctx['cube'],ctx['cylinder'];boundary=ctx['boundary'];roads=ctx['roads'];elev=ctx['elev'];records=[]
- road=unary_union([w['g'].buffer(width/2,cap_style=2,join_style=2) for w,width,lanes in roads]).intersection(boundary)
+ road=ctx['road_area']
  cycle=unary_union([w['g'].buffer(1.7) for w in ctx['ways'] if w['tags'].get('highway')=='cycleway' and w['g'].geom_type=='LineString']).intersection(boundary)
  crossings=unary_union([w['g'].buffer(1.8) for w in ctx['footpaths'] if w['tags'].get('footway')=='crossing'])
  rows=unary_union([ctx['geom'](r['the_geom']) for r in ctx['json'].load(open(ctx['DATA']/'row.json'))])
@@ -21,9 +22,14 @@ def compile(ctx):
  for p in pits:surface(p,'landscape','soil',.095)
  curb_lines=road.boundary.intersection(boundary.buffer(-1)).difference(crossings)
  for line in ctx['lines'](curb_lines):
-  for a,b in zip(line.coords,list(line.coords)[1:]):
-   a,b=np.array(a),np.array(b);v=b-a;le=np.linalg.norm(v)
-   if le>.02:cube([*(a+b)/2,float(elev(*(a+b)/2))+.175],[le,.18,.17],'sidewalks','concrete',math.atan2(v[1],v[0]))
+  # Short terrain-conforming strips avoid metre-long floating curb slabs.
+  for ss in np.arange(0,line.length,.65):
+   seg=LineString([line.interpolate(ss),line.interpolate(min(ss+.65,line.length))])
+   surface(seg.buffer(.09,cap_style=2),'sidewalks','concrete',.26)
+   for side in [-1,1]:
+    ln=seg.offset_curve(side*.09);a,b=np.array(ln.coords[0]),np.array(ln.coords[-1]);za,zb=float(elev(*a)),float(elev(*b))
+    vv=[[a[0],a[1],za+.09],[b[0],b[1],zb+.09],[b[0],b[1],zb+.26],[a[0],a[1],za+.26]]
+    ctx['put'](trimesh.Trimesh(vv,[[0,1,2],[0,2,3]],process=False),'sidewalks','concrete')
  # Score joints in the paving; geometry stays local and follows each street orientation.
  for w,width,lanes in roads:
   g=w['g']
@@ -34,7 +40,7 @@ def compile(ctx):
      if le<.01:continue
      u=v/le;n=np.array([u[1],-u[0]]);a=np.array([p.x,p.y])-n*1.6;b=np.array([p.x,p.y])+n*1.6
      for joint in ctx['lines'](LineString([a,b]).intersection(sidewalks)):
-      c,d=np.array(joint.coords[0]),np.array(joint.coords[-1]);vv=d-c;cube([*(c+d)/2,float(elev(*(c+d)/2))+.265],[np.linalg.norm(vv),.015,.008],'sidewalks','joint',math.atan2(vv[1],vv[0]))
+      surface(joint.buffer(.0075,cap_style=2),'sidewalks','joint',.269)
   if w['tags'].get('busway:right')=='lane':
    surface(g.offset_curve(-(width/2-1.6)).buffer(1.5).intersection(road),'markings','redpaint',.103)
   # Render direction arrows only when lane-turn semantics exist.
@@ -52,7 +58,7 @@ def compile(ctx):
      if 'left' in value:tip=center+n*1.3
      for side in [-1,1]:
       tail=tip-u*.7+n*.5*side;vec=tip-tail;cube([*(tip+tail)/2,z],[np.linalg.norm(vec),.19,.018],'markings','white',math.atan2(vec[1],vec[0]))
- surface(cycle.difference(ctx['all_buildings']),'cycleways','asphalt',.105)
+ # Separately mapped cycleways are owned by mobility.compile.
  # Tactile panels at mapped crossing endpoints, with detectable raised studs.
  for w in ctx['footpaths']:
   if w['tags'].get('footway')!='crossing':continue
