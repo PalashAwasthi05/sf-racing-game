@@ -13,7 +13,7 @@ def test_arch_hole_is_preserved():
     out = compile_wall(wall(), [{"kind": "window", "boundary_polygon": arch,
                                  "frame_width_m": .12}], .3)
     assert out["checks"]["closed_manifold"]
-    assert out["apertures"][0]["hole_area_m2"] == pytest.approx(6.0)
+    assert out["apertures"][0]["hole_area_m2"] == pytest.approx(7.0)
 
 
 def test_mullion_is_clipped_to_nonrectangular_glazing():

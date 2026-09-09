@@ -65,4 +65,5 @@ for w in ways:
   except (KeyError,ValueError):count=max(2,round(g.length/.32))
   if boundary.covers(g):stairs.append({'key':w['key'],'path':list(g.coords),'count':count,'handrail':t.get('handrail')=='yes'})
 d={'schema':'normalized-world-input/v1','snapshotDate':j['snapshotDate'],'groundFile':'ground.npz','surfacePointsFile':'surface-points.npz','buildings':features,'surfaces':surfaces,'stairs':stairs,'images':{},'derivedDetails':[],'provenance':{'automaticNormalization':True,'manualFacadeSourcesRead':0,'sourceJobHashInput':str(jobpath.name)}}
+d['coordinateFrame']={'projectedCrs':j['projectedCrs'],'originProjectedM':[cx,cy],'verticalOriginM':base,'units':'m','axes':'east,north,up'}
 (out/'input.json').write_text(json.dumps(d,separators=(',',':')));print({'buildings':len(features),'groundPoints':len(ground),'surfacePoints':len(surface),'rawSurfaces':len(surfaces),'stairs':len(stairs)})

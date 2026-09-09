@@ -80,7 +80,21 @@ def reconstruct_building(footprint,points,terrain,policy,fallback_height=None):
  xy=np.array(boundary);ground=np.asarray(terrain(xy[:,0],xy[:,1]));datum=float(np.median(ground));bottom=float(ground.min()-policy.ground_clearance_m)
  if points is None:points=np.empty((0,3))
  points=np.asarray(points);roof=points[points[:,2]>datum+2] if len(points) else points
+ # Slopes must be continuous surfaces, not height-quantized facade floors.
+ # The local import avoids a module cycle with the shared solid primitives.
+ from .roof_planes import fit_roof,roof_solid,evaluate
+ model,fit=fit_roof(footprint,roof)
+ if model is not None:
+  top=float(evaluate(model,xy).min())
+  if top>float(ground.max())+.25:
+   mesh=roof_solid(footprint,model,bottom)
+   return mesh,{'baseRoofM':top,'roofStatus':'continuous-plane-envelope','roofFit':fit,
+                'roofModel':model,'status':'closed-proxy-solid','detailStatus':'missing-images',
+                'foundationBottomM':bottom,'minimumBoundaryGroundM':float(ground.min()),'maximumBoundaryGroundM':float(ground.max()),
+                'watertight':bool(mesh.is_watertight),'positiveVolume':bool(mesh.is_volume),'components':len(mesh.split(only_watertight=False)),
+                'windowsInvented':0,'materialsInvented':0,'authoredProfilesUsed':0}
  layers,report=supported_roof_layers(footprint,roof,terrain,policy)
+ report['continuousRoofUnresolved']=fit
  top=report.get('baseRoofM')
  if top is None:
   if fallback_height is None:return None,{**report,'status':'unresolved-height','detailStatus':'missing-images'}
