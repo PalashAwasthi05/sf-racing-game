@@ -3,11 +3,13 @@
 This module deliberately consumes geometry and measurements only.  It does not
 infer openings, choose a facade style, or add unmeasured architectural parts.
 Coordinates supplied to this API are (horizontal, vertical) metres; returned
-meshes use (X horizontal, Y depth, Z vertical).
+meshes use (X horizontal, Y depth, Z vertical), with positive Y pointing
+inward from the measured wall face; positive recess_m therefore moves inward.
 """
 from __future__ import annotations
 
 from typing import Any, Iterable
+import math
 import numpy as np
 import trimesh
 from shapely.geometry import Polygon, LineString, MultiLineString, shape
@@ -66,6 +68,18 @@ def _segments(value: Iterable) -> Iterable[LineString]:
             yield line
 
 
+def _finite(value: Any, name: str, *, positive: bool = False,
+            nonnegative: bool = False) -> float:
+    try:
+        out = float(value)
+    except (TypeError, ValueError):
+        raise ApertureError(f"{name} must be finite") from None
+    if not math.isfinite(out) or (positive and out <= 0) or (nonnegative and out < 0):
+        rule = "positive" if positive else "nonnegative"
+        raise ApertureError(f"{name} must be {rule} and finite")
+    return out
+
+
 def compile_wall(wall_polygon: Any, apertures: Iterable[dict], wall_thickness_m: float) -> dict:
     """Compile a measured wall and its measured openings into closed mesh parts.
 
@@ -76,9 +90,7 @@ def compile_wall(wall_polygon: Any, apertures: Iterable[dict], wall_thickness_m:
     only when explicitly measured.  The result contains ``parts`` and explicit
     area/topology checks for downstream validation.
     """
-    t = float(wall_thickness_m)
-    if t <= 0:
-        raise ValueError("wall_thickness_m must be positive")
+    t = _finite(wall_thickness_m, "wall_thickness_m", positive=True)
     wall = _poly(wall_polygon)
     if wall.is_empty or not wall.is_valid or wall.area <= 1e-8:
         raise ApertureError("wall_polygon is degenerate or invalid")
@@ -103,11 +115,12 @@ def compile_wall(wall_polygon: Any, apertures: Iterable[dict], wall_thickness_m:
     aperture_reports = []
     for i, rec in enumerate(records):
         aperture = holes[i]
-        width = float(rec.get("frame_width_m", 0.0) or 0.0)
-        depth = float(rec.get("frame_depth_m", t) or t)
-        recess = float(rec.get("recess_m", 0.0) or 0.0)
-        if width < 0 or depth <= 0:
-            raise ApertureError(f"aperture {i}: invalid frame measurement")
+        width = _finite(rec.get("frame_width_m", 0.0) or 0.0,
+                        f"aperture {i} frame_width_m", nonnegative=True)
+        depth = _finite(rec.get("frame_depth_m", t) or t,
+                        f"aperture {i} frame_depth_m", positive=True)
+        recess = _finite(rec.get("recess_m", 0.0) or 0.0,
+                         f"aperture {i} recess_m", nonnegative=True)
         inner = aperture.buffer(-width, join_style=2) if width else aperture
         if inner.is_empty or inner.area <= 1e-8:
             raise ApertureError(f"aperture {i}: frame buffer collapses opening")
@@ -119,29 +132,42 @@ def compile_wall(wall_polygon: Any, apertures: Iterable[dict], wall_thickness_m:
             _add(parts, inner, y0 + depth / 2 - 0.001, y0 + depth / 2 + 0.001,
                  f"aperture_{i}_glazing", i)
             glazing = inner
+        elif rec["kind"] == "door":
+            glazing = inner
         else:
+            if rec.get("mullion_segments"):
+                raise ApertureError(f"aperture {i}: open_passage cannot have mullions")
             glazing = inner
         for j, line in enumerate(_segments(rec.get("mullion_segments"))):
             clipped = line.intersection(glazing)
             for k, piece in enumerate(getattr(clipped, "geoms", [clipped])):
                 if piece.geom_type != "LineString" or piece.length <= 1e-8:
                     continue
-                bar_width = float(rec.get("mullion_width_m", 0.03))
+                bar_width = _finite(rec.get("mullion_width_m", 0.03),
+                                    f"aperture {i} mullion_width_m", positive=True)
                 bar = piece.buffer(bar_width / 2, cap_style=2, join_style=2).intersection(glazing)
                 _add(parts, bar,
                      y0 + depth / 2 - bar_width / 2, y0 + depth / 2 + bar_width / 2,
                      f"aperture_{i}_mullion_{j}_{k}", i)
         leaf = rec.get("leaf_polygon", rec.get("measured_leaf_polygon"))
         if leaf is not None:
+            if rec["kind"] != "door":
+                raise ApertureError(f"aperture {i}: measured leaf is only legal for door")
             lp = _poly(leaf)
-            if not inner.covers(lp):
-                raise ApertureError(f"aperture {i}: measured leaf lies outside interior")
-            leaf_depth = float(rec.get("leaf_depth_m", 0.05))
+            if lp.is_empty or not lp.is_valid or lp.area <= 1e-8 or not inner.covers(lp):
+                raise ApertureError(f"aperture {i}: invalid measured leaf polygon")
+            leaf_depth = _finite(rec.get("leaf_depth_m", 0.05),
+                                 f"aperture {i} leaf_depth_m", positive=True)
             _add(parts, lp, y0 + depth / 2 - leaf_depth / 2,
                  y0 + depth / 2 + leaf_depth / 2, f"aperture_{i}_door_leaf", i)
         threshold = rec.get("threshold_polygon")
         if threshold is not None:
             tp = _poly(threshold)
+            if tp.is_empty or not tp.is_valid or tp.area <= 1e-8 or not aperture.covers(tp):
+                raise ApertureError(f"aperture {i}: invalid or unsupported threshold polygon")
+            bottom = aperture.bounds[1]
+            if not tp.intersects(aperture.boundary) or tp.bounds[1] > bottom + 1e-7:
+                raise ApertureError(f"aperture {i}: threshold is detached from opening bottom")
             _add(parts, tp, -t / 2, t / 2, f"aperture_{i}_threshold", i)
         aperture_reports.append({"index": i, "kind": rec["kind"],
                                  "hole_area_m2": aperture.area,

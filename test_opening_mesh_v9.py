@@ -43,3 +43,22 @@ def test_bad_overlap_is_rejected():
            {"kind": "door", "boundary_polygon": [(3, 2), (5, 2), (5, 4), (3, 4)]}]
     with pytest.raises(ApertureError, match="overlaps"):
         compile_wall(wall(), aps, .3)
+
+
+def test_nonfinite_thickness_is_rejected():
+    with pytest.raises(ApertureError, match="finite"):
+        compile_wall(wall(), [], float("nan"))
+
+
+def test_passage_cannot_gain_measured_leaf():
+    with pytest.raises(ApertureError, match="only legal for door"):
+        compile_wall(wall(), [{"kind": "open_passage",
+                              "boundary_polygon": [(4, 0), (6, 0), (6, 3), (4, 3)],
+                              "leaf_polygon": [(4, 0), (6, 0), (6, 3), (4, 3)]}], .3)
+
+
+def test_detached_threshold_is_rejected():
+    with pytest.raises(ApertureError, match="detached"):
+        compile_wall(wall(), [{"kind": "door",
+                              "boundary_polygon": [(1, 0), (3, 0), (3, 4), (1, 4)],
+                              "threshold_polygon": [(1.2, 1), (2.8, 1), (2.8, 1.2), (1.2, 1.2)]}], .3)
