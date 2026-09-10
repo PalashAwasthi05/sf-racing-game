@@ -157,7 +157,7 @@ def _nearest_metrics(points: np.ndarray, tree: cKDTree) -> tuple[dict[str, float
     return _metrics(np.asarray(distances)), np.asarray(distances)
 
 
-def bounded_registration(source: np.ndarray, target: np.ndarray) -> dict[str, Any]:
+def bounded_registration(source: np.ndarray, target: np.ndarray, target_tree: cKDTree | None = None) -> dict[str, Any]:
     """Robust trimmed ICP with bounded rigid motion and held-out scoring.
 
     Correspondences are nearest-neighbour proposals only; acceptance is based on
@@ -214,7 +214,7 @@ def bounded_registration(source: np.ndarray, target: np.ndarray) -> dict[str, An
     train = source[~holdout_mask]
     holdout = source[holdout_mask]
 
-    tree = cKDTree(target)
+    tree = target_tree if target_tree is not None else cKDTree(target)
     initial_train, initial_train_d = _nearest_metrics(train, tree)
     initial_holdout, initial_holdout_d = _nearest_metrics(holdout, tree)
     result["initial"] = {"train": initial_train, "holdout": initial_holdout}
@@ -375,12 +375,13 @@ def _cluster_image_counts(imagery: Path) -> dict[str, int]:
     return counts
 
 
-def diagnose(imagery: Path, normalized_path: Path, world_path: Path, maximum_clusters: int | None = None, selected_clusters: Iterable[str] | None = None) -> dict[str, Any]:
+def diagnose(imagery: Path, normalized_path: Path, world_path: Path, maximum_clusters: int | None = None, selected_clusters: Iterable[str] | None = None, target_max_points: int | None = None) -> dict[str, Any]:
     normalized = json.loads(normalized_path.read_text())
     world = json.loads(world_path.read_text())
     frame = _world_frame(normalized, world)
     world_points = load_world_points(normalized_path, normalized, world)
-    target = _sample_points(world_points, 80_000, seed=11)
+    target = _sample_points(world_points, target_max_points, seed=11) if target_max_points else world_points
+    target_tree = cKDTree(target)
     ids = list(selected_clusters) if selected_clusters is not None else _cluster_ids(imagery)
     ids = sorted(set(ids))
     if maximum_clusters is not None:
@@ -407,7 +408,7 @@ def diagnose(imagery: Path, normalized_path: Path, world_path: Path, maximum_clu
             local = enu_to_local_projected(points, reference, frame)
             source_sample = _sample_points(local, 20_000, seed=19)
             cropped, crop_report = _crop_source_to_target_xy(source_sample, world_points)
-            registration = bounded_registration(cropped, target)
+            registration = bounded_registration(cropped, target, target_tree=target_tree)
             record.update({"referenceLla": reference, "sfmPointCount": int(len(points)), "sfmPointCountSampled": int(len(source_sample)), "verticalDatumOffsetM": float(reference.get("altitude", 0.0)) - float(frame.get("verticalOriginM", 0.0)), "sourceCropXY": crop_report, "registration": registration})
         except Exception as exc:  # keep one malformed provider cluster from hiding the report
             record["reason"] = f"cluster could not be assessed: {type(exc).__name__}: {exc}"
@@ -425,6 +426,7 @@ def diagnose(imagery: Path, normalized_path: Path, world_path: Path, maximum_clu
         "thresholds": {"maxTranslationM": MAX_TRANSLATION_M, "maxRotationDeg": MAX_ROTATION_DEG, "maxCorrespondenceM": MAX_CORRESPONDENCE_M, "coarseOverlapInlierM": HOLDOUT_INLIER_M, "coarseOverlapInlierRatioMinimum": MIN_HOLDOUT_INLIER_RATIO, "maxHoldoutP75M": MAX_HOLDOUT_P75_M, "facadeConservativeInlierThresholdsM": [0.25, 0.5, 1.0], "minImprovement": MIN_IMPROVEMENT, "sourceCropMarginM": MAX_TRANSLATION_M},
         "worldPointCount": int(len(world_points)),
         "worldPointCountSampled": int(len(target)),
+        "targetSampling": {"maxPoints": target_max_points, "usedFullInputCloud": target_max_points is None},
         "summary": {"clustersExamined": len(records), "clustersWithCandidateEvidence": int(accepted), "clustersRejected": len(records) - int(accepted), "plausible": bool(records) and accepted == len(records)},
         "clusters": records,
         "limitations": ["The 5 m inlier ratio is a coarse overlap diagnostic only and is not a facade-accuracy threshold; 0.25/0.5/1 m ratios are reported for scrutiny.", "SfM/LiDAR nearest-neighbour agreement is a diagnostic, not semantic feature correspondence.", "Provider-internal camera/shot pose agreement does not validate world registration.", "Vertical conversion uses WGS84 ellipsoidal height minus normalized verticalOriginM; any unmodeled LiDAR datum bias remains an uncertainty.", "No source-index admission, worldRegistrationValidated flag, facade geometry, or renderer input was changed."],
@@ -438,9 +440,10 @@ def main() -> None:
     parser.add_argument("--world", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--max-clusters", type=int)
+    parser.add_argument("--target-max-points", type=int, help="optional deterministic target cap; default uses the full normalized cloud")
     parser.add_argument("--cluster", action="append", dest="clusters", help="cluster id to assess; repeatable")
     args = parser.parse_args()
-    report = diagnose(args.imagery, args.normalized_input, args.world, args.max_clusters, args.clusters)
+    report = diagnose(args.imagery, args.normalized_input, args.world, args.max_clusters, args.clusters, args.target_max_points)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2))
     print(json.dumps(report["summary"], sort_keys=True))
