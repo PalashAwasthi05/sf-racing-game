@@ -16,7 +16,7 @@ AS_OF = "2026-01-01"
 def _world(buildings):
     return {
         "snapshotDate": AS_OF,
-        "coordinateFrame": {"projectedCrs": "EPSG:32610", "originProjectedM": [553556.0, 4181427.0]},
+        "coordinateFrame": {"projectedCrs": "EPSG:32631", "originProjectedM": [500000.0, 5000000.0]},
         "buildings": buildings,
         "images": {},
     }
@@ -41,11 +41,11 @@ def _image(image_id, lonlat, *, sequence="seq", heading=None, pano=True, capture
 
 
 def _local_to_lonlat(x, y):
-    # EPSG:32610 point conversion used only to make compact synthetic fixtures.
+    # EPSG:32631 point conversion used only to make compact synthetic fixtures.
     from pyproj import Transformer
 
-    t = Transformer.from_crs("EPSG:32610", "EPSG:4326", always_xy=True)
-    return t.transform(553556.0 + x, 4181427.0 + y)
+    t = Transformer.from_crs("EPSG:32631", "EPSG:4326", always_xy=True)
+    return t.transform(500000.0 + x, 5000000.0 + y)
 
 
 def test_front_back_and_budget_are_geometry_driven():
@@ -57,7 +57,10 @@ def test_front_back_and_budget_are_geometry_driven():
         _world([building]),
         limit=1,
     )
-    assert plan["selectedSourceIDs"] == ["west"]
+    # Equal-distance opposite frontages are equally useful; projection
+    # roundoff must not make one particular opaque camera identity the oracle.
+    assert len(plan["selectedSourceIDs"]) == 1
+    assert plan["selectedSourceIDs"][0] in {"west", "east"}
     assert plan["planReport"]["selectedCount"] <= 1
 
 

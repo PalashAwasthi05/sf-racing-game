@@ -73,12 +73,12 @@ def _mesh_url(record: dict[str, Any]) -> str | None:
 def select_spatial(records: list[dict[str, Any]], limit: int = 3) -> list[dict[str, Any]]:
     """Select far-apart valid camera captures deterministically.
 
-    Candidate order is entity-id order.  Farthest-point sampling then spreads
+    Candidate order follows camera coordinates and capture time.  Farthest-point sampling then spreads
     the small probe over the available camera footprint without location- or
     capture-specific rules.
     """
     candidates = [r for r in records if _position(r) is not None and _mesh_url(r)]
-    candidates.sort(key=lambda r: str(r.get("id", "")))
+    candidates.sort(key=lambda r: (_position(r), r.get("captured_at", 0)))
     if limit <= 0 or not candidates:
         return []
     if len(candidates) <= limit:

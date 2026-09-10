@@ -229,9 +229,39 @@ def _prepare_proposals(
     return by_crop, counts
 
 
+def _view_pair_eligible(left, right, pairing_mode="independent-sequence"):
+    if pairing_mode == "independent-sequence":
+        return (_independent_view_group(left.get("viewGroup"))
+                and _independent_view_group(right.get("viewGroup"))
+                and left["viewGroup"] != right["viewGroup"])
+    if pairing_mode != "geometric":
+        return False
+    if (not left.get("clusterId") or left.get("clusterId") != right.get("clusterId")
+            or not left.get("sourceId") or left.get("sourceId") == right.get("sourceId")
+            or not left.get("imageSha256") or not right.get("imageSha256")
+            or left["imageSha256"] == right["imageSha256"]):
+        return False
+    try:
+        frame = left["metricFrame"]
+        target = (np.asarray(frame["origin"],float)
+                  + np.asarray(frame["horizontal"],float)*float(left["widthM"])/2
+                  + np.asarray(frame["vertical"],float)*float(left["diagnosticHeightM"])/2)
+        a,b = [np.asarray(r["cameraCenterWorldM"],float) for r in (left,right)]
+        if any(v.shape!=(3,) or not np.isfinite(v).all() for v in (target,a,b)):
+            return False
+        ra,rb = target-a,target-b
+        denom=np.linalg.norm(ra)*np.linalg.norm(rb)
+        if denom<1e-9:return False
+        angle=np.degrees(np.arccos(np.clip(np.dot(ra,rb)/denom,-1,1)))
+        return bool(np.linalg.norm(a-b)>=2.0 and angle>=5.0)
+    except (KeyError,ValueError,TypeError):
+        return False
+
+
 def compare(provenance: dict[str, Any], proposals: Any, obstruction_report: dict[str, Any] | None = None, *, example_limit: int = EXAMPLE_LIMIT) -> dict[str, Any]:
     """Return conservative cross-view proposal agreement diagnostics."""
     crops = _crop_records(provenance)
+    pairing_mode = provenance.get("selection",{}).get("pairingMode","independent-sequence")
     by_index = {record.get("index"): record for record in crops}
     proposal_items = _proposal_records(proposals)
     obstruction_enabled = obstruction_report is not None
@@ -250,7 +280,7 @@ def compare(provenance: dict[str, Any], proposals: Any, obstruction_report: dict
     agreement_residuals: list[dict[str, float]] = []
     for key, records in groups.items():
         for left, right in itertools.combinations(records, 2):
-            if not _independent_view_group(left.get("viewGroup")) or not _independent_view_group(right.get("viewGroup")) or left.get("viewGroup") == right.get("viewGroup"):
+            if not _view_pair_eligible(left,right,pairing_mode):
                 rejected_same_view_group += 1
                 continue
             left_props = proposal_by_crop.get(left.get("index"), [])
@@ -303,7 +333,7 @@ def compare(provenance: dict[str, Any], proposals: Any, obstruction_report: dict
         "schema": "facade-part-multiview-consistency/v1",
         "evidenceScope": "visual proposal consistency only; no registration certification, opening acceptance, or derived geometry",
         "thresholds": {"iouMinimum": IOU_MIN, "centerErrorMaxM": CENTER_ERROR_MAX_M, "sizeErrorMaxM": SIZE_ERROR_MAX_M, "ambiguityCostMargin": AMBIGUITY_COST_MARGIN, "obstructionAlphaMinimum": OBSTRUCTION_ALPHA_MIN},
-        "pairing": {"groups": len(groups), "eligibleViewPairs": sum(1 for records in groups.values() for a, b in itertools.combinations(records, 2) if _independent_view_group(a.get("viewGroup")) and _independent_view_group(b.get("viewGroup")) and a.get("viewGroup") != b.get("viewGroup")), "sameViewGroupRejected": rejected_same_view_group},
+        "pairing": {"mode":pairing_mode,"minimumGeometricBaselineM":2.0,"minimumGeometricParallaxDeg":5.0,"groups": len(groups), "eligibleViewPairs": sum(1 for records in groups.values() for a, b in itertools.combinations(records, 2) if _view_pair_eligible(a,b,pairing_mode)), "sameViewGroupRejected": rejected_same_view_group},
         "counts": totals,
         "residuals": {"note": "All-match residuals include false correspondences and do not estimate camera or world-registration error.", "centerErrorM": stats("centerErrorM"), "sizeErrorM": stats("sizeErrorM"), "iou": stats("iou"), "agreementOnly": {"centerErrorM": stats("centerErrorM", agreement_residuals), "sizeErrorM": stats("sizeErrorM", agreement_residuals), "iou": stats("iou", agreement_residuals)}},
         "proposalFiltering": proposal_counts,

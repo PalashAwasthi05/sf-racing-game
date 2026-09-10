@@ -90,3 +90,27 @@ def test_column_tie_is_ambiguous(tmp_path):
     result = compare(provenance, proposals)
     assert result["counts"]["ambiguous"] == 1
     assert result["counts"]["disagreement"] == 1
+
+
+def test_geometric_views_can_share_sequence_but_require_parallax(tmp_path):
+    provenance,proposals=_fixture(tmp_path,same_group=True)
+    provenance['selection']={'pairingMode':'geometric'}
+    for i,r in enumerate(provenance['crops']):
+        r.update(clusterId='shared-reconstruction',imageSha256=str(i)*64,cameraCenterWorldM=[i*3.,-10.,5.])
+    assert compare(provenance,proposals)['counts']['agreement']==1
+    provenance['crops'][1]['cameraCenterWorldM']=[.5,-10.,5.]
+    assert compare(provenance,proposals)['pairing']['eligibleViewPairs']==0
+    provenance['crops'][1]['cameraCenterWorldM']=[3.,-1000.,5.]
+    provenance['crops'][0]['cameraCenterWorldM']=[0.,-1000.,5.]
+    assert compare(provenance,proposals)['pairing']['eligibleViewPairs']==0
+
+
+def test_geometric_views_reject_duplicate_images_and_different_reconstructions(tmp_path):
+    provenance,proposals=_fixture(tmp_path,same_group=True)
+    provenance['selection']={'pairingMode':'geometric'}
+    for i,r in enumerate(provenance['crops']):
+        r.update(clusterId=str(i),imageSha256=str(i)*64,cameraCenterWorldM=[i*3.,-10.,5.])
+    assert compare(provenance,proposals)['pairing']['eligibleViewPairs']==0
+    provenance['crops'][1]['clusterId']='0'
+    provenance['crops'][1]['imageSha256']='0'*64
+    assert compare(provenance,proposals)['pairing']['eligibleViewPairs']==0

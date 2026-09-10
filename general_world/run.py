@@ -63,6 +63,15 @@ def execute(input_path,output_dir,policy=None):
  hygiene=[remove_empty_faces(m) for m in scene.geometry.values()]
  scene.apply_transform(np.array([[1,0,0,0],[0,0,1,0],[0,-1,0,0],[0,0,0,1]],float));glb=scene.export(file_type='glb');(out/'candidate.glb').write_bytes(glb)
  report={'schema':'generation-report/v1','emptyFacesRemoved':sum(r['emptyFacesRemoved'] for r in hygiene),'allFeaturesUseSameRules':True,'manualProfilesRead':0,'buildingsAttempted':len(records),'closedBuildings':sum(r.get('watertight',False) for r in records),'buildingsUnresolved':sum(r.get('status')!='closed-proxy-solid' for r in records),'facadesReconstructedFromImages':detailed,'inventedWindows':0,'inventedFacadeMaterials':0,'inventedSignage':0,'strayDecorativeObjectsGenerated':0,'records':records,'stairs':stair_records,'detailVerdicts':verdicts,'appearanceGate':'FAIL: complete image-derived facade coverage and materials not verified','publicationApprovedByQualityGate':False,'inputHash':hashlib.sha256(path.read_bytes()).hexdigest(),'outputHash':hashlib.sha256(glb).hexdigest(),'elapsedSeconds':round(time.perf_counter()-start,2),'triangles':sum(len(m.faces) for m in scene.geometry.values())}
+ # Regeneration identity includes the actual measurements and rule code, not
+ # just filenames in a JSON manifest. A changed heuristic invalidates reuse.
+ input_files={'normalized':report['inputHash']}
+ for field in ('groundFile','surfacePointsFile'):
+  input_files[field]=hashlib.sha256((path.parent/d[field]).read_bytes()).hexdigest()
+ rules={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(Path(__file__).parent.glob('*.py'))}
+ report['heuristicHash']=hashlib.sha256(json.dumps(rules,sort_keys=True).encode()).hexdigest()
+ report['inputFileHashes']=input_files
+ report['generationFingerprint']=hashlib.sha256(json.dumps({'rules':report['heuristicHash'],'inputs':input_files},sort_keys=True).encode()).hexdigest()
  (out/'report.json').write_text(json.dumps(report,indent=2));(out/'acquisition-queue.json').write_text(json.dumps({'surfaces':queue,'automaticQueue':True,'manualBuildingInstructions':False},indent=2));print(json.dumps({k:v for k,v in report.items() if k not in ['records','stairs','detailVerdicts']}));return report
 
 if __name__=='__main__':
