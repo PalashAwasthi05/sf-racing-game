@@ -1,0 +1,47 @@
+import json
+from pathlib import Path
+
+import numpy as np
+from shapely.geometry import Polygon
+
+from rectify_facade_diagnostics_v12 import FrameConverter, _facing_cosines, _line_of_sight_clear
+
+
+def test_line_of_sight_allows_owner_only_at_target_boundary():
+    owner = Polygon([(8, -2), (12, -2), (12, 2), (8, 2)])
+    assert _line_of_sight_clear(np.array([0.0, 0.0]), np.array([10.0, 0.0]), "owner", [("owner", owner)])
+
+
+def test_line_of_sight_rejects_another_building_before_owner():
+    owner = Polygon([(8, -2), (12, -2), (12, 2), (8, 2)])
+    blocker = Polygon([(3, -2), (5, -2), (5, 2), (3, 2)])
+    assert not _line_of_sight_clear(np.array([0.0, 0.0]), np.array([10.0, 0.0]), "owner", [("owner", owner), ("blocker", blocker)])
+
+
+def test_facing_rejects_a_frontage_behind_the_camera():
+    frame = {"a": [0, 0], "b": [10, 0], "normal": [0, 1], "baseZM": 0.0, "heightM": 8.0}
+    midpoint, corners = _facing_cosines(frame, np.array([5.0, -10.0, 4.0]))
+    assert midpoint < 0.5
+    assert min(corners) < 0.25
+
+
+def test_normalized_projected_to_cluster_enu_round_trip():
+    root = Path(__file__).resolve().parent
+    normalized = json.loads((root / "imagery-v12/input-with-imagery.json").read_text())
+    source = next(value for value in normalized["images"].values() if value["camera"].get("referenceLla"))
+    converter = FrameConverter(normalized["coordinateFrame"], source["camera"]["referenceLla"])
+    points = np.array([[0.0, 0.0, 0.0], [12.0, -7.0, 4.0], [-80.0, 42.0, 15.0]])
+    np.testing.assert_allclose(converter.cluster_enu_to_world(converter.world_to_cluster_enu(points)), points, atol=1e-5)
+
+
+def test_alignment_report_inverse_is_applied_before_geodetic_conversion():
+    root = Path(__file__).resolve().parent
+    normalized = json.loads((root / "imagery-v12/input-with-imagery.json").read_text())
+    source = next(value for value in normalized["images"].values() if value["camera"].get("referenceLla"))
+    baseline = FrameConverter(normalized["coordinateFrame"], source["camera"]["referenceLla"])
+    rotation = np.array([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
+    translation = np.array([2.0, -3.0, 0.5])
+    aligned = FrameConverter(normalized["coordinateFrame"], source["camera"]["referenceLla"], {"rotationMatrix": rotation.tolist(), "translationM": translation.tolist()})
+    source_point = np.array([[-20.0, 15.0, 4.0]])
+    world_point = source_point @ rotation.T + translation
+    np.testing.assert_allclose(aligned.world_to_ecef(world_point), baseline.world_to_ecef(source_point), atol=1e-5)

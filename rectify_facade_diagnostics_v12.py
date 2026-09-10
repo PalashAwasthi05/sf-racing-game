@@ -19,7 +19,7 @@ from typing import Any
 import numpy as np
 from PIL import Image, ImageDraw
 from pyproj import Transformer
-from shapely.geometry import shape
+from shapely.geometry import LineString, Point, shape
 
 from general_world.evidence import contiguous_frames
 from general_world.image_projection import CameraTransform, Orientation, project_facade_crop
@@ -49,13 +49,14 @@ def _enu_basis(latitude: float, longitude: float) -> np.ndarray:
 class FrameConverter:
     """Convert normalized local projected points and cluster ENU points."""
 
-    def __init__(self, frame: dict[str, Any], reference: dict[str, Any]):
+    def __init__(self, frame: dict[str, Any], reference: dict[str, Any], inverse_alignment: dict[str, Any] | None = None):
         required = ("projectedCrs", "originProjectedM", "verticalOriginM")
         missing = [k for k in required if k not in frame]
         if missing:
             raise ValueError("normalized coordinateFrame missing " + ", ".join(missing))
         self.frame = frame
         self.reference = reference
+        self.inverse_alignment = inverse_alignment
         self.origin_xy = np.asarray(frame["originProjectedM"], dtype=float)
         self.vertical_origin = float(frame["verticalOriginM"])
         self.to_lla = Transformer.from_crs(frame["projectedCrs"], "EPSG:4979", always_xy=True)
@@ -72,6 +73,12 @@ class FrameConverter:
 
     def world_to_ecef(self, points_world: np.ndarray) -> np.ndarray:
         points = np.asarray(points_world, dtype=float).reshape(-1, 3)
+        if self.inverse_alignment is not None:
+            # The report stores source->normalized world R,t.  Apply its
+            # inverse only to this diagnostic path, before geodetic conversion.
+            rotation = np.asarray(self.inverse_alignment["rotationMatrix"], dtype=float)
+            translation = np.asarray(self.inverse_alignment["translationM"], dtype=float)
+            points = (points - translation[None, :]) @ rotation
         x = points[:, 0] + self.origin_xy[0]
         y = points[:, 1] + self.origin_xy[1]
         z = points[:, 2] + self.vertical_origin
@@ -87,7 +94,13 @@ class FrameConverter:
         points = np.asarray(points_enu, dtype=float).reshape(-1, 3)
         ecef = self.ecef0 + points @ self.basis
         x, y, z = self.from_ecef.transform(ecef[:, 0], ecef[:, 1], ecef[:, 2])
-        return np.column_stack((np.asarray(x) - self.origin_xy[0], np.asarray(y) - self.origin_xy[1], np.asarray(z) - self.vertical_origin))
+        points_world = np.column_stack((np.asarray(x) - self.origin_xy[0], np.asarray(y) - self.origin_xy[1], np.asarray(z) - self.vertical_origin))
+        if self.inverse_alignment is not None:
+            rotation = np.asarray(self.inverse_alignment["rotationMatrix"], dtype=float)
+            translation = np.asarray(self.inverse_alignment["translationM"], dtype=float)
+            # Inverse-alignment metadata is source->world in this direction.
+            points_world = points_world @ rotation.T + translation[None, :]
+        return points_world
 
     def ecef_to_world(self, ecef: np.ndarray) -> np.ndarray:
         points = np.asarray(ecef, dtype=float).reshape(-1, 3)
@@ -117,6 +130,24 @@ def _affine_error(converter: FrameConverter, anchor: np.ndarray, corners: np.nda
         "maxCornerErrorM": float(np.max(residual)) if len(residual) else 0.0,
         "meanCornerErrorM": float(np.mean(residual)) if len(residual) else 0.0,
     }
+
+
+def _orthogonalize_projection_basis(horizontal: np.ndarray, vertical: np.ndarray) -> tuple[np.ndarray, np.ndarray, bool]:
+    """Preserve local metric lengths while removing CRS shear for the crop API."""
+
+    h = np.asarray(horizontal, dtype=float)
+    v = np.asarray(vertical, dtype=float)
+    h_length = float(np.linalg.norm(h))
+    v_length = float(np.linalg.norm(v))
+    if h_length == 0.0 or v_length == 0.0:
+        return h, v, False
+    h_unit = h / h_length
+    v_perpendicular = v - np.dot(v, h_unit) * h_unit
+    v_perpendicular_length = float(np.linalg.norm(v_perpendicular))
+    if v_perpendicular_length == 0.0:
+        raise ValueError("affine facade basis collapsed")
+    changed = not np.isclose(np.dot(h, v), 0.0, atol=1e-7)
+    return h_unit * h_length, v_perpendicular / v_perpendicular_length * v_length, bool(changed)
 
 
 def _height_for_building(building: dict[str, Any]) -> tuple[float | None, str]:
@@ -209,7 +240,33 @@ def _capture_age(record: dict[str, Any], as_of: date) -> int | None:
         return None
 
 
-def _camera_records(imagery: Path, source_index: dict[str, Any], frame: dict[str, Any], clusters: dict[str, dict[str, Any]], as_of: date) -> list[dict[str, Any]]:
+def _load_alignment_report(path: Path | None) -> dict[str, dict[str, Any]]:
+    if path is None:
+        return {}
+    payload = json.loads(path.read_text())
+    alignments: dict[str, dict[str, Any]] = {}
+    for entry in payload.get("clusters", []):
+        cluster_id = entry.get("clusterId")
+        registration = entry.get("registration") or {}
+        transform = registration.get("transform")
+        if cluster_id is None or registration.get("accepted") is not True or not transform:
+            continue
+        rotation = np.asarray(transform.get("rotationMatrix"), dtype=float)
+        translation = np.asarray(transform.get("translationM"), dtype=float)
+        if rotation.shape == (3, 3) and translation.shape == (3,) and np.isfinite(rotation).all() and np.isfinite(translation).all():
+            alignments[str(cluster_id)] = {"rotationMatrix": rotation.tolist(), "translationM": translation.tolist(), "source": str(path.resolve())}
+    return alignments
+
+
+def _camera_records(
+    imagery: Path,
+    source_index: dict[str, Any],
+    frame: dict[str, Any],
+    clusters: dict[str, dict[str, Any]],
+    as_of: date,
+    alignments: dict[str, dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    alignments = alignments or {}
     records = []
     for source_id, record in source_index.items():
         camera = record.get("camera") or {}
@@ -227,26 +284,104 @@ def _camera_records(imagery: Path, source_index: dict[str, Any], frame: dict[str
         if not reference or camera.get("translation") is None or camera.get("rotationAngleAxis") is None:
             continue
         try:
-            converter = FrameConverter(frame, reference)
+            alignment = alignments.get(str(cluster_id))
+            converter = FrameConverter(frame, reference, alignment)
             transform = CameraTransform(camera["rotationAngleAxis"], camera["translation"], Orientation.EQUIRECTANGULAR, False, diagnostic=True)
             center_enu = transform.camera_center
             center_world = converter.cluster_enu_to_world(center_enu)[0]
             center_ecef = converter.ecef0 + center_enu @ converter.basis
         except (ValueError, TypeError, KeyError, IndexError):
             continue
-        records.append({"sourceId": source_id, "record": record, "camera": camera, "converter": converter, "transform": transform, "centerWorld": center_world, "centerEcef": center_ecef, "ageDays": age})
+        records.append({"sourceId": source_id, "record": record, "camera": camera, "converter": converter, "transform": transform, "centerWorld": center_world, "centerEcef": center_ecef, "ageDays": age, "alignment": alignment})
     return records
 
 
-def _candidate_for_frame(frame_record: dict[str, Any], cameras: list[dict[str, Any]]) -> dict[str, Any] | None:
+def _frontage_rectangle(frame_record: dict[str, Any]) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
     a = np.asarray(frame_record["a"], dtype=float)
     b = np.asarray(frame_record["b"], dtype=float)
     direction = b - a
     length = float(np.linalg.norm(direction))
     if length < MIN_FRONTAGE_M:
+        raise ValueError("frontage shorter than minimum")
+    unit = direction / length
+    frame_normal = np.asarray(frame_record["normal"], dtype=float)
+    cross_normal = np.array([unit[1], -unit[0]])
+    sign = 1.0 if float(np.dot(cross_normal, frame_normal)) >= 0.0 else -1.0
+    horizontal = np.array([unit[0], unit[1], 0.0], dtype=float) * sign
+    width = min(length, MAX_FACADE_WIDTH_M)
+    midpoint = (a + b) / 2.0
+    origin = np.array([midpoint[0], midpoint[1], float(frame_record.get("baseZM", 0.0))], dtype=float) - horizontal * (width * 0.5)
+    vertical = np.array([0.0, 0.0, 1.0], dtype=float)
+    return origin, horizontal, vertical, width
+
+
+def _facing_cosines(frame_record: dict[str, Any], camera_center: np.ndarray) -> tuple[float, list[float]]:
+    origin, horizontal, vertical, width = _frontage_rectangle(frame_record)
+    height = frame_record.get("heightM")
+    diagnostic_height = MAX_DIAGNOSTIC_HEIGHT_M if height is None else max(0.5, float(height))
+    normal = np.cross(horizontal, vertical)
+    normal /= np.linalg.norm(normal)
+    points = np.array(
+        [
+            origin,
+            origin + horizontal * width,
+            origin + vertical * diagnostic_height,
+            origin + horizontal * width + vertical * diagnostic_height,
+            origin + horizontal * (width * 0.5) + vertical * (diagnostic_height * 0.5),
+        ]
+    )
+    rays = camera_center[None, :] - points
+    lengths = np.linalg.norm(rays, axis=1)
+    cosines = np.einsum("j,nj->n", normal, rays) / np.maximum(lengths, np.finfo(float).tiny)
+    return float(cosines[-1]), [float(value) for value in cosines[:4]]
+
+
+def _intersection_distances(line: LineString, geometry: Any) -> list[float]:
+    boundary = line.intersection(geometry.boundary)
+    if boundary.is_empty:
+        return []
+    geometries = list(boundary.geoms) if hasattr(boundary, "geoms") else [boundary]
+    distances: list[float] = []
+    for item in geometries:
+        if hasattr(item, "coords"):
+            coordinates = list(item.coords)
+        else:
+            coordinates = []
+        distances.extend(float(line.project(Point(x, y))) for x, y, *_ in coordinates)
+    return distances
+
+
+def _line_of_sight_clear(camera_xy: np.ndarray, target_xy: np.ndarray, owner_key: str, footprints: list[tuple[str, Any]]) -> bool:
+    """Reject a frontage hidden behind another footprint in plan view."""
+
+    line = LineString([tuple(camera_xy), tuple(target_xy)])
+    total = float(line.length)
+    if total <= 0.0:
+        return False
+    camera_point = Point(tuple(camera_xy))
+    for key, footprint in footprints:
+        if footprint.is_empty:
+            continue
+        if footprint.contains(camera_point):
+            return False
+        distances = _intersection_distances(line, footprint)
+        if not distances:
+            continue
+        for distance in distances:
+            if distance >= total - 0.75:
+                continue
+            if key == owner_key and distance >= total - 3.0:
+                continue
+            return False
+    return True
+
+
+def _candidate_for_frame(frame_record: dict[str, Any], cameras: list[dict[str, Any]], footprints: list[tuple[str, Any]]) -> dict[str, Any] | None:
+    a = np.asarray(frame_record["a"], dtype=float)
+    b = np.asarray(frame_record["b"], dtype=float)
+    length = float(np.linalg.norm(b - a))
+    if length < MIN_FRONTAGE_M:
         return None
-    direction /= length
-    normal = np.asarray(frame_record["normal"], dtype=float)
     center = (a + b) / 2.0
     world_center = np.array([center[0], center[1], float(frame_record.get("baseZM", 0.0))])
     choices = []
@@ -259,33 +394,53 @@ def _candidate_for_frame(frame_record: dict[str, Any], cameras: list[dict[str, A
         horizontal_distance = float(np.linalg.norm(delta[:2]))
         if horizontal_distance < 2.0 or horizontal_distance > MAX_CAMERA_DISTANCE_M:
             continue
-        facing = float(np.dot(normal, delta[:2]) / horizontal_distance)
-        if facing <= 0.0:
+        midpoint_facing, corner_facings = _facing_cosines(frame_record, camera["centerWorld"])
+        if midpoint_facing < 0.5 or min(corner_facings) < 0.25:
+            continue
+        if not _line_of_sight_clear(camera["centerWorld"][:2], center, str(frame_record["buildingKey"]), footprints):
             continue
         # Prefer nearby, near-normal views while preserving recency as a
         # deterministic tie-break.  This score has no source-specific values.
-        score = distance * (1.0 + max(0.0, 1.0 - facing)) + 0.01 * camera["ageDays"]
-        choices.append((score, camera, distance, facing))
+        score = distance * (1.0 + max(0.0, 1.0 - midpoint_facing)) + 0.01 * camera["ageDays"]
+        choices.append((score, camera, distance, midpoint_facing, corner_facings))
     if not choices:
         return None
-    _, camera, distance, facing = min(choices, key=lambda x: (x[0], x[1]["sourceId"]))
+    _, camera, distance, facing, corner_facings = min(choices, key=lambda x: (x[0], x[1]["sourceId"]))
     result = dict(frame_record)
-    result.update({"camera": camera, "distanceM": distance, "facingCosine": facing})
+    result.update({"camera": camera, "distanceM": distance, "facingCosine": facing, "cornerFacingCosines": corner_facings, "screenVisibilityGeometryOnly": True})
     return result
 
 
 def _select_spatial(candidates: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
     selected: list[dict[str, Any]] = []
-    remaining = list(candidates)
-    while remaining and len(selected) < limit:
+    # First round: at most one frontage per building, preferring supported
+    # heights above four metres and longer visible frontage intervals.
+    best_by_building: dict[str, dict[str, Any]] = {}
+    for candidate in candidates:
+        key = candidate["buildingKey"]
+        current = best_by_building.get(key)
+        preference = (candidate["heightM"] is not None and candidate["heightM"] > 4.0, candidate["frontageLengthM"], candidate["facingCosine"], -candidate["distanceM"])
+        if current is None or preference > (current["heightM"] is not None and current["heightM"] > 4.0, current["frontageLengthM"], current["facingCosine"], -current["distanceM"]):
+            best_by_building[key] = candidate
+    first_round = list(best_by_building.values())
+    remaining = [candidate for candidate in candidates if candidate not in first_round]
+
+    def choose(pool: list[dict[str, Any]], *, spread_weight: bool) -> dict[str, Any]:
         if not selected:
-            pick = min(remaining, key=lambda c: (c["distanceM"], c["buildingKey"], c["frameIndex"]))
-        else:
-            def score(candidate: dict[str, Any]) -> tuple[float, float, str, int]:
-                midpoint = np.asarray(candidate["midpoint"], dtype=float)
-                spread = min(float(np.linalg.norm(midpoint - np.asarray(other["midpoint"], dtype=float))) for other in selected)
-                return (spread, -candidate["facingCosine"], -candidate["frontageLengthM"], candidate["buildingKey"])
-            pick = max(remaining, key=score)
+            return max(pool, key=lambda c: (c["heightM"] is not None and c["heightM"] > 4.0, c["frontageLengthM"], c["facingCosine"], -c["distanceM"], c["buildingKey"]))
+        def score(candidate: dict[str, Any]) -> tuple[float, bool, float, float, str]:
+            midpoint = np.asarray(candidate["midpoint"], dtype=float)
+            spread = min(float(np.linalg.norm(midpoint - np.asarray(other["midpoint"], dtype=float))) for other in selected)
+            known = candidate["heightM"] is not None and candidate["heightM"] > 4.0
+            return ((spread if spread_weight else 0.0), known, candidate["frontageLengthM"], candidate["facingCosine"], candidate["buildingKey"])
+        return max(pool, key=score)
+
+    while first_round and len(selected) < limit:
+        pick = choose(first_round, spread_weight=True)
+        selected.append(pick)
+        first_round.remove(pick)
+    while remaining and len(selected) < limit:
+        pick = choose(remaining, spread_weight=True)
         selected.append(pick)
         remaining.remove(pick)
     return selected
@@ -316,7 +471,7 @@ def _save_contact_sheet(paths: list[Path], output: Path) -> None:
     sheet.save(output)
 
 
-def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DEFAULT_LIMIT) -> dict[str, Any]:
+def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DEFAULT_LIMIT, alignment_report: Path | None = None) -> dict[str, Any]:
     if limit < 1:
         raise ValueError("limit must be positive")
     normalized = json.loads(normalized_input.read_text())
@@ -326,12 +481,20 @@ def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DE
         raise FileNotFoundError(f"missing local source index: {source_path}")
     source_index = json.loads(source_path.read_text())
     clusters = _load_clusters(imagery)
+    alignments = _load_alignment_report(alignment_report)
     as_of = date.fromisoformat(str(normalized.get("snapshotDate")))
-    cameras = _camera_records(imagery, source_index, frame, clusters, as_of)
+    cameras = _camera_records(imagery, source_index, frame, clusters, as_of, alignments)
     if not cameras:
         raise ValueError("no recent local providerPoseConsistent spherical orientation-1 cameras")
 
     ground_points = _load_ground_points(normalized_input, normalized)
+    footprints: list[tuple[str, Any]] = []
+    for building in normalized.get("buildings", []):
+        try:
+            geometry = shape(building.get("geometry"))
+        except (TypeError, ValueError):
+            continue
+        footprints.append((str(building.get("key", "unknown")), geometry))
     candidates: list[dict[str, Any]] = []
     for building in normalized.get("buildings", []):
         geometry = building.get("geometry")
@@ -345,7 +508,7 @@ def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DE
         height, height_source = _height_for_building(building)
         for index, frontage in enumerate(frames):
             base_z, base_z_source = _base_z_for_frontage(frontage, ground_points)
-            candidate = _candidate_for_frame({**frontage, "buildingKey": str(building.get("key", "unknown")), "frameIndex": index, "baseZM": base_z}, cameras)
+            candidate = _candidate_for_frame({**frontage, "buildingKey": str(building.get("key", "unknown")), "frameIndex": index, "baseZM": base_z, "heightM": height}, cameras, footprints)
             if candidate is None:
                 continue
             a, b = np.asarray(candidate["a"], dtype=float), np.asarray(candidate["b"], dtype=float)
@@ -397,6 +560,7 @@ def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DE
         projection_origin = affine_offset + (origin - anchor) @ affine_jacobian.T
         projection_horizontal = horizontal @ affine_jacobian.T
         projection_vertical = vertical @ affine_jacobian.T
+        projection_horizontal, projection_vertical, basis_orthogonalized = _orthogonalize_projection_basis(projection_horizontal, projection_vertical)
         try:
             with Image.open(record["imagePath"]) as source:
                 image = np.asarray(source.convert("RGB"))
@@ -446,6 +610,13 @@ def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DE
                 "affineConversionError": affine_error,
                 "cameraDistanceM": candidate["distanceM"],
                 "frontFacingCosineAtMidpoint": candidate["facingCosine"],
+                "frontFacingCosinesAtCorners": candidate["cornerFacingCosines"],
+                "screenVisibilityGeometryOnly": candidate["screenVisibilityGeometryOnly"],
+                "occlusionChecked": False,
+                "alignmentApplied": camera.get("alignment") is not None,
+                "alignmentReport": None if camera.get("alignment") is None else camera["alignment"].get("source"),
+                "uncorrectedBaselineAccessible": True,
+                "projectionBasisOrthogonalized": basis_orthogonalized,
             }
         )
     contact_sheet = output / "contact-sheet.png"
@@ -457,8 +628,9 @@ def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DE
         "texturesPublished": False,
         "occlusionUnchecked": True,
         "evidenceScope": "unregistered photo rectification diagnostics only; no facade measurements or inferred openings",
-        "inputs": {"imagery": str(imagery.resolve()), "normalizedInput": str(normalized_input.resolve())},
-        "selection": {"candidateFrontages": len(candidates), "selected": len(selected), "limit": limit, "recentDays": RECENT_DAYS, "pixelsPerM": PIXELS_PER_M},
+        "inputs": {"imagery": str(imagery.resolve()), "normalizedInput": str(normalized_input.resolve()), "alignmentReport": None if alignment_report is None else str(alignment_report.resolve())},
+        "selection": {"candidateFrontages": len(candidates), "selected": len(selected), "limit": limit, "recentDays": RECENT_DAYS, "pixelsPerM": PIXELS_PER_M, "facingCosineMidpointMinimum": 0.5, "facingCosineCornerMinimum": 0.25, "lineOfSightGeometryOnly": True},
+        "alignment": {"appliedClusters": len(alignments), "diagnosticOnly": True, "uncorrectedBaselineAccessible": True},
         "contactSheet": str(contact_sheet.resolve()) if contact_paths_exist(contact_sheet) else None,
         "crops": crop_records,
         "failures": failures,
@@ -483,8 +655,9 @@ def main() -> None:
     parser.add_argument("--normalized-input", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT)
+    parser.add_argument("--alignment-report", type=Path, help="optional accepted cluster alignment report; applied diagnostically only")
     args = parser.parse_args()
-    result = rectify(args.imagery, args.normalized_input, args.output, args.limit)
+    result = rectify(args.imagery, args.normalized_input, args.output, args.limit, args.alignment_report)
     print(json.dumps({"selected": result["selection"]["selected"], "crops": len(result["crops"]), "failures": len(result["failures"]), "contactSheet": result["contactSheet"]}, sort_keys=True))
 
 
