@@ -52,6 +52,22 @@ def test_overlying_roof_is_rejected():
     assert result["reports"][0]["reason"] == "overlying-upward-surface"
 
 
+def test_thin_positive_clearance_roof_is_rejected():
+    overlying = sloped_patch(z=10.01)
+    overlying.invert()
+    result = audit_sloped_caps(sloped_patch(), [overlying], FP, roof_points(), 5.0)
+    assert not result["repairable"]
+    assert result["reports"][0]["reason"] == "overlying-upward-surface"
+
+
+def test_high_ceiling_above_candidate_is_rejected():
+    overlying = sloped_patch(z=13.0)
+    overlying.invert()
+    result = audit_sloped_caps(sloped_patch(), [overlying], FP, roof_points(), 5.0)
+    assert not result["repairable"]
+    assert result["reports"][0]["reason"] == "overlying-upward-surface"
+
+
 def test_insufficient_support_is_rejected():
     result = audit_sloped_caps(sloped_patch(), [], FP, roof_points()[:3], 5.0)
     assert not result["repairable"]

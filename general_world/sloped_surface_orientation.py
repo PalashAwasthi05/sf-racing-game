@@ -75,7 +75,7 @@ def _z_at_xy(point: np.ndarray, normal: np.ndarray, xy: np.ndarray) -> np.ndarra
     return point[2] - ((xy - point[:2]) @ normal[:2]) / normal[2]
 
 
-def _overlying_surface(region, plane_point: np.ndarray, plane_normal: np.ndarray, meshes: list[trimesh.Trimesh], connected_shell: trimesh.Trimesh, max_clearance_m: float = 2.0) -> str | None:
+def _overlying_surface(region, plane_point: np.ndarray, plane_normal: np.ndarray, meshes: list[trimesh.Trimesh], connected_shell: trimesh.Trimesh, minimum_clearance_m: float = 1e-4) -> str | None:
     """Reject a roof/skin above the candidate, including split neighboring meshes."""
 
     candidate_up = -plane_normal
@@ -89,10 +89,12 @@ def _overlying_surface(region, plane_point: np.ndarray, plane_normal: np.ndarray
             polygon = Polygon(triangle[:, :2])
             if polygon.is_empty or not polygon.is_valid:
                 continue
-            centroid = triangle.mean(axis=0)
-            candidate_z = float(_z_at_xy(plane_point, plane_normal, centroid[None, :2])[0])
-            clearance = float(centroid[2] - candidate_z)
-            if 0.05 <= clearance <= max_clearance_m:
+            candidate_z = _z_at_xy(plane_point, plane_normal, triangle[:, :2])
+            clearances = triangle[:, 2] - candidate_z
+            # Require the whole projected triangle to be positively above the
+            # candidate. A crossing triangle is ambiguous and is ignored rather
+            # than treated as evidence for either orientation.
+            if float(np.min(clearances)) >= minimum_clearance_m:
                 candidate_polygons.append(polygon)
     if candidate_polygons:
         overlap = unary_union(candidate_polygons).intersection(region).area / max(region.area, 1e-9)
