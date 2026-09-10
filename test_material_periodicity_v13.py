@@ -42,6 +42,25 @@ class MaterialPeriodicityTests(unittest.TestCase):
         self.assertEqual(bond["full_module_period_px"], full)
         self.assertTrue(bond["stagger_consistent"])
 
+    def test_irregular_phase_bands_reject_stagger(self):
+        rng = np.random.default_rng(9)
+        image = np.full((192, 256), 0.78, dtype=float)
+        for row in range(0, image.shape[0], 24):
+            image[row:row + 24, :] = 0.72
+            offset = int(rng.integers(0, 64))
+            image[row:row + 24, offset::64] = 0.10
+            image[row:row + 2, :] = 0.10
+        image += rng.normal(0, 0.02, image.shape)
+        bond = infer_joint_periods(image, min_period_px=6)["banded_running_bond"]
+        self.assertFalse(bond["stagger_consistent"])
+        self.assertTrue(bond["ambiguous_half_period"])
+
+    def test_nonfinite_input_rejected(self):
+        image = np.zeros((32, 32), dtype=float)
+        image[0, 0] = np.nan
+        with self.assertRaises(ValueError):
+            infer_joint_periods(image)
+
 
 if __name__ == "__main__":
     unittest.main()

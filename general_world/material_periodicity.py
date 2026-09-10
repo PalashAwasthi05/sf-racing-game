@@ -68,6 +68,8 @@ def infer_joint_periods(image: np.ndarray, *, min_period_px: int = 4,
     arr = np.asarray(image)
     if arr.ndim not in (2, 3):
         raise ValueError("image must be a 2-D or 3-D array")
+    if not np.isfinite(arr).all():
+        raise ValueError("image contains non-finite samples")
     h, w = arr.shape[:2]
     cap = max_period_px or min(h, w) // 2
     horizontal = _one(_profile(arr, 0), min_period_px=min_period_px, max_period_px=min(cap, h // 2))
@@ -103,23 +105,21 @@ def infer_joint_periods(image: np.ndarray, *, min_period_px: int = 4,
             # Two stable phase classes separated by half a pitch certify a
             # staggered repeat; a single class remains ambiguous.
             half = pitch / 2.0
-            classes = [min(abs(x), abs(x - pitch), abs(x - half)) for x in offsets]
-            separated = sum(abs(x - half) <= max(2, pitch * .18) for x in offsets) >= 2
-            banded["stagger_consistent"] = separated and len(observed) >= 4
+            tolerance = max(2, pitch * .12)
+            labels = [1 if abs(x - half) <= tolerance else
+                      (0 if min(abs(x), abs(x - pitch)) <= tolerance else -1)
+                      for x in offsets]
+            valid = [x for x in labels if x >= 0]
+            alternations = sum(a != b for a, b in zip(labels, labels[1:]) if a >= 0 and b >= 0)
+            comparisons = sum(a >= 0 and b >= 0 for a, b in zip(labels, labels[1:]))
+            phase_fraction = sum(x >= 0 for x in labels) / max(len(labels), 1)
+            alternate_fraction = alternations / max(comparisons, 1)
+            separated = sum(x == 1 for x in valid) >= 2 and sum(x == 0 for x in valid) >= 2
+            banded["phase_consistency"] = round(min(phase_fraction, alternate_fraction), 4)
+            banded["stagger_consistent"] = (separated and len(observed) >= 4 and
+                                             phase_fraction >= .75 and alternate_fraction >= .75)
             if banded["stagger_consistent"]:
                 banded["full_module_period_px"] = int(round(pitch))
-                banded["accepted"] = True
-                banded["ambiguous_half_period"] = False
-        if len(observed) >= 4:
-            short = float(np.median([x for x in observed if x <= np.median(observed)]))
-            doubled = [x for x in observed if abs(x / max(short, 1) - 2.0) <= 0.25]
-            short_count = sum(abs(x / max(short, 1) - 1.0) <= 0.25 for x in observed)
-            # Alternating short/full pitches are the measurable signature of a
-            # staggered bond; the physical brick width remains unclaimed here.
-            if short_count >= 2 and len(doubled) >= 2:
-                full = float(np.median(doubled))
-                banded["full_module_period_px"] = int(round(full))
-                banded["stagger_consistent"] = True
                 banded["accepted"] = True
                 banded["ambiguous_half_period"] = False
     accepted = horizontal["period_px"] is not None or vertical["period_px"] is not None
