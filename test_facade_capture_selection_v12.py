@@ -129,3 +129,17 @@ def test_nonfinite_catalog_location_is_rejected():
     plan = select_facade_captures(_coverage([malformed]), _world([building]), limit=2)
     assert plan["selectedSourceIDs"] == []
     assert plan["planReport"]["candidateCounts"]["rejected"]["missingLocation"] == 1
+
+
+def test_street_level_height_weighting_caps_highrise_and_assumes_unknown():
+    footprint = {"type": "Polygon", "coordinates": [[[10, -5], [20, -5], [20, 5], [10, 5], [10, -5]]]}
+    unknown = {"key": "unknown-height", "heightM": None, "geometry": footprint}
+    highrise = {"key": "known-highrise", "heightM": 80, "geometry": footprint}
+    unknown_frames, _, _ = build_facade_frames([unknown])
+    highrise_frames, _, _ = build_facade_frames([highrise])
+    assert unknown_frames[0]["planningHeightAssumed"] is True
+    assert unknown_frames[0]["heightM"] is None
+    assert highrise_frames[0]["planningHeightAssumed"] is False
+    assert highrise_frames[0]["heightM"] == 80
+    assert unknown_frames[0]["planningHeightM"] == highrise_frames[0]["planningHeightM"] == 12
+    assert unknown_frames[0]["visibleAreaM2"] == highrise_frames[0]["visibleAreaM2"]

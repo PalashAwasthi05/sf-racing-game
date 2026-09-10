@@ -140,8 +140,17 @@ def build_facade_frames(
             continue
         footprints.append(footprint)
         owner_keys.append(key)
-        raw_height = building.get("heightM", 0.0)
-        height = max(0.1, float(raw_height or 0.0))
+        raw_height = building.get("heightM")
+        try:
+            measured_height = float(raw_height)
+        except (TypeError, ValueError):
+            measured_height = float("nan")
+        height_known = math.isfinite(measured_height) and measured_height > 0.0
+        # Selection value is deliberately street-level: tall buildings do
+        # not outweigh shorter facades merely because their roofs are high.
+        # Unknown/invalid heights receive an explicit assumed planning extent,
+        # never a fabricated measured height.
+        planning_height = min(measured_height, 12.0) if height_known else 12.0
         source_frames = contiguous_frames(footprint, min_length=min_length_m)
         edge_index = 0
         for source in source_frames:
@@ -149,8 +158,11 @@ def build_facade_frames(
                 part["frameID"] = f"{key}:frame:{edge_index}:{part['part']}"
                 part["buildingKey"] = key
                 part["ownerIndex"] = len(footprints) - 1
-                part["heightM"] = height
-                part["visibleAreaM2"] = float(part["lengthM"] * height)
+                part["heightM"] = measured_height if height_known else None
+                part["heightKnown"] = height_known
+                part["planningHeightM"] = float(planning_height)
+                part["planningHeightAssumed"] = not height_known
+                part["visibleAreaM2"] = float(part["lengthM"] * planning_height)
                 line = LineString([part["a"], part["b"]])
                 part["midpoint"] = [float(line.centroid.x), float(line.centroid.y)]
                 frames.append(part)
@@ -452,6 +464,8 @@ def select_facade_captures(
             "minFrontFacing": min_front_facing,
             "ownerEdgeToleranceM": owner_edge_tolerance,
             "frameLengthM": frame_length_m,
+            "streetLevelBandM": 12.0,
+            "unknownHeightPolicy": "assume 12m planning extent and flag planningHeightAssumed; never emit it as measured height",
             "independentSequenceReward": {"first": 1.0, "second": 0.65, "later": 0.08},
             "opaqueJoinField": "sourceID",
         },
