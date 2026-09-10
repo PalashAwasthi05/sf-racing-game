@@ -25,7 +25,7 @@ from general_world.stereo_rays import triangulate_pixel_pair
 AMBIGUITY_COST_MARGIN = 0.05
 OBSTRUCTION_ALPHA_MIN = 0.75
 PAIR_LIMIT = 12
-MAX_RAY_RESIDUAL_M = 1.0
+MAX_RAY_RESIDUAL_M = 0.15
 
 
 def _known(value: Any) -> bool:

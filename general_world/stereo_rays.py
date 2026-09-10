@@ -32,9 +32,11 @@ def closest_positive_rays(
     *,
     min_angle_deg: float = 5.0,
     max_condition: float = 100.0,
-    max_residual_m: float = 1.0,
+    max_residual_m: float = 0.15,
 ) -> dict[str, Any]:
     """Find the closest positive points on two rays, with bounded geometry."""
+    if not all(np.isfinite(float(value)) for value in (min_angle_deg, max_condition, max_residual_m)) or min_angle_deg <= 0.0 or min_angle_deg >= 180.0 or max_condition < 1.0 or max_residual_m <= 0.0:
+        raise ValueError("ray bounds must be finite, positive, and geometrically valid")
     a, b = _vec(camera_a), _vec(camera_b)
     da, db = _unit(direction_a), _unit(direction_b)
     if any(value is None for value in (a, b, da, db)):
@@ -67,8 +69,13 @@ def closest_positive_rays(
 def metric_plane_point(record: dict[str, Any], pixel_xy: Any, image_size: tuple[int, int]) -> np.ndarray:
     """Map a pixel centre onto the record's assumed facade plane."""
     origin = _vec(record.get("metricFrame", {}).get("origin"))
-    horizontal = _unit(record.get("metricFrame", {}).get("horizontal"))
-    vertical = _unit(record.get("metricFrame", {}).get("vertical"))
+    horizontal_raw = _vec(record.get("metricFrame", {}).get("horizontal"))
+    vertical_raw = _vec(record.get("metricFrame", {}).get("vertical"))
+    if horizontal_raw is None or vertical_raw is None:
+        raise ValueError("invalid metric frame")
+    if abs(float(np.linalg.norm(horizontal_raw)) - 1.0) > 1e-5 or abs(float(np.linalg.norm(vertical_raw)) - 1.0) > 1e-5 or abs(float(np.dot(horizontal_raw, vertical_raw))) > 1e-5:
+        raise ValueError("metric frame basis must be orthonormal")
+    horizontal, vertical = horizontal_raw, vertical_raw
     if origin is None or horizontal is None or vertical is None:
         raise ValueError("invalid metric frame")
     try:
@@ -134,4 +141,3 @@ def triangulate_pixel_pair(
     if local_x < -panel_margin_m or local_x > width_m + panel_margin_m or local_y < -panel_margin_m or local_y > height_m + panel_margin_m:
         return {"valid": False, "reason": "outside_panel_margin", "signedOffsetFromAssumedPlaneM": offset, "rayResidualM": result["rayResidualM"]}
     return {**result, "valid": True, "center": center, "signedOffsetFromAssumedPlaneM": offset, "planarReprojectionErrorM": float(np.linalg.norm(plane_a - plane_b)), "panelLocalXYM": [local_x, local_y]}
-
