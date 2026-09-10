@@ -459,6 +459,78 @@ def _paired_selection(candidates, cameras, footprints, limit):
     return selected
 
 
+def _geometric_pair_metrics(first_camera: dict[str, Any], second_camera: dict[str, Any], target_world: np.ndarray, minimum_baseline_m: float = 2.0, minimum_parallax_deg: float = 5.0) -> tuple[float, float] | None:
+    """Validate stereo independence in one shared reconstruction cluster."""
+
+    first_cluster = first_camera.get("camera", {}).get("clusterId")
+    second_cluster = second_camera.get("camera", {}).get("clusterId")
+    if first_cluster in (None, "", "unknown") or second_cluster != first_cluster:
+        return None
+    first_source = first_camera.get("sourceId")
+    second_source = second_camera.get("sourceId")
+    first_hash = first_camera.get("record", {}).get("imageSha256")
+    second_hash = second_camera.get("record", {}).get("imageSha256")
+    if not first_source or not second_source or first_source == second_source or not first_hash or not second_hash or first_hash == second_hash:
+        return None
+    first_center = np.asarray(first_camera.get("centerWorld"), dtype=float)
+    second_center = np.asarray(second_camera.get("centerWorld"), dtype=float)
+    target = np.asarray(target_world, dtype=float)
+    baseline = float(np.linalg.norm(second_center - first_center))
+    if not np.isfinite(baseline) or baseline < minimum_baseline_m:
+        return None
+    first_ray = target - first_center
+    second_ray = target - second_center
+    first_norm, second_norm = np.linalg.norm(first_ray), np.linalg.norm(second_ray)
+    if first_norm == 0.0 or second_norm == 0.0:
+        return None
+    cosine = float(np.clip(np.dot(first_ray, second_ray) / (first_norm * second_norm), -1.0, 1.0))
+    parallax = float(np.degrees(np.arccos(cosine)))
+    if not np.isfinite(parallax) or parallax < minimum_parallax_deg:
+        return None
+    return baseline, parallax
+
+
+def _geometric_cameras(first: dict[str, Any], cameras: list[dict[str, Any]], target_world: np.ndarray) -> list[tuple[dict[str, Any], float, float]]:
+    accepted = []
+    for camera in cameras:
+        metrics = _geometric_pair_metrics(first["camera"], camera, target_world)
+        if metrics is not None:
+            accepted.append((camera, metrics[0], metrics[1]))
+    return accepted
+
+
+def _paired_selection_geometric(candidates, cameras, footprints, limit):
+    selected = []
+    used_sources: set[str] = set()
+    for first in _select_spatial(candidates, len(candidates)):
+        if len(selected) + 2 > limit:
+            break
+        if first["camera"]["sourceId"] in used_sources:
+            continue
+        frame_center = (np.asarray(first["a"], dtype=float) + np.asarray(first["b"], dtype=float)) / 2.0
+        target_world = np.array([frame_center[0], frame_center[1], float(first.get("baseZM", 0.0))])
+        geometric = _geometric_cameras(first, cameras, target_world)
+        if not geometric:
+            continue
+        # Re-run ordinary near/facing/LOS selection over only geometrically
+        # eligible cameras, retaining the same metric frontage.
+        filtered = [camera for camera, _, _ in geometric]
+        second = _candidate_for_frame(first, filtered, footprints)
+        if second is None or second["camera"]["sourceId"] in used_sources:
+            continue
+        metrics = _geometric_pair_metrics(first["camera"], second["camera"], target_world)
+        if metrics is None:
+            continue
+        pairing = {"baselineM": metrics[0], "angularParallaxDeg": metrics[1], "mode": "geometric"}
+        first = dict(first)
+        second = dict(second)
+        first["pairing"] = pairing
+        second["pairing"] = pairing
+        selected.extend([first, second])
+        used_sources.update((first["camera"]["sourceId"], second["camera"]["sourceId"]))
+    return selected
+
+
 def _save_contact_sheet(paths: list[Path], output: Path) -> None:
     if not paths:
         return
@@ -484,11 +556,13 @@ def _save_contact_sheet(paths: list[Path], output: Path) -> None:
     sheet.save(output)
 
 
-def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DEFAULT_LIMIT, alignment_report: Path | None = None, pixels_per_m: float = PIXELS_PER_M, paired_views: bool = False) -> dict[str, Any]:
+def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DEFAULT_LIMIT, alignment_report: Path | None = None, pixels_per_m: float = PIXELS_PER_M, paired_views: bool = False, pairing_mode: str = "independent-sequence") -> dict[str, Any]:
     if limit < 1:
         raise ValueError("limit must be positive")
     if not np.isfinite(pixels_per_m) or not 1 <= pixels_per_m <= 128:
         raise ValueError('pixels_per_m must be finite and between 1 and 128')
+    if pairing_mode not in {"independent-sequence", "geometric"}:
+        raise ValueError("pairing_mode must be independent-sequence or geometric")
     normalized = json.loads(normalized_input.read_text())
     frame = normalized.get("coordinateFrame") or {}
     source_path = imagery / "source-index.json"
@@ -539,7 +613,12 @@ def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DE
                 }
             )
             candidates.append(candidate)
-    selected = _paired_selection(candidates, cameras, footprints, limit) if paired_views else _select_spatial(candidates, limit)
+    if paired_views and pairing_mode == "geometric":
+        selected = _paired_selection_geometric(candidates, cameras, footprints, limit)
+    elif paired_views:
+        selected = _paired_selection(candidates, cameras, footprints, limit)
+    else:
+        selected = _select_spatial(candidates, limit)
     output.mkdir(parents=True, exist_ok=True)
     crops_dir = output / "crops"
     crops_dir.mkdir(exist_ok=True)
@@ -626,6 +705,12 @@ def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DE
                 "grazingFraction": float(np.mean(crop.grazing_mask)),
                 "affineConversionError": affine_error,
                 "cameraDistanceM": candidate["distanceM"],
+                "cameraCenterWorldM": camera["centerWorld"].tolist(),
+                "clusterId": camera["camera"].get("clusterId"),
+                "imageSha256": record.get("imageSha256"),
+                "pairingMode": pairing_mode,
+                "pairBaselineM": None if candidate.get("pairing") is None else candidate["pairing"]["baselineM"],
+                "pairAngularParallaxDeg": None if candidate.get("pairing") is None else candidate["pairing"]["angularParallaxDeg"],
                 "frontFacingCosineAtMidpoint": candidate["facingCosine"],
                 "frontFacingCosinesAtCorners": candidate["cornerFacingCosines"],
                 "screenVisibilityGeometryOnly": candidate["screenVisibilityGeometryOnly"],
@@ -646,7 +731,7 @@ def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DE
         "occlusionUnchecked": True,
         "evidenceScope": "unregistered photo rectification diagnostics only; no facade measurements or inferred openings",
         "inputs": {"imagery": str(imagery.resolve()), "normalizedInput": str(normalized_input.resolve()), "alignmentReport": None if alignment_report is None else str(alignment_report.resolve())},
-        "selection": {"candidateFrontages": len(candidates), "selected": len(selected), "limit": limit, "recentDays": RECENT_DAYS, "pixelsPerM": pixels_per_m, "pairedIndependentViews": paired_views, "facingCosineMidpointMinimum": 0.5, "facingCosineCornerMinimum": 0.25, "lineOfSightGeometryOnly": True},
+        "selection": {"candidateFrontages": len(candidates), "selected": len(selected), "limit": limit, "recentDays": RECENT_DAYS, "pixelsPerM": pixels_per_m, "pairedIndependentViews": paired_views, "pairingMode": pairing_mode, "geometricPairMinimumBaselineM": 2.0, "geometricPairMinimumAngularParallaxDeg": 5.0, "facingCosineMidpointMinimum": 0.5, "facingCosineCornerMinimum": 0.25, "lineOfSightGeometryOnly": True},
         "alignment": {"appliedClusters": len(alignments), "diagnosticOnly": True, "uncorrectedBaselineAccessible": True},
         "contactSheet": str(contact_sheet.resolve()) if contact_paths_exist(contact_sheet) else None,
         "crops": crop_records,
@@ -674,9 +759,10 @@ def main() -> None:
     parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT)
     parser.add_argument('--pixels-per-m',type=float,default=PIXELS_PER_M)
     parser.add_argument("--paired-views", action="store_true", help="select two independent captures per identical metric frontage")
+    parser.add_argument("--pairing-mode", choices=("independent-sequence", "geometric"), default="independent-sequence")
     parser.add_argument("--alignment-report", type=Path, help="optional accepted cluster alignment report; applied diagnostically only")
     args = parser.parse_args()
-    result = rectify(args.imagery, args.normalized_input, args.output, args.limit, args.alignment_report,args.pixels_per_m,args.paired_views)
+    result = rectify(args.imagery, args.normalized_input, args.output, args.limit, args.alignment_report,args.pixels_per_m,args.paired_views,args.pairing_mode)
     print(json.dumps({"selected": result["selection"]["selected"], "crops": len(result["crops"]), "failures": len(result["failures"]), "contactSheet": result["contactSheet"]}, sort_keys=True))
 
 

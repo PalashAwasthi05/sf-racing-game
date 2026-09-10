@@ -58,3 +58,30 @@ def test_independent_pairs_require_known_groups_and_baseline():
     good = {"record": {"viewGroup": "b"}, "centerWorld": np.array([3., 0., 0.])}
     unknown = {"record": {}, "centerWorld": np.array([3., 0., 0.])}
     assert _independent_cameras(a, [same, close, good, unknown]) == [good]
+
+
+def _geo_camera(source_id, center, *, cluster="cluster-a", image_hash=None):
+    return {
+        "sourceId": source_id,
+        "centerWorld": np.asarray(center, dtype=float),
+        "camera": {"clusterId": cluster},
+        "record": {"imageSha256": image_hash or source_id + "-hash"},
+    }
+
+
+def test_geometric_pair_requires_shared_cluster_baseline_and_parallax():
+    from rectify_facade_diagnostics_v12 import _geometric_pair_metrics
+    first = _geo_camera("one", [-10.0, 0.0, 3.0])
+    accepted = _geo_camera("two", [-10.0, 2.0, 3.0])
+    assert _geometric_pair_metrics(first, accepted, np.array([0.0, 0.0, 3.0]))[0] >= 2.0
+    assert _geometric_pair_metrics(first, accepted, np.array([0.0, 0.0, 3.0]))[1] >= 5.0
+
+
+def test_geometric_pair_rejects_other_cluster_small_baseline_narrow_angle_and_duplicate():
+    from rectify_facade_diagnostics_v12 import _geometric_pair_metrics
+    first = _geo_camera("one", [-10.0, 0.0, 3.0])
+    target = np.array([0.0, 0.0, 3.0])
+    assert _geometric_pair_metrics(first, _geo_camera("other-cluster", [-10.0, 2.0, 3.0], cluster="cluster-b"), target) is None
+    assert _geometric_pair_metrics(first, _geo_camera("small", [-9.0, 0.0, 3.0]), target) is None
+    assert _geometric_pair_metrics(first, _geo_camera("narrow", [-10.0, 0.5, 3.0]), target) is None
+    assert _geometric_pair_metrics(first, _geo_camera("duplicate", [-10.0, 2.0, 3.0], image_hash=first["record"]["imageSha256"]), target) is None
