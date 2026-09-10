@@ -1,4 +1,5 @@
 import numpy as np
+from pyproj import Transformer
 from scipy.spatial.transform import Rotation
 
 from mapillary_world_alignment import bounded_registration, enu_to_local_projected
@@ -28,7 +29,9 @@ def test_bounded_registration_rejects_wrong_overlap():
 
 
 def test_enu_conversion_applies_projected_origin_and_vertical_origin():
-    frame = {"projectedCrs": "EPSG:32610", "originProjectedM": [553556.9197708304, 4181427.3639752637], "verticalOriginM": 4.23}
-    point = enu_to_local_projected(np.array([[0.0, 0.0, 10.0]]), {"latitude": 37.7786, "longitude": -122.3918, "altitude": 0.0}, frame)
+    reference = {"latitude": 12.3, "longitude": 45.6, "altitude": 0.0}
+    projected = Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True)
+    frame = {"projectedCrs": "EPSG:3857", "originProjectedM": list(projected.transform(reference["longitude"], reference["latitude"])), "verticalOriginM": 4.23}
+    point = enu_to_local_projected(np.array([[0.0, 0.0, 10.0]]), reference, frame)
     assert np.isfinite(point).all()
     assert abs(point[0, 2] - 5.77) < 0.02
