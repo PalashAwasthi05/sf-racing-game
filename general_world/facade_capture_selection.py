@@ -86,7 +86,15 @@ def _local_point(transformer: Transformer, origin: np.ndarray, lonlat: Iterable[
     values = list(lonlat)
     if len(values) != 2:
         raise ValueError("tile_location must be [longitude, latitude]")
-    x, y = transformer.transform(float(values[0]), float(values[1]))
+    try:
+        lon, lat = float(values[0]), float(values[1])
+    except (TypeError, ValueError):
+        raise ValueError("tile_location must contain finite numbers") from None
+    if not math.isfinite(lon) or not math.isfinite(lat):
+        raise ValueError("tile_location must contain finite numbers")
+    x, y = transformer.transform(lon, lat)
+    if not math.isfinite(float(x)) or not math.isfinite(float(y)):
+        raise ValueError("projected image location is not finite")
     return np.array([float(x) - origin[0], float(y) - origin[1]], dtype=float)
 
 
@@ -170,6 +178,12 @@ def _line_clear(
 ) -> bool:
     line = LineString([camera.tolist(), sample.tolist()])
     if line.length <= 1e-6:
+        return False
+    # The owner may legitimately occupy the final facade edge, but it must
+    # not occlude the ray before that edge (important for concave footprints).
+    owner = footprints[owner_index]
+    before_owner_edge = line.difference(Point(sample.tolist()).buffer(owner_edge_tolerance))
+    if owner.buffer(-1e-7).intersects(before_owner_edge):
         return False
     for raw_index in footprint_tree.query(line):
         index = int(raw_index)
@@ -304,6 +318,13 @@ def _candidate_pairs(
     return candidates
 
 
+def _sequence_key(record: dict[str, Any], source_id: str) -> str:
+    value = record.get("sequence_id", record.get("sequenceID"))
+    if value is None or not str(value).strip():
+        return "__unknown_sequence__"
+    return str(value)
+
+
 def _greedy_select(candidates: dict[str, dict[str, Any]], limit: int) -> tuple[list[dict[str, Any]], dict[str, set[str]]]:
     selected: list[dict[str, Any]] = []
     covered_sequences: dict[str, set[str]] = {}
@@ -313,7 +334,7 @@ def _greedy_select(candidates: dict[str, dict[str, Any]], limit: int) -> tuple[l
         best_value = 0.0
         best_gain: dict[str, float] = {}
         for source_id, candidate in remaining.items():
-            sequence = str(candidate["record"].get("sequence_id", candidate["record"].get("sequenceID", source_id)))
+            sequence = _sequence_key(candidate["record"], source_id)
             gain = 0.0
             gains = {}
             for pair in candidate["pairs"]:
@@ -336,7 +357,7 @@ def _greedy_select(candidates: dict[str, dict[str, Any]], limit: int) -> tuple[l
         if best_id is None:
             break
         candidate = remaining.pop(best_id)
-        sequence = str(candidate["record"].get("sequence_id", candidate["record"].get("sequenceID", best_id)))
+        sequence = _sequence_key(candidate["record"], best_id)
         for frame_id in best_gain:
             covered_sequences.setdefault(frame_id, set()).add(sequence)
         selected.append({"sourceID": best_id, "record": candidate["record"], "pairs": candidate["pairs"], "score": best_value})
@@ -362,16 +383,13 @@ def _current_records(normalized_input: dict[str, Any], coverage_records: list[di
         return []
     by_id = {str(record.get("id")): record for record in coverage_records}
     result = []
-    transformer, origin, _ = _projector(normalized_input)
     for key, value in current.items():
         source_id = str(key).split(":", 1)[-1]
         source = by_id.get(source_id)
-        location = (value.get("camera") or {}).get("locationWgs84") if isinstance(value, dict) else None
-        if source is None or location is None:
+        if source is None:
             continue
         record = dict(source)
         record["sourceID"] = source_id
-        record["point"] = _local_point(transformer, origin, location[:2])
         result.append(record)
     return result
 
@@ -405,7 +423,7 @@ def select_facade_captures(
         selection.append(
             {
                 "sourceID": item["sourceID"],
-                "sequenceID": str(record.get("sequence_id", record.get("sequenceID", item["sourceID"]))),
+                "sequenceID": record.get("sequence_id", record.get("sequenceID")),
                 "capturedAt": item["record"].get("captureDate", _capture_date(record).isoformat() if _capture_date(record) else None),
                 "isPano": bool(record.get("is_pano", record.get("isPano", False))),
                 "qualityScore": float(record.get("quality_score", record.get("qualityScore", 0.0)) or 0.0),
