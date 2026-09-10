@@ -45,6 +45,14 @@ def test_same_view_group_is_rejected(tmp_path):
     assert result["counts"]["agreement"] == 0
 
 
+def test_missing_view_group_is_rejected(tmp_path):
+    provenance, proposals = _fixture(tmp_path)
+    provenance["crops"][1]["viewGroup"] = None
+    result = compare(provenance, proposals)
+    assert result["pairing"]["sameViewGroupRejected"] == 1
+    assert result["pairing"]["eligibleViewPairs"] == 0
+
+
 def test_nonfinite_and_degenerate_boxes_are_rejected(tmp_path):
     provenance, proposals = _fixture(tmp_path)
     proposals["crops"][0]["proposals"] = [{"box": [0, 0, float("nan"), 2], "category": "door"}, {"box": [1, 2, 1, 4], "category": "door"}]
@@ -64,3 +72,21 @@ def test_blocked_car_alpha_is_filtered_even_with_high_score(tmp_path):
     assert result["proposalFiltering"]["blocked"] == 1
     assert result["counts"]["agreement"] == 0
 
+
+def test_empty_required_obstruction_report_is_fail_closed(tmp_path):
+    provenance, proposals = _fixture(tmp_path)
+    result = compare(provenance, proposals, {"crops": []})
+    assert result["proposalFiltering"]["missingOrInvalidObstructionMask"] == 2
+    assert result["proposalFiltering"]["notRejectedByObstructionMask"] == 0
+    assert result["counts"]["agreement"] == 0
+
+
+def test_column_tie_is_ambiguous(tmp_path):
+    provenance, proposals = _fixture(tmp_path)
+    proposals["crops"][0]["proposals"] = [
+        {"box": [20, 20, 40, 40], "category": "door", "score": .9},
+        {"box": [20, 20, 40, 40], "category": "door", "score": .8},
+    ]
+    result = compare(provenance, proposals)
+    assert result["counts"]["ambiguous"] == 1
+    assert result["counts"]["disagreement"] == 1

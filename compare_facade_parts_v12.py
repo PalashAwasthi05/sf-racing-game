@@ -154,6 +154,12 @@ def _obstruction_index(report: dict[str, Any] | None) -> dict[tuple[str, str], d
     return result
 
 
+def _independent_view_group(value: Any) -> bool:
+    if value is None:
+        return False
+    return str(value).strip().lower() not in {"", "none", "unknown", "null"}
+
+
 def _alpha_fraction(path: str, box: tuple[float, float, float, float], expected_size: tuple[int, int] | None = None) -> float | None:
     try:
         with Image.open(path) as image:
@@ -175,9 +181,10 @@ def _prepare_proposals(
     proposal_items: list[dict[str, Any]],
     provenance_by_index: dict[Any, dict[str, Any]],
     obstruction: dict[tuple[str, str], dict[str, Any]],
+    obstruction_enabled: bool,
 ) -> tuple[dict[Any, list[dict[str, Any]]], dict[str, int]]:
     by_crop: dict[Any, list[dict[str, Any]]] = {}
-    counts = {"invalidBoxes": 0, "blocked": 0, "unknownObstruction": 0, "unobstructed": 0}
+    counts = {"invalidBoxes": 0, "blocked": 0, "missingOrInvalidObstructionMask": 0, "notRejectedByObstructionMask": 0}
     for item in proposal_items:
         index = item.get("index")
         provenance = provenance_by_index.get(index)
@@ -204,18 +211,18 @@ def _prepare_proposals(
                 continue
             category = str(raw.get("category", "unknown"))
             candidate = {"box": box, "category": category, "score": raw.get("score"), "sourceId": source_id}
-            if obstruction:
+            if obstruction_enabled:
                 mask = obstruction.get((path or "", source_id))
                 mask_path = mask.get("outputMasked") if mask else None
                 fraction = _alpha_fraction(mask_path, box, _image_size(provenance)) if mask_path else None
                 candidate["nonObstructedFraction"] = fraction
                 if fraction is None:
-                    counts["unknownObstruction"] += 1
+                    counts["missingOrInvalidObstructionMask"] += 1
                     continue
                 if fraction < OBSTRUCTION_ALPHA_MIN:
                     counts["blocked"] += 1
                     continue
-                counts["unobstructed"] += 1
+                counts["notRejectedByObstructionMask"] += 1
             by_crop.setdefault(index, []).append(candidate)
     return by_crop, counts
 
@@ -225,8 +232,9 @@ def compare(provenance: dict[str, Any], proposals: Any, obstruction_report: dict
     crops = _crop_records(provenance)
     by_index = {record.get("index"): record for record in crops}
     proposal_items = _proposal_records(proposals)
+    obstruction_enabled = obstruction_report is not None
     obstruction = _obstruction_index(obstruction_report)
-    proposal_by_crop, proposal_counts = _prepare_proposals(proposal_items, by_index, obstruction)
+    proposal_by_crop, proposal_counts = _prepare_proposals(proposal_items, by_index, obstruction, obstruction_enabled)
     groups: dict[tuple[Any, Any, str], list[dict[str, Any]]] = {}
     for record in crops:
         key = _frame_key(record)
@@ -237,9 +245,10 @@ def compare(provenance: dict[str, Any], proposals: Any, obstruction_report: dict
     examples: list[dict[str, Any]] = []
     rejected_same_view_group = 0
     residuals: list[dict[str, float]] = []
+    agreement_residuals: list[dict[str, float]] = []
     for key, records in groups.items():
         for left, right in itertools.combinations(records, 2):
-            if left.get("viewGroup") is None or left.get("viewGroup") == right.get("viewGroup"):
+            if not _independent_view_group(left.get("viewGroup")) or not _independent_view_group(right.get("viewGroup")) or left.get("viewGroup") == right.get("viewGroup"):
                 rejected_same_view_group += 1
                 continue
             left_props = proposal_by_crop.get(left.get("index"), [])
@@ -265,8 +274,13 @@ def compare(provenance: dict[str, Any], proposals: Any, obstruction_report: dict
                     p, q = lhs[valid_left[int(ri)]], rhs[valid_right[int(ci)]]
                     a, b = left_metric[valid_left[int(ri)]], right_metric[valid_right[int(ci)]]
                     iou, center, width, height, size = _residual(a, b)
-                    costs = sorted(1.0 - _residual(a, right_metric[j])[0] for j in valid_right)
-                    ambiguous = len(costs) > 1 and costs[1] - costs[0] <= AMBIGUITY_COST_MARGIN
+                    row_costs = matrix[int(ri), :]
+                    col_costs = matrix[:, int(ci)]
+                    row_sorted = np.sort(row_costs)
+                    col_sorted = np.sort(col_costs)
+                    row_unique = int(np.argmin(row_costs)) == int(ci) and (len(row_sorted) == 1 or row_sorted[1] - row_sorted[0] > AMBIGUITY_COST_MARGIN)
+                    col_unique = int(np.argmin(col_costs)) == int(ri) and (len(col_sorted) == 1 or col_sorted[1] - col_sorted[0] > AMBIGUITY_COST_MARGIN)
+                    ambiguous = not (row_unique and col_unique)
                     agreement = (not ambiguous and iou >= IOU_MIN and center <= CENTER_ERROR_MAX_M and size <= SIZE_ERROR_MAX_M)
                     if ambiguous:
                         totals["ambiguous"] += 1
@@ -274,19 +288,22 @@ def compare(provenance: dict[str, Any], proposals: Any, obstruction_report: dict
                         totals["agreement"] += 1
                     else:
                         totals["disagreement"] += 1
-                    residuals.append({"iou": iou, "centerErrorM": center, "widthErrorM": width, "heightErrorM": height, "sizeErrorM": size})
+                    residual = {"iou": iou, "centerErrorM": center, "widthErrorM": width, "heightErrorM": height, "sizeErrorM": size}
+                    residuals.append(residual)
+                    if agreement:
+                        agreement_residuals.append(residual)
                     if len(examples) < example_limit and (not agreement or ambiguous):
                         examples.append({"buildingKey": key[0], "frameIndex": key[1], "leftIndex": left.get("index"), "rightIndex": right.get("index"), "category": category, "agreement": agreement, "ambiguous": ambiguous, "iou": iou, "centerErrorM": center, "widthErrorM": width, "heightErrorM": height, "scoreLeft": p.get("score"), "scoreRight": q.get("score")})
-    def stats(field: str) -> dict[str, float] | None:
-        values = [x[field] for x in residuals]
+    def stats(field: str, source: list[dict[str, float]] = residuals) -> dict[str, float] | None:
+        values = [x[field] for x in source]
         return {"count": len(values), "mean": float(np.mean(values)), "p95": float(np.percentile(values, 95)), "max": float(np.max(values))} if values else None
     return {
         "schema": "facade-part-multiview-consistency/v1",
         "evidenceScope": "visual proposal consistency only; no registration certification, opening acceptance, or derived geometry",
         "thresholds": {"iouMinimum": IOU_MIN, "centerErrorMaxM": CENTER_ERROR_MAX_M, "sizeErrorMaxM": SIZE_ERROR_MAX_M, "ambiguityCostMargin": AMBIGUITY_COST_MARGIN, "obstructionAlphaMinimum": OBSTRUCTION_ALPHA_MIN},
-        "pairing": {"groups": len(groups), "eligibleViewPairs": sum(1 for records in groups.values() for a, b in itertools.combinations(records, 2) if a.get("viewGroup") is not None and a.get("viewGroup") != b.get("viewGroup")), "sameViewGroupRejected": rejected_same_view_group},
+        "pairing": {"groups": len(groups), "eligibleViewPairs": sum(1 for records in groups.values() for a, b in itertools.combinations(records, 2) if _independent_view_group(a.get("viewGroup")) and _independent_view_group(b.get("viewGroup")) and a.get("viewGroup") != b.get("viewGroup")), "sameViewGroupRejected": rejected_same_view_group},
         "counts": totals,
-        "residuals": {"centerErrorM": stats("centerErrorM"), "sizeErrorM": stats("sizeErrorM"), "iou": stats("iou")},
+        "residuals": {"note": "All-match residuals include false correspondences and do not estimate camera or world-registration error.", "centerErrorM": stats("centerErrorM"), "sizeErrorM": stats("sizeErrorM"), "iou": stats("iou"), "agreementOnly": {"centerErrorM": stats("centerErrorM", agreement_residuals), "sizeErrorM": stats("sizeErrorM", agreement_residuals), "iou": stats("iou", agreement_residuals)}},
         "proposalFiltering": proposal_counts,
         "examples": examples[:example_limit],
     }
