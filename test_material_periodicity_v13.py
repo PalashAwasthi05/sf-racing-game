@@ -25,6 +25,23 @@ class MaterialPeriodicityTests(unittest.TestCase):
         self.assertIsNone(result["horizontal"]["period_px"])
         self.assertIsNone(result["vertical"]["period_px"])
 
+    def test_running_bond_reports_full_module_and_stagger(self):
+        rng = np.random.default_rng(8)
+        image = np.full((192, 256), 0.78, dtype=float)
+        row_pitch, full = 24, 64
+        for row in range(0, image.shape[0], row_pitch):
+            image[row:row + row_pitch, :] = 0.72
+            offset = 0 if (row // row_pitch) % 2 == 0 else full // 2
+            image[row:row + row_pitch, offset::full] = 0.10
+            image[row:row + 2, :] = 0.10
+        image += rng.normal(0, 0.02, image.shape)
+        result = infer_joint_periods(image, min_period_px=6)
+        bond = result["banded_running_bond"]
+        self.assertTrue(bond["accepted"])
+        self.assertEqual(bond["row_pitch_px"], row_pitch)
+        self.assertEqual(bond["full_module_period_px"], full)
+        self.assertTrue(bond["stagger_consistent"])
+
 
 if __name__ == "__main__":
     unittest.main()

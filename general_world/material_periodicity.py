@@ -72,6 +72,57 @@ def infer_joint_periods(image: np.ndarray, *, min_period_px: int = 4,
     cap = max_period_px or min(h, w) // 2
     horizontal = _one(_profile(arr, 0), min_period_px=min_period_px, max_period_px=min(cap, h // 2))
     vertical = _one(_profile(arr, 1), min_period_px=min_period_px, max_period_px=min(cap, w // 2))
+    banded = {"accepted": False, "row_pitch_px": horizontal["period_px"],
+              "band_periods_px": [], "full_module_period_px": None,
+              "stagger_consistent": False, "ambiguous_half_period": True}
+    row_pitch = horizontal["period_px"]
+    if row_pitch is not None and row_pitch >= min_period_px * 2:
+        profiles = []
+        raw_profiles = []
+        for start in range(0, h - row_pitch + 1, row_pitch):
+            band = arr[start:start + row_pitch]
+            if band.ndim == 3:
+                band = band.mean(axis=2)
+            values = np.nanmedian(band, axis=0)
+            raw = np.diff(values, prepend=values[0]); raw_profiles.append(raw - raw.mean())
+            profiles.append(_one(np.diff(values, prepend=values[0]),
+                                 min_period_px=min_period_px,
+                                 max_period_px=min(cap, w // 2)))
+        observed = [x["period_px"] for x in profiles if x["period_px"] is not None]
+        banded["band_periods_px"] = observed
+        if len(raw_profiles) >= 4 and observed:
+            pitch = int(round(float(np.median(observed))))
+            ref = raw_profiles[0] / max(float(np.linalg.norm(raw_profiles[0])), 1e-9)
+            offsets = []
+            for raw in raw_profiles:
+                raw = raw / max(float(np.linalg.norm(raw)), 1e-9)
+                shifts = range(-pitch // 2, pitch // 2 + 1)
+                best = max(shifts, key=lambda s: float(np.dot(ref, np.roll(raw, s))))
+                offsets.append(int(best % pitch))
+            banded["phase_offsets_px"] = offsets
+            # Two stable phase classes separated by half a pitch certify a
+            # staggered repeat; a single class remains ambiguous.
+            half = pitch / 2.0
+            classes = [min(abs(x), abs(x - pitch), abs(x - half)) for x in offsets]
+            separated = sum(abs(x - half) <= max(2, pitch * .18) for x in offsets) >= 2
+            banded["stagger_consistent"] = separated and len(observed) >= 4
+            if banded["stagger_consistent"]:
+                banded["full_module_period_px"] = int(round(pitch))
+                banded["accepted"] = True
+                banded["ambiguous_half_period"] = False
+        if len(observed) >= 4:
+            short = float(np.median([x for x in observed if x <= np.median(observed)]))
+            doubled = [x for x in observed if abs(x / max(short, 1) - 2.0) <= 0.25]
+            short_count = sum(abs(x / max(short, 1) - 1.0) <= 0.25 for x in observed)
+            # Alternating short/full pitches are the measurable signature of a
+            # staggered bond; the physical brick width remains unclaimed here.
+            if short_count >= 2 and len(doubled) >= 2:
+                full = float(np.median(doubled))
+                banded["full_module_period_px"] = int(round(full))
+                banded["stagger_consistent"] = True
+                banded["accepted"] = True
+                banded["ambiguous_half_period"] = False
     accepted = horizontal["period_px"] is not None or vertical["period_px"] is not None
-    return {"accepted": accepted, "horizontal": horizontal, "vertical": vertical,
+    return {"accepted": accepted or banded["accepted"], "horizontal": horizontal, "vertical": vertical,
+            "banded_running_bond": banded,
             "signal": "row/column median edge profile", "physical_scale": "not inferred"}
