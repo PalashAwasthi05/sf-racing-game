@@ -1,5 +1,7 @@
 import pytest
 import trimesh
+import numpy as np
+import general_world.detail_compiler as detail_compiler
 from general_world.detail_compiler import DetailCompilerError, compile_detail_records
 
 
@@ -68,3 +70,44 @@ def test_envelope_uses_wall_depth_axis_and_removes_correct_volume():
     result=replace_measured_panel(proxy,r)
     assert result['proxy'].volume==pytest.approx(96-6*4*.15,abs=1e-5)
     assert result['proxy'].bounds[0,1]==pytest.approx(.15)
+
+
+def test_surface_audit_rejects_removed_front_triangle_before_proxy_change(monkeypatch):
+    proxy = trimesh.creation.box([6, .6, 4]); proxy.apply_translation([3, 0, 2])
+    original = detail_compiler.compile_detail_records
+
+    def damaged(records):
+        out = original(records)
+        wall = out[0]["parts"][0]["mesh"]
+        front = np.where(wall.face_normals[:, 1] < -.99)[0]
+        wall.update_faces(np.delete(np.arange(len(wall.faces)), front[0]))
+        return out
+
+    monkeypatch.setattr(detail_compiler, "compile_detail_records", damaged)
+    before = proxy.copy()
+    with pytest.raises(DetailCompilerError, match="surface audit failed"):
+        detail_compiler.replace_measured_panel(proxy, record(coordinate_frame={"origin": [0, 0, 2], "horizontal": [1, 0, 0],
+                                                                                "inward": [0, 1, 0], "vertical": [0, 0, 1]}))
+    assert np.array_equal(proxy.vertices, before.vertices)
+    assert np.array_equal(proxy.faces, before.faces)
+
+
+def test_surface_audit_rejects_reversed_front_triangle_before_proxy_change(monkeypatch):
+    proxy = trimesh.creation.box([6, .6, 4]); proxy.apply_translation([3, 0, 2])
+    original = detail_compiler.compile_detail_records
+
+    def reversed_front(records):
+        out = original(records)
+        wall = out[0]["parts"][0]["mesh"]
+        front = np.where(wall.face_normals[:, 1] < -.99)[0][0]
+        wall.faces[front] = wall.faces[front][::-1]
+        wall._cache.clear()
+        return out
+
+    monkeypatch.setattr(detail_compiler, "compile_detail_records", reversed_front)
+    before = proxy.copy()
+    with pytest.raises(DetailCompilerError, match="surface audit failed"):
+        detail_compiler.replace_measured_panel(proxy, record(coordinate_frame={"origin": [0, 0, 2], "horizontal": [1, 0, 0],
+                                                                                "inward": [0, 1, 0], "vertical": [0, 0, 1]}))
+    assert np.array_equal(proxy.vertices, before.vertices)
+    assert np.array_equal(proxy.faces, before.faces)

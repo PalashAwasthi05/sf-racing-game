@@ -105,8 +105,10 @@ def replacement_transaction(host_surface, emitted_surfaces, intentional_openings
     emitted = _union(emitted_surfaces, "emitted_surfaces")
     replaceable = emitted.intersection(host)
     owned_openings = _union(_opening_polygons(intentional_openings), "intentional_openings") if intentional_openings else Polygon()
-    retained = host.difference(replaceable.union(owned_openings))
+    cut_domain = replaceable.union(owned_openings)
+    retained = host.difference(cut_domain)
     return {
+        "cut_domain": cut_domain,
         "replaceable_union": replaceable,
         "retained_host_remainder": retained,
         "coverage": audit,
@@ -121,10 +123,10 @@ def audit_mesh_projection(mesh, expected_surface, frame, intentional_openings=()
     union and counted, preventing unrelated geometry from hiding a gap.
     """
     try:
-        origin = np.asarray(frame["origin"], dtype=float)
-        horizontal = np.asarray(frame["horizontal"], dtype=float)
-        vertical = np.asarray(frame["vertical"], dtype=float)
-        normal = np.asarray(frame["normal"], dtype=float)
+        origin = np.asarray(frame["origin"], dtype=float).copy()
+        horizontal = np.asarray(frame["horizontal"], dtype=float).copy()
+        vertical = np.asarray(frame["vertical"], dtype=float).copy()
+        normal = np.asarray(frame["normal"], dtype=float).copy()
     except (KeyError, TypeError, ValueError) as exc:
         raise SurfaceCoverageError("frame requires origin, horizontal, vertical, normal") from exc
     if any(v.shape != (3,) or not np.isfinite(v).all() for v in (origin, horizontal, vertical, normal)):
@@ -132,6 +134,8 @@ def audit_mesh_projection(mesh, expected_surface, frame, intentional_openings=()
     norms = [np.linalg.norm(v) for v in (horizontal, vertical, normal)]
     if any(n <= 1e-12 for n in norms):
         raise SurfaceCoverageError("frame vectors must be nonzero")
+    if any(abs(n - 1.0) > 1e-6 for n in norms):
+        raise SurfaceCoverageError("frame vectors must be unit length")
     horizontal /= norms[0]; vertical /= norms[1]; normal /= norms[2]
     if (abs(horizontal @ vertical) > 1e-6 or abs(horizontal @ normal) > 1e-6 or abs(vertical @ normal) > 1e-6
             or not np.allclose(np.cross(horizontal, vertical), normal, atol=1e-6)):

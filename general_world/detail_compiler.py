@@ -29,6 +29,7 @@ from shapely.geometry import Polygon
 from .evidence import contains_authored_override
 from .geometry import extruded
 from .opening_mesh import ApertureError, compile_wall
+from .surface_coverage import SurfaceCoverageError, audit_mesh_projection
 
 
 class DetailCompilerError(ValueError):
@@ -132,6 +133,29 @@ def replace_measured_panel(proxy_mesh: trimesh.Trimesh, record: Mapping) -> dict
             raise DetailCompilerError("open_passage replacement requires full passage depth measurement")
     compiled = compile_detail_records([record])[0]
     frame = _frame(record["coordinate_frame"])
+    # Audit the measured front skin before touching the proxy.  Only wall-labelled
+    # parts on the front plane count; frames, glazing, and depth cues are recessed
+    # or separate evidence and must not hide a missing wall triangle.
+    wall_parts = [part["mesh"] for part in compiled["parts"] if part["label"].startswith("wall")]
+    try:
+        wall_polygon = Polygon(record["wall_polygon"])
+        openings = [{"polygon": Polygon(ap["boundary_polygon"]), "owned": True}
+                    for ap in record.get("apertures", [])]
+        origin, (horizontal, inward, vertical) = frame
+        front_frame = {"origin": origin - inward * float(record["wall_thickness_m"]) / 2,
+                       "horizontal": horizontal, "vertical": vertical, "normal": -inward}
+        surface_check = audit_mesh_projection(
+            trimesh.util.concatenate(wall_parts), wall_polygon, front_frame, openings,
+            tolerance=1e-6)
+    except (SurfaceCoverageError, ValueError, TypeError) as exc:
+        raise DetailCompilerError(f"measured wall surface audit failed: {exc}") from exc
+    floating = 1e-7
+    if any(surface_check[key] > floating for key in ("missing_area", "overlap_area", "outside_area")):
+        raise DetailCompilerError(
+            "measured wall surface audit failed: "
+            f"missing={surface_check['missing_area']:.9g}, "
+            f"overlap={surface_check['overlap_area']:.9g}, "
+            f"outside={surface_check['outside_area']:.9g}")
     from .opening_mesh import _solid
     t=float(record["wall_thickness_m"])
     envelope = _solid(Polygon(record["wall_polygon"]), -t/2, t/2, "replacement-envelope")
@@ -148,4 +172,5 @@ def replace_measured_panel(proxy_mesh: trimesh.Trimesh, record: Mapping) -> dict
         raise DetailCompilerError(f"proxy boolean replacement failed: {exc}") from exc
     if replacement is None or not replacement.is_watertight or not replacement.is_volume:
         raise DetailCompilerError("proxy boolean replacement is not a closed positive solid")
-    return {"proxy": replacement, "wall_parts": compiled["parts"], "checks": compiled["checks"]}
+    return {"proxy": replacement, "wall_parts": compiled["parts"], "checks": compiled["checks"],
+            "surface_coverage": surface_check}

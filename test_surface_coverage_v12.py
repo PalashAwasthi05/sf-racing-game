@@ -27,6 +27,7 @@ def test_narrow_012m_return_is_not_buffered_away():
 
 def test_transaction_keeps_missing_host_and_only_replaces_exact_union():
     result = replacement_transaction(box(0, 0, 10, 8), [box(2, 2, 8, 6)])
+    assert result["cut_domain"].area == pytest.approx(24)
     assert result["replaceable_union"].area == pytest.approx(24)
     assert result["retained_host_remainder"].area == pytest.approx(56)
 
@@ -73,3 +74,12 @@ def test_non_orthonormal_frame_is_rejected():
     bad = {**frame(), "normal": [0, 1, 0]}
     with pytest.raises(SurfaceCoverageError, match="orthonormal"):
         audit_mesh_projection(mesh, box(0, 0, 1, 1), bad)
+
+
+def test_non_unit_frame_is_rejected_without_mutating_input():
+    mesh = trimesh.Trimesh(vertices=[[0, 0, 0], [1, 0, 0], [0, 0, 1]], faces=[[0, 1, 2]], process=False)
+    h = [2.0, 0.0, 0.0]
+    bad = {**frame(), "horizontal": h}
+    with pytest.raises(SurfaceCoverageError, match="unit length"):
+        audit_mesh_projection(mesh, box(0, 0, 1, 1), bad)
+    assert h == [2.0, 0.0, 0.0]
