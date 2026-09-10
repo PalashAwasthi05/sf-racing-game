@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 import trimesh
 from shapely.geometry import Polygon
 
@@ -49,3 +50,25 @@ def test_exact_no_overlap_existing_is_unresolved():
     fp = Polygon([(0, 0), (4, 0), (4, 4), (0, 4)])
     made, report = recover_roof_coverage([roof(Polygon([(10, 10), (11, 10), (11, 11), (10, 11)]), 10)], fp, points(fp, 10, [(1, 1), (1, 2), (1, 3)]), 5)
     assert not made and report["status"] == "no-overlap-existing"
+
+
+def test_sloped_patch_follows_existing_plane_exactly():
+    fp = Polygon([(0, 0), (6, 0), (6, 4), (0, 4)])
+    base = roof(Polygon([(0, 0), (2.9, 0), (2.9, 4), (0, 4)]), 10)
+    # Existing cap has a z=10+0.5x plane.
+    base.vertices[:, 2] += .5 * base.vertices[:, 0]
+    cloud = np.asarray([[2.95, y, 10.05 + .5 * 2.95] for y in (1.2, 1.5, 1.8, 2.2, 2.5, 2.8, 3.2, 3.5, 3.8)])
+    made, report = recover_roof_coverage([base], fp, cloud, 5)
+    assert made and report["supportedAreaM2"] > 0
+    patch = made[0]
+    error = patch.vertices[:, 2] - (.5 * patch.vertices[:, 0] + 10.05)
+    assert np.max(np.abs(error[error > -.01])) <= 1e-9
+    assert np.min(error) == pytest.approx(-.02, abs=1e-9)
+
+
+def test_far_disconnected_support_in_missing_domain_is_excluded():
+    fp = Polygon([(0, 0), (10, 0), (10, 4), (0, 4)])
+    existing = [roof(Polygon([(0, 0), (1.9, 0), (1.9, 4), (0, 4)]), 10)]
+    far = points(fp, 10, [(7, 1), (7, 2), (7, 3)])
+    made, report = recover_roof_coverage(existing, fp, far, 5)
+    assert not made and report["supportedAreaM2"] == 0

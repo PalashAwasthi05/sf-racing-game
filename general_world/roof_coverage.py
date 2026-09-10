@@ -1,5 +1,4 @@
 """Conservative recovery of small, measured gaps in planar roof coverage."""
-import math
 import numpy as np
 import trimesh
 from shapely.geometry import Polygon, MultiPolygon, box
@@ -22,9 +21,11 @@ def _polys(g):
 
 def _plane(tri):
     n = np.cross(tri[1] - tri[0], tri[2] - tri[0])
-    if np.linalg.norm(n) < 1e-9 or n[2] <= 1e-6:
+    if np.linalg.norm(n) < 1e-9:
         return None
     n /= np.linalg.norm(n)
+    if n[2] < .5:
+        return None
     a, b = -n[0] / n[2], -n[1] / n[2]
     return np.array([a, b, tri[0, 2] - a * tri[0, 0] - b * tri[0, 1]])
 
@@ -40,7 +41,7 @@ def _plane_groups(meshes):
             p = Polygon(t[:, :2])
             if p.area <= 1e-9:
                 continue
-            match = next((g for g in groups if np.linalg.norm(c[:2] - g["plane"][:2]) < 1e-5 and abs(c[2] - g["plane"][2]) < 1e-3), None)
+            match = next((g for g in groups if g["parent"] == parent and np.linalg.norm(c[:2] - g["plane"][:2]) < 1e-5 and abs(c[2] - g["plane"][2]) < 1e-3), None)
             if match is None:
                 match = {"plane": c, "footprints": [], "parent": parent}
                 groups.append(match)
@@ -76,10 +77,13 @@ def recover_roof_coverage(roof_meshes, footprint, point_cloud, minimum_roof_z, m
     observed = unary_union([g["surface"] for g in groups]) if groups else Polygon()
     expected = footprint
     missing = expected.difference(observed)
-    report = {"expectedAreaM2": float(expected.area), "observedAreaM2": float(observed.intersection(expected).area),
+    overlap = observed.intersection(expected)
+    report = {"expectedAreaM2": float(expected.area), "observedAreaM2": float(overlap.area),
               "gapAreaM2": float(missing.area), "supportedAreaM2": 0.0, "unresolvedAreaM2": float(missing.area),
-              "components": [], "status": "no-overlap-existing" if observed.intersection(expected).is_empty else "unresolved"}
+              "components": [], "status": "no-overlap-existing" if overlap.is_empty else "unresolved"}
     patches = []
+    if overlap.is_empty:
+        return patches, report
     for component in _polys(missing):
         candidates = [g for g in groups if g["surface"].distance(component) <= max_cap_distance and
                       g["surface"].boundary.distance(component) <= max_cap_distance]
@@ -91,7 +95,13 @@ def recover_roof_coverage(roof_meshes, footprint, point_cloud, minimum_roof_z, m
             cloud = points[points[:, 2] >= minimum_roof_z]
             cloud = cloud[np.abs(cloud[:, 2] - (plane[0] * cloud[:, 0] + plane[1] * cloud[:, 1] + plane[2])) <= residual_m]
             cell_points = _cells(cloud, component, cell_m)
-            support = unary_union([box(k[0] * cell_m, k[1] * cell_m, (k[0] + 1) * cell_m, (k[1] + 1) * cell_m) for k in cell_points]).intersection(component) if cell_points else Polygon()
+            cells = [box(k[0] * cell_m, k[1] * cell_m, (k[0] + 1) * cell_m, (k[1] + 1) * cell_m) for k in cell_points]
+            support = unary_union(cells).intersection(g["surface"].buffer(max_cap_distance)).intersection(component) if cells else Polygon()
+            connected = []
+            for piece in _polys(support):
+                if piece.distance(g["surface"].boundary) <= 1e-6:
+                    connected.append(piece)
+            support = unary_union(connected) if connected else Polygon()
             if len(cell_points) < 3 or support.is_empty:
                 continue
             accepted = (g, support)
@@ -106,8 +116,8 @@ def recover_roof_coverage(roof_meshes, footprint, point_cloud, minimum_roof_z, m
             if piece.area <= 1e-9:
                 continue
             z = float(g["plane"][0] * piece.centroid.x + g["plane"][1] * piece.centroid.y + g["plane"][2])
-            raw = trimesh.creation.extrude_polygon(piece, mid_plane := thickness_m, engine="earcut")
-            raw.apply_translation([0, 0, z - mid_plane / 2])
+            raw = trimesh.creation.extrude_polygon(piece, thickness_m, engine="earcut")
+            raw.vertices[:, 2] = g["plane"][0] * raw.vertices[:, 0] + g["plane"][1] * raw.vertices[:, 1] + g["plane"][2] + (raw.vertices[:, 2] - thickness_m)
             raw.metadata.update({"coverage": "measured-planar-gap", "parent_index": g["parent"], "plane": g["plane"].tolist()})
             parent = meshes[g["parent"]]
             if hasattr(parent.visual, "material"):
