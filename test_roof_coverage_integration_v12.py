@@ -18,7 +18,28 @@ def test_separate_cells_do_not_pad_evidence_for_one_near_cell():
 def test_lower_roof_does_not_mask_gap_but_higher_neighbor_does():
     mesh=trimesh.creation.extrude_polygon(box(0,0,2,4),.1,engine='earcut');mesh.apply_translation([0,0,9.9])
     points=np.array([[x,y,10.] for x in (2.2,2.7,3.2,3.7) for y in (.2,1.2,2.2,3.2)])
-    made,_=recover_roof_coverage([mesh],box(0,0,4,4),points,5.,occupied_surfaces=[(box(2,0,4,4),8.)])
+    tops=[[[2,0,10],[4,0,10]],[[4,0,10],[4,4,10]],[[4,4,10],[2,4,10]]]
+    made,_=recover_roof_coverage([mesh],box(0,0,4,4),points,5.,occupied_surfaces=[(box(2,0,4,4),8.)],wall_top_segments=tops)
     assert made
     blocked,_=recover_roof_coverage([mesh],box(0,0,4,4),points,5.,occupied_surfaces=[(box(2,0,4,4),12.)])
     assert not blocked
+
+def test_roof_points_over_ground_footprint_do_not_create_unsupported_upper_extension():
+    mesh=trimesh.creation.extrude_polygon(box(0,0,2,4),.1,engine='earcut');mesh.apply_translation([0,0,9.9])
+    points=np.array([[x,y,10.] for x in (2.2,2.7,3.2,3.7) for y in (.2,1.2,2.2,3.2)])
+    made,report=recover_roof_coverage([mesh],box(0,0,4,4),points,5.)
+    assert not made and report['rejectedUnsupportedBoundaryPatches']>0
+
+def test_wall_top_below_roof_does_not_leave_a_visible_join_gap():
+    mesh=trimesh.creation.extrude_polygon(box(0,0,2,4),.1,engine='earcut');mesh.apply_translation([0,0,9.9])
+    points=np.array([[x,y,10.] for x in (2.2,2.7,3.2,3.7) for y in (.2,1.2,2.2,3.2)])
+    tops=[[[2,0,9.8],[4,0,9.8]],[[4,0,9.8],[4,4,9.8]],[[4,4,9.8],[2,4,9.8]]]
+    made,_=recover_roof_coverage([mesh],box(0,0,4,4),points,5.,wall_top_segments=tops)
+    assert not made
+
+def test_nearby_lower_surface_is_a_conflict_not_a_hole():
+    mesh=trimesh.creation.extrude_polygon(box(0,0,2,4),.1,engine='earcut');mesh.apply_translation([0,0,9.9])
+    points=np.array([[x,y,10.] for x in (2.2,2.7,3.2,3.7) for y in (.2,1.2,2.2,3.2)])
+    for existing_z in (9.96,9.8,10.04):
+        made,_=recover_roof_coverage([mesh],box(0,0,4,4),points,5.,occupied_surfaces=[(box(2,0,4,4),existing_z)])
+        assert not made

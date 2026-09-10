@@ -358,21 +358,14 @@ def _line_of_sight_clear(camera_xy: np.ndarray, target_xy: np.ndarray, owner_key
     total = float(line.length)
     if total <= 0.0:
         return False
-    camera_point = Point(tuple(camera_xy))
+    # Camera uncertainty is not permission to see metres through the host.
+    trimmed = LineString([tuple(camera_xy), line.interpolate(max(0.0, total - 0.5))])
     for key, footprint in footprints:
         if footprint.is_empty:
             continue
-        if footprint.contains(camera_point):
+        if footprint.buffer(-1e-7).intersects(trimmed):
             return False
-        distances = _intersection_distances(line, footprint)
-        if not distances:
-            continue
-        for distance in distances:
-            if distance >= total - 0.75:
-                continue
-            if key == owner_key and distance >= total - 3.0:
-                continue
-            return False
+
     return True
 
 
@@ -405,7 +398,7 @@ def _candidate_for_frame(frame_record: dict[str, Any], cameras: list[dict[str, A
         choices.append((score, camera, distance, midpoint_facing, corner_facings))
     if not choices:
         return None
-    _, camera, distance, facing, corner_facings = min(choices, key=lambda x: (x[0], x[1]["sourceId"]))
+    _, camera, distance, facing, corner_facings = min(choices, key=lambda x: (x[0], tuple(x[1]["centerWorld"])))
     result = dict(frame_record)
     result.update({"camera": camera, "distanceM": distance, "facingCosine": facing, "cornerFacingCosines": corner_facings, "screenVisibilityGeometryOnly": True})
     return result
@@ -427,12 +420,12 @@ def _select_spatial(candidates: list[dict[str, Any]], limit: int) -> list[dict[s
 
     def choose(pool: list[dict[str, Any]], *, spread_weight: bool) -> dict[str, Any]:
         if not selected:
-            return max(pool, key=lambda c: (c["heightM"] is not None and c["heightM"] > 4.0, c["frontageLengthM"], c["facingCosine"], -c["distanceM"], c["buildingKey"]))
+            return max(pool, key=lambda c: (c["heightM"] is not None and c["heightM"] > 4.0, c["frontageLengthM"], c["facingCosine"], -c["distanceM"], tuple(c["midpoint"])))
         def score(candidate: dict[str, Any]) -> tuple[float, bool, float, float, str]:
             midpoint = np.asarray(candidate["midpoint"], dtype=float)
             spread = min(float(np.linalg.norm(midpoint - np.asarray(other["midpoint"], dtype=float))) for other in selected)
             known = candidate["heightM"] is not None and candidate["heightM"] > 4.0
-            return ((spread if spread_weight else 0.0), known, candidate["frontageLengthM"], candidate["facingCosine"], candidate["buildingKey"])
+            return ((spread if spread_weight else 0.0), known, candidate["frontageLengthM"], candidate["facingCosine"], tuple(candidate["midpoint"]))
         return max(pool, key=score)
 
     while first_round and len(selected) < limit:
@@ -443,6 +436,26 @@ def _select_spatial(candidates: list[dict[str, Any]], limit: int) -> list[dict[s
         pick = choose(remaining, spread_weight=True)
         selected.append(pick)
         remaining.remove(pick)
+    return selected
+
+
+def _independent_cameras(first, cameras, minimum_baseline_m=2.0):
+    group = first["record"].get("viewGroup")
+    if not group or group in ("None", "unknown"):
+        return []
+    return [camera for camera in cameras
+            if camera["record"].get("viewGroup") not in (None, "None", "unknown", group)
+            and np.linalg.norm(camera["centerWorld"]-first["centerWorld"]) >= minimum_baseline_m]
+
+
+def _paired_selection(candidates, cameras, footprints, limit):
+    selected = []
+    for first in _select_spatial(candidates, len(candidates)):
+        if len(selected) + 2 > limit:
+            break
+        second = _candidate_for_frame(first, _independent_cameras(first["camera"], cameras), footprints)
+        if second is not None:
+            selected.extend([first, second])
     return selected
 
 
@@ -471,9 +484,11 @@ def _save_contact_sheet(paths: list[Path], output: Path) -> None:
     sheet.save(output)
 
 
-def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DEFAULT_LIMIT, alignment_report: Path | None = None) -> dict[str, Any]:
+def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DEFAULT_LIMIT, alignment_report: Path | None = None, pixels_per_m: float = PIXELS_PER_M, paired_views: bool = False) -> dict[str, Any]:
     if limit < 1:
         raise ValueError("limit must be positive")
+    if not np.isfinite(pixels_per_m) or not 1 <= pixels_per_m <= 128:
+        raise ValueError('pixels_per_m must be finite and between 1 and 128')
     normalized = json.loads(normalized_input.read_text())
     frame = normalized.get("coordinateFrame") or {}
     source_path = imagery / "source-index.json"
@@ -524,7 +539,7 @@ def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DE
                 }
             )
             candidates.append(candidate)
-    selected = _select_spatial(candidates, limit)
+    selected = _paired_selection(candidates, cameras, footprints, limit) if paired_views else _select_spatial(candidates, limit)
     output.mkdir(parents=True, exist_ok=True)
     crops_dir = output / "crops"
     crops_dir.mkdir(exist_ok=True)
@@ -566,7 +581,7 @@ def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DE
                 image = np.asarray(source.convert("RGB"))
             # Keep this explicitly diagnostic and unregistered.  No occlusion
             # segmentation is fabricated for local source images.
-            crop = project_facade_crop(image, transform, projection_origin, projection_horizontal, projection_vertical, width, diagnostic_height, PIXELS_PER_M, diagnostic=True)
+            crop = project_facade_crop(image, transform, projection_origin, projection_horizontal, projection_vertical, width, diagnostic_height, pixels_per_m, diagnostic=True)
             filename = f"crop-{crop_index:03d}.png"
             path = crops_dir / filename
             alpha = np.where(crop.valid_mask, 255, 0).astype(np.uint8)
@@ -592,6 +607,8 @@ def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DE
                 "heightSource": candidate["heightSource"],
                 "sourceId": camera["sourceId"],
                 "captureDate": record.get("captureDate"),
+                "viewGroup": record.get("viewGroup"),
+                "metricFrame": {"origin": origin.tolist(), "horizontal": horizontal.tolist(), "vertical": vertical.tolist()},
                 "sourceUrl": record.get("sourceUrl"),
                 "imagePath": str(Path(record["imagePath"]).resolve()),
                 "ageDays": camera["ageDays"],
@@ -629,7 +646,7 @@ def rectify(imagery: Path, normalized_input: Path, output: Path, limit: int = DE
         "occlusionUnchecked": True,
         "evidenceScope": "unregistered photo rectification diagnostics only; no facade measurements or inferred openings",
         "inputs": {"imagery": str(imagery.resolve()), "normalizedInput": str(normalized_input.resolve()), "alignmentReport": None if alignment_report is None else str(alignment_report.resolve())},
-        "selection": {"candidateFrontages": len(candidates), "selected": len(selected), "limit": limit, "recentDays": RECENT_DAYS, "pixelsPerM": PIXELS_PER_M, "facingCosineMidpointMinimum": 0.5, "facingCosineCornerMinimum": 0.25, "lineOfSightGeometryOnly": True},
+        "selection": {"candidateFrontages": len(candidates), "selected": len(selected), "limit": limit, "recentDays": RECENT_DAYS, "pixelsPerM": pixels_per_m, "pairedIndependentViews": paired_views, "facingCosineMidpointMinimum": 0.5, "facingCosineCornerMinimum": 0.25, "lineOfSightGeometryOnly": True},
         "alignment": {"appliedClusters": len(alignments), "diagnosticOnly": True, "uncorrectedBaselineAccessible": True},
         "contactSheet": str(contact_sheet.resolve()) if contact_paths_exist(contact_sheet) else None,
         "crops": crop_records,
@@ -655,9 +672,11 @@ def main() -> None:
     parser.add_argument("--normalized-input", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT)
+    parser.add_argument('--pixels-per-m',type=float,default=PIXELS_PER_M)
+    parser.add_argument("--paired-views", action="store_true", help="select two independent captures per identical metric frontage")
     parser.add_argument("--alignment-report", type=Path, help="optional accepted cluster alignment report; applied diagnostically only")
     args = parser.parse_args()
-    result = rectify(args.imagery, args.normalized_input, args.output, args.limit, args.alignment_report)
+    result = rectify(args.imagery, args.normalized_input, args.output, args.limit, args.alignment_report,args.pixels_per_m,args.paired_views)
     print(json.dumps({"selected": result["selection"]["selected"], "crops": len(result["crops"]), "failures": len(result["failures"]), "contactSheet": result["contactSheet"]}, sort_keys=True))
 
 

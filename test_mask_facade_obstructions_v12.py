@@ -26,6 +26,12 @@ def test_label_groups_are_configuration_driven():
     assert groups["exclude"] == [2, 3]
     assert groups["openingCandidate"] == [4]
 
+def test_label_substrings_do_not_invent_building_or_car_classes():
+    groups=label_groups({0:'wall clock',1:'carpet',2:'house',3:'tree',4:'screen door'})
+    assert groups['unknown']==[0,1]
+    assert groups['keep']==[2] and groups['exclude']==[3]
+    assert groups['openingCandidate']==[4]
+
 
 def test_excluded_classes_mask_and_low_confidence_preserves_alpha():
     alpha = np.full((512, 1024), 127, dtype=np.uint8)
@@ -39,3 +45,4 @@ def test_excluded_classes_mask_and_low_confidence_preserves_alpha():
     assert eligible[100, 100, 3] == 127  # only confident building/wall is eligible
     assert eligible[100, 900, 3] == 0
     assert eligible[450, 100, 3] == 0  # unknown is never texture-eligible
+    assert np.all(eligible[...,3] <= output[...,3])  # dilated obstruction boundary wins

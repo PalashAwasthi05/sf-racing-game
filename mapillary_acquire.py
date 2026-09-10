@@ -123,6 +123,7 @@ def main():
     p.add_argument('--limit', type=int, default=160)
     p.add_argument('--reuse-coverage', action='store_true')
     p.add_argument('--download', action='store_true')
+    p.add_argument('--selection-plan',type=Path,help='external facade-coverage capture plan; no geographic rules are embedded here')
     args = p.parse_args(); out = args.output; out.mkdir(parents=True, exist_ok=True)
     token = read_token()
     job = json.loads(args.job.read_text())
@@ -130,7 +131,16 @@ def main():
     dy = (job['contextRadiusM'] + 100)/111320; dx = dy/math.cos(math.radians(lat))
     bbox = [lon-dx, lat-dy, lon+dx, lat+dy]
     manifest = json.loads((out/'coverage.json').read_text()) if args.reuse_coverage else discover(bbox, token, out)
-    chosen = select(manifest, cap=args.limit)
+    selection_method='20m cells; most recent capture month then panorama; spatially distributed cap'
+    if args.selection_plan:
+        plan=json.loads(args.selection_plan.read_text())
+        ids=list(dict.fromkeys(str(i) for i in plan['selectedSourceIDs']))[:args.limit]
+        index={str(row['id']):row for row in manifest['images']}
+        if any(i not in index for i in ids):raise ValueError('capture plan contains IDs absent from the supplied coverage index')
+        chosen=[index[i] for i in ids]
+        selection_method=plan.get('provenance',{}).get('selectionMethod','external facade-coverage plan')
+    else:
+        chosen = select(manifest, cap=args.limit)
     fields = 'id,captured_at,computed_geometry,geometry,computed_altitude,altitude,computed_compass_angle,compass_angle,computed_rotation,camera_type,camera_parameters,width,height,is_pano,sequence,thumb_2048_url,thumb_original_url,sfm_cluster,mesh'
     def entity(row):
         dest = out/'entities'/f"{row['id']}.json"; dest.parent.mkdir(exist_ok=True)
@@ -158,7 +168,7 @@ def main():
             records.append(rec)
             if len(records)%20 == 0:
                 print(json.dumps({'selected':len(chosen),'completed':len(records),'errors':sum('error' in r for r in records)}),flush=True)
-    result = {'retrievedAt':datetime.now(timezone.utc).isoformat(), 'bbox':bbox, 'selection':'20m cells; most recent capture month then panorama; spatially distributed cap', 'calibrationValidated':False,'images':records}
+    result = {'retrievedAt':datetime.now(timezone.utc).isoformat(), 'bbox':bbox, 'selection':selection_method, 'calibrationValidated':False,'images':records}
     (out/'selected.json').write_text(json.dumps(result,separators=(',',':')))
     dates = [datetime.fromtimestamp(r['captured_at']/1000,timezone.utc).date().isoformat() for r in records if r.get('captured_at')]
     print(json.dumps({'discovered':len(manifest['images']),'selected':len(records),'downloaded':sum(bool(r.get('local_image')) for r in records),'errors':sum('error' in r for r in records),'oldest':min(dates) if dates else None,'newest':max(dates) if dates else None}),flush=True)

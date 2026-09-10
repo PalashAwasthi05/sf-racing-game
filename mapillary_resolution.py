@@ -6,6 +6,7 @@ from datetime import datetime,timezone
 from PIL import Image
 p=argparse.ArgumentParser();p.add_argument('--imagery',type=Path,required=True);p.add_argument('--as-of',required=True);a=p.parse_args();now=datetime.fromisoformat(a.as_of).replace(tzinfo=timezone.utc);d=json.loads((a.imagery/'selected.json').read_text())
 def upgrade(rec):
+ if rec.get('error') or not rec.get('local_image'):return 'acquisition-failed'
  if (now-datetime.fromtimestamp(rec['captured_at']/1000,timezone.utc)).days>730:return 'historical-retained'
  path=Path(rec['local_image']);width=Image.open(path).width
  if width>=rec.get('width',width):return 'already-full-resolution'

@@ -19,8 +19,8 @@ def enu_basis(lat,lon):
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--imagery',type=Path,required=True);p.add_argument('--normalized-input',type=Path,required=True);p.add_argument('--as-of',required=True);args=p.parse_args()
-    root=args.imagery;d=json.loads((root/'selected.json').read_text());records=d['images'];cache=root/'clusters';cache.mkdir(exist_ok=True)
-    recent=[r for r in records if (datetime.fromisoformat(args.as_of).replace(tzinfo=timezone.utc)-datetime.fromtimestamp(r['captured_at']/1000,timezone.utc)).days<=730]
+    root=args.imagery;d=json.loads((root/'selected.json').read_text());attempted=d['images'];records=[r for r in attempted if not r.get('error') and r.get('captured_at') and r.get('local_image') and Path(r['local_image']).is_file()];cache=root/'clusters';cache.mkdir(exist_ok=True)
+    recent=[r for r in records if 0<=(datetime.fromisoformat(args.as_of).replace(tzinfo=timezone.utc)-datetime.fromtimestamp(r['captured_at']/1000,timezone.utc)).days<=730]
     clusters={r['sfm_cluster']['id']:r['sfm_cluster']['url'] for r in recent if r.get('sfm_cluster',{}).get('url')}
     def download(pair):
         cid,url=pair;dest=cache/(cid+'.json')
@@ -43,7 +43,7 @@ def main():
         if cluster and cluster.get('shots'):
             # Numeric image ID and internal reconstruction shot key differ.
             # Match capture timestamp + rotation, then independently check center.
-            shots=[s for s in cluster['shots'].values() if abs(s.get('capture_time',-1)-rec['captured_at']/1000)<.002 and np.linalg.norm(np.asarray(s['rotation'])-rec['computed_rotation'])<1e-5]
+            shots=[s for s in cluster['shots'].values() if rec.get('computed_rotation') is not None and abs(s.get('capture_time',-1)-rec['captured_at']/1000)<.002 and np.linalg.norm(np.asarray(s['rotation'])-rec['computed_rotation'])<1e-5]
             if len(shots)==1:
                 shot=shots[0];R=Rotation.from_rotvec(shot['rotation']).as_matrix();center=-R.T@shot['translation'];ref=cluster['reference_lla'];ecef0=np.array(geocentric.transform(ref['longitude'],ref['latitude'],ref['altitude']));basis=enu_basis(ref['latitude'],ref['longitude']);lon,lat=camera['locationWgs84'];ecef=np.array(geocentric.transform(lon,lat,camera['altitudeM']));given=basis@(ecef-ecef0);err=float(np.linalg.norm(given-center))
                 camera.update(providerPoseConsistent=err<1.,providerCenterResidualM=err,rotationAngleAxis=shot['rotation'],translation=shot['translation'],referenceLla=ref,orientation=shot.get('orientation'),clusterId=cid)
@@ -54,7 +54,7 @@ def main():
     for k in ('surfacePointsFile','groundFile'):
         if normalized.get(k):normalized[k]=str((args.normalized_input.parent/normalized[k]).resolve())
     (root/'input-with-imagery.json').write_text(json.dumps(normalized,separators=(',',':')))
-    report={'discoveredImages':len(json.loads((root/'coverage.json').read_text())['images']),'selectedImages':len(source),'recentImagesWithin730Days':len(recent),'panoramas':sum(r.get('is_pano',False) for r in records),'providerPosesConsistent':sum(r['camera']['providerPoseConsistent'] for r in source.values()),'worldRegistrationsValidated':0,'facadeMeasurementsGenerated':0,'oldestSelectedCapture':min(r['captureDate'] for r in source.values()),'newestSelectedCapture':max(r['captureDate'] for r in source.values()),'asOf':args.as_of,'limitations':['Spatial selection includes historical-only cells; old imagery is not admitted as current evidence.','Provider pose checks do not validate alignment to the independently measured world.','No facade geometry has been derived from these images yet.']}
+    report={'discoveredImages':len(json.loads((root/'coverage.json').read_text())['images']),'selectedImages':len(source),'failedSelectedImages':len(attempted)-len(records),'selectionMethod':d.get('selection'),'recentImagesWithin730Days':len(recent),'panoramas':sum(r.get('is_pano',False) for r in records),'providerPosesConsistent':sum(r['camera']['providerPoseConsistent'] for r in source.values()),'worldRegistrationsValidated':0,'facadeMeasurementsGenerated':0,'oldestSelectedCapture':min((r['captureDate'] for r in source.values()),default=None),'newestSelectedCapture':max((r['captureDate'] for r in source.values()),default=None),'asOf':args.as_of,'limitations':['Coverage scores describe potential sight lines, not verified visibility or calibrated facade evidence.','Provider pose checks do not validate alignment to the independently measured world.','No facade geometry has been derived from these images yet.']}
     (root/'report.json').write_text(json.dumps(report,indent=2));print(json.dumps(report),flush=True)
 
 

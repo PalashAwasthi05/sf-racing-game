@@ -1,7 +1,8 @@
 """Read-only audit for downward-facing open roof caps."""
 import numpy as np
 import trimesh
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Polygon, MultiPolygon
+from shapely import intersects_xy
 from shapely.ops import unary_union
 
 
@@ -55,7 +56,7 @@ def audit_downward_caps(mesh, other_meshes, footprint, point_cloud, minimum_roof
 
     No mesh is modified. Indices refer to ``mesh.faces`` in the original input.
     """
-    if not isinstance(mesh, trimesh.Trimesh) or not isinstance(footprint, (Polygon,)) or not footprint.is_valid:
+    if not isinstance(mesh, trimesh.Trimesh) or not isinstance(footprint, (Polygon,MultiPolygon)) or not footprint.is_valid:
         raise SurfaceOrientationError("mesh and valid polygon footprint are required")
     cloud = np.asarray(point_cloud, float)
     if cloud.ndim != 2 or cloud.shape[1] < 3 or not np.isfinite(cloud[:, :3]).all():
@@ -65,16 +66,18 @@ def audit_downward_caps(mesh, other_meshes, footprint, point_cloud, minimum_roof
     area = np.asarray(mesh.area_faces)
     downward = np.where((mesh.face_normals[:, 2] < -.98) & (area >= min_face_area))[0]
     reports = []; repair = []
+    component_faces = _components(range(len(mesh.faces)), mesh.faces, mesh.vertices) if len(downward) else []
     for group in _components(downward, mesh.faces, mesh.vertices):
         triangles = tri[group]; region = _polygon(triangles); z = _plane_z(triangles)
         report = {"face_indices": group, "areaM2": float(sum(area[group])), "planeZ": z, "status": "rejected"}
-        if region.is_empty or not region.intersects(footprint):
+        if np.ptp(triangles[:,:,2])>.005:
+            report['reason']='non-horizontal-cap-requires-plane-specific-audit';reports.append(report);continue
+        if region.is_empty or region.intersection(footprint).area < .7*region.area:
             report["reason"] = "outside-footprint"; reports.append(report); continue
-        component_faces = _components(range(len(mesh.faces)), mesh.faces, mesh.vertices)
         owner = next((c for c in component_faces if group[0] in c), group)
         sub = mesh.submesh([owner], append=True, repair=False)
-        sub.merge_vertices(digits_vertex=7)
-        if sub.is_watertight and sub.is_volume:
+        sub.merge_vertices(digits_vertex=7,merge_tex=True,merge_norm=True)
+        if sub.is_watertight:
             report["reason"] = "closed-solid"; reports.append(report); continue
         in_cloud = cloud[contains_region(cloud, region)]
         in_cloud = in_cloud[in_cloud[:, 2] >= minimum_roof_z]
@@ -83,7 +86,7 @@ def audit_downward_caps(mesh, other_meshes, footprint, point_cloud, minimum_roof
         report["sampleCount"] = int(len(in_cloud)); report["cellCount"] = int(len(cells))
         if len(in_cloud) < 12 or len(cells) < 6 or len(cells) < .25 * region.area:
             report["reason"] = "insufficient-distributed-lidar"; reports.append(report); continue
-        reject = _overlying_roof(region, z, meshes, footprint)
+        reject = _overlying_roof(region, z, meshes, sub)
         if reject:
             report["reason"] = reject; reports.append(report); continue
         report["status"] = "repairable"; repair.extend(group); reports.append(report)
@@ -98,21 +101,22 @@ def find_reversed_caps(mesh, other_meshes, footprint, point_cloud, minimum_roof_
 
 
 def contains_region(cloud, region):
-    return np.array([region.covers(Point(float(p[0]), float(p[1]))) for p in cloud], dtype=bool)
+    return intersects_xy(region,cloud[:,0],cloud[:,1])
 
 
-def _overlying_roof(region, z, meshes, footprint):
+def _overlying_roof(region, z, meshes, connected_shell):
+    tops=[]
     for m in meshes:
         up = np.where(m.face_normals[:, 2] > .98)[0]
-        tops = [Polygon(m.triangles[i][:, :2]) for i in up
-                if np.all(m.triangles[i][:, 2] >= z) and np.all(m.triangles[i][:, 2] < z + 1.0)]
-        if tops:
-            coverage = unary_union(tops).intersection(region).area / max(region.area, 1e-9)
-            if coverage >= .8:
-                return "overlying-upward-surface"
-        vertical = np.where(np.abs(m.face_normals[:, 2]) < .1)[0]
-        for i in vertical:
-            t = m.triangles[i]; p = Polygon(t[:, :2]).buffer(1e-6)
-            if t[:, 2].max() > z + 1e-5 and p.intersects(region.boundary):
-                return "adjoining-wall-above-plane"
+        tops.extend(Polygon(m.triangles[i][:, :2]) for i in up
+                if np.all(m.triangles[i][:, 2] >= z) and np.all(m.triangles[i][:, 2] < z + 1.0))
+    if tops and unary_union(tops).intersection(region).area / max(region.area,1e-9)>=.8:
+        return 'overlying-upward-surface'
+    # A neighboring higher building or a disconnected parapet is not proof that
+    # this cap is a ceiling. Follow its connected skin for this topology check.
+    vertical = np.where(np.abs(connected_shell.face_normals[:, 2]) < .1)[0]
+    for i in vertical:
+        t = connected_shell.triangles[i]; p = Polygon(t[:, :2]).buffer(1e-6)
+        if t[:, 2].max() > z + 1e-5 and p.intersects(region.boundary):
+            return "adjoining-wall-above-plane"
     return None

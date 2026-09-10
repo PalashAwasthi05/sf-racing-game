@@ -42,20 +42,20 @@ def label_groups(id2label: dict[Any, Any]) -> dict[str, list[int]]:
     """Map configured labels to semantic groups without numeric assumptions."""
 
     groups = {"keep": [], "exclude": [], "openingCandidate": [], "unknown": []}
-    keep_terms = ("building", "wall")
-    opening_terms = ("window", "door")
-    exclude_terms = ("vegetation", "sky", "car", "truck", "bus", "train", "person", "rider", "bicycle", "motorcycle", "pole", "traffic light", "traffic sign", "road", "sidewalk", "terrain")
+    keep_terms = {"building", "wall", "house"}
+    opening_terms = {"window", "windowpane", "door", "screen door"}
+    exclude_terms = {"vegetation", "tree", "plant", "grass", "sky", "car", "truck", "bus", "train", "person", "rider", "bicycle", "motorcycle", "pole", "traffic light", "traffic sign", "road", "sidewalk", "terrain", "earth", "floor", "ceiling"}
     for raw_id, raw_label in id2label.items():
         try:
             class_id = int(raw_id)
         except (TypeError, ValueError):
             continue
         label = _normal_label(raw_label)
-        if any(term in label for term in keep_terms):
+        if label in keep_terms:
             groups["keep"].append(class_id)
-        elif any(term in label for term in opening_terms):
+        elif label in opening_terms:
             groups["openingCandidate"].append(class_id)
-        elif any(term in label for term in exclude_terms):
+        elif label in exclude_terms:
             groups["exclude"].append(class_id)
         else:
             groups["unknown"].append(class_id)
@@ -101,6 +101,9 @@ def infer_mask(image: Image.Image, processor: Any, model: Any, groups: dict[str,
     excluded = confident & np.isin(classes, groups["exclude"])
     opening = confident & np.isin(classes, groups["openingCandidate"])
     excluded = binary_dilation(excluded, iterations=1)
+    valid_alpha=np.asarray(original)[...,3]>0
+    keep &= ~excluded & valid_alpha
+    opening &= ~excluded & valid_alpha
     rgba = np.asarray(original).copy()
     rgba[..., 3][excluded] = 0
     eligible = np.asarray(original).copy()
@@ -117,7 +120,7 @@ def _load_model(model_id: str, model_dir: Path | None, cache_dir: Path, device: 
     processor = AutoImageProcessor.from_pretrained(model_dir, trust_remote_code=False)
     # Recent Transformers/PyTorch use safe weights-only deserialization for this
     # public state dict.  No custom code is loaded from the repository.
-    model = AutoModelForSemanticSegmentation.from_pretrained(model_dir, trust_remote_code=False, use_safetensors=False)
+    model = AutoModelForSemanticSegmentation.from_pretrained(model_dir, trust_remote_code=False, use_safetensors=False, weights_only=True)
     model.eval().to(device)
     return processor, model, model_dir
 
@@ -141,11 +144,11 @@ def _contact_sheet(paths: list[Path], output: Path) -> None:
     sheet = Image.new("RGB", (columns * thumb_size, rows * (thumb_size + 24)), (35, 35, 35))
     draw = ImageDraw.Draw(sheet)
     for index, path in enumerate(paths):
-        image = Image.open(path).convert("RGB")
+        image = Image.open(path).convert("RGBA")
         image.thumbnail((thumb_size, thumb_size))
         x = (index % columns) * thumb_size + (thumb_size - image.width) // 2
         y = (index // columns) * (thumb_size + 24) + (thumb_size - image.height) // 2
-        sheet.paste(image, (x, y))
+        sheet.paste(image, (x, y), image.getchannel('A'))
         draw.text(((index % columns) * thumb_size + 4, (index // columns) * (thumb_size + 24) + thumb_size + 3), path.stem, fill="white")
     sheet.save(output)
 

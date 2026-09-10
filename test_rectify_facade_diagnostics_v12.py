@@ -9,7 +9,7 @@ from rectify_facade_diagnostics_v12 import FrameConverter, _facing_cosines, _lin
 
 def test_line_of_sight_allows_owner_only_at_target_boundary():
     owner = Polygon([(8, -2), (12, -2), (12, 2), (8, 2)])
-    assert _line_of_sight_clear(np.array([0.0, 0.0]), np.array([10.0, 0.0]), "owner", [("owner", owner)])
+    assert _line_of_sight_clear(np.array([0.0, 0.0]), np.array([8.0, 0.0]), "owner", [("owner", owner)])
 
 
 def test_line_of_sight_rejects_another_building_before_owner():
@@ -26,18 +26,16 @@ def test_facing_rejects_a_frontage_behind_the_camera():
 
 
 def test_normalized_projected_to_cluster_enu_round_trip():
-    root = Path(__file__).resolve().parent
-    normalized = json.loads((root / "imagery-v12/input-with-imagery.json").read_text())
-    source = next(value for value in normalized["images"].values() if value["camera"].get("referenceLla"))
+    normalized = {"coordinateFrame": {"projectedCrs": "EPSG:32631", "originProjectedM": [500000, 5000000], "verticalOriginM": 12}}
+    source = {"camera": {"referenceLla": {"latitude": 45.15, "longitude": 3.0, "altitude": 20}}}
     converter = FrameConverter(normalized["coordinateFrame"], source["camera"]["referenceLla"])
     points = np.array([[0.0, 0.0, 0.0], [12.0, -7.0, 4.0], [-80.0, 42.0, 15.0]])
     np.testing.assert_allclose(converter.cluster_enu_to_world(converter.world_to_cluster_enu(points)), points, atol=1e-5)
 
 
 def test_alignment_report_inverse_is_applied_before_geodetic_conversion():
-    root = Path(__file__).resolve().parent
-    normalized = json.loads((root / "imagery-v12/input-with-imagery.json").read_text())
-    source = next(value for value in normalized["images"].values() if value["camera"].get("referenceLla"))
+    normalized = {"coordinateFrame": {"projectedCrs": "EPSG:32631", "originProjectedM": [500000, 5000000], "verticalOriginM": 12}}
+    source = {"camera": {"referenceLla": {"latitude": 45.15, "longitude": 3.0, "altitude": 20}}}
     baseline = FrameConverter(normalized["coordinateFrame"], source["camera"]["referenceLla"])
     rotation = np.array([[0.0, -1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, 1.0]])
     translation = np.array([2.0, -3.0, 0.5])
@@ -45,3 +43,18 @@ def test_alignment_report_inverse_is_applied_before_geodetic_conversion():
     source_point = np.array([[-20.0, 15.0, 4.0]])
     world_point = source_point @ rotation.T + translation
     np.testing.assert_allclose(aligned.world_to_ecef(world_point), baseline.world_to_ecef(source_point), atol=1e-5)
+
+
+def test_owner_mass_cannot_be_ignored_as_pose_uncertainty():
+    owner = Polygon([(8, -2), (12, -2), (12, 2), (8, 2)])
+    assert not _line_of_sight_clear(np.array([0., 0.]), np.array([10., 0.]), "owner", [("owner", owner)])
+
+
+def test_independent_pairs_require_known_groups_and_baseline():
+    from rectify_facade_diagnostics_v12 import _independent_cameras
+    a = {"record": {"viewGroup": "a"}, "centerWorld": np.array([0., 0., 0.])}
+    same = {"record": {"viewGroup": "a"}, "centerWorld": np.array([3., 0., 0.])}
+    close = {"record": {"viewGroup": "b"}, "centerWorld": np.array([1., 0., 0.])}
+    good = {"record": {"viewGroup": "b"}, "centerWorld": np.array([3., 0., 0.])}
+    unknown = {"record": {}, "centerWorld": np.array([3., 0., 0.])}
+    assert _independent_cameras(a, [same, close, good, unknown]) == [good]

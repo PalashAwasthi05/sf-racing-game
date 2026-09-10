@@ -1,7 +1,7 @@
 """Conservative recovery of small, measured gaps in planar roof coverage."""
 import numpy as np
 import trimesh
-from shapely.geometry import Polygon, MultiPolygon, Point, box
+from shapely.geometry import Polygon, MultiPolygon, Point, LineString, box
 from shapely.ops import unary_union
 from shapely import intersects_xy
 from shapely.strtree import STRtree
@@ -67,7 +67,7 @@ def _cells(points, region, cell=1.0):
 
 
 def recover_roof_coverage(roof_meshes, footprint, point_cloud, minimum_roof_z, max_cap_distance=4.0,
-                          residual_m=.25, cell_m=1.0, thickness_m=.02, occupied_domains=(), occupied_surfaces=()):
+                          residual_m=.25, cell_m=1.0, thickness_m=.02, occupied_domains=(), occupied_surfaces=(), wall_top_segments=()):
     """Recover only point-supported gap components adjacent to an existing plane."""
     if not all(np.isfinite(v) and v > 0 for v in (max_cap_distance, residual_m, cell_m, thickness_m)) or not np.isfinite(minimum_roof_z):
         raise RoofCoverageError("coverage thresholds must be positive and finite")
@@ -105,13 +105,15 @@ def recover_roof_coverage(roof_meshes, footprint, point_cloud, minimum_roof_z, m
             cell_points = _cells(cloud, component, cell_m)
             cells = [box(k[0] * cell_m, k[1] * cell_m, (k[0] + 1) * cell_m, (k[1] + 1) * cell_m) for k in cell_points]
             support = unary_union(cells).intersection(g["surface"].buffer(max_cap_distance)).intersection(component) if cells else Polygon()
-            # Other owners may cover this location at or above the candidate
-            # plane. A lower surface does not close a hole in a higher roof.
+            # Existing faces within the measurement tolerance already own this
+            # surface, even if they lie slightly below the fitted plane. Adding
+            # a second sheet there changes materials and can cause z-fighting.
+            # Only a distinctly lower surface leaves a possible upper-roof gap.
             blocked=[]
             for i in occupancy_tree.query(support,predicate='intersects'):
                 domain,top_z=occupancy[i]
                 q=domain.representative_point()
-                if top_z >= plane[0]*q.x+plane[1]*q.y+plane[2]-.001:blocked.append(domain)
+                if top_z >= plane[0]*q.x+plane[1]*q.y+plane[2]-residual_m-thickness_m:blocked.append(domain)
             if blocked:support=support.difference(unary_union(blocked))
             connected = []
             for piece in _polys(support):
@@ -132,6 +134,25 @@ def recover_roof_coverage(roof_meshes, footprint, point_cloud, minimum_roof_z, m
         emitted_area=0.
         for piece in _polys(support):
             if piece.area < .001:
+                continue
+            # A ground footprint does not describe an upper storey's setbacks.
+            # Every new perimeter must meet an existing roof or measured wall
+            # top at this height. Sparse roof points alone cannot establish a
+            # supported overhang, and sample-cell borders are not architecture.
+            edge_support=[other['surface'].buffer(.05) for other in groups
+                          if np.linalg.norm(other['plane'][:2]-g['plane'][:2])<1e-5
+                          and abs(other['plane'][2]-g['plane'][2])<.001]
+            for segment in wall_top_segments:
+                q=np.asarray(segment,float)
+                if q.shape!=(2,3) or not np.isfinite(q).all():
+                    raise RoofCoverageError('wall top segments must contain two finite XYZ endpoints')
+                predicted=q[:,:2]@g['plane'][:2]+g['plane'][2]
+                if np.max(np.abs(q[:,2]-predicted))<=thickness_m+.001:
+                    edge_support.append(LineString(q[:,:2]).buffer(.05))
+            unsupported_edge=piece.boundary.difference(unary_union(edge_support))
+            if unsupported_edge.length>.05:
+                report.setdefault('rejectedUnsupportedBoundaryPatches',0)
+                report['rejectedUnsupportedBoundaryPatches']+=1
                 continue
             solids=extruded(piece,0,thickness_m)
             if len(solids)!=1:continue

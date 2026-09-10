@@ -363,9 +363,10 @@ def _greedy_select(candidates: dict[str, dict[str, Any]], limit: int) -> tuple[l
             distance = min((p["distanceM"] for p in candidate["pairs"]), default=MAX_DISTANCE_M)
             front = max((p["frontFacing"] for p in candidate["pairs"]), default=0.0)
             value = gain * quality * (0.65 + 0.35 * front) / (1.0 + distance / 80.0)
-            tie = (0.000001 * sum(ord(char) for char in source_id))
-            if value + tie > best_value:
-                best_id, best_value, best_gain = source_id, value + tie, gains
+            # Opaque source identity never changes priority. Exact ties retain
+            # the external catalog order; geometric evidence sets the score.
+            if value > best_value:
+                best_id, best_value, best_gain = source_id, value, gains
         if best_id is None:
             break
         candidate = remaining.pop(best_id)

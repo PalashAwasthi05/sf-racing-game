@@ -21,9 +21,11 @@ from PIL import Image
 from scipy.optimize import linear_sum_assignment
 
 
-IOU_MIN = 0.30
-CENTER_ERROR_MAX_M = 1.0
-SIZE_ERROR_MAX_M = 1.0
+# Metre-scale agreement is useful for discovery, not street-level detail.
+# These remain diagnostic thresholds; passing is not opening admission.
+IOU_MIN = 0.60
+CENTER_ERROR_MAX_M = 0.15
+SIZE_ERROR_MAX_M = 0.20
 AMBIGUITY_COST_MARGIN = 0.05
 OBSTRUCTION_ALPHA_MIN = 0.75
 EXAMPLE_LIMIT = 24

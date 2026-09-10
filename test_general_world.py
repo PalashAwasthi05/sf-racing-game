@@ -64,4 +64,5 @@ chosen,state=scheduler.allocate(ss,cc,1);assert chosen[0]['key']=='b'
 renamed=copy.deepcopy(ss);renamed[0]['name']='Landmark';renamed[1]['name']='Ordinary';assert scheduler.allocate(renamed,cc,1)[0]==chosen
 passed.append('unserved surfaces precede extra attention; names do not change schedule')
 report={'passed':passed,'testCount':len(passed),'independentPhotographicAccuracy':False,'noLocationSpecificFixtures':True}
+Path('outputs').mkdir(exist_ok=True)
 Path('outputs/general-world-validation.json').write_text(json.dumps(report,indent=2));print(json.dumps(report,indent=2))

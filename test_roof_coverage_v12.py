@@ -22,7 +22,9 @@ def points(poly, z, cells):
 def test_deleted_narrow_strip_is_recovered():
     fp = Polygon([(0, 0), (6, 0), (6, 4), (0, 4)])
     existing = [roof(Polygon([(0, 0), (2.9, 0), (2.9, 4), (0, 4)]), 10), roof(Polygon([(3.1, 0), (6, 0), (6, 4), (3.1, 4)]), 10)]
-    made, report = recover_roof_coverage(existing, fp, points(fp, 10, [(2.8, 1), (2.8, 2), (2.8, 3)]), 5)
+    tops=[[[0,y,10.05],[6,y,10.05]] for y in (0,4)]
+    cloud=np.array([[x,y,10.05] for x in (2.95,3.05) for y in (.2,.8,1.2,1.8,2.2,2.8,3.2,3.8)])
+    made, report = recover_roof_coverage(existing, fp, cloud, 5,wall_top_segments=tops)
     assert made and report["supportedAreaM2"] > 0
 
 
@@ -53,12 +55,13 @@ def test_exact_no_overlap_existing_is_unresolved():
 
 
 def test_sloped_patch_follows_existing_plane_exactly():
-    fp = Polygon([(0, 0), (6, 0), (6, 4), (0, 4)])
+    fp = Polygon([(0, 0), (3.1, 0), (3.1, 4), (0, 4)])
     base = roof(Polygon([(0, 0), (2.9, 0), (2.9, 4), (0, 4)]), 10)
     # Existing cap has a z=10+0.5x plane.
     base.vertices[:, 2] += .5 * base.vertices[:, 0]
-    cloud = np.asarray([[2.95, y, 10.05 + .5 * 2.95] for y in (1.2, 1.5, 1.8, 2.2, 2.5, 2.8, 3.2, 3.5, 3.8)])
-    made, report = recover_roof_coverage([base], fp, cloud, 5)
+    cloud = np.asarray([[x, y, 10.05 + .5*x] for x in (2.95,3.05) for y in (.2,.5,.8,1.2, 1.5, 1.8, 2.2, 2.5, 2.8, 3.2, 3.5, 3.8)])
+    tops=[[[0,y,10.05],[3.1,y,11.6]] for y in (0,4)]+[[[3.1,0,11.6],[3.1,4,11.6]]]
+    made, report = recover_roof_coverage([base], fp, cloud, 5,wall_top_segments=tops)
     assert made and report["supportedAreaM2"] > 0
     patch = made[0]
     error = patch.vertices[:, 2] - (.5 * patch.vertices[:, 0] + 10.05)

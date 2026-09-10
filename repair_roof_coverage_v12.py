@@ -31,7 +31,9 @@ job=json.loads(Path(a.area_job).read_text());boundary=Point(0,0).buffer(job['con
 all_upward=[];upward_heights=[]
 for m in s.geometry.values():
     if m.metadata.get('layer') in ('buildings','facades','roofs'):
-        for t in m.triangles[m.face_normals[:,2]>.5]:
+        # Downward faces also own surface area. Audit their orientation first;
+        # never add another roof under an existing face merely because it is culled.
+        for t in m.triangles[np.abs(m.face_normals[:,2])>.5]:
             domain=Polygon(t[:,:2])
             if domain.area>1e-8:all_upward.append(domain);upward_heights.append(float(t[:,2].max()))
 surface_index=STRtree(all_upward)
@@ -44,7 +46,15 @@ for owner in sorted(o for o in owners if o):
     if not len(gp):
         records.append({'owner':owner,'status':'missing-ground-reference'});continue
     occupied=[(all_upward[i],upward_heights[i]) for i in surface_index.query(fp,predicate='intersects')]
-    patches,report=recover_roof_coverage(meshes,fp,pc,float(np.median(gp[:,2]))+3.,occupied_surfaces=occupied)
+    wall_tops=[]
+    for wall in s.geometry.values():
+        if wall.metadata.get('featureId')!=owner or wall.metadata.get('layer')!='buildings':continue
+        for tri in wall.triangles[np.abs(wall.face_normals[:,2])<.1]:
+            for j in range(3):
+                edge=tri[[j,(j+1)%3]];other=tri[(j+2)%3]
+                if abs(edge[0,2]-edge[1,2])<.02 and other[2]<edge[:,2].min()-.05:
+                    wall_tops.append(edge)
+    patches,report=recover_roof_coverage(meshes,fp,pc,float(np.median(gp[:,2]))+3.,occupied_surfaces=occupied,wall_top_segments=wall_tops)
     report['owner']=owner;report['emittedPatches']=len(patches);records.append(report)
     print(json.dumps({'ownersCompleted':len(records),'patches':len(patches),'supportedAreaM2':round(report['supportedAreaM2'],2)}),flush=True)
     for patch in patches:

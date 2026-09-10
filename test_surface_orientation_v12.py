@@ -44,9 +44,20 @@ def test_missing_or_unsupported_lidar_skips_repair():
     assert result["reports"][0]["reason"] == "insufficient-distributed-lidar"
 
 
-def test_wall_extending_above_candidate_skips_repair():
-    v = [[0, 0, 9], [4, 0, 9], [4, 0, 11], [0, 0, 11]]
+def test_connected_wall_extending_above_candidate_skips_repair():
+    v = [[0, 0, 10], [4, 0, 10], [4, 0, 11], [0, 0, 11]]
     wall = trimesh.Trimesh(v, [[0, 1, 2], [0, 2, 3]], process=False)
-    result = audit_downward_caps(cap(), [wall], FP, lidar(), 5)
+    shell=trimesh.util.concatenate([cap(),wall])
+    result = audit_downward_caps(shell, [], FP, lidar(), 5)
     assert not result["repairable"]
     assert result["reports"][0]["reason"] == "adjoining-wall-above-plane"
+
+def test_neighboring_higher_wall_is_not_a_connected_ceiling_shell():
+    wall=trimesh.Trimesh([[0,0,9],[4,0,9],[4,0,11],[0,0,11]],[[0,1,2],[0,2,3]],process=False)
+    assert audit_downward_caps(cap(),[wall],FP,lidar(),5)['repairable']
+
+def test_two_overlying_roof_halves_are_combined_before_soffit_decision():
+    halves=[]
+    for x in (1.,3.):
+        m=trimesh.creation.box([2,4,.1]);m.apply_translation([x,2,10.5]);halves.append(m)
+    assert not audit_downward_caps(cap(),halves,FP,lidar(),5)['repairable']
