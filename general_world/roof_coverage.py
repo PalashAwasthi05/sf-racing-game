@@ -1,8 +1,11 @@
 """Conservative recovery of small, measured gaps in planar roof coverage."""
 import numpy as np
 import trimesh
-from shapely.geometry import Polygon, MultiPolygon, box
+from shapely.geometry import Polygon, MultiPolygon, Point, box
 from shapely.ops import unary_union
+from shapely import intersects_xy
+from shapely.strtree import STRtree
+from .geometry import extruded
 
 
 class RoofCoverageError(ValueError):
@@ -54,17 +57,20 @@ def _plane_groups(meshes):
 def _cells(points, region, cell=1.0):
     if not len(points):
         return {}
-    keys = np.floor(np.asarray(points)[:, :2] / cell).astype(int)
+    points=np.asarray(points)
+    points=points[intersects_xy(region,points[:,0],points[:,1])]
+    keys = np.floor(points[:, :2] / cell).astype(int)
     out = {}
     for key, point in zip(map(tuple, keys), points):
-        if region.covers(__import__("shapely").geometry.Point(*point[:2])):
-            out.setdefault(key, []).append(point)
+        out.setdefault(key, []).append(point)
     return out
 
 
 def recover_roof_coverage(roof_meshes, footprint, point_cloud, minimum_roof_z, max_cap_distance=4.0,
-                          residual_m=.25, cell_m=1.0, thickness_m=.02):
+                          residual_m=.25, cell_m=1.0, thickness_m=.02, occupied_domains=(), occupied_surfaces=()):
     """Recover only point-supported gap components adjacent to an existing plane."""
+    if not all(np.isfinite(v) and v > 0 for v in (max_cap_distance, residual_m, cell_m, thickness_m)) or not np.isfinite(minimum_roof_z):
+        raise RoofCoverageError("coverage thresholds must be positive and finite")
     meshes = list(roof_meshes)
     if not meshes or not all(isinstance(m, trimesh.Trimesh) for m in meshes):
         raise RoofCoverageError("roof_meshes must contain trimesh meshes")
@@ -74,7 +80,9 @@ def recover_roof_coverage(roof_meshes, footprint, point_cloud, minimum_roof_z, m
     if points.ndim != 2 or points.shape[1] < 3 or not np.isfinite(points[:, :3]).all():
         raise RoofCoverageError("point_cloud must be finite XYZ rows")
     groups = _plane_groups(meshes)
-    observed = unary_union([g["surface"] for g in groups]) if groups else Polygon()
+    occupancy=list(occupied_surfaces)
+    occupancy_tree=STRtree([domain for domain,height in occupancy])
+    observed = unary_union([g["surface"] for g in groups] + list(occupied_domains))
     expected = footprint
     missing = expected.difference(observed)
     overlap = observed.intersection(expected)
@@ -97,9 +105,18 @@ def recover_roof_coverage(roof_meshes, footprint, point_cloud, minimum_roof_z, m
             cell_points = _cells(cloud, component, cell_m)
             cells = [box(k[0] * cell_m, k[1] * cell_m, (k[0] + 1) * cell_m, (k[1] + 1) * cell_m) for k in cell_points]
             support = unary_union(cells).intersection(g["surface"].buffer(max_cap_distance)).intersection(component) if cells else Polygon()
+            # Other owners may cover this location at or above the candidate
+            # plane. A lower surface does not close a hole in a higher roof.
+            blocked=[]
+            for i in occupancy_tree.query(support,predicate='intersects'):
+                domain,top_z=occupancy[i]
+                q=domain.representative_point()
+                if top_z >= plane[0]*q.x+plane[1]*q.y+plane[2]-.001:blocked.append(domain)
+            if blocked:support=support.difference(unary_union(blocked))
             connected = []
             for piece in _polys(support):
-                if piece.distance(g["surface"].boundary) <= 1e-6:
+                supported_cells = sum(any(piece.covers(Point(*q[:2])) for q in values) for values in cell_points.values())
+                if piece.distance(g["surface"].boundary) <= 1e-6 and supported_cells >= 3:
                     connected.append(piece)
             support = unary_union(connected) if connected else Polygon()
             if len(cell_points) < 3 or support.is_empty:
@@ -112,18 +129,31 @@ def recover_roof_coverage(roof_meshes, footprint, point_cloud, minimum_roof_z, m
         g, support = accepted
         # Never interpolate beyond the measured cell union; each emitted piece is
         # clipped to both the gap and the supported 1 m cells.
+        emitted_area=0.
         for piece in _polys(support):
-            if piece.area <= 1e-9:
+            if piece.area < .001:
                 continue
-            z = float(g["plane"][0] * piece.centroid.x + g["plane"][1] * piece.centroid.y + g["plane"][2])
-            raw = trimesh.creation.extrude_polygon(piece, thickness_m, engine="earcut")
+            solids=extruded(piece,0,thickness_m)
+            if len(solids)!=1:continue
+            raw=solids[0]
+            raw.vertices=np.array(raw.vertices,copy=True)
             raw.vertices[:, 2] = g["plane"][0] * raw.vertices[:, 0] + g["plane"][1] * raw.vertices[:, 1] + g["plane"][2] + (raw.vertices[:, 2] - thickness_m)
+            # Validate at the precision actually written into the game asset.
+            # A valid double-precision sliver can collapse during GLB export.
+            raw.vertices=raw.vertices.astype(np.float32).astype(float)
+            raw.merge_vertices()
+            raw.update_faces(raw.area_faces>0)
+            if not raw.is_volume or not np.isfinite(raw.face_normals).all() or np.any(np.linalg.norm(raw.face_normals,axis=1)<.5):
+                report.setdefault('rejectedUnrenderablePatches',0)
+                report['rejectedUnrenderablePatches']+=1
+                continue
             raw.metadata.update({"coverage": "measured-planar-gap", "parent_index": g["parent"], "plane": g["plane"].tolist()})
             parent = meshes[g["parent"]]
             if hasattr(parent.visual, "material"):
                 raw.visual.material = parent.visual.material
             patches.append(raw)
-        area = float(support.area)
+            emitted_area+=float(piece.area)
+        area = emitted_area
         report["supportedAreaM2"] += area
         report["unresolvedAreaM2"] -= area
         report["components"].append({"areaM2": float(component.area), "supportedAreaM2": area, "status": "supported", "parent_index": g["parent"]})

@@ -64,6 +64,8 @@ def metric_uv(mesh, scale):
     """
     uv=np.zeros((len(mesh.vertices),2));seen=np.zeros(len(mesh.vertices),bool)
     for normal,face in zip(mesh.face_normals,mesh.faces):
+        if not np.isfinite(normal).all() or np.linalg.norm(normal)<1e-8:
+            raise ValueError('empty or invalid face has no texture frame')
         if abs(normal[2])>.999:
             u=np.array([1.,0,0]);v=np.array([0.,1,0])
         else:

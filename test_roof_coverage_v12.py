@@ -62,8 +62,9 @@ def test_sloped_patch_follows_existing_plane_exactly():
     assert made and report["supportedAreaM2"] > 0
     patch = made[0]
     error = patch.vertices[:, 2] - (.5 * patch.vertices[:, 0] + 10.05)
-    assert np.max(np.abs(error[error > -.01])) <= 1e-9
-    assert np.min(error) == pytest.approx(-.02, abs=1e-9)
+    # Output is intentionally checked at GLB float32 precision.
+    assert np.max(np.abs(error[error > -.01])) <= 2e-6
+    assert np.min(error) == pytest.approx(-.02, abs=2e-6)
 
 
 def test_far_disconnected_support_in_missing_domain_is_excluded():

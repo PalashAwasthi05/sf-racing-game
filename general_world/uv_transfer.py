@@ -16,6 +16,8 @@ def infer_repeat_m(mesh):
  return np.median(lengths[valid],axis=0) if valid.any() else None
 
 def apply_source_material(replacement,source):
+ from .mesh_hygiene import remove_empty_faces
+ remove_empty_faces(replacement)
  scale=infer_repeat_m(source)
  if scale is None:
   replacement.visual=TextureVisuals(material=source.visual.material)
@@ -23,4 +25,6 @@ def apply_source_material(replacement,source):
   replacement.unmerge_vertices()
   replacement.visual=TextureVisuals(uv=metric_uv(replacement,scale),material=source.visual.material)
  replacement.metadata=dict(source.metadata)
+ uv=getattr(replacement.visual,'uv',None)
+ if uv is not None and not np.isfinite(uv).all():raise ValueError('nonfinite replacement texture coordinates')
  return replacement
