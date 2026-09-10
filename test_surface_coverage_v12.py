@@ -6,7 +6,7 @@ from general_world.surface_coverage import SurfaceCoverageError, audit_mesh_proj
 
 
 def frame():
-    return {"origin": [0, 0, 0], "horizontal": [1, 0, 0], "vertical": [0, 0, 1], "normal": [0, 1, 0]}
+    return {"origin": [0, 0, 0], "horizontal": [1, 0, 0], "vertical": [0, 0, 1], "normal": [0, -1, 0]}
 
 
 def test_generic_56m2_host_gap_is_reported():
@@ -31,6 +31,12 @@ def test_transaction_keeps_missing_host_and_only_replaces_exact_union():
     assert result["retained_host_remainder"].area == pytest.approx(56)
 
 
+def test_transaction_removes_owned_aperture_domain_without_filling_it():
+    result = replacement_transaction(box(0, 0, 4, 4), [box(0, 0, 1, 4), box(3, 0, 4, 4), box(1, 0, 3, 1), box(1, 3, 3, 4)],
+                                      [{"polygon": box(1, 1, 3, 3), "owned": True}])
+    assert result["retained_host_remainder"].area == pytest.approx(0)
+
+
 def test_mesh_rejects_backwards_and_incorrect_depth_triangles():
     good = trimesh.Trimesh(vertices=[[0, 0, 0], [2, 0, 0], [0, 0, 2]], faces=[[0, 1, 2]], process=False)
     bad_depth = trimesh.Trimesh(vertices=[[2, .2, 0], [4, .2, 0], [2, .2, 2]], faces=[[0, 1, 2]], process=False)
@@ -48,6 +54,11 @@ def test_overlapping_emitted_surfaces_are_detected():
     assert result["overlap_area"] == pytest.approx(4)
 
 
+def test_bare_opening_polygon_is_not_treated_as_owned():
+    with pytest.raises(SurfaceCoverageError, match="explicitly owned"):
+        audit_surface_coverage(box(0, 0, 4, 4), [box(0, 0, 4, 4)], [box(1, 1, 2, 2)])
+
+
 @pytest.mark.parametrize("kwargs", [
     {"intentional_openings": [box(5, 5, 6, 6)]},
     {"intentional_openings": [{"polygon": box(0, 0, 1, 1), "owned": False}]},
@@ -55,3 +66,10 @@ def test_overlapping_emitted_surfaces_are_detected():
 def test_invalid_or_unowned_openings_are_rejected(kwargs):
     with pytest.raises(SurfaceCoverageError):
         audit_surface_coverage(box(0, 0, 4, 4), [box(0, 0, 4, 4)], **kwargs)
+
+
+def test_non_orthonormal_frame_is_rejected():
+    mesh = trimesh.Trimesh(vertices=[[0, 0, 0], [1, 0, 0], [0, 0, 1]], faces=[[0, 1, 2]], process=False)
+    bad = {**frame(), "normal": [0, 1, 0]}
+    with pytest.raises(SurfaceCoverageError, match="orthonormal"):
+        audit_mesh_projection(mesh, box(0, 0, 1, 1), bad)

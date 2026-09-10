@@ -58,10 +58,9 @@ def _opening_polygons(openings):
     """Parse explicit opening records and enforce ownership at the API boundary."""
     values = []
     for item in openings or ():
-        if isinstance(item, dict):
-            if item.get("owned") is not True:
-                raise SurfaceCoverageError("intentional opening must be explicitly owned")
-            item = item.get("polygon")
+        if not isinstance(item, dict) or item.get("owned") is not True:
+            raise SurfaceCoverageError("intentional opening must be an explicitly owned record")
+        item = item.get("polygon")
         values.append(item)
     return _polygons(values, "intentional_openings")
 
@@ -105,7 +104,8 @@ def replacement_transaction(host_surface, emitted_surfaces, intentional_openings
     audit = audit_surface_coverage(host, emitted_surfaces, intentional_openings)
     emitted = _union(emitted_surfaces, "emitted_surfaces")
     replaceable = emitted.intersection(host)
-    retained = host.difference(replaceable)
+    owned_openings = _union(_opening_polygons(intentional_openings), "intentional_openings") if intentional_openings else Polygon()
+    retained = host.difference(replaceable.union(owned_openings))
     return {
         "replaceable_union": replaceable,
         "retained_host_remainder": retained,
@@ -129,7 +129,13 @@ def audit_mesh_projection(mesh, expected_surface, frame, intentional_openings=()
         raise SurfaceCoverageError("frame requires origin, horizontal, vertical, normal") from exc
     if any(v.shape != (3,) or not np.isfinite(v).all() for v in (origin, horizontal, vertical, normal)):
         raise SurfaceCoverageError("frame vectors must be finite 3D values")
-    horizontal /= np.linalg.norm(horizontal); vertical /= np.linalg.norm(vertical); normal /= np.linalg.norm(normal)
+    norms = [np.linalg.norm(v) for v in (horizontal, vertical, normal)]
+    if any(n <= 1e-12 for n in norms):
+        raise SurfaceCoverageError("frame vectors must be nonzero")
+    horizontal /= norms[0]; vertical /= norms[1]; normal /= norms[2]
+    if (abs(horizontal @ vertical) > 1e-6 or abs(horizontal @ normal) > 1e-6 or abs(vertical @ normal) > 1e-6
+            or not np.allclose(np.cross(horizontal, vertical), normal, atol=1e-6)):
+        raise SurfaceCoverageError("frame vectors must be orthonormal with horizontal x vertical = normal")
     triangles = np.asarray(mesh.triangles, dtype=float)
     faces = np.asarray(mesh.face_normals, dtype=float)
     emitted = []
