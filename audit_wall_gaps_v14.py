@@ -90,8 +90,16 @@ def crosses(segs, ox, oy, dx, dy, t_enter, t_exit):
     t = sa[straddle] / (sa[straddle] - sb[straddle])
     pts = a[straddle] + (b[straddle] - a[straddle]) * t[:, None]
     along = (pts - [ox, oy]) @ np.array([dx, dy])
-    # A margin either side so a wall sitting exactly on the plan line counts.
-    return bool(((along > t_enter - 1.0) & (along < t_exit + 1.0)).any())
+    # Count ANY wall the ray meets before it has passed the far side of the
+    # plan. The first version windowed this to the footprint's own chord, which
+    # is wrong on this data: the input footprints are fragmented parcels, 2-9x
+    # smaller in plan than the consolidated buildings actually meshed, so a
+    # perfectly good wall standing outside the parcel line was outside the
+    # window and the ray was reported as passing clean through. Measured on
+    # sf_201006_0007874: a plain 4-wall box at 11.5 m (8 straddling triangles)
+    # was scored 41.7% see-through. The question the eye asks is "is anything in
+    # the way before I'm past the building", so that is the window.
+    return bool(((along > 0.0) & (along < t_exit + 1.0)).any())
 
 
 def main() -> None:
@@ -145,8 +153,22 @@ def main() -> None:
         radius = float(np.hypot(hi[0] - lo[0], hi[1] - lo[1])) / 2 + 15.0
         total = gaps = 0
         worst = []
+        skipped_levels = []
+        perimeter = float(poly.length)
         for z in levels:
             segs = sections_at(mesh, z)
+            # A level only asks a fair question if walls actually exist there.
+            # Bounding boxes are inflated by signs, lettering and spires, so the
+            # upper sampled heights often sit ABOVE the real roofline, where every
+            # ray "passes through" trivially. Measured on sf_201006_0007874: the
+            # section at 11.7 m was eight triangles of a rooftop element, and the
+            # audit scored it 41.7% see-through. Require the slice to carry wall
+            # length comparable to the plan perimeter before judging it; record
+            # what was skipped so the omission is counted, not hidden.
+            wall_len = float(np.linalg.norm(segs[:, 1, :] - segs[:, 0, :], axis=1).sum()) if len(segs) else 0.0
+            if wall_len < 0.5 * perimeter:
+                skipped_levels.append({"heightM": round(z - lo[2], 2), "wallLenM": round(wall_len, 1), "perimeterM": round(perimeter, 1)})
+                continue
             for k in range(RAYS_PER_HEIGHT):
                 th = 2 * np.pi * (k + rng.random()) / RAYS_PER_HEIGHT
                 dx, dy = -np.cos(th), -np.sin(th)
@@ -176,6 +198,7 @@ def main() -> None:
             "gapRays": gaps,
             "gapFraction": round(gaps / total, 4) if total else 0.0,
             "levels": len(levels),
+            "levelsSkippedAboveRoofline": skipped_levels,
             "samples": worst,
         })
 
