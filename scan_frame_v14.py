@@ -24,7 +24,7 @@ import numpy as np
 import trimesh
 
 FOV_DEG = 58.0
-CHUNK = 200_000  # triangles per batch, to keep peak memory sane
+CHUNK = 20_000  # triangles per batch, to keep peak memory sane
 
 
 def basis(cam, target):
@@ -70,6 +70,8 @@ def main() -> None:
     ap.add_argument("--cols", type=int, default=64)
     ap.add_argument("--rows", type=int, default=36)
     ap.add_argument("--aspect", type=float, default=1280 / 720)
+    ap.add_argument("--box", default="", help="x0,y0,x1,y1 in screenshot pixels; blank = whole frame")
+    ap.add_argument("--size", default="800,450")
     ap.add_argument("--report", type=Path, default=Path("outputs/frame-scan-v14.json"))
     args = ap.parse_args()
 
@@ -78,8 +80,14 @@ def main() -> None:
     f, right, up = basis(cam, target)
     t = np.tan(np.radians(FOV_DEG) / 2)
 
-    xs = (np.arange(args.cols) + 0.5) / args.cols * 2 - 1
-    ys = 1 - (np.arange(args.rows) + 0.5) / args.rows * 2
+    if args.box:
+        x0, y0, x1, y1 = (float(v) for v in args.box.split(","))
+        W, H = (float(v) for v in args.size.split(","))
+        xs = (x0 + (np.arange(args.cols) + 0.5) / args.cols * (x1 - x0)) / W * 2 - 1
+        ys = 1 - (y0 + (np.arange(args.rows) + 0.5) / args.rows * (y1 - y0)) / H * 2
+    else:
+        xs = (np.arange(args.cols) + 0.5) / args.cols * 2 - 1
+        ys = 1 - (np.arange(args.rows) + 0.5) / args.rows * 2
     dirs = []
     for y in ys:
         for x in xs:
@@ -114,12 +122,27 @@ def main() -> None:
     # near wall and a far one read differently at a glance.
     print(f"\n  frame scan {args.cols}x{args.rows} from {cam.tolist()} to {target.tolist()}")
     print("  '.' = NOTHING HIT (sky or see-through)   digits = nearest surface, tens of metres\n")
+    # Symbol per ray = WHAT IT LANDED ON, not merely whether it landed.
+    # The first version printed distance only and treated any hit as fine, so a
+    # ray that passed clean through a gap and came to rest on the ground beyond
+    # counted as a wall. That is why it reported no gaps.
+    def sym(name):
+        if not name:
+            return "."
+        if name.startswith(("terrain", "roads", "markings", "sidewalks", "cycleways", "paths", "water", "landscape")):
+            return "_"   # GROUND: the ray reached the floor, so it missed every wall
+        if name.startswith("buildings"):
+            return "B"
+        if name.startswith("facades"):
+            return "f"
+        if name.startswith("roofs"):
+            return "r"
+        if name.startswith("foundations"):
+            return "n"
+        return "o"
     for r in range(args.rows):
-        line = ""
-        for c in range(args.cols):
-            d = grid[r, c]
-            line += "." if not np.isfinite(d) else str(min(9, int(d // 10)))
-        print("   " + line)
+        print("   " + "".join(sym(names[r, c]) for c in range(args.cols)))
+    print("\n   '.' nothing   '_' GROUND (a gap: the ray reached the floor)   B shell  f facade  r roof  n foundation  o other")
 
     finite = np.isfinite(best)
     counts = Counter(owner[finite])
