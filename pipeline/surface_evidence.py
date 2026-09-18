@@ -20,6 +20,13 @@ def resolve_material(surface):
            'metal-panel':{'default':'panel_silver','dark':'panel_dark'}}
  if ev['family'] not in families:raise ValueError('Unresolved material family: '+ev['family'])
  options=families[ev['family']];after=options.get(ev.get('finish','default'),options['default'])
+ if ev.get('colorRgb'):
+  # The photograph shows the wall's colour; the recipe keeps its structure (joints, relief, roughness) and takes
+  # the observed colour as a named variant, so the material vocabulary is not a fixed palette.
+  from . import material_recipes
+  rgb=[int(max(0,min(255,round(v)))) for v in ev['colorRgb']];variant=f"{after}#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
+  if after in material_recipes.RECIPES:
+   material_recipes.RECIPES.setdefault(variant,{**material_recipes.RECIPES[after],'color':rgb});after=variant
  AUDIT.append({'rule':'material-family','surfaceId':surface.get('id'),'before':before,'after':after,'changed':before!=after,'sourceIds':ev['sourceIds']})
  return after
 
