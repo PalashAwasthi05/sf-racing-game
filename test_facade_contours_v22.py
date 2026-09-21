@@ -31,7 +31,7 @@ def test_arch_is_shaped_before_segment_clip():
 def test_polygon_only_opening_compiles_and_keeps_contour():
     emitted = []
 
-    def cube(size, key, material, angle):
+    def cube(center, size, key, material, angle):
         emitted.append(('cube', key, material, size))
 
     def put(mesh, key, material):
@@ -74,6 +74,10 @@ def test_polygon_only_opening_compiles_and_keeps_contour():
     glass_mesh = next(item[3] for item in meshes if item[2] == 'glass')
     assert len(glass_mesh.vertices) > 0
     assert len(glass_mesh.faces) > 0
+    from shapely.geometry import MultiPoint
+    projected = MultiPoint(np.c_[5.0-glass_mesh.vertices[:,0],glass_mesh.vertices[:,2]]).convex_hull
+    expected = opening_outline(profile['openings'][0],10.,10.).buffer(-.05,join_style=2)
+    assert projected.symmetric_difference(expected).area < 1e-6
 
 
 def test_material_evidence_resolves_for_panels_and_bands():
