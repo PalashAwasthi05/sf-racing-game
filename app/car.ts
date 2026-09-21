@@ -128,7 +128,7 @@ function halfSection(x:number):[number,number][]{ // (lateral, height) from the 
   const seg=path.slice(1).map((p,i)=>Math.hypot(p[0]-path[i][0],p[1]-path[i][1]));const total=seg.reduce((a,b)=>a+b,0);
   for(let k=1;k<=9;k++){let d=total*k/9,i=0;while(i<seg.length-1&&d>seg[i]){d-=seg[i];i++;}const t=seg[i]>0?d/seg[i]:1;pts.push([path[i][0]+(path[i+1][0]-path[i][0])*t,path[i][1]+(path[i+1][1]-path[i][1])*t]);}
  }else{ // a crowned deck: a quarter superellipse from the belt line to the centre
-  const zt=zs+crown(x),bump=fender(x);for(let k=1;k<=9;k++){const th=k/9*Math.PI/2;const l=ws*Math.pow(Math.cos(th),.78);const t=l/Math.max(ws,1e-6);pts.push([l,zs+(zt-zs)*Math.pow(Math.sin(th),.78)+bump*Math.exp(-((t-.72)/.2)**2)]);}
+  const zt=zs+crown(x),bump=fender(x);for(let k=1;k<=9;k++){const th=k/9*Math.PI/2;const l=ws*Math.pow(Math.cos(th),.78);const t=l/Math.max(ws,1e-6);pts.push([l,zs+(zt-zs)*Math.pow(Math.sin(th),.78)+bump*Math.exp(-(((t-.72)/.2)**2))]);}
  }
  return pts;
 }

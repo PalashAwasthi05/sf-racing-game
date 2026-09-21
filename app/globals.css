@@ -141,3 +141,20 @@ html,body{margin:0;height:100%;overflow:hidden}.world-app{position:relative;widt
 /* Street inspection keeps the road and facades unobstructed. */
 .inspector.is-closed{display:none}.inspect-toggle{position:absolute;top:98px;left:24px;background:#f6f9faec;z-index:2}.inspector.is-open{top:148px;max-height:calc(100dvh - 205px);overflow:auto}.next-street{position:absolute;bottom:84px;left:26px;background:#f6f9faed}.controls-help{background:#f6f9fadb;border-radius:6px;padding:7px 10px;color:#233e4c}.eyebrow{font-size:12px}.layer-row{font-size:14px}.source-lines b{font-size:12px}.attribution{font-size:12px}
 @media(max-width:640px){.inspect-toggle{top:auto;bottom:48px;left:15px;height:34px}.next-street{left:auto;right:15px;bottom:48px;height:34px}.inspector.is-open{top:135px;bottom:100px;max-height:calc(100dvh - 250px)}.viewbar button{padding-inline:9px}.controls-help{display:none}}
+
+.preview-status{position:absolute;top:158px;left:24px;width:300px;max-width:calc(100vw - 48px);padding:16px 18px;border-radius:12px;background:#f7f9faf2;box-shadow:0 8px 32px #20323b14;font-size:14px;line-height:1.5}.preview-status strong{display:block;font-weight:600}.preview-status p{margin-top:8px;color:#526974}.preview-status a{display:inline-block;margin-top:10px;text-decoration:underline}.preview-comparison{position:fixed;bottom:126px;left:26px;z-index:4;max-width:calc(100vw - 52px);padding:10px 14px;border-radius:8px;background:#f8f1dcec;color:#533e0c;font-size:14px}@media(max-width:640px){.preview-status{top:150px;font-size:13px;padding:12px;width:270px}.topbar .download{font-size:12px;padding:8px}.preview-comparison{bottom:100px}}
+.car-hud{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:flex;align-items:flex-end;gap:14px;padding:10px 14px 8px;background:#0f151ae6;border:1px solid #ffffff14;border-radius:18px;box-shadow:0 10px 30px #0a121a55;pointer-events:none;color:#e9eef2}
+.car-tach{width:210px;height:auto;display:block}
+.car-tach .tach-track{fill:none;stroke:#222b33;stroke-width:9;stroke-linecap:round}
+.car-tach .tach-red{fill:none;stroke:#7d1a22;stroke-width:9}
+.car-tach .tach-fill{fill:none;stroke:#f2f5f7;stroke-width:9;stroke-linecap:round}
+.car-tach .tach-fill.is-hot{stroke:#ff3b47}
+.car-tach .tach-ticks line{stroke:#c7d0d6;stroke-width:1.6}.car-tach .tach-ticks line.is-red{stroke:#ff5a63}
+.car-tach .tach-ticks text{fill:#c7d0d6;font:600 9px/1 ui-sans-serif,system-ui,sans-serif;text-anchor:middle}.car-tach .tach-ticks text.is-red{fill:#ff5a63}
+.car-tach .tach-needle{stroke:#ff8a3d;stroke-width:3;stroke-linecap:round}
+.car-tach .tach-rpm{fill:#7c8d97;font:600 7px/1 ui-sans-serif,system-ui,sans-serif;text-anchor:middle;letter-spacing:.08em}
+.car-tach .tach-speed{fill:#fff;font:600 32px/1 ui-sans-serif,system-ui,sans-serif;text-anchor:middle;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.car-tach .tach-unit{fill:#9fb0ba;font:500 9px/1 ui-sans-serif,system-ui,sans-serif;text-anchor:middle;letter-spacing:.1em;text-transform:uppercase}
+.car-tach .tach-gear{fill:#fff;font:700 16px/1 ui-sans-serif,system-ui,sans-serif;text-anchor:middle}
+.car-help{font-size:11px;color:#9fb0ba;max-width:230px;line-height:1.4;padding-bottom:6px}
+@media(max-width:640px){.car-hud{bottom:96px;gap:12px;padding:8px 10px}.car-help{display:none}.car-tach{width:150px}}
