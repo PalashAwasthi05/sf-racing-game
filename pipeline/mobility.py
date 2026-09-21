@@ -20,23 +20,30 @@ def length_m(value,default=None):
  """
  if value is None:return default
  if isinstance(value,(int,float)):
-  return float(value)
+  return float(value) if math.isfinite(float(value)) else default
  text=str(value).strip().lower().replace(',', '.')
  if not text:return default
  # Feet/inches notation is unambiguous and needs to be handled before the
  # generic unit parser (the inch quote is otherwise easy to lose).
  foot=re.fullmatch(r"\s*(-?\d+(?:\.\d+)?)\s*'\s*(?:(\d+(?:\.\d+)?)\s*\"?)?\s*",text)
  if foot:
-  return float(foot.group(1))*.3048+float(foot.group(2) or 0)*.0254
+  result=float(foot.group(1))*.3048+float(foot.group(2) or 0)*.0254
+  return result if math.isfinite(result) else default
  compound=re.fullmatch(r'\s*(-?\d+(?:\.\d+)?)\s*(?:ft|feet|foot)\s*(?:(\d+(?:\.\d+)?)\s*(?:in|inch|inches))?\s*',text)
  if compound:
-  return float(compound.group(1))*.3048+float(compound.group(2) or 0)*.0254
- match=re.match(r'^\s*(-?(?:\d+(?:\.\d*)?|\.\d+))\s*([a-z\"\']*)',text)
+  result=float(compound.group(1))*.3048+float(compound.group(2) or 0)*.0254
+  return result if math.isfinite(result) else default
+ match=re.fullmatch(r'\s*(-?(?:\d+(?:\.\d*)?|\.\d+))\s*([a-z\"\']*)\s*',text)
  if not match:return default
  try:value=float(match.group(1))
  except ValueError:return default
- unit=match.group(2).strip().strip('"\'') or 'm'
- return value*_LENGTH_UNITS.get(unit,1.)
+ if not math.isfinite(value):return default
+ raw_unit=match.group(2).strip().lower()
+ if raw_unit in ('"','inches','inch'):unit='in'
+ else:unit=raw_unit.strip('"\'') or 'm'
+ if unit not in _LENGTH_UNITS:return default
+ result=value*_LENGTH_UNITS[unit]
+ return result if math.isfinite(result) else default
 
 
 def number(value,default):
@@ -64,24 +71,21 @@ def _colour_name(value,default=None):
  value=str(value).strip().lower()
  if not value:return default
  if value.startswith('#') and len(value) in (4,7):
-  # Keep common colour intent while avoiding unsupported arbitrary material
-  # names.  The most useful pavement colours have stable catalogue entries.
   try:
    h=value[1:]
    if len(h)==3:h=''.join(c*2 for c in h)
-   rgb=tuple(int(h[i:i+2],16) for i in (0,2,4))
+   tuple(int(h[i:i+2],16) for i in (0,2,4))
   except ValueError:return default
-  if rgb[1]>rgb[0]*1.18 and rgb[1]>rgb[2]*1.05:return 'greenpaint'
-  if rgb[0]>rgb[1]*1.25 and rgb[0]>rgb[2]*1.2:return 'redpaint'
-  if min(rgb)>185:return 'white'
-  if max(rgb)<75:return 'charcoal'
-  return default
+  # ``stone`` is a supported recipe and safely carries an exact colour
+  # variant through Materials.get. Do not turn blue paint into water.
+  return f'stone#{h}'
  if 'green' in value:return 'greenpaint'
  if 'red' in value or 'maroon' in value:return 'redpaint'
  if 'yellow' in value or 'amber' in value:return 'yellow'
  if 'white' in value:return 'white'
  if value in ('black','charcoal','dark gray','dark grey'):return 'charcoal'
- if value in ('blue','navy','cyan'):return 'water'
+ if value in ('blue','navy'):return 'stone#356aaf'
+ if value == 'cyan':return 'stone#35aab5'
  return default
 
 
@@ -161,7 +165,11 @@ def compile(ctx):
  surface,cube,cyl,elev=ctx['surface'],ctx['cube'],ctx['cylinder'],ctx['elev'];boundary=ctx['boundary'];buildings=ctx['all_buildings'];records=[]
  clear=boundary.difference(buildings)
  street_plan=ctx.get('street_plan') or {}
- road_mask=street_plan.get('road') or ctx.get('road_area')
+ road_mask=street_plan.get('road')
+ if road_mask is None or road_mask.is_empty:road_mask=ctx.get('road_area')
+ cycle_mask=street_plan.get('cycle')
+ sidewalk_mask=street_plan.get('sidewalk')
+ path_excluded=[m for m in (road_mask,cycle_mask,sidewalk_mask) if m is not None and not m.is_empty]
  def paint(line,width,color='white',offset=.145,mask=None):
   if line is None or line.is_empty:return
   area=line.buffer(width/2,cap_style=2,join_style=2).intersection(clear)
@@ -179,22 +187,24 @@ def compile(ctx):
   if g.geom_type!='LineString':continue
   if t.get('highway')=='cycleway':
    width=length_m(t.get('width'),3.2 if t.get('oneway')=='no' else 1.8);width=min(12,max(.5,width));area=g.buffer(width/2,cap_style=2).intersection(clear)
+   if cycle_mask is not None and not cycle_mask.is_empty:area=area.intersection(cycle_mask)
    mat='concrete' if t.get('surface') in ['concrete','paving_stones','paved'] else 'asphalt'
    colour=surface_colour(t,default=None)
-   surface(area,'cycleways',colour or mat,.115)
+   if not area.is_empty:surface(area,'cycleways',colour or mat,.115)
    shared=t.get('foot') in ['yes','designated'] and t.get('segregated')=='no'
    crossing=t.get('cycleway')=='crossing'
    # Crossings and cycle lanes are green only when their source tags say so.
-   if crossing and not shared and colour:surface(area,'markings',colour,.128)
+   if crossing and not shared and colour and not area.is_empty:surface(area,'markings',colour,.128)
    if not shared:
     for side in [-1,1]:
-     for line in ctx['lines'](g.offset_curve(side*(width/2-.10))):paint(line,.10,mask=None)
+     for line in ctx['lines'](g.offset_curve(side*(width/2-.10))):paint(line,.10,mask=area)
     if t.get('oneway')=='no':
-     for s in np.arange(2,g.length-2,5):paint(LineString([g.interpolate(s),g.interpolate(min(s+2,g.length))]),.09,'yellow')
-    for s in np.arange(min(9,g.length/2),g.length-1,32):bike_symbol(g,s)
+     for s in np.arange(2,g.length-2,5):paint(LineString([g.interpolate(s),g.interpolate(min(s+2,g.length))]),.09,'yellow',mask=area)
+    for s in np.arange(min(9,g.length/2),g.length-1,32):bike_symbol(g,s,mask=area)
    records.append({'rule':'mapped-cycleway','id':w['id'],'lengthM':round(g.intersection(boundary).length,2),'widthM':width,'shared':shared,'surfaceColour':colour,'source':'OSM geometry; width default unless tagged'})
   elif t.get('highway') in ['footway','path','pedestrian'] and t.get('footway')!='crossing':
    width=length_m(t.get('width'),1.8);width=min(12,max(.3,width));path_area=g.buffer(width/2,cap_style=2).intersection(clear)
+   for owned in path_excluded:path_area=path_area.difference(owned)
    if not path_area.is_empty:surface(path_area,'paths',surface_colour(t,default='concrete'),.24)
   elif t.get('highway')=='steps':
    if g.length<.3:continue
@@ -215,14 +225,31 @@ def compile(ctx):
   if t.get('barrier') not in ['fence','wall','retaining_wall','bollard']:continue
   if not g.intersects(boundary):continue
   typ=t.get('barrier');height=number(t.get('height'),1.1 if t.get('fence_type')=='railing' else 1.6);key='street_objects'
+  placement=None
+  if typ=='bollard' and street_plan:
+   space=ctx.get('street_space')
+   if space is None:
+    try:
+     from . import street_space as space
+    except ImportError:
+     space=None
+   placement=(getattr(space,'place',None) if space is not None and
+              all(k in street_plan for k in ('forbidden','occupied','records')) else None)
   for ln in ctx['lines'](g.intersection(boundary).difference(buildings.buffer(.01))):
    if typ in ['wall','retaining_wall']:
     for s in np.arange(0,ln.length,1):
      a=ln.interpolate(s);b=ln.interpolate(min(s+1,ln.length));v=np.array(b.coords[0])-a.coords[0];p=(np.array(a.coords[0])+b.coords[0])/2;cube([*p,float(elev(*p))+height/2],[np.linalg.norm(v),.22,height],key,'stone',math.atan2(v[1],v[0]))
    else:
     pitch=2.5 if typ=='bollard' else 1.8
-    for s in np.linspace(0,ln.length,max(2,round(ln.length/pitch)+1)):
-     p=ln.interpolate(s);z=float(elev(p.x,p.y));cyl([p.x,p.y,z+.1],[p.x,p.y,z+height],.09 if typ=='bollard' else .035,key,'steel',8)
+    placed=0
+    for index,s in enumerate(np.linspace(0,ln.length,max(2,round(ln.length/pitch)+1))):
+     p=ln.interpolate(s)
+     if typ=='bollard' and placement is not None:
+      pos=placement(street_plan,(p.x,p.y),.09,boundary,kind='mapped-bollard',source_id=f"{w['id']}:{index}",max_shift=.5)
+      if pos is None:continue
+      x,y=pos
+     else:x,y=p.x,p.y
+     z=float(elev(x,y));cyl([x,y,z+.1],[x,y,z+height],.09 if typ=='bollard' else .035,key,'steel',8);placed+=1
     if typ=='fence':
      for hh in [.22,height]:
       for aa,bb in zip(ln.coords,list(ln.coords)[1:]):cyl([*aa,float(elev(*aa))+hh],[*bb,float(elev(*bb))+hh],.028,key,'steel',8)
@@ -239,7 +266,7 @@ def compile(ctx):
     line=g.offset_curve((k-lanes/2)*lane_width)
     for ln in ctx['lines'](line):
      for d in np.arange(6,ln.length-4,9):paint(LineString([ln.interpolate(d),ln.interpolate(min(d+3,ln.length))]),.12,mask=mark_mask)
-   if t.get('oneway')!='yes' and lanes>=2:paint(g,.14,'yellow',mask=mark_mask)
+   if t.get('oneway') not in ('yes','-1') and lanes>=2:paint(g,.14,'yellow',mask=mark_mask)
   for side,sign in [('left',1),('right',-1)]:
    if s['bike'][side]<=0:continue
    bike_width=s['bike'][side];offset=sign*(s['vehicleWidthM']/2+bike_width/2);line=g.offset_curve(offset)
@@ -249,9 +276,10 @@ def compile(ctx):
     lane_area=lane_area.intersection(mark_mask)
     if not lane_area.is_empty:surface(lane_area,'cycleways',lane_colour,.11)
    for ln in ctx['lines'](line):
+    lane_mask=ln.buffer(bike_width/2,cap_style=2,join_style=2).intersection(mark_mask)
     for edge in [-1,1]:
-     for ee in ctx['lines'](ln.offset_curve(edge*(bike_width/2-.04))):paint(ee,.12,mask=mark_mask)
-    for d in np.arange(12,ln.length-4,35):bike_symbol(ln,d,mask=mark_mask)
+     for ee in ctx['lines'](ln.offset_curve(edge*(bike_width/2-.04))):paint(ee,.12,mask=lane_mask)
+    for d in np.arange(12,ln.length-4,35):bike_symbol(ln,d,mask=lane_mask)
    records.append({'rule':'tagged-cycle-lane','id':w['id'],'side':side,'widthM':bike_width,'surfaceColour':lane_colour,'source':'OSM lane side; width/paint pattern inferred'})
  ctx['counts']['mappedStairways']=sum(r['rule']=='mapped-stairs' for r in records);ctx['counts']['cyclewayFeatures']=sum(r['rule'] in ['mapped-cycleway','tagged-cycle-lane'] for r in records);ctx['counts']['mappedBarrierSections']=sum(r['rule']=='mapped-barrier' for r in records)
  return records

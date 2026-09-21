@@ -8,7 +8,15 @@ from pipeline import mobility
 def test_length_parser_handles_metric_and_imperial_osm_widths():
     assert math.isclose(mobility.length_m("12' 0\""), 3.6576, rel_tol=1e-8)
     assert math.isclose(mobility.length_m('19 ft 4 in'), 5.8928, rel_tol=1e-8)
+    assert math.isclose(mobility.length_m('6"'), .1524, rel_tol=1e-8)
     assert math.isclose(mobility.length_m('2.4m'), 2.4, rel_tol=1e-8)
+    assert mobility.number('2m of unknown units', 7) == 7
+    assert mobility.number(float('nan'), 7) == 7
+
+
+def test_explicit_blue_colour_stays_a_colour_variant_not_water():
+    assert mobility.surface_colour({'surface:colour': 'blue'}) == 'stone#356aaf'
+    assert mobility.surface_colour({'surface:colour': '#0066ff'}) == 'stone#0066ff'
 
 
 def test_spec_keeps_explicit_total_width_and_known_side_order():
@@ -88,3 +96,51 @@ def test_mapped_cycleway_uses_explicit_imperial_width_without_inventing_green():
     assert mapped['surfaceColour'] is None
     assert not any(material == 'greenpaint' for _, _, material, _ in captured)
 
+
+def test_shared_ownership_clips_cycle_markings_and_path_surfaces():
+    cycle = {'id': 'cycle', 'tags': {'highway': 'cycleway', 'width': '2 m'},
+             'g': LineString([(1, 4), (20, 4)])}
+    path = {'id': 'path', 'tags': {'highway': 'footway', 'width': '2 m'},
+            'g': LineString([(1, 0), (20, 0)])}
+    ctx, captured = _compile_context({'highway': 'residential', 'lanes': '2'}, cycleway=cycle)
+    ctx['ways'].append(path)
+    road_owned = ctx['road_area']
+    cycle_owned = cycle['g'].buffer(.45, cap_style=2)
+    sidewalk_owned = box(1, 3.5, 20, 4.5)
+    ctx['street_plan'] = {'road': road_owned, 'cycle': cycle_owned, 'sidewalk': sidewalk_owned}
+    mobility.compile(ctx)
+    cycle_surfaces = [g for g, semantic, _, _ in captured if semantic == 'cycleways']
+    path_surfaces = [g for g, semantic, _, _ in captured if semantic == 'paths']
+    assert cycle_surfaces and all(g.difference(cycle_owned).area < 1e-8 for g in cycle_surfaces)
+    assert not path_surfaces
+
+
+def test_reverse_oneway_has_no_yellow_median_and_bollards_use_shared_space():
+    road_tags = {'highway': 'residential', 'lanes': '2', 'oneway': '-1'}
+    barrier = {'id': 'bollards', 'tags': {'barrier': 'bollard'},
+               'g': LineString([(3, 0), (18, 0)])}
+    ctx, captured = _compile_context(road_tags)
+    ctx['ways'] = [barrier]
+    cylinders = []
+    ctx['cylinder'] = lambda *args: cylinders.append(args)
+    ctx['street_plan'] = {'road': ctx['road_area'], 'cycle': box(0, 4, 1, 5),
+                          'sidewalk': box(0, 3, 20, 5),
+                          'forbidden': ctx['road_area'].union(ctx['all_buildings']),
+                          'occupied': [], 'records': []}
+    mobility.compile(ctx)
+    assert not any(material == 'yellow' for _, semantic, material, _ in captured if semantic == 'markings')
+    assert not cylinders
+
+    path_barrier = {'id': 'path-bollards', 'tags': {'barrier': 'bollard'},
+                    'g': LineString([(3, 4), (18, 4)])}
+    ctx, captured = _compile_context(road_tags)
+    ctx['ways'] = [path_barrier]
+    cylinders = []
+    ctx['cylinder'] = lambda *args: cylinders.append(args)
+    ctx['street_plan'] = {'road': ctx['road_area'], 'cycle': box(0, 6, 1, 7),
+                          'sidewalk': box(0, 3, 20, 5),
+                          'forbidden': ctx['road_area'].union(ctx['all_buildings']),
+                          'occupied': [], 'records': []}
+    mobility.compile(ctx)
+    assert cylinders
+    assert all(record['status'] == 'mapped' for record in ctx['street_plan']['records'])
