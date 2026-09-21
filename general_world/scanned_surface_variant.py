@@ -2,26 +2,24 @@
 import numpy as np
 from PIL import Image
 from trimesh.visual.material import PBRMaterial
-from .material_periodicity import infer_joint_periods
+from .material_periodicity import measure_masonry_module
 from .texture_selection import recolor
 
 def running_bond_scale(color, roughness, source_tile_m, target_module_m):
-    """Require two maps to agree on full staggered module, never a half period."""
-    estimates=[infer_joint_periods(np.asarray(image)) for image in (color,roughness)]
+    """Require the colour and roughness maps to agree on the course pitch and the joint period read inside
+    single courses (never a half period from a band straddling two courses)."""
+    estimates=[measure_masonry_module(np.asarray(image.convert('L'))) for image in (color,roughness)]
     units=[]
     for image,e in zip((color,roughness),estimates):
-        row=e['horizontal'].get('period_px'); bond=e.get('banded_running_bond',{})
-        col=bond.get('full_module_period_px')
-        if not row or not col or not bond.get('stagger_consistent'):
-            raise ValueError('scan module cannot be measured unambiguously')
-        units.append(np.array(source_tile_m)*np.array([col/image.width,row/image.height]))
+        if not e.get('accepted'):raise ValueError('scan module cannot be measured unambiguously: '+str(e.get('reason')))
+        units.append(np.array(source_tile_m)*np.array([e['module_px']/image.width,e['row_px']/image.height]))
     if not np.allclose(units[0],units[1],rtol=.08,atol=0):raise ValueError('scan maps disagree on module dimensions')
     unit=np.mean(units,axis=0);target=np.asarray(target_module_m,float);source=np.asarray(source_tile_m,float)
     if target.shape!=(2,) or not np.isfinite(target).all() or np.min(target)<=0:raise ValueError('invalid target module')
     ratio=target/unit
     if np.min(ratio)<.75 or np.max(ratio)>1.3 or max(ratio)/min(ratio)>1.1:
         raise ValueError('scan morphology needs a different source')
-    return (source*ratio).tolist(), {'moduleMeasurementM':unit.tolist(),'physicalRescale':ratio.tolist(),'measurement':'independent color/roughness periods plus staggered per-row agreement','estimates':estimates}
+    return (source*ratio).tolist(), {'moduleMeasurementM':unit.tolist(),'physicalRescale':ratio.tolist(),'measurement':'course pitch and within-course joint period agreed by the color and roughness maps','estimates':estimates}
 
 def variant(color,normal,roughness,source_tile_m,target):
     if target['pattern']!='brick_running':raise ValueError('unsupported scan morphology')

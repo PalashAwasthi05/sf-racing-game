@@ -17,24 +17,43 @@ def select_texture(target, assets):
     for aid,a in assets.items():
         if any(a.get(k)!=target[k] for k in required):continue
         if a.get('strong_weathering',False)!=target.get('strong_weathering',False):continue
+        rotate=False;rescale=None;fit=None
         if target.get('unit_size_m'):
+            # The module measured in the scan must match the observed module within a quarter, on every jointed
+            # axis; a scan may be turned by a right angle (boards run either way), never stretched into a pattern.
             if not a.get('unit_size_m'):continue
-            if max(abs(np.log(np.array(a['unit_size_m'])/target['unit_size_m'])))>np.log(1.25):continue
+            unit=np.array(a['unit_size_m'],float);open_axes=set(a.get('unit_open_axes',[]))
+            fits=[]
+            for turned,(u,oa) in enumerate(((unit,open_axes),(unit[::-1],{1-i for i in open_axes}))):
+                errors=[abs(np.log(u[i]/target['unit_size_m'][i])) for i in range(2) if i not in oa]
+                fits.append((max(errors) if errors else 0.,bool(turned),u,oa))
+            fit,rotate,unit,open_axes=min(fits,key=lambda f:f[0])
+            if fit>np.log(1.25):continue
+            # The observed module sets the physical scale: the source tile is rescaled so its module equals the
+            # observed one; the two axes must agree within a tenth (an open axis follows the jointed one).
+            ratios=[target['unit_size_m'][i]/unit[i] for i in range(2) if i not in open_axes]
+            if max(ratios)/min(ratios)>1.1:continue
+            rescale=[target['unit_size_m'][i]/unit[i] if i not in open_axes else float(np.mean(ratios)) for i in range(2)]
         scale=a.get('tile_size_m'); estimated=False
         if scale is None:
             # Only unjointed fine grain may use an explicitly provisional repeat.
             if a['pattern'] not in ('plaster_grain','smooth_grain') or not target.get('provisional_repeat_m'):continue
             scale=target['provisional_repeat_m'];estimated=True
+        elif rescale is not None:
+            source=np.array(scale,float)[::-1] if rotate else np.array(scale,float)
+            scale=(source*np.array(rescale)).round(4).tolist()
         delta=float(np.linalg.norm(np.array(a['mean_rgb'])-color)/255)
         if a.get('intrinsic_color',True) and delta>.35:continue
-        compatible.append((delta+.08*estimated,aid,a,scale,estimated,delta))
+        compatible.append((delta+.08*estimated+.02*rotate,aid,a,scale,estimated,delta,rotate,rescale,fit))
     if not compatible:
         signature={k:target.get(k) for k in (*required,'strong_weathering','unit_size_m')}
         key=hashlib.sha256(json.dumps(signature,sort_keys=True).encode()).hexdigest()[:16]
         return {'action':'request_new','request_key':key,'requirements':signature,'reason':'no compatible pattern, finish and physical scale; color alone is not a new asset requirement'}
-    _,aid,a,scale,estimated,delta=min(compatible,key=lambda x:(x[0],x[1]))
-    return {'action':'recolor' if delta>.06 else 'reuse','asset_id':aid,'tile_size_m':scale,
-            'scale_provenance':'provisional target repeat, not measured' if estimated else 'asset source metadata',
+    _,aid,a,scale,estimated,delta,rotate,rescale,fit=min(compatible,key=lambda x:(x[0],x[1]))
+    provenance='provisional target repeat, not measured' if estimated else 'asset source metadata'
+    if rescale is not None:provenance='asset source metadata, rescaled to the observed module measured in the scan (module fit %.3f in log units)'%fit
+    return {'action':'recolor' if delta>.06 else 'reuse','asset_id':aid,'tile_size_m':scale,'rotate90':rotate,
+            'physical_rescale':rescale,'module_source':a.get('unit_size_m'),'scale_provenance':provenance,
             'color_distance':delta,'color_rgb':target['color_rgb'],'reason':'compatible substrate, pattern, finish and weathering'}
 
 

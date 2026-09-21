@@ -126,3 +126,97 @@ def infer_joint_periods(image: np.ndarray, *, min_period_px: int = 4,
     return {"accepted": accepted or banded["accepted"], "horizontal": horizontal, "vertical": vertical,
             "banded_running_bond": banded,
             "signal": "row/column median edge profile", "physical_scale": "not inferred"}
+
+
+def _course_phase(arr: np.ndarray, row_px: int) -> int:
+    """Row offset of the horizontal joints, so that bands read one course each rather than straddling two."""
+    means = np.nanmedian(arr, axis=1)
+    edge = np.abs(np.diff(means, prepend=means[0]))
+    h = arr.shape[0]
+    scores = [sum(edge[(phase + k * row_px) % h] for k in range(h // row_px)) for phase in range(row_px)]
+    return int(np.argmax(scores))
+
+
+def _course_profiles(arr: np.ndarray, row_px: int) -> list[np.ndarray]:
+    """Vertical-joint profile of each course: the column derivative of the course's median row, joint rows excluded."""
+    h = arr.shape[0]
+    phase = _course_phase(arr, row_px)
+    margin = max(1, row_px // 8)
+    out = []
+    for start in range(phase, h - row_px + 1, row_px):
+        band = arr[start + margin:start + row_px - margin]
+        if band.shape[0] < 2:
+            continue
+        values = np.nanmedian(band, axis=0)
+        d = np.diff(values, prepend=values[0])
+        out.append(d - d.mean())
+    return out
+
+
+def measure_masonry_module(image: np.ndarray, *, min_period_px: int = 6) -> dict[str, Any]:
+    """Course height and full unit module in pixels, and the bond, from one map alone.
+
+    The course pitch is the row period; each course is then read on its own (aligned to the joint rows, so
+    a band never mixes two courses and the half-module ambiguity of a running bond does not arise); the module
+    is the joint period shared by the courses; the bond is the shift between neighbouring courses (half a module
+    for a running bond, none for a stack bond). No physical unit is attached and no material family inferred.
+    """
+    arr = np.asarray(image, dtype=float)
+    if arr.ndim == 3:
+        arr = arr.mean(axis=2)
+    if arr.ndim != 2 or min(arr.shape) < 32:
+        return {"accepted": False, "reason": "map too small"}
+    h, w = arr.shape
+    rows = _one(_profile(arr, 0), min_period_px=min_period_px, max_period_px=h // 2)
+    row_px = rows["period_px"]
+    if not row_px:
+        return {"accepted": False, "reason": "no course pitch"}
+    courses = _course_profiles(arr, row_px)
+    if len(courses) < 4:
+        return {"accepted": False, "reason": "too few courses"}
+    # Mean autocorrelation of the normalised course profiles: the smallest strong peak is the module.
+    acc = np.zeros(w)
+    for p in courses:
+        c = p - p.mean()
+        ac = np.correlate(c, c, "full")[w - 1:]
+        acc += ac / max(float(ac[0]), 1e-9)
+    acc /= len(courses)
+    lags = [k for k in range(min_period_px, w // 2) if acc[k] >= acc[k - 1] and acc[k] >= acc[k + 1] and acc[k] > .15]
+    if not lags:
+        return {"accepted": False, "reason": "no joint period across the courses"}
+    top = max(float(acc[k]) for k in lags)
+    module_px = min(k for k in lags if acc[k] >= .8 * top)
+    # Bond: the circular shift that best aligns neighbouring courses.
+    shifts = []
+    for a, b in zip(courses, courses[1:]):
+        na = a / max(float(np.linalg.norm(a)), 1e-9)
+        nb = b / max(float(np.linalg.norm(b)), 1e-9)
+        shifts.append(max(range(module_px), key=lambda s: float(np.dot(na, np.roll(nb, s)))))
+    half = module_px / 2
+    tol = max(2, .15 * module_px)
+    running = sum(abs(s - half) <= tol for s in shifts) / len(shifts)
+    stacked = sum(min(s, module_px - s) <= tol for s in shifts) / len(shifts)
+    # Hand-laid bricks vary in length by a tenth or more, so the course-to-course shift is only a diagnostic; the
+    # module itself is certified by the course pitch and the joint period read inside single courses.
+    bond = "running" if running >= .7 else "stack" if stacked >= .7 else None
+    return {"accepted": True, "bond": bond, "row_px": int(row_px), "module_px": int(module_px), "peak": round(top, 3),
+            "shifts_px": shifts, "stagger_fraction": round(max(running, stacked), 3), "courses": len(courses),
+            "physical_scale": "not inferred"}
+
+
+def measure_board_pitch(image: np.ndarray, *, min_period_px: int = 8) -> dict[str, Any]:
+    """Pitch of parallel boards in pixels and the axis they run along, from one map alone."""
+    arr = np.asarray(image, dtype=float)
+    if arr.ndim == 3:
+        arr = arr.mean(axis=2)
+    h, w = arr.shape
+    rows = _one(_profile(arr, 0), min_period_px=min_period_px, max_period_px=h // 2)
+    cols = _one(_profile(arr, 1), min_period_px=min_period_px, max_period_px=w // 2)
+    best, other, axis = (rows, cols, "rows") if rows["confidence"] >= cols["confidence"] else (cols, rows, "columns")
+    if not best["period_px"] or best["confidence"] < .4:
+        return {"accepted": False, "reason": "no board pitch"}
+    if other["period_px"] and other["confidence"] > .8 * best["confidence"]:
+        return {"accepted": False, "reason": "joints in both directions are not boards"}
+    # boards run along the axis perpendicular to the pitch: a row pitch means horizontal boards
+    return {"accepted": True, "pitch_px": int(best["period_px"]), "boards": "horizontal" if axis == "rows" else "vertical",
+            "confidence": best["confidence"], "physical_scale": "not inferred"}
