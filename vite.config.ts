@@ -1,7 +1,7 @@
 import { sites } from '@openai/sites-vite-plugin';
 import tailwindcss from '@tailwindcss/postcss';
 import vinext from 'vinext';
-import { defineConfig } from 'vite';
+import { defineConfig, type ViteDevServer } from 'vite';
 import hostingConfig from './.openai/hosting.json';
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
@@ -46,10 +46,26 @@ export default defineConfig(async () => {
 
   return {
     css: { postcss: { plugins: [tailwindcss()] } },
-    server: isCodexSeatbeltSandbox
-      ? { watch: { useFsEvents: false, usePolling: true } }
-      : undefined,
+    server: {
+      strictPort: true,
+      // Preview HTML and browser modules must come from the same live revision.
+      // Reusing an older document after a UI edit can fail React hydration.
+      headers: { 'Cache-Control': 'no-store' },
+      ...(isCodexSeatbeltSandbox
+        ? { watch: { useFsEvents: false, usePolling: true } }
+        : {}),
+    },
     plugins: [
+      {
+        name: 'local-preview-no-store',
+        configureServer(server: ViteDevServer) {
+          // Worker-rendered HTML bypasses Vite's static response headers.
+          server.middlewares.use((_req, res, next) => {
+            res.setHeader('Cache-Control', 'no-store');
+            next();
+          });
+        },
+      },
       vinext(),
       sites(),
       cloudflare({
