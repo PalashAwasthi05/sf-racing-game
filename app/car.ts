@@ -263,7 +263,7 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
   }
  }
  function lerpAngle(a:number,b:number,k:number){let d=b-a;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;return a+d*k;}
- let camYaw=0,camDist=4.9,camHeight=0;
+ let camYaw=0,camDist=4.9;
  // How far the camera may trail the car before it stands inside a wall: the trailing ray is marched through the
  // distance field and stops at the last free point.
  function freeDistance(bx:number,bz:number,want:number){if(!field)return want;let d=1.2;for(let t=1.2;t<=want;t+=.25){if(field.at(s.x-bx*t,s.z-bz*t)<.7)break;d=t;}return d;}
@@ -284,12 +284,12 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
   camDist=snap?allowed:camDist+(allowed-camDist)*(1-Math.exp(-dt*(allowed<camDist?9:2.5)));
   // The camera is placed from its smoothed heading and distance, so when it swings round the car (a reverse, a
   // spin) it travels the arc and never cuts across the body; only its height and its aim are eased separately.
-  // A fixed downward angle of seven degrees to the aim point, whatever the distance: neither speed nor a wall behind
-  // changes the pitch. Only the ground level under the car is eased.
-  camHeight=snap?y:camHeight+(y-camHeight)*(1-Math.exp(-dt*10));
+  // A fixed downward angle of seven degrees to the aim point whatever the geometry: the height follows the
+  // horizontal distance to the aim, so neither speed, a wall behind, a slide nor a spin changes the pitch.
   const look=new THREE.Vector3(s.x+fx*2.2*ahead,y+.75,s.z+fz*2.2*ahead);
   if(snap)camLook.copy(look);else camLook.lerp(look,1-Math.exp(-dt*14));
-  camPos.set(s.x-bx*camDist,camHeight+.75+.123*(camDist+2.2),s.z-bz*camDist);
+  camPos.set(s.x-bx*camDist,0,s.z-bz*camDist);
+  camPos.y=camLook.y+.123*Math.max(2.5,Math.hypot(camPos.x-camLook.x,camPos.z-camLook.z));
   camera.position.copy(camPos);camera.up.set(0,1,0);camera.lookAt(camLook);
   camera.fov=56+Math.min(10,speed*.2);camera.updateProjectionMatrix();
  }
