@@ -144,3 +144,19 @@ def test_reverse_oneway_has_no_yellow_median_and_bollards_use_shared_space():
     mobility.compile(ctx)
     assert cylinders
     assert all(record['status'] == 'mapped' for record in ctx['street_plan']['records'])
+
+
+def test_unmarked_service_road_does_not_invent_a_two_lane_centerline():
+    tags={'highway':'service','service':'alley'}
+    ctx,captured=_compile_context(tags)
+    mobility.compile(ctx)
+    assert mobility.spec(tags)['lanes']==1
+    assert not any(semantic=='markings' and material=='yellow' for _,semantic,material,_ in captured)
+
+
+def test_generic_paved_crossing_is_not_concrete_or_a_marked_track():
+    crossing={'id':'crossing','tags':{'highway':'cycleway','cycleway':'crossing','surface':'paved','oneway':'no'},'g':LineString([(0,4),(20,4)])}
+    ctx,captured=_compile_context({'highway':'service'},cycleway=crossing)
+    mobility.compile(ctx)
+    assert any(semantic=='cycleways' and material=='asphalt' for _,semantic,material,_ in captured)
+    assert not any(semantic=='markings' for _,semantic,_,_ in captured)

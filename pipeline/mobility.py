@@ -136,7 +136,7 @@ def _cycleway_width(tags,side,value):
  return 1.8 if value in ('lane','opposite_lane') else 0.
 
 def spec(tags):
- lanes=max(1,int(number(tags.get('lanes'),2)))
+ lanes=max(1,int(number(tags.get('lanes'),1 if tags.get('highway') in ('service','living_street') else 2)))
  lane_width=length_m(_tag_value(tags,['lanes:width','lane_width']),None)
  vehicle=lanes*(lane_width if lane_width and lane_width>0 else 3.15)
  if tags.get('highway')=='service' and lane_width is None:vehicle=4.5
@@ -188,14 +188,16 @@ def compile(ctx):
   if t.get('highway')=='cycleway':
    width=length_m(t.get('width'),3.2 if t.get('oneway')=='no' else 1.8);width=min(12,max(.5,width));area=g.buffer(width/2,cap_style=2).intersection(clear)
    if cycle_mask is not None and not cycle_mask.is_empty:area=area.intersection(cycle_mask)
-   mat='concrete' if t.get('surface') in ['concrete','paving_stones','paved'] else 'asphalt'
+   # "Paved" establishes a hard surface, not its substrate. A crossing or
+   # generic paved track must not become a bright concrete ribbon in asphalt.
+   mat='concrete' if t.get('surface') in ['concrete','concrete:plates'] else 'stone' if t.get('surface')=='paving_stones' else 'asphalt'
    colour=surface_colour(t,default=None)
    if not area.is_empty:surface(area,'cycleways',colour or mat,.115)
    shared=t.get('foot') in ['yes','designated'] and t.get('segregated')=='no'
    crossing=t.get('cycleway')=='crossing'
    # Crossings and cycle lanes are green only when their source tags say so.
    if crossing and not shared and colour and not area.is_empty:surface(area,'markings',colour,.128)
-   if not shared:
+   if not shared and not crossing:
     for side in [-1,1]:
      for line in ctx['lines'](g.offset_curve(side*(width/2-.10))):paint(line,.10,mask=area)
     if t.get('oneway')=='no':
@@ -224,7 +226,7 @@ def compile(ctx):
    records.append({'rule':'mapped-stairs','id':w['id'],'stepCount':count,'riseM':round(zb-za,3),'handrail':t.get('handrail')=='yes','riseSource':'terrain; individual risers inferred'})
   if t.get('barrier') not in ['fence','wall','retaining_wall','bollard']:continue
   if not g.intersects(boundary):continue
-  typ=t.get('barrier');height=number(t.get('height'),1.1 if t.get('fence_type')=='railing' else 1.6);key='street_objects'
+  typ=t.get('barrier');height=length_m(t.get('height'),.95 if typ=='bollard' else 1.1 if t.get('fence_type')=='railing' else 1.6);key='street_objects'
   placement=None
   if typ=='bollard' and street_plan:
    space=ctx.get('street_space')
@@ -235,7 +237,12 @@ def compile(ctx):
      space=None
    placement=(getattr(space,'place',None) if space is not None and
               all(k in street_plan for k in ('forbidden','occupied','records')) else None)
-  for ln in ctx['lines'](g.intersection(boundary).difference(buildings.buffer(.01))):
+  barrier_line=g.intersection(boundary).difference(buildings.buffer(.01))
+  if street_plan:
+   for name in ['road','cycle','crossings']:
+    if name in street_plan:barrier_line=barrier_line.difference(street_plan[name].buffer(.08))
+  for ln in ctx['lines'](barrier_line):
+   if ln.is_empty or ln.length<.01:continue
    if typ in ['wall','retaining_wall']:
     for s in np.arange(0,ln.length,1):
      a=ln.interpolate(s);b=ln.interpolate(min(s+1,ln.length));v=np.array(b.coords[0])-a.coords[0];p=(np.array(a.coords[0])+b.coords[0])/2;cube([*p,float(elev(*p))+height/2],[np.linalg.norm(v),.22,height],key,'stone',math.atan2(v[1],v[0]))
@@ -249,7 +256,8 @@ def compile(ctx):
       if pos is None:continue
       x,y=pos
      else:x,y=p.x,p.y
-     z=float(elev(x,y));cyl([x,y,z+.1],[x,y,z+height],.09 if typ=='bollard' else .035,key,'steel',8);placed+=1
+     z=float(elev(x,y));cyl([x,y,z+.1],[x,y,z+height],.09 if typ=='bollard' else .035,key,'charcoal' if typ=='bollard' else 'steel',8);placed+=1
+     if typ=='bollard':ctx['counts']['bollards']=ctx['counts'].get('bollards',0)+1
     if typ=='fence':
      for hh in [.22,height]:
       for aa,bb in zip(ln.coords,list(ln.coords)[1:]):cyl([*aa,float(elev(*aa))+hh],[*bb,float(elev(*bb))+hh],.028,key,'steel',8)

@@ -2,25 +2,23 @@
 import math,re
 import numpy as np
 import trimesh
-from shapely.geometry import Point,LineString,box
+from shapely.geometry import Point,LineString,Polygon,box
 from shapely.ops import unary_union,nearest_points
+from .street_space import place
 
 def compile(ctx):
  surface,cube,cyl=ctx['surface'],ctx['cube'],ctx['cylinder'];boundary=ctx['boundary'];roads=ctx['roads'];elev=ctx['elev'];records=[]
- road=ctx['road_area']
- cycle=unary_union([w['g'].buffer(1.7) for w in ctx['ways'] if w['tags'].get('highway')=='cycleway' and w['g'].geom_type=='LineString']).intersection(boundary)
- crossings=unary_union([w['g'].buffer(1.8) for w in ctx['footpaths'] if w['tags'].get('footway')=='crossing'])
- rows=unary_union([ctx['geom'](r['the_geom']) for r in ctx['json'].load(open(ctx['DATA']/'row.json'))])
- sidewalks=road.buffer(3.2).intersection(rows.buffer(.5)).difference(road.buffer(.02)).difference(ctx['all_buildings'].buffer(.02)).difference(cycle).intersection(boundary)
+ plan=ctx['street_plan'];road=plan['road'];cycle=plan['cycle'];crossings=plan['crossings']
+ sidewalks=plan['sidewalk']
  pits=[]
- for t in ctx['json'].load(open(ctx['DATA']/'trees.json')):
-  try:x,y=ctx['local'](float(t['longitude']),float(t['latitude']))
-  except:continue
-  if Point(x,y).within(sidewalks):pits.append(box(x-.65,y-.65,x+.65,y+.65))
+ for t in ctx['tree_placements']:
+  x,y=t['position']
+  pit=box(x-.55,y-.55,x+.55,y+.55).intersection(sidewalks)
+  if not pit.is_empty:pits.append(pit)
  if pits:sidewalks=sidewalks.difference(unary_union(pits))
  surface(sidewalks,'sidewalks','concrete',.26)
  for p in pits:surface(p,'landscape','soil',.095)
- curb_lines=road.boundary.intersection(boundary.buffer(-1)).difference(crossings)
+ curb_lines=plan['curb'].intersection(boundary.buffer(-1)).difference(crossings)
  for line in ctx['lines'](curb_lines):
   # Short terrain-conforming strips avoid metre-long floating curb slabs.
   for ss in np.arange(0,line.length,.65):
@@ -65,11 +63,22 @@ def compile(ctx):
   for ln in ctx['lines'](w['g'].intersection(boundary.buffer(-2))):
    if ln.length>45:continue
    for p,q in [(np.array(ln.coords[0]),np.array(ln.coords[1])),(np.array(ln.coords[-1]),np.array(ln.coords[-2]))]:
+    # A graph crossing endpoint can be on a median or still in the road.
+    # Tactile slabs require an adjoining sidewalk landing, not just a node.
+    landing=sidewalks.buffer(-.30)
+    if landing.is_empty:continue
+    target=nearest_points(Point(p),landing)[1]
+    if target.distance(Point(p))>1.2:continue
+    p=np.array(target.coords[0])
     u=(q-p)/max(.01,np.linalg.norm(q-p));n=np.array([-u[1],u[0]]);angle=math.atan2(n[1],n[0]);z=float(elev(*p))+.275
-    cube([*p,z],[1.6,.6,.035],'sidewalks','yellow',angle)
+    panel=Polygon([p+n*a+u*b for a,b in [(-.8,-.3),(.8,-.3),(.8,.3),(-.8,.3)]]).intersection(sidewalks)
+    if panel.area<.6:continue
+    surface(panel,'sidewalks','yellow',.278)
     for xx in np.arange(-.7,.75,.1):
      for yy in [-.2,-.1,0,.1,.2]:
-      s=p+n*xx+u*yy;cyl([*s,z+.02],[*s,z+.029],.019,'sidewalks','yellow',6)
+      s=p+n*xx+u*yy
+      if panel.buffer(-.02).covers(Point(s)):
+       zz=float(elev(*s))+.279;cyl([*s,zz],[*s,zz+.009],.019,'sidewalks','yellow',6)
  # Inventory contains many co-located records. Deduplicate types at each candidate location,
  # snap cautiously to a nearby inferred curb, retain displacement and uncertainty.
  used=set();signs=ctx['json'].load(open(ctx['DATA']/'signs.json'));signcount=0
@@ -80,13 +89,16 @@ def compile(ctx):
   except:continue
   if p.distance(Point(0,0))>ctx['CONFIG']['region']['studyRadiusM']:continue
   family='STOP' if legend=='STOP' else 'ONE WAY' if 'ONE WAY' in legend else 'NO PARKING' if 'PARKING' in legend else 'NO STOPPING' if 'STOPPING' in legend else 'DO NOT ENTER' if 'DO NOT ENTER' in legend else 'SPEED LIMIT' if 'SPEED LIMIT' in legend else 'STREET'
-  key=(round(p.x/7),round(p.y/7),family)
+  key=(round(p.x/2),round(p.y/2),family)
   if key in used:continue
-  used.add(key);curb=nearest_points(p,curb_lines)[1]
-  if p.distance(curb)>12:continue
+  used.add(key)
+  if curb_lines.is_empty:continue
+  curb=nearest_points(p,curb_lines)[1]
+  if p.distance(curb)>3:continue
   nearest=min(roads,key=lambda r:r[0]['g'].distance(curb));line=nearest[0]['g'];s=line.project(curb);a=line.interpolate(max(0,s-.2));b=line.interpolate(min(line.length,s+.2));u=np.array([b.x-a.x,b.y-a.y]);u=u/max(np.linalg.norm(u),.01);n=np.array([u[1],-u[0]]);pos=np.array([curb.x,curb.y]);toward=np.array([p.x,p.y])-pos
   if np.dot(toward,n)<0:n=-n
-  pos+=n*.3
+  pos=place(plan,(p.x,p.y),.05,boundary,kind='sign',source_id=item.get('asset_id'),max_shift=2.0,require_walk=True)
+  if pos is None:continue
   facing=item.get('corner_side_facing','').upper();dirs={'NORTHBOUND':np.array([0.,-1.]),'SOUTHBOUND':np.array([0.,1.]),'EASTBOUND':np.array([-1.,0.]),'WESTBOUND':np.array([1.,0.])};normal=next((v for k,v in dirs.items() if k in facing),-n);angle=math.atan2(normal[0],-normal[1]);z=float(elev(*pos))+.26
   cyl([*pos,z],[*pos,z+2.9],.032,'signs','steel',8)
   signid='sign_'+str(item.get('asset_id'));ctx['make_sign'](pos,z+2.5,angle,family,legend,signid)
