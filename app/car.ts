@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 // A drivable mid-engined roadster with a planar vehicle model: rigid body (position, yaw, longitudinal and
 // lateral velocity, yaw rate), bicycle tyre model with slip angles and a magic-formula lateral force, friction
@@ -140,8 +141,24 @@ function buildBody(material:THREE.Material){
  for(let j=0;j<n-1;j++)for(let i=0;i<M;i++){const i2=(i+1)%M;const A=j*M+i,B=j*M+i2,C=(j+1)*M+i2,D=(j+1)*M+i;idx.push(A,C,B,A,D,C);}
  const tail=pos.length/3;{const loop=loops[0];pos.push(stations[0],loop.reduce((s,p)=>s+p[1],0)/M,0);for(let i=0;i<M;i++)idx.push(tail,i,(i+1)%M);}
  const nose=pos.length/3;{const loop=loops[n-1];pos.push(stations[n-1],loop.reduce((s,p)=>s+p[1],0)/M,0);const o=(n-1)*M;for(let i=0;i<M;i++)idx.push(nose,o+(i+1)%M,o+i);}
- const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geometry.setIndex(idx);geometry.computeVertexNormals();
+ const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(pos.length/3*2),2));geometry.setIndex(idx);geometry.computeVertexNormals();
  return new THREE.Mesh(geometry,material);
+}
+function mergeChildren(parent:THREE.Object3D,keep:(m:THREE.Mesh)=>boolean){
+ const groups=new Map<string,THREE.Mesh[]>();const materials=new Map<string,THREE.Material>();
+ for(const child of parent.children){
+  if(!(child instanceof THREE.Mesh)||Array.isArray(child.material)||!keep(child))continue;
+  const key=child.material.uuid+'|'+(child.geometry.index?'i':'n')+'|'+Object.keys(child.geometry.attributes).sort().join(',');
+  materials.set(key,child.material);const list=groups.get(key);if(list)list.push(child);else groups.set(key,[child]);
+ }
+ for(const [key,list] of groups){
+  if(list.length<2)continue;
+  const parts=list.map(m=>{m.updateMatrix();const g=m.geometry.clone();g.applyMatrix4(m.matrix);return g;});
+  const merged=mergeGeometries(parts,false);parts.forEach(g=>g.dispose());
+  if(!merged)continue;
+  for(const m of list){parent.remove(m);m.geometry.dispose();}
+  const mesh=new THREE.Mesh(merged,materials.get(key)!);mesh.castShadow=list.some(m=>m.castShadow);mesh.receiveShadow=true;parent.add(mesh);
+ }
 }
 function buildModel(){
  const car=new THREE.Group();
@@ -199,6 +216,9 @@ function buildModel(){
   car.add(g);return g;
  };
  makeWheel(AXLE,SPEC.trackFrontM/2,.335,.235);makeWheel(AXLE,-SPEC.trackFrontM/2,.335,.235);makeWheel(-AXLE,SPEC.trackRearM/2,.345,.265);makeWheel(-AXLE,-SPEC.trackRearM/2,.345,.265);
+ // Draw-call batching: the static parts of the body merge per material (paint, trim, lamps, leather each become one
+ // mesh), and each wheel's tyre, rim and spokes merge inside its spinning group. The transparent pane stays alone.
+ mergeChildren(car,m=>m.material!==glass);for(const {spin} of wheels)for(const lathe of spin.children)mergeChildren(lathe,()=>true);
  return {car,wheels,body,tailOn};
 }
 
