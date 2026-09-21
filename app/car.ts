@@ -109,11 +109,13 @@ function smooth(ctrl:[number,number][]){ // Catmull-Rom through the control poin
   return .5*(2*p1[1]+(-p0[1]+p2[1])*t+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*t2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*t3);};
 }
 const AXLE=SPEC.wheelbaseM/2;
-const halfWidth=smooth([[-2.2,.56],[-2.1,.78],[-2.0,.85],[-1.5,.91],[-1.24,.915],[-.6,.89],[.3,.885],[1.0,.885],[1.6,.86],[2.0,.78],[2.12,.66],[2.2,.42]]);
+const halfWidth=smooth([[-2.2,.56],[-2.1,.78],[-2.0,.85],[-1.65,.905],[-1.24,.95],[-.85,.9],[-.3,.885],[.3,.885],[.85,.89],[1.24,.925],[1.6,.87],[2.0,.78],[2.12,.66],[2.2,.42]]);
 const beltLine=smooth([[-2.2,.70],[-2.1,.78],[-2.0,.82],[-1.6,.845],[-1.24,.845],[-.9,.82],[-.5,.80],[.3,.80],[.55,.79],[.9,.78],[1.24,.76],[1.6,.68],[2.0,.56],[2.12,.50],[2.2,.40]]);
 const floorLine=smooth([[-2.2,.30],[-2.1,.20],[-2.0,.15],[-1.7,.13],[1.7,.13],[2.05,.15],[2.12,.20],[2.2,.28]]);
 const TUB_FROM=.40,TUB_TO=-1.05,TUB_W=.60,TUB_FLOOR=.50;
-function crown(x:number){return x>TUB_FROM?(x>2.05?.03:.05):(x<TUB_TO?.03:0);}
+function crown(x:number){return x>TUB_FROM?(x>2.05?.03:.025):(x<TUB_TO?.02:0);}
+// The fenders rise above the bonnet and the haunches above the rear deck: a bump on the deck path near the flank.
+function fender(x:number){const front=Math.min(1,Math.max(0,(x-.55)/.35))*Math.min(1,Math.max(0,(2.15-x)/.3));const rear=Math.min(1,Math.max(0,(-.95-x)/.3))*Math.min(1,Math.max(0,(x+2.1)/.25));return .05*front+.035*rear;}
 function archTop(x:number){for(const [xa,r,ra] of [[AXLE,.335,.355],[-AXLE,.345,.36]] as [number,number,number][]){const d=Math.abs(x-xa);if(d<ra)return r+Math.sqrt(ra*ra-d*d);}return 0;}
 function flank(w:number,h:number){return w-.04*((h-.45)/.35)**2;}   // tumblehome: the side is widest at 0.45 m
 function halfSection(x:number):[number,number][]{ // (lateral, height) from the bottom centre to the top centre
@@ -126,7 +128,7 @@ function halfSection(x:number):[number,number][]{ // (lateral, height) from the 
   const seg=path.slice(1).map((p,i)=>Math.hypot(p[0]-path[i][0],p[1]-path[i][1]));const total=seg.reduce((a,b)=>a+b,0);
   for(let k=1;k<=9;k++){let d=total*k/9,i=0;while(i<seg.length-1&&d>seg[i]){d-=seg[i];i++;}const t=seg[i]>0?d/seg[i]:1;pts.push([path[i][0]+(path[i+1][0]-path[i][0])*t,path[i][1]+(path[i+1][1]-path[i][1])*t]);}
  }else{ // a crowned deck: a quarter superellipse from the belt line to the centre
-  const zt=zs+crown(x);for(let k=1;k<=9;k++){const th=k/9*Math.PI/2;pts.push([ws*Math.pow(Math.cos(th),.78),zs+(zt-zs)*Math.pow(Math.sin(th),.78)]);}
+  const zt=zs+crown(x),bump=fender(x);for(let k=1;k<=9;k++){const th=k/9*Math.PI/2;const l=ws*Math.pow(Math.cos(th),.78);const t=l/Math.max(ws,1e-6);pts.push([l,zs+(zt-zs)*Math.pow(Math.sin(th),.78)+bump*Math.exp(-((t-.72)/.2)**2)]);}
  }
  return pts;
 }
@@ -143,12 +145,12 @@ function buildBody(material:THREE.Material){
 }
 function buildModel(){
  const car=new THREE.Group();
- const paint=new THREE.MeshPhysicalMaterial({color:'#7e0912',metalness:0,roughness:.28,clearcoat:1,clearcoatRoughness:.05});
+ const paint=new THREE.MeshPhysicalMaterial({color:'#e6e7e3',metalness:0,roughness:.3,clearcoat:1,clearcoatRoughness:.04});
  const black=new THREE.MeshStandardMaterial({color:'#141516',metalness:.2,roughness:.55});
  const glass=new THREE.MeshPhysicalMaterial({color:'#243744',metalness:0,roughness:.04,transmission:.4,transparent:true,opacity:.82,ior:1.5,side:THREE.DoubleSide});
  const lampGlass=new THREE.MeshPhysicalMaterial({color:'#1a1e22',metalness:.1,roughness:.12,clearcoat:1,clearcoatRoughness:.04});
  const rubber=new THREE.MeshStandardMaterial({color:'#111111',roughness:.92,side:THREE.DoubleSide});
- const rim=new THREE.MeshStandardMaterial({color:'#4a4d52',metalness:.85,roughness:.32,side:THREE.DoubleSide});
+ const rim=new THREE.MeshStandardMaterial({color:'#2a2c30',metalness:.7,roughness:.38,side:THREE.DoubleSide});
  const disc=new THREE.MeshStandardMaterial({color:'#8c8f93',metalness:.9,roughness:.4});
  const caliper=new THREE.MeshStandardMaterial({color:'#c8102e',metalness:.3,roughness:.5});
  const lampOn=new THREE.MeshStandardMaterial({color:'#f2f0e8',emissive:'#fff4d6',emissiveIntensity:1.2,roughness:.3});
@@ -173,7 +175,10 @@ function buildModel(){
   blob(.40,.13,.25,paint,-1.36,.86,s*.40);}
  {const wheel=new THREE.Mesh(new THREE.TorusGeometry(.165,.02,10,28),black);wheel.position.set(.05,.92,.38);wheel.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),new THREE.Vector3(Math.cos(.45),Math.sin(.45),0));add(wheel);}
  // Mirrors and the side intakes ahead of the rear wheels.
- for(const s of [-1,1]){box(.16,.10,.20,paint,.40,.88,s*1.0);box(.04,.06,.12,black,.40,.84,s*.92);box(.44,.24,.07,black,-.72,.60,s*.86);}
+ for(const s of [-1,1]){box(.16,.10,.20,paint,.40,.88,s*1.0);box(.04,.06,.12,black,.40,.84,s*.92);const scoop=box(.56,.30,.08,black,-.80,.56,s*.855);scoop.rotation.y=s*.12;
+  // panel gaps: door edges and the front and rear lids, as thin dark seams just proud of the surface
+  for(const [gx,h0,h1] of [[.52,.20,.79],[-.78,.20,.80]] as [number,number,number][]){const seam=box(.012,h1-h0,.014,black,gx,(h0+h1)/2,s*(flank(halfWidth(gx),(h0+h1)/2)+.002));seam.castShadow=false;}}
+ box(1.3,.012,.012,black,1.45,beltLine(1.45)+crown(1.45)+.004,0);box(.012,.012,1.2,black,.62,beltLine(.62)+crown(.62)+.004,0);box(.012,.012,1.3,black,-1.9,beltLine(-1.9)+crown(-1.9)+.004,0);
  // Front: lamps on the fender tops with four-point lights, intakes and the lip.
  for(const s of [-1,1]){blob(.13,.10,.21,lampGlass,2.02,.60,s*.58);for(const [dy,dz] of [[.035,.035],[.035,-.035],[-.035,.035],[-.035,-.035]])blob(.02,.02,.02,lampOn,2.135,.60+dy,s*.58+dz);box(.10,.24,.40,black,2.12,.36,s*.62);}
  box(.10,.20,.70,black,2.15,.30,0);box(.12,.03,1.62,black,2.14,.14,0);
@@ -199,12 +204,60 @@ function buildModel(){
 
 // ---- engine sound ---------------------------------------------------------------------------------------
 class EngineSound{
- private ctx:AudioContext|null=null;private osc:OscillatorNode[]=[];private gain:GainNode|null=null;private filter:BiquadFilterNode|null=null;
- start(){if(this.ctx)return;try{const ctx=new AudioContext();this.ctx=ctx;this.gain=ctx.createGain();this.gain.gain.value=0;this.filter=ctx.createBiquadFilter();this.filter.type='lowpass';this.filter.frequency.value=600;this.filter.connect(this.gain);this.gain.connect(ctx.destination);
-  for(const [type,detune,level] of [['sawtooth',0,.5],['square',1200,.18],['sawtooth',-1195,.3]] as [OscillatorType,number,number][]){const o=ctx.createOscillator();o.type=type;o.detune.value=detune;const g=ctx.createGain();g.gain.value=level;o.connect(g);g.connect(this.filter);o.start();this.osc.push(o);}
+ // A flat-six voice: firing-order harmonics through a soft clipper and a throttle-opened low-pass, an exhaust rasp
+ // and wind from shaped noise, an irregular idle lope that fades out by 2000 rpm, a limiter stutter, and on every
+ // gear change a throttle cut with an exhaust pop (up) or a blip (down).
+ private ctx:AudioContext|null=null;private master:GainNode|null=null;private tone:GainNode|null=null;private filter:BiquadFilterNode|null=null;
+ private osc:{o:OscillatorNode;ratio:number}[]=[];private noise:AudioBuffer|null=null;
+ private exhaust:{src:AudioBufferSourceNode;band:BiquadFilterNode;gain:GainNode}|null=null;private wind:{src:AudioBufferSourceNode;band:BiquadFilterNode;gain:GainNode}|null=null;
+ private lastGear=0;private lope=0;private t=0;
+ start(){if(this.ctx)return;try{const ctx=new AudioContext();this.ctx=ctx;
+  const master=ctx.createGain();master.gain.value=0;master.connect(ctx.destination);this.master=master;
+  const shaper=ctx.createWaveShaper();const curve=new Float32Array(1024);for(let i=0;i<1024;i++){const x=i/511.5-1;curve[i]=Math.tanh(2.4*x);}shaper.curve=curve;shaper.oversample='2x';
+  const filter=ctx.createBiquadFilter();filter.type='lowpass';filter.frequency.value=500;filter.Q.value=1.1;this.filter=filter;
+  const tone=ctx.createGain();tone.gain.value=.5;this.tone=tone;tone.connect(shaper);shaper.connect(filter);filter.connect(master);
+  for(const [type,ratio,detune,level] of [['sawtooth',1,0,.55],['square',.5,0,.3],['sawtooth',2,7,.16],['triangle',3,-5,.1],['sawtooth',1,-11,.3]] as [OscillatorType,number,number,number][]){const o=ctx.createOscillator();o.type=type;o.detune.value=detune;const g=ctx.createGain();g.gain.value=level;o.connect(g);g.connect(tone);o.start();this.osc.push({o,ratio});}
+  const noise=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);const data=noise.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;this.noise=noise;
+  const shaped=(type:BiquadFilterType,freq:number,q:number)=>{const src=ctx.createBufferSource();src.buffer=noise;src.loop=true;const band=ctx.createBiquadFilter();band.type=type;band.frequency.value=freq;band.Q.value=q;const gain=ctx.createGain();gain.gain.value=0;src.connect(band);band.connect(gain);gain.connect(master);src.start();return {src,band,gain};};
+  this.exhaust=shaped('bandpass',260,.8);this.wind=shaped('lowpass',420,.6);
   if(ctx.state==='suspended')void ctx.resume();}catch{this.ctx=null;}}
- update(rpm:number,throttle:number){if(!this.ctx||!this.gain||!this.filter)return;const f=rpm/20;for(const o of this.osc)o.frequency.setTargetAtTime(f,this.ctx.currentTime,.03);this.filter.frequency.setTargetAtTime(400+throttle*1800+rpm*.12,this.ctx.currentTime,.05);this.gain.gain.setTargetAtTime(.012+throttle*.03+rpm/7800*.012,this.ctx.currentTime,.08);}
- stop(){if(!this.ctx)return;this.gain?.gain.setTargetAtTime(0,this.ctx.currentTime,.1);setTimeout(()=>{this.osc.forEach(o=>{try{o.stop()}catch{}});void this.ctx?.close();this.ctx=null;this.osc=[];},400);}
+ update(rpm:number,throttle:number,speed:number,gear:number,dt:number){
+  if(!this.ctx||!this.master||!this.filter)return;const now=this.ctx.currentTime;
+  this.t+=dt;this.lope+=(Math.sin(this.t*9.2)+.6*Math.sin(this.t*13.7+1.3)+.3*(Math.random()-.5)-this.lope)*Math.min(1,dt*8);
+  const idleness=Math.max(0,1-(rpm-SPEC.idleRpm)/1200);const f0=rpm/20*(1+.018*this.lope*idleness);
+  for(const {o,ratio} of this.osc)o.frequency.setTargetAtTime(f0*ratio,now,.025);
+  this.filter.frequency.setTargetAtTime(320+throttle*2600+rpm*.14,now,.04);
+  const limiter=rpm>SPEC.limiterRpm-150&&throttle>.5?(Math.floor(this.t*22)%2?.35:1):1;
+  const level=(.02+throttle*.045+rpm/SPEC.limiterRpm*.02)*(1+.1*this.lope*idleness)*limiter;
+  this.master.gain.setTargetAtTime(level,now,.06);
+  if(this.exhaust){this.exhaust.band.frequency.setTargetAtTime(220+rpm*.09,now,.05);this.exhaust.gain.gain.setTargetAtTime(.15+.6*throttle,now,.08);}
+  if(this.wind){this.wind.band.frequency.setTargetAtTime(300+speed*14,now,.2);this.wind.gain.gain.setTargetAtTime(Math.min(.9,(speed/38)**2*1.2),now,.2);}
+  if(gear!==this.lastGear){if(this.lastGear>0&&gear>0)this.shift(gear>this.lastGear);this.lastGear=gear;}
+ }
+ shift(up:boolean){
+  if(!this.ctx||!this.master||!this.noise)return;const ctx=this.ctx,now=ctx.currentTime;const g=this.master.gain;const current=g.value;
+  g.cancelScheduledValues(now);g.setValueAtTime(current,now);g.linearRampToValueAtTime(current*.3,now+.04);g.setTargetAtTime(current,now+.16,.05);
+  const pop=ctx.createBufferSource();pop.buffer=this.noise;const band=ctx.createBiquadFilter();band.type='bandpass';band.frequency.value=up?160:420;band.Q.value=1.4;
+  const pg=ctx.createGain();pg.gain.setValueAtTime(0,now);pg.gain.linearRampToValueAtTime(up?.35:.2,now+.012);pg.gain.exponentialRampToValueAtTime(.001,now+(up?.22:.14));
+  pop.connect(band);band.connect(pg);pg.connect(this.master);pop.start(now);pop.stop(now+.3);
+ }
+ stop(){if(!this.ctx)return;const ctx=this.ctx;this.master?.gain.setTargetAtTime(0,ctx.currentTime,.1);
+  setTimeout(()=>{for(const {o} of this.osc){try{o.stop()}catch{}}for(const n of [this.exhaust,this.wind]){try{n?.src.stop()}catch{}}void ctx.close();this.ctx=null;this.osc=[];this.exhaust=null;this.wind=null;},400);}
+}
+
+// ---- instrument cluster --------------------------------------------------------------------------------------
+// A rev counter drawn as a 270-degree arc with the speed in the middle and the gear below; the needle and the lit arc
+// follow the engine every frame.
+const TACH={cx:100,cy:96,r:80,start:135,sweep:270,max:8000,red:7000};
+function polar(a:number,r:number):[number,number]{const t=a*Math.PI/180;return [TACH.cx+Math.cos(t)*r,TACH.cy+Math.sin(t)*r];}
+function arc(a0:number,a1:number,r:number){const [x0,y0]=polar(a0,r),[x1,y1]=polar(a1,r);return `M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 ${a1-a0>180?1:0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;}
+function gaugeMarkup(){
+ const ticks:string[]=[];
+ for(let k=0;k<=16;k++){const a=TACH.start+TACH.sweep*k/16,major=k%2===0,red=k>=14?' class="is-red"':'';const [x0,y0]=polar(a,TACH.r-6),[x1,y1]=polar(a,TACH.r-(major?15:10));
+  ticks.push(`<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}"${red}/>`);
+  if(major){const [lx,ly]=polar(a,TACH.r-25);ticks.push(`<text x="${lx.toFixed(1)}" y="${(ly+3.4).toFixed(1)}"${red}>${k/2}</text>`);}}
+ const redStart=TACH.start+TACH.sweep*TACH.red/TACH.max,full=arc(TACH.start,TACH.start+TACH.sweep,TACH.r);
+ return `<svg class="car-tach" viewBox="0 0 200 164" aria-hidden="true"><path class="tach-track" d="${full}"/><path class="tach-red" d="${arc(redStart,TACH.start+TACH.sweep,TACH.r)}"/><path class="tach-fill" d="${full}" pathLength="1000" stroke-dasharray="0 1000"/><g class="tach-ticks">${ticks.join('')}</g><text class="tach-rpm" x="${TACH.cx}" y="${TACH.cy-34}">RPM x1000</text><text class="tach-speed" x="${TACH.cx}" y="${TACH.cy+9}">0</text><text class="tach-unit" x="${TACH.cx}" y="${TACH.cy+26}">km/h</text><line class="tach-needle" x1="${TACH.cx+16}" y1="${TACH.cy}" x2="${TACH.cx+TACH.r-18}" y2="${TACH.cy}" transform="rotate(${TACH.start} ${TACH.cx} ${TACH.cy})"/><text class="tach-gear" x="${TACH.cx}" y="${TACH.cy+58}">N</text></svg>`;
 }
 
 // ---- vehicle ----------------------------------------------------------------------------------------------
@@ -212,8 +265,9 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
  const {car,wheels,body}=buildModel();scene.add(car);
  const sound=new EngineSound();
  const hud=document.createElement('div');hud.className='car-hud';hud.setAttribute('aria-live','off');
- hud.innerHTML='<div class="car-speed"><b>0</b><small>km/h</small></div><div class="car-gear"><span>N</span><i><em></em></i></div><div class="car-help">W / S throttle and brake · A / D steer · Space handbrake · C camera · R reset · drag to look</div>';
- host.appendChild(hud);const speedEl=hud.querySelector('b')!,gearEl=hud.querySelector('.car-gear span')!,rpmEl=hud.querySelector('.car-gear em') as HTMLElement;
+ hud.innerHTML=gaugeMarkup()+'<div class="car-help">W / S throttle and brake · A / D steer · Space handbrake · C camera · R reset · drag to look</div>';
+ host.appendChild(hud);const speedEl=hud.querySelector('.tach-speed')!,gearEl=hud.querySelector('.tach-gear')!,needle=hud.querySelector('.tach-needle') as SVGLineElement,fill=hud.querySelector('.tach-fill') as SVGPathElement;
+ function gauge(){const frac=Math.min(1,Math.max(0,s.rpm/TACH.max));needle.setAttribute('transform',`rotate(${(TACH.start+TACH.sweep*frac).toFixed(2)} ${TACH.cx} ${TACH.cy})`);fill.setAttribute('stroke-dasharray',`${(frac*1000).toFixed(1)} 1000`);fill.classList.toggle('is-hot',s.rpm>=TACH.red);}
  // State in the body frame: u forward, v left, r yaw rate (positive turns left). Heading: forward=(-sin yaw, -cos yaw).
  const s={x:0,z:0,yaw:0,u:0,v:0,r:0,steer:0,gear:1,reverse:false,ax:0,ay:0,throttle:0,rpm:SPEC.idleRpm,slip:0,pitch:0,roll:0};
  let trace:Record<string,number>={};
@@ -324,7 +378,7 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
   const targetYaw=s.yaw+(reversing?Math.PI:0)+slide*.55+lead+lookYaw;
   camYaw=snap?targetYaw:lerpAngle(camYaw,targetYaw,1-Math.exp(-dt*4.2));
   const bx=-Math.sin(camYaw),bz=-Math.cos(camYaw);
-  const allowed=freeDistance(bx,bz,7.6+speed*.06);
+  const allowed=freeDistance(bx,bz,6.6+speed*.055);
   camDist=snap?allowed:camDist+(allowed-camDist)*(1-Math.exp(-dt*(allowed<camDist?9:2.5)));
   // The camera is placed from its smoothed heading and distance, so when it swings round the car (a reverse, a
   // spin) it travels the arc and never cuts across the body; only its height and its aim are eased separately.
@@ -350,8 +404,8 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
  function update(dt:number,input:CarInput){
   const sub=4,hdt=dt/sub;for(let k=0;k<sub;k++)step(hdt,input);
   pose(dt);syncCamera(dt);
-  if(input.throttle>0||input.brake>0)sound.start();sound.update(s.rpm,s.throttle);
-  hudTimer+=dt;if(hudTimer>.1){hudTimer=0;const kmh=Math.round(Math.abs(s.u)*3.6);speedEl.textContent=String(kmh);gearEl.textContent=s.reverse?'R':(Math.abs(s.u)<.3&&s.throttle===0?'N':String(s.gear));rpmEl.style.width=Math.round((s.rpm-SPEC.idleRpm)/(SPEC.limiterRpm-SPEC.idleRpm)*100)+'%';rpmEl.classList.toggle('is-hot',s.rpm>7000);}
+  if(input.throttle>0||input.brake>0)sound.start();sound.update(s.rpm,s.throttle,Math.abs(s.u),s.reverse?-1:s.gear,dt);
+  gauge();hudTimer+=dt;if(hudTimer>.1){hudTimer=0;speedEl.textContent=String(Math.round(Math.abs(s.u)*3.6));gearEl.textContent=s.reverse?'R':(Math.abs(s.u)<.3&&s.throttle===0?'N':String(s.gear));}
  }
  function telemetry():CarTelemetry{return {speedKmh:Math.abs(s.u)*3.6,gear:s.reverse?'R':String(s.gear),rpm:s.rpm,throttle:s.throttle,slip:s.slip};}
  return {group:car,body,update,placeAt,telemetry,
