@@ -19,11 +19,11 @@ const SPEC={
  trackFrontM:1.515,
  trackRearM:1.532,
  wheelRadiusM:0.345,    // 265/35 R20
- tyreMu:1.15,
- lockedTyreMu:0.72,
+ tyreMu:1.28,           // Horizon-style grip: sticky, with a broad, forgiving peak
+ lockedTyreMu:0.55,
  dragArea:0.64,         // Cd 0.32 x 2.0 m2
  rollingResistance:0.013,
- maxBrakeG:1.2,
+ maxBrakeG:1.3,
  brakeFrontShare:0.62,
  gears:[3.31,1.95,1.41,1.13,0.95,0.81],
  finalDrive:3.89,
@@ -32,7 +32,7 @@ const SPEC={
  limiterRpm:7800,
  upshiftRpm:7100,
  downshiftRpm:3000,
- maxSteerRad:0.60,
+ maxSteerRad:0.55,
 };
 function engineTorqueNm(rpm:number){
  // Naturally aspirated 4.0 flat six: broad plateau, hard limiter.
@@ -42,8 +42,9 @@ function engineTorqueNm(rpm:number){
  return 380;
 }
 function lateralForce(slipRad:number,load:number,mu:number){
- // Pacejka-style: peak near 8 degrees of slip, gentle fall-off beyond it.
- const B=10,C=1.4,D=mu*Math.max(load,0);
+ // Pacejka-style with a broad peak near 14 degrees and almost no fall-off past it: slides are holdable and
+ // recoverable, the way an arcade-simulation tyre behaves, rather than snapping away.
+ const B=9,C=1.35,D=mu*Math.max(load,0);
  return -D*Math.sin(C*Math.atan(B*slipRad));
 }
 
@@ -175,25 +176,26 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
  let cameraMode:'chase'|'bonnet'='chase';let lookYaw=0;let hudTimer=0;let reverseHold=0;let shiftTimer=0;
  const camPos=new THREE.Vector3(),camLook=new THREE.Vector3();
  const {massKg:m,wheelbaseM:L,cgToFrontM:a,cgHeightM:h,yawInertia:Iz,wheelRadiusM:Rw}=SPEC;const b=L-a;
- function placeAt(x:number,z:number,yaw:number){Object.assign(s,{x,z,yaw,u:0,v:0,r:0,steer:0,gear:1,reverse:false,ax:0,ay:0,rpm:SPEC.idleRpm});lookYaw=0;hud.style.display='';syncCamera(true);}
+ function placeAt(x:number,z:number,yaw:number){Object.assign(s,{x,z,yaw,u:0,v:0,r:0,steer:0,gear:1,reverse:false,ax:0,ay:0,rpm:SPEC.idleRpm});lookYaw=0;hud.style.display='';syncCamera(0,true);}
  function forward(){return [-Math.sin(s.yaw),-Math.cos(s.yaw)];}
  function left(){const [fx,fz]=forward();return [fz,-fx];}
  function step(hdt:number,input:CarInput){
   const {u,v,r}=s;const absU=Math.abs(u);
   // Steering: rate limited, and the wheels turn less at speed, as a driver would.
-  const maxSteer=SPEC.maxSteerRad/(1+(absU/9)**2);const target=input.steer*maxSteer;const rate=(input.steer===0?4.5:3.2)/(1+absU/25);
+  const maxSteer=SPEC.maxSteerRad/(1+(absU/11)**2);const target=input.steer*maxSteer;const rate=(input.steer===0?9:5.5)/(1+absU/40);
   s.steer+=Math.max(-rate*hdt,Math.min(rate*hdt,target-s.steer));const delta=s.steer;
   // Gearbox: automatic shifts by engine speed, reverse engaged from rest with the brake pedal held.
   if(absU<.4&&input.brake>0&&input.throttle===0){reverseHold+=hdt;if(reverseHold>.35)s.reverse=true;}else if(absU<.4&&input.throttle>0&&s.reverse&&input.brake===0){s.reverse=false;}
   if(input.throttle===0&&input.brake===0)reverseHold=0;
-  const drivePedal=s.reverse?input.brake:input.throttle;const brakePedal=s.reverse?input.throttle:input.brake;
+  const drivePedal=s.reverse?(absU>7?0:input.brake):input.throttle;const brakePedal=s.reverse?input.throttle:input.brake;
   const ratio=(s.reverse?SPEC.gears[0]:SPEC.gears[s.gear-1])*SPEC.finalDrive;
   let rpm=Math.abs(u)/Rw*ratio*60/(2*Math.PI);
   shiftTimer=Math.max(0,shiftTimer-hdt);
   if(!s.reverse&&shiftTimer===0){if(rpm>SPEC.upshiftRpm&&s.gear<SPEC.gears.length){s.gear++;shiftTimer=.25;}else if(rpm<SPEC.downshiftRpm&&s.gear>1){s.gear--;shiftTimer=.25;}}
   rpm=Math.max(SPEC.idleRpm,Math.min(SPEC.limiterRpm,rpm));s.rpm+=(rpm-s.rpm)*Math.min(1,hdt*12);
   const clutch=Math.min(1,absU/2.5+.25);   // slipping clutch from rest
-  const wheelTorque=engineTorqueNm(rpm)*drivePedal*(shiftTimer>0?.15:1)*ratio*SPEC.drivelineEfficiency*clutch;
+  const rearSlipNow=Math.abs(Math.atan((v-b*r)/(absU<.6?.6:u)));const stmTrim=(!input.handbrake&&rearSlipNow>.28)?.55:1;
+  const wheelTorque=engineTorqueNm(rpm)*drivePedal*(shiftTimer>0?.15:1)*ratio*SPEC.drivelineEfficiency*clutch*stmTrim;
   const engineBrake=drivePedal===0&&absU>.5?-Math.sign(u)*(30+rpm*.012)*ratio*SPEC.drivelineEfficiency:0;
   let fxRear=(wheelTorque*(s.reverse?-1:1)+engineBrake)/Rw;
   // Loads with longitudinal transfer from the last step's acceleration.
@@ -212,7 +214,13 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
   // demand is cut to what is left: traction control on the driven axle, ABS on a braking one, so a floored
   // throttle or a stamped brake in a bend does not throw the car. The handbrake hands the rear to the driver.
   const circle=(fx:number,fy:number,limit:number,keepLateral:boolean)=>{
-   if(keepLateral){const fyc=Math.max(-limit,Math.min(limit,fy));const room=Math.sqrt(Math.max(0,limit*limit-fyc*fyc));return [Math.max(-room,Math.min(room,fx)),fyc];}
+   if(keepLateral){
+    // Traction control that lets a third of the excess through: the tyre can run a little over its circle,
+    // so a floored throttle in a bend loosens the rear progressively instead of either cutting all power or
+    // throwing the car; the stability damping below catches the yaw.
+    const fyc=Math.max(-limit,Math.min(limit,fy));const room=Math.sqrt(Math.max(0,limit*limit-fyc*fyc));
+    const fxc=Math.abs(fx)>room?Math.sign(fx)*(room+(Math.abs(fx)-room)*.33):fx;const mag=Math.hypot(fxc,fyc);const cap=limit*1.08;
+    return mag>cap?[fxc*cap/mag,fyc*cap/mag]:[fxc,fyc];}
    const mag=Math.hypot(fx,fy);return mag>limit?[fx*limit/mag,fy*limit/mag]:[fx,fy];};
   [fxFront,fyFront]=circle(fxFront,fyFront,SPEC.tyreMu*fzFront,true);[fxRear,fyRear]=circle(fxRear,fyRear,muRear*fzRear,!input.handbrake);
   s.slip=Math.max(Math.abs(alphaF),Math.abs(alphaR));
@@ -223,11 +231,12 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
   let rDot=(a*(fyFront*cosD+fxFront*sinD)-b*fyRear)/Iz;
   // Stability control: yaw beyond what the steering asks for at this speed is damped, as the brakes of a
   // stability system would; the handbrake switches it off.
-  if(!input.handbrake&&absU>2){const rGrip=.85*SPEC.tyreMu*G/absU;const rRef=Math.max(-rGrip,Math.min(rGrip,u*Math.tan(delta)/L));const excess=r-rRef;if(Math.abs(excess)>.12)rDot-=excess*6;}
+  if(!input.handbrake&&absU>2){const rGrip=.9*SPEC.tyreMu*G/absU;const rRef=Math.max(-rGrip,Math.min(rGrip,u*Math.tan(delta)/L));const excess=r-rRef;if(Math.abs(excess)>.08){const e=excess-Math.sign(excess)*.08;rDot-=e*9;rDot-=Math.sign(e)*Math.min(Math.abs(e),.5)*a*Math.abs(fyFront)*.35/Iz;}}
   trace={u,v,r,delta,alphaF,alphaR,fyFront,fyRear,fxRear,fxFront,ax,ay,rDot,fzFront,fzRear,gear:s.gear,rpm:s.rpm,shift:shiftTimer,sax:s.ax};
   s.u+=ax*hdt;s.v+=ay*hdt;s.r+=rDot*hdt;s.ax+=(ax-s.ax)*.3;s.ay=ay;
-  // Rest: the tyre model has no meaning at zero speed; settle the body instead of jittering.
-  if(absU<.6){const k=Math.max(0,1-6*hdt);s.v*=k;s.r*=k;if(drivePedal===0&&Math.abs(s.u)<.15&&brakePedal>0)s.u=0;}
+  // Parking speeds: the slip-angle tyre has no meaning near rest, so the body is blended toward the kinematic
+  // turn the steering asks for (yaw rate u tan(delta)/L, rear axle tracking), fully at walking pace.
+  if(absU<3){const k=Math.min(1,(3-absU)/2.5)*Math.min(1,hdt*14);const rKin=s.u*Math.tan(delta)/L;s.r+=(rKin-s.r)*k;s.v+=(b*s.r-s.v)*k;if(drivePedal===0&&Math.abs(s.u)<.15&&brakePedal>0)s.u=0;}
   s.yaw+=s.r*hdt;
   const [fx,fz]=forward(),[lx,lz]=left();
   s.x+=(fx*s.u+lx*s.v)*hdt;s.z+=(fz*s.u+lz*s.v)*hdt;
@@ -251,20 +260,33 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
    if(into<0){const kx=wx-nx*into*1.2,kz=wz-nz*into*1.2;const speedLoss=.75;s.u=(kx*fx+kz*fz)*speedLoss;s.v=(kx*lx+kz*lz)*speedLoss;s.r+=-(cy*into)*.05;s.r*=.7;s.ax=Math.max(s.ax,-6);}
   }
  }
- function syncCamera(snap:boolean){
-  const [fx,fz]=forward();const y=groundAt(s.x,s.z);
-  if(cameraMode==='bonnet'){camPos.set(s.x+fx*.2,y+1.12+s.pitch*.3,s.z+fz*.2);camLook.set(s.x+fx*30,y+1.05,s.z+fz*30);
-   const ly=s.yaw+lookYaw;camLook.set(s.x-Math.sin(ly)*30,y+1.05,s.z-Math.cos(ly)*30);camera.position.copy(camPos);camera.lookAt(camLook);camera.fov=62;camera.updateProjectionMatrix();return;}
-  const back=6.6+Math.abs(s.u)*.05;const ly=s.yaw+lookYaw;const bx=-Math.sin(ly),bz=-Math.cos(ly);
-  const desired=new THREE.Vector3(s.x-bx*back,y+2.35,s.z-bz*back);const look=new THREE.Vector3(s.x+bx*3.5,y+1.0,s.z+bz*3.5);
-  if(snap){camPos.copy(desired);camLook.copy(look);}else{camPos.lerp(desired,.14);camLook.lerp(look,.25);}
-  camera.position.copy(camPos);camera.lookAt(camLook);camera.fov=58+Math.min(12,Math.abs(s.u)*.18);camera.updateProjectionMatrix();
+ function lerpAngle(a:number,b:number,k:number){let d=b-a;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;return a+d*k;}
+ let camYaw=0;
+ function syncCamera(dt:number,snap=false){
+  const speed=Math.abs(s.u);const y=groundAt(s.x,s.z);const [fx,fz]=forward(),[lx,lz]=left();
+  if(cameraMode==='bonnet'){const ly=s.yaw+lookYaw;camera.position.set(s.x+fx*.25,y+1.1+s.pitch*.3,s.z+fz*.25);camera.lookAt(s.x-Math.sin(ly)*30,y+1.02,s.z-Math.cos(ly)*30);camera.fov=64+Math.min(10,speed*.15);camera.updateProjectionMatrix();return;}
+  // Chase camera in the arcade-simulation idiom: it trails a heading that lags the car's and leans toward the
+  // velocity direction in a slide (so a drift is seen sideways), sits lower and further back with speed, looks a
+  // little into the turn, banks with lateral g, swings to the front when reversing, and pulls in when a wall
+  // stands behind it. Every smoothing is time based, the same at any frame rate.
+  const reversing=s.u<-.8;const ahead=reversing?-1:1;
+  const slide=Math.atan2(s.v,Math.max(1.5,speed))*ahead;
+  const targetYaw=s.yaw+(reversing?Math.PI:0)+slide*.55+lookYaw;
+  camYaw=snap?targetYaw:lerpAngle(camYaw,targetYaw,1-Math.exp(-dt*4.2));
+  const bx=-Math.sin(camYaw),bz=-Math.cos(camYaw);
+  let dist=4.9+speed*.045;const height=1.5+speed*.012;
+  if(field){for(let i=0;i<4&&field.at(s.x-bx*dist,s.z-bz*dist)<1.0;i++)dist*=.78;}
+  const desired=new THREE.Vector3(s.x-bx*dist,y+height,s.z-bz*dist);
+  const look=new THREE.Vector3(s.x+fx*2.2*ahead+lx*s.steer*1.2,y+.75,s.z+fz*2.2*ahead+lz*s.steer*1.2);
+  if(snap){camPos.copy(desired);camLook.copy(look);}else{camPos.lerp(desired,1-Math.exp(-dt*12));camLook.lerp(look,1-Math.exp(-dt*14));}
+  camera.position.copy(camPos);camera.lookAt(camLook);camera.rotateZ(-s.ay*.003);
+  camera.fov=56+Math.min(10,speed*.2);camera.updateProjectionMatrix();
  }
  function pose(dt:number){
   const [fx,fz]=forward(),[lx,lz]=left();
   const yc=groundAt(s.x,s.z),yf=groundAt(s.x+fx*1.2,s.z+fz*1.2),yr=groundAt(s.x-fx*1.2,s.z-fz*1.2),yl=groundAt(s.x+lx*.8,s.z+lz*.8),yrt=groundAt(s.x-lx*.8,s.z-lz*.8);
   const groundPitch=Math.atan2(yf-yr,2.4),groundRoll=Math.atan2(yl-yrt,1.6);
-  const dynPitch=-s.ax*.0045,dynRoll=-s.ay*.007;
+  const dynPitch=Math.max(-.07,Math.min(.07,s.ax*.0065)),dynRoll=Math.max(-.08,Math.min(.08,s.ay*.011));   // squat under power, dive on the brakes, lean out of the bend; impacts do not tip the body
   s.pitch+=(groundPitch+dynPitch-s.pitch)*Math.min(1,dt*8);s.roll+=(groundRoll+dynRoll-s.roll)*Math.min(1,dt*8);
   car.position.set(s.x,yc+.02,s.z);car.rotation.set(0,s.yaw+Math.PI/2,0);car.rotateZ(s.pitch);car.rotateX(s.roll);
   const spin=s.u/Rw*dt;
@@ -272,7 +294,7 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
  }
  function update(dt:number,input:CarInput){
   const sub=4,hdt=dt/sub;for(let k=0;k<sub;k++)step(hdt,input);
-  pose(dt);syncCamera(false);
+  pose(dt);syncCamera(dt);
   if(input.throttle>0||input.brake>0)sound.start();sound.update(s.rpm,s.throttle);
   hudTimer+=dt;if(hudTimer>.1){hudTimer=0;const kmh=Math.round(Math.abs(s.u)*3.6);speedEl.textContent=String(kmh);gearEl.textContent=s.reverse?'R':(Math.abs(s.u)<.3&&s.throttle===0?'N':String(s.gear));rpmEl.style.width=Math.round((s.rpm-SPEC.idleRpm)/(SPEC.limiterRpm-SPEC.idleRpm)*100)+'%';rpmEl.classList.toggle('is-hot',s.rpm>7000);}
  }
@@ -280,7 +302,7 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
  return {group:car,body,update,placeAt,telemetry,
   look:(deltaYaw:number)=>{lookYaw=Math.max(-2.6,Math.min(2.6,lookYaw+deltaYaw));},
   relax:(dt:number)=>{lookYaw*=Math.max(0,1-dt*2.2);},
-  toggleCamera:()=>{cameraMode=cameraMode==='chase'?'bonnet':'chase';syncCamera(true);},
+  toggleCamera:()=>{cameraMode=cameraMode==='chase'?'bonnet':'chase';syncCamera(0,true);},
   position:()=>[s.x,s.z,s.yaw] as [number,number,number],
   debug:()=>({...trace}),
   stop:()=>{sound.stop();hud.style.display='none';},
