@@ -9,17 +9,14 @@ def compile(ctx):
   a,b=np.array(a),np.array(b);v=b-a;n=np.cross(v,[0,0,1]);n=n/max(.001,np.linalg.norm(n));mid=a+v*.55
   vv=np.array([a,mid+n*width,b,mid-n*width,mid+[0,0,width*.2]])
   put(trimesh.Trimesh(vv,[[0,1,4],[1,2,4],[2,3,4],[3,0,4]],process=False),'vegetation',key)
- for t in ctx['json'].load(open(ctx['DATA']/'trees.json')):
-  try:x,y=ctx['local'](float(t['longitude']),float(t['latitude']))
-  except:continue
-  if math.hypot(x,y)>ctx['CONFIG']['region']['studyRadiusM']+30 or ctx['all_buildings'].contains(Point(x,y)):continue
-  if any((x-a)**2+(y-b)**2<1 for a,b in positions):continue
-  positions.append((x,y));z=float(ctx['elev'](x,y));seed=int(float(t.get('treeid',0)));rng=np.random.default_rng(seed)
+ for item in ctx['tree_placements']:
+  t=item['record'];x,y=item['position'];positions.append((x,y))
+  z=float(ctx['elev'](x,y))+.095;seed=int(float(t.get('treeid',0)));rng=np.random.default_rng(seed)
   palm=any(s in t.get('qspecies','').lower() for s in ['palm','phoenix','washingtonia'])
   h=9+rng.random()*3 if palm else 5+rng.random()*3
-  cyl([x,y,z],[x,y,z+h],.23 if palm else .15,'vegetation','bark',12)
+  radius=item['radius'];cyl([x,y,z],[x,y,z+h],radius,'vegetation','bark',12)
   if palm:
-   for zh in np.arange(.3,h-.3,.27):cyl([x,y,z+zh],[x,y,z+zh+.045],.245,'vegetation','bark',10)
+   for zh in np.arange(.3,h-.3,.27):cyl([x,y,z+zh],[x,y,z+zh+.045],radius+.015,'vegetation','bark',10)
    for k in range(14):
     ang=k*math.tau/14+rng.uniform(-.1,.1);d=np.array([math.cos(ang),math.sin(ang),0]);side=np.array([-d[1],d[0],0]);root=np.array([x,y,z+h]);length=rng.uniform(2.9,4.)
     previous=root
