@@ -182,7 +182,9 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
  function step(hdt:number,input:CarInput){
   const {u,v,r}=s;const absU=Math.abs(u);
   // Steering: rate limited, and the wheels turn less at speed, as a driver would.
-  const maxSteer=SPEC.maxSteerRad/(1+(absU/11)**2);const target=input.steer*maxSteer;const rate=(input.steer===0?9:5.5)/(1+absU/40);
+  // Speed-sensitive lock; a snapping input (keys) winds on at a paced rate and unwinds faster, so the yaw response
+  // is smooth however the input arrives.
+  const maxSteer=SPEC.maxSteerRad/(1+(absU/11)**2);const target=input.steer*maxSteer;const rate=(Math.abs(target)<Math.abs(s.steer)?8:3.8)/(1+absU/30);
   s.steer+=Math.max(-rate*hdt,Math.min(rate*hdt,target-s.steer));const delta=s.steer;
   // Gearbox: automatic shifts by engine speed, reverse engaged from rest with the brake pedal held.
   if(absU<.4&&input.brake>0&&input.throttle===0){reverseHold+=hdt;if(reverseHold>.35)s.reverse=true;}else if(absU<.4&&input.throttle>0&&s.reverse&&input.brake===0){s.reverse=false;}
@@ -261,25 +263,34 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
   }
  }
  function lerpAngle(a:number,b:number,k:number){let d=b-a;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;return a+d*k;}
- let camYaw=0;
+ let camYaw=0,camDist=4.9,camHeight=0;
+ // How far the camera may trail the car before it stands inside a wall: the trailing ray is marched through the
+ // distance field and stops at the last free point.
+ function freeDistance(bx:number,bz:number,want:number){if(!field)return want;let d=1.2;for(let t=1.2;t<=want;t+=.25){if(field.at(s.x-bx*t,s.z-bz*t)<.7)break;d=t;}return d;}
  function syncCamera(dt:number,snap=false){
-  const speed=Math.abs(s.u);const y=groundAt(s.x,s.z);const [fx,fz]=forward(),[lx,lz]=left();
-  if(cameraMode==='bonnet'){const ly=s.yaw+lookYaw;camera.position.set(s.x+fx*.25,y+1.1+s.pitch*.3,s.z+fz*.25);camera.lookAt(s.x-Math.sin(ly)*30,y+1.02,s.z-Math.cos(ly)*30);camera.fov=64+Math.min(10,speed*.15);camera.updateProjectionMatrix();return;}
-  // Chase camera in the arcade-simulation idiom: it trails a heading that lags the car's and leans toward the
-  // velocity direction in a slide (so a drift is seen sideways), sits lower and further back with speed, looks a
-  // little into the turn, banks with lateral g, swings to the front when reversing, and pulls in when a wall
-  // stands behind it. Every smoothing is time based, the same at any frame rate.
+  const speed=Math.abs(s.u);const y=groundAt(s.x,s.z);const [fx,fz]=forward();
+  if(cameraMode==='bonnet'){const ly=s.yaw+lookYaw;camera.position.set(s.x+fx*.25,y+1.1+s.pitch*.3,s.z+fz*.25);camera.up.set(0,1,0);camera.lookAt(s.x-Math.sin(ly)*30,y+1.02,s.z-Math.cos(ly)*30);camera.fov=64+Math.min(10,speed*.15);camera.updateProjectionMatrix();return;}
+  // Chase camera in the arcade-simulation idiom: level at all times, trailing a heading that lags the car's and
+  // leans toward the velocity direction in a slide (so a drift is seen sideways) and a little into a turn, sitting
+  // further back with speed, swinging to the front when reversing, and easing in when a wall stands behind it
+  // while keeping its downward angle, so nothing pitches or rolls with the steering. Every smoothing is time based.
   const reversing=s.u<-.8;const ahead=reversing?-1:1;
-  const slide=Math.atan2(s.v,Math.max(1.5,speed))*ahead;
-  const targetYaw=s.yaw+(reversing?Math.PI:0)+slide*.55+lookYaw;
+  const slide=Math.atan2(s.v,Math.max(1.5,speed))*ahead*Math.min(1,speed/6);
+  const lead=Math.max(-.22,Math.min(.22,s.r*.16))*ahead;
+  const targetYaw=s.yaw+(reversing?Math.PI:0)+slide*.55+lead+lookYaw;
   camYaw=snap?targetYaw:lerpAngle(camYaw,targetYaw,1-Math.exp(-dt*4.2));
   const bx=-Math.sin(camYaw),bz=-Math.cos(camYaw);
-  let dist=4.9+speed*.045;const height=1.5+speed*.012;
-  if(field){for(let i=0;i<4&&field.at(s.x-bx*dist,s.z-bz*dist)<1.0;i++)dist*=.78;}
-  const desired=new THREE.Vector3(s.x-bx*dist,y+height,s.z-bz*dist);
-  const look=new THREE.Vector3(s.x+fx*2.2*ahead+lx*s.steer*1.2,y+.75,s.z+fz*2.2*ahead+lz*s.steer*1.2);
-  if(snap){camPos.copy(desired);camLook.copy(look);}else{camPos.lerp(desired,1-Math.exp(-dt*12));camLook.lerp(look,1-Math.exp(-dt*14));}
-  camera.position.copy(camPos);camera.lookAt(camLook);camera.rotateZ(-s.ay*.003);
+  const allowed=freeDistance(bx,bz,4.9+speed*.045);
+  camDist=snap?allowed:camDist+(allowed-camDist)*(1-Math.exp(-dt*(allowed<camDist?9:2.5)));
+  // The camera is placed from its smoothed heading and distance, so when it swings round the car (a reverse, a
+  // spin) it travels the arc and never cuts across the body; only its height and its aim are eased separately.
+  // A fixed downward angle of seven degrees to the aim point, whatever the distance: neither speed nor a wall behind
+  // changes the pitch. Only the ground level under the car is eased.
+  camHeight=snap?y:camHeight+(y-camHeight)*(1-Math.exp(-dt*10));
+  const look=new THREE.Vector3(s.x+fx*2.2*ahead,y+.75,s.z+fz*2.2*ahead);
+  if(snap)camLook.copy(look);else camLook.lerp(look,1-Math.exp(-dt*14));
+  camPos.set(s.x-bx*camDist,camHeight+.75+.123*(camDist+2.2),s.z-bz*camDist);
+  camera.position.copy(camPos);camera.up.set(0,1,0);camera.lookAt(camLook);
   camera.fov=56+Math.min(10,speed*.2);camera.updateProjectionMatrix();
  }
  function pose(dt:number){

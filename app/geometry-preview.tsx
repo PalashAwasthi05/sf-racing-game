@@ -33,7 +33,7 @@ export default function GeometryPreview(){
    <Button variant={mode==='orbit'?'default':'ghost'} onClick={()=>view('orbit')}><Compass/>Orbit</Button>
    <Button variant={mode==='street'?'default':'ghost'} onClick={()=>view('street')}><PersonStanding/>Street</Button>
    <Button variant={mode==='top'?'default':'ghost'} onClick={()=>view('top')}><Layers3/>Plan</Button>
-   <Button variant="ghost" size="icon" aria-label={overcast?'Afternoon sun':'Soft daylight'} onClick={()=>{setOvercast(!overcast);api.current?.lighting(!overcast)}}>{overcast?<CloudSun/>:<Sun/>}</Button>
+   <Button variant="ghost" size="icon" aria-label={overcast?'Afternoon sun':'Soft daylight'} onClick={()=>{setOvercast(!overcast);api.current?.lighting(overcast?'afternoon':'overcast')}}>{overcast?<CloudSun/>:<Sun/>}</Button>
   </nav>
   <aside className="preview-status"><strong>{world?.counts.buildings??65} building shapes · facades unfinished</strong><p>Every building uses the same rules. Gray surfaces show where image-based facade reconstruction is still missing. This is a geometry check, not a finished realism pass.</p>{selected&&<p>{selected.name} · {selected.height.toFixed(1)} m roof height · {Math.round(selected.area).toLocaleString()} m² footprint</p>}<a href="/general-preview/report.json" target="_blank" rel="noreferrer">Generation report</a></aside>
   {mode==='street'&&<Button className="next-street" variant="outline" onClick={()=>api.current?.nextStreet()}>Next street view<ChevronRight/></Button>}
