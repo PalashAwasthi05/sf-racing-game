@@ -45,10 +45,16 @@ def test_camera_inverse_roundtrip_uses_nontrivial_angle_axis_rotation():
 
 def test_pair_requires_separated_views_and_local_component_agreement():
     a = Component("a", 1, (0.0, 0.0), frozenset({(0, 0), (1, 0), (0, 1)}), box(0, 0, 1, 1))
-    b = Component("b", 2, (3.0, 0.0), frozenset({(0, 0), (1, 0), (0, 1)}), box(0.4, 0.2, 1.4, 1.2))
+    b = Component("b", 2, (3.0, 0.0), frozenset({(0, 0), (1, 0), (0, 1)}), box(0.2, 0.1, 1.2, 1.1))
     c = Component("c", 3, (0.1, 0.0), frozenset({(0, 0), (1, 0), (0, 1)}), box(4, 4, 5, 5))
     assert _patch_pair(a, b) is not None
     assert _patch_pair(a, c) is None
+
+
+def test_pair_rejects_concentric_incompatible_shapes():
+    a = Component("a", 1, (0.0, 0.0), frozenset({(0, 0)}), box(0, 0, 2, 2))
+    b = Component("b", 2, (3.0, 0.0), frozenset({(0, 0)}), box(0.75, 0.75, 1.25, 1.25))
+    assert _patch_pair(a, b) is None
 
 
 def test_components_are_clipped_and_require_connected_area():

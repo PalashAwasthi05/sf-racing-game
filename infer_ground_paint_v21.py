@@ -231,15 +231,23 @@ def _camera_distance(a: Component, b: Component) -> float:
     return math.hypot(a.camera_xy[0] - b.camera_xy[0], a.camera_xy[1] - b.camera_xy[1])
 
 
-def _patch_pair(a: Component, b: Component) -> tuple[Any, float] | None:
+def _patch_pair(a: Component, b: Component) -> tuple[Any, float, float, float] | None:
     if a.image_id == b.image_id or _camera_distance(a, b) < MIN_VIEW_SEPARATION_M:
         return None
     distance = math.hypot(a.centroid_xy[0] - b.centroid_xy[0], a.centroid_xy[1] - b.centroid_xy[1])
     if distance > MAX_AGREEMENT_M:
         return None
-    # Keep one observed component's connected geometry.  A buffered intersection
-    # would bridge gaps and imply sub-cell registration precision.
-    return a.geometry, distance
+    min_area = min(float(a.geometry.area), float(b.geometry.area))
+    max_area = max(float(a.geometry.area), float(b.geometry.area))
+    if min_area <= 0.0 or max_area / min_area > 2.0:
+        return None
+    intersection = a.geometry.intersection(b.geometry)
+    overlap_ratio = float(intersection.area) / min_area
+    if overlap_ratio < 0.60 or intersection.area < MIN_PATCH_AREA_M2:
+        return None
+    # Exact intersection preserves only mutually observed cells; it cannot bridge
+    # gaps or silently retain a large component around a tiny one.
+    return intersection, distance, max_area / min_area, overlap_ratio
 
 
 def _street_allowed(street: Mapping[str, Any]) -> Any:
@@ -296,17 +304,38 @@ def infer_ground_paint(
             pair = _patch_pair(first, second)
             if pair is None:
                 continue
-            patch, agreement = pair
+            patch, agreement, area_ratio, overlap_ratio = pair
             accepted.append(
                 {
                     "geometry": mapping(patch),
                     "imageIds": sorted({first.image_id, second.image_id}),
                     "captureTimestamps": [first.captured_at, second.captured_at],
                     "agreementDistanceM": round(agreement, 3),
+                    "shapeAreaRatio": round(area_ratio, 3),
+                    "shapeOverlapRatio": round(overlap_ratio, 3),
                     "projectionUncertaintyM": 1.25,
                     "areaM2": round(float(patch.area), 3),
                 }
             )
+    # Pairing adjacent views can rediscover the same physical patch repeatedly.
+    # Merge only exact intersections/touches; no buffer is used, so separated
+    # dashes remain separate and area is not double-counted.
+    deduped: list[dict[str, Any]] = []
+    for item in accepted:
+        geom = shape(item["geometry"])
+        merged = False
+        for existing in deduped:
+            existing_geom = shape(existing["geometry"])
+            if existing_geom.intersects(geom) or existing_geom.touches(geom):
+                existing["geometry"] = mapping(existing_geom.union(geom))
+                existing["imageIds"] = sorted(set(existing["imageIds"]) | set(item["imageIds"]))
+                existing["captureTimestamps"] = sorted(set(existing["captureTimestamps"]) | set(item["captureTimestamps"]))
+                existing["areaM2"] = round(float(shape(existing["geometry"]).area), 3)
+                merged = True
+                break
+        if not merged:
+            deduped.append(item)
+    accepted = deduped
     features = []
     for item in accepted:
         properties = {k: v for k, v in item.items() if k != "geometry"}
@@ -316,13 +345,14 @@ def infer_ground_paint(
         "type": "FeatureCollection",
         "schema": "infer_ground_paint_v21",
         "worldCRS": resolved_crs,
+        "origin": {"lat": center_lat, "lon": center_lon},
         "coordinateSystem": "local ENU metres; origin is world.center",
         "features": features,
         "diagnostics": {
             "panoImagesRead": len({c.image_id for c in components}),
             "greenComponents": len(components),
             "acceptedPatches": len(features),
-            "acceptedAreaM2": round(sum(float(x["areaM2"]) for x in accepted), 3),
+            "acceptedAreaM2": round(float(unary_union([shape(x["geometry"]) for x in accepted]).area) if accepted else 0.0, 3),
             "pairCandidates": pairCandidates,
             "rejectedViewSeparation": rejectedSeparation,
             "rejectedLocalAgreement": rejectedAgreement,
