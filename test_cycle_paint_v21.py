@@ -5,6 +5,7 @@ import numpy as np
 
 from infer_cycle_paint_v21 import (
     GroundSample,
+    _pair_supported_pattern,
     classify_green_pattern,
     green_patch_score,
     project_ground_samples,
@@ -57,3 +58,50 @@ def test_projection_handles_camera_separation_without_claiming_registration():
     }
     assert project_ground_samples([sample], first)
     assert project_ground_samples([sample], second)
+
+
+def test_disjoint_green_runs_from_two_views_do_not_promote_a_style():
+    first = {
+        (0.0, 0.0): False,
+        (1.5, 0.0): True,
+        (3.0, 0.0): True,
+        (4.5, 0.0): False,
+    }
+    second = {
+        (0.0, 0.0): False,
+        (1.5, 0.0): False,
+        (3.0, 0.0): False,
+        (4.5, 0.0): True,
+        (6.0, 0.0): True,
+    }
+    pattern, matched, overlap = _pair_supported_pattern(first, second)
+    assert pattern is None
+    assert matched == []
+    assert overlap == (0.0, 4.5)
+
+
+def test_lane_like_evidence_keeps_side_offsets_separate():
+    left = {
+        (0.0, -1.6): False,
+        (1.5, -1.6): True,
+        (3.0, -1.6): True,
+        (4.5, -1.6): True,
+        (6.0, -1.6): False,
+        (1.5, 1.6): False,
+        (3.0, 1.6): False,
+        (4.5, 1.6): False,
+    }
+    right = {
+        (0.0, -1.6): False,
+        (1.5, -1.6): True,
+        (3.0, -1.6): True,
+        (4.5, -1.6): True,
+        (6.0, -1.6): False,
+        (1.5, 1.6): True,
+        (3.0, 1.6): True,
+        (4.5, 1.6): True,
+    }
+    left_pattern, _, _ = _pair_supported_pattern(left, right, lane_like=True, side=-1)
+    right_pattern, _, _ = _pair_supported_pattern(left, right, lane_like=True, side=1)
+    assert left_pattern == "solid"
+    assert right_pattern is None

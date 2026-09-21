@@ -245,18 +245,97 @@ def _camera_distance(a: Mapping[str, Any], b: Mapping[str, Any]) -> float:
         return 0.0
 
 
+def _image_chain_observation(
+    chain_values: Mapping[tuple[float, float], bool],
+    *,
+    lane_like: bool,
+    side: int | None = None,
+) -> dict[float, bool]:
+    """Collapse samples while preserving the side offset used for lane evidence."""
+
+    result: dict[float, bool] = {}
+    for (chain, offset), value in chain_values.items():
+        if lane_like:
+            sign = 1 if offset > 0.5 else -1 if offset < -0.5 else 0
+            if sign == 0 or (side is not None and sign != side):
+                continue
+        result[chain] = result.get(chain, False) or bool(value)
+    return result
+
+
+def _pair_supported_pattern(
+    first: Mapping[tuple[float, float], bool],
+    second: Mapping[tuple[float, float], bool],
+    *,
+    lane_like: bool = False,
+    side: int | None = None,
+) -> tuple[str | None, list[float], tuple[float, float] | None]:
+    """Compare only jointly observed chain stations from two cameras.
+
+    A positive station is retained only when both views have a green station at
+    the same chain position (within one densification sample).  This prevents
+    two disjoint photos from promoting a whole way.
+    """
+
+    a = _image_chain_observation(first, lane_like=lane_like, side=side)
+    b = _image_chain_observation(second, lane_like=lane_like, side=side)
+    if not a or not b:
+        return None, [], None
+    overlap = (max(min(a), min(b)), min(max(a), max(b)))
+    if overlap[1] < overlap[0]:
+        return None, [], None
+    a_positions = [position for position in sorted(a) if overlap[0] <= position <= overlap[1]]
+    b_positions = [position for position in sorted(b) if overlap[0] <= position <= overlap[1]]
+    if not a_positions or not b_positions:
+        return None, [], overlap
+    values: list[bool] = []
+    matched: list[float] = []
+    for position in a_positions:
+        nearest = min(b_positions, key=lambda candidate: abs(candidate - position))
+        if abs(nearest - position) > SAMPLE_SPACING_M:
+            values.append(False)
+            continue
+        positive = bool(a[position]) and bool(b[nearest])
+        values.append(positive)
+        if positive:
+            matched.append((position + nearest) / 2.0)
+    pattern = classify_green_pattern(values) if len(matched) >= 2 else None
+    return pattern, matched, overlap
+
+
+def _supported_intervals(matched: Sequence[float], overlap: tuple[float, float] | None) -> list[dict[str, float]]:
+    if not matched or overlap is None:
+        return []
+    stations = sorted(matched)
+    groups: list[list[float]] = [[stations[0]]]
+    for station in stations[1:]:
+        if station - groups[-1][-1] <= SAMPLE_SPACING_M * 1.6:
+            groups[-1].append(station)
+        else:
+            groups.append([station])
+    intervals = []
+    for group in groups:
+        start = max(overlap[0], group[0] - SAMPLE_SPACING_M / 2.0)
+        end = min(overlap[1], group[-1] + SAMPLE_SPACING_M / 2.0)
+        if end > start:
+            intervals.append({"startM": round(start, 2), "endM": round(end, 2)})
+    return intervals
+
+
 def infer_cycle_paint(selection: Mapping[str, Any], osm_path: str | os.PathLike[str]) -> dict[str, Any]:
     ways = parse_osm_cycle_ways(osm_path)
     samples_by_way = {way.way_id: _polyline_samples(way) for way in ways}
     images = selection.get("images", []) if isinstance(selection, Mapping) else []
-    observations: dict[str, dict[str, dict[float, bool]]] = {}
+    # Keep (chain station, lateral offset) separate.  A plain chain->bool map
+    # silently overwrites left/right lane evidence.
+    observations: dict[str, dict[str, dict[tuple[float, float], bool]]] = {}
     image_meta_by_id: dict[str, Mapping[str, Any]] = {}
     for meta in images:
         if not isinstance(meta, Mapping):
             continue
         image_id = str(meta.get("id", ""))
         image_path = meta.get("local_image")
-        if not image_id or not image_path:
+        if not image_id or not image_path or meta.get("is_pano") is not True:
             continue
         image = _load_image(str(image_path))
         if image is None:
@@ -272,46 +351,55 @@ def infer_cycle_paint(selection: Mapping[str, Any], osm_path: str | os.PathLike[
                 patch = _patch(image, u, v)
                 score = green_patch_score(patch)
                 # A modest majority is needed to reject isolated green pixels.
-                by_chain[round(sample.chain_m, 2)] = score >= 0.52
+                by_chain[(round(sample.chain_m, 2), round(sample.offset_m, 2))] = score >= 0.52
     styles: list[dict[str, Any]] = []
     unresolved: list[str] = []
     for way in ways:
         per_image = observations.get(way.way_id, {})
-        image_runs: dict[str, str] = {}
-        green_images: list[str] = []
-        for image_id, chain_values in per_image.items():
-            ordered = [value for _, value in sorted(chain_values.items())]
-            pattern = classify_green_pattern(ordered)
-            if pattern:
-                image_runs[image_id] = pattern
-            if sum(ordered) >= 2:
-                green_images.append(image_id)
-        # Agreement requires two distinct camera locations at least 3 m apart,
-        # and the same style in both views.  This is a consistency check only.
         agreeing: list[str] = []
         pattern: str | None = None
-        for first_index, first in enumerate(green_images):
-            for second in green_images[first_index + 1 :]:
+        intervals: list[dict[str, float]] = []
+        chosen_side: int | None = None
+        for first_index, first in enumerate(per_image):
+            for second in list(per_image)[first_index + 1 :]:
                 if _camera_distance(image_meta_by_id[first], image_meta_by_id[second]) < MIN_CAMERA_SEPARATION_M:
                     continue
-                first_pattern = image_runs.get(first)
-                second_pattern = image_runs.get(second)
-                if first_pattern and first_pattern == second_pattern:
-                    agreeing = [first, second]
-                    pattern = first_pattern
+                sides: Iterable[int | None] = (1, -1) if way.lane_like else (None,)
+                for side in sides:
+                    pair_pattern, matched, overlap = _pair_supported_pattern(
+                        per_image[first], per_image[second], lane_like=way.lane_like, side=side
+                    )
+                    if pair_pattern:
+                        agreeing = [first, second]
+                        pattern = pair_pattern
+                        intervals = _supported_intervals(matched, overlap)
+                        chosen_side = side
+                        break
+                if pattern:
                     break
             if pattern:
                 break
         if pattern:
+            capture_timestamps = [
+                {"imageId": image_id, "capturedAt": image_meta_by_id[image_id].get("captured_at")}
+                for image_id in agreeing
+            ]
+            evidence = {
+                "wayId": way.way_id,
+                "colour": "greenpaint",
+                "pattern": pattern,
+                "supportedIntervalsM": intervals,
+                "evidenceImages": agreeing,
+                "captureTimestamps": capture_timestamps,
+                "status": "coarse-image-supported",
+                "positionUncertaintyM": 8.0,
+            }
+            if way.lane_like:
+                # Retain which lane-side offset supplied the evidence so the
+                # caller cannot paint both sides of a way by accident.
+                evidence["sideOffsetSign"] = chosen_side
             styles.append(
-                {
-                    "wayId": way.way_id,
-                    "colour": "greenpaint",
-                    "pattern": pattern,
-                    "evidenceImages": agreeing,
-                    "status": "coarse-image-supported",
-                    "positionUncertaintyM": 8.0,
-                }
+                evidence
             )
         else:
             unresolved.append(way.way_id)
@@ -323,7 +411,7 @@ def infer_cycle_paint(selection: Mapping[str, Any], osm_path: str | os.PathLike[
         "limitations": [
             "2.5 m camera height and provider pose are coarse assumptions; no metric registration is claimed.",
             "Samples use projected ground rays and exclude v>=0.70 vehicle/branding overlay; foliage false positives remain unverified.",
-            "A style is emitted only after same-pattern agreement from two cameras separated by at least 3 m.",
+            "A style is emitted only after same-pattern agreement from two cameras separated by at least 3 m over their jointly observed chain overlap.",
         ],
     }
 
