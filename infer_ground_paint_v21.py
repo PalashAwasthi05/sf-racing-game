@@ -11,6 +11,7 @@ import argparse
 import json
 import math
 import os
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -18,11 +19,20 @@ from typing import Any, Mapping, Sequence
 import numpy as np
 from PIL import Image
 from scipy import ndimage
+from pyproj import Transformer
 from shapely.geometry import GeometryCollection, Point, box, mapping, shape
 from shapely.ops import unary_union
 from shapely import contains_xy
 
 from general_world.image_projection import angle_axis_matrix
+
+
+def _resolve_transformer(world: Mapping[str, Any], world_crs: str | None) -> tuple[Transformer, str]:
+    metadata_crs = world.get("coordinateSystem", {}).get("crs") if isinstance(world.get("coordinateSystem"), Mapping) else None
+    crs = world_crs or metadata_crs
+    if not crs:
+        raise ValueError("world CRS is required via --world-crs or world.coordinateSystem.crs")
+    return Transformer.from_crs(4326, crs, always_xy=True), str(crs)
 
 
 CAMERA_HEIGHT_M = 2.5
@@ -54,9 +64,23 @@ def _meters_per_degree(lat: float) -> tuple[float, float]:
     return 111320.0 * math.cos(phi), 110540.0
 
 
-def lonlat_to_enu(lon: float, lat: float, center_lon: float, center_lat: float) -> tuple[float, float]:
-    east_scale, north_scale = _meters_per_degree(center_lat)
-    return (lon - center_lon) * east_scale, (lat - center_lat) * north_scale
+def lonlat_to_enu(
+    lon: float, lat: float, center_lon: float, center_lat: float, transformer: Transformer
+) -> tuple[float, float]:
+    center_x, center_y = transformer.transform(center_lon, center_lat)
+    x, y = transformer.transform(lon, lat)
+    return float(x - center_x), float(y - center_y)
+
+
+def local_utm_jacobian(lon: float, lat: float, transformer: Transformer) -> np.ndarray:
+    """Map tangent ENU metres at a camera into the local projected CRS."""
+
+    x0, y0 = transformer.transform(lon, lat)
+    east_scale, north_scale = _meters_per_degree(lat)
+    dlon, dlat = 1.0 / east_scale, 1.0 / north_scale
+    xe, ye = transformer.transform(lon + dlon, lat)
+    xn, yn = transformer.transform(lon, lat + dlat)
+    return np.array([[xe - x0, xn - x0], [ye - y0, yn - y0]], dtype=np.float64)
 
 
 def green_mask(image: np.ndarray, *, v_min: float = GROUND_V_MIN, v_max: float = GROUND_V_MAX) -> np.ndarray:
@@ -87,7 +111,11 @@ def _load_image(path: str | os.PathLike[str]) -> np.ndarray | None:
 
 
 def camera_to_ground_xy(
-    u: np.ndarray, v: np.ndarray, rotation_angle_axis: Any, camera_xy: tuple[float, float]
+    u: np.ndarray,
+    v: np.ndarray,
+    rotation_angle_axis: Any,
+    camera_xy: tuple[float, float],
+    local_jacobian: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Intersect spherical camera rays with the plane 2.5 m below camera.
 
@@ -102,13 +130,18 @@ def camera_to_ground_xy(
     camera_rays = np.stack(
         [np.sin(theta) * horizontal, np.sin(phi), np.cos(theta) * horizontal], axis=-1
     )
-    world_rays = camera_rays @ angle_axis_matrix(rotation_angle_axis).T
+    # image_projection uses camera_column = R @ world_column.  With row-wise
+    # arrays the inverse is therefore camera_row @ R.
+    world_rays = camera_rays @ angle_axis_matrix(rotation_angle_axis)
     dz = world_rays[..., 2]
     valid = np.isfinite(dz) & (dz < -1e-6)
     distance_scale = np.full(dz.shape, np.nan, dtype=np.float64)
     distance_scale[valid] = -CAMERA_HEIGHT_M / dz[valid]
-    east = camera_xy[0] + distance_scale * world_rays[..., 0]
-    north = camera_xy[1] + distance_scale * world_rays[..., 1]
+    east_enu = distance_scale * world_rays[..., 0]
+    north_enu = distance_scale * world_rays[..., 1]
+    jacobian = np.eye(2, dtype=np.float64) if local_jacobian is None else np.asarray(local_jacobian, dtype=np.float64)
+    east = camera_xy[0] + jacobian[0, 0] * east_enu + jacobian[0, 1] * north_enu
+    north = camera_xy[1] + jacobian[1, 0] * east_enu + jacobian[1, 1] * north_enu
     horizontal_range = np.hypot(east - camera_xy[0], north - camera_xy[1])
     valid &= np.isfinite(east) & np.isfinite(north)
     valid &= (horizontal_range >= MIN_RANGE_M) & (horizontal_range <= MAX_RANGE_M)
@@ -145,6 +178,7 @@ def extract_components(
     allowed: Any,
     center_lon: float,
     center_lat: float,
+    transformer: Transformer,
 ) -> list[Component]:
     """Extract connected metric-cell patches from one image only."""
 
@@ -153,7 +187,9 @@ def extract_components(
     geom = allowed.buffer(1e-8)
     try:
         camera_geom = meta["computed_geometry"]["coordinates"]
-        camera_xy = lonlat_to_enu(float(camera_geom[0]), float(camera_geom[1]), center_lon, center_lat)
+        camera_lon, camera_lat = float(camera_geom[0]), float(camera_geom[1])
+        camera_xy = lonlat_to_enu(camera_lon, camera_lat, center_lon, center_lat, transformer)
+        jacobian = local_utm_jacobian(camera_lon, camera_lat, transformer)
         rotation = meta["computed_rotation"]
         image_id = str(meta["id"])
     except (KeyError, TypeError, ValueError, IndexError):
@@ -165,7 +201,7 @@ def extract_components(
             continue
         u = (xs.astype(np.float64) + 0.5) / image.shape[1]
         v = (ys.astype(np.float64) + 0.5) / image.shape[0]
-        east, north, valid = camera_to_ground_xy(u, v, rotation, camera_xy)
+        east, north, valid = camera_to_ground_xy(u, v, rotation, camera_xy, jacobian)
         if not np.any(valid):
             continue
         xvals, yvals = east[valid], north[valid]
@@ -221,7 +257,10 @@ def _street_allowed(street: Mapping[str, Any]) -> Any:
     return cycle.buffer(2.0).intersection(road.union(cycle)).difference(sidewalk).difference(building).buffer(0)
 
 
-def infer_ground_paint(selection: Mapping[str, Any], world: Mapping[str, Any], street: Mapping[str, Any]) -> dict[str, Any]:
+def infer_ground_paint(
+    selection: Mapping[str, Any], world: Mapping[str, Any], street: Mapping[str, Any], world_crs: str | None = None
+) -> dict[str, Any]:
+    transformer, resolved_crs = _resolve_transformer(world, world_crs)
     center = world.get("center", {})
     center_lon, center_lat = float(center["lon"]), float(center["lat"])
     allowed = _street_allowed(street)
@@ -233,7 +272,7 @@ def infer_ground_paint(selection: Mapping[str, Any], world: Mapping[str, Any], s
         image = _load_image(str(meta["local_image"]))
         if image is None:
             continue
-        components.extend(extract_components(image, meta, allowed, center_lon, center_lat))
+        components.extend(extract_components(image, meta, allowed, center_lon, center_lat, transformer))
 
     accepted: list[dict[str, Any]] = []
     pairCandidates = 0
@@ -276,6 +315,7 @@ def infer_ground_paint(selection: Mapping[str, Any], world: Mapping[str, Any], s
     return {
         "type": "FeatureCollection",
         "schema": "infer_ground_paint_v21",
+        "worldCRS": resolved_crs,
         "coordinateSystem": "local ENU metres; origin is world.center",
         "features": features,
         "diagnostics": {
@@ -301,6 +341,7 @@ def _main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--selection", required=True)
     parser.add_argument("--world", required=True)
     parser.add_argument("--street-space", required=True)
+    parser.add_argument("--world-crs", default=None, help="projected CRS used by street-space geometry, e.g. EPSG:32610")
     parser.add_argument("--output", required=True)
     args = parser.parse_args(argv)
     with open(args.selection, encoding="utf-8") as f:
@@ -309,7 +350,7 @@ def _main(argv: Sequence[str] | None = None) -> int:
         world = json.load(f)
     with open(args.street_space, encoding="utf-8") as f:
         street = json.load(f)
-    output = infer_ground_paint(selection, world, street)
+    output = infer_ground_paint(selection, world, street, args.world_crs)
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2, sort_keys=True)
         f.write("\n")

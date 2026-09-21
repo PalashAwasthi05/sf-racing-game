@@ -1,5 +1,6 @@
 import numpy as np
 from shapely.geometry import box
+from pyproj import Transformer
 
 from infer_ground_paint_v21 import (
     _patch_pair,
@@ -8,6 +9,7 @@ from infer_ground_paint_v21 import (
     green_mask,
     Component,
 )
+from general_world.image_projection import angle_axis_matrix, camera_vectors_to_uv
 
 
 def test_green_mask_accepts_muted_green_and_excludes_gray_and_lower_overlay():
@@ -22,13 +24,23 @@ def test_green_mask_accepts_muted_green_and_excludes_gray_and_lower_overlay():
 
 def test_camera_rays_intersect_below_camera_plane_and_enforce_range():
     # The rotation maps a camera ray with positive camera-y to world down.
-    rotation = [-np.pi / 2, 0.0, 0.0]
+    rotation = [np.pi / 2, 0.0, 0.0]
     east, north, valid = camera_to_ground_xy(
         np.array([0.5, 0.5]), np.array([0.60, 0.54]), rotation, (10.0, 20.0)
     )
     assert valid[0]
     assert np.isfinite(east[0]) and np.isfinite(north[0])
     assert not valid[1] or np.hypot(east[1] - 10.0, north[1] - 20.0) >= 5.0
+
+
+def test_camera_inverse_roundtrip_uses_nontrivial_angle_axis_rotation():
+    rotation = [0.23, -0.31, 0.17]
+    target_world = np.array([[3.0, 5.0, -2.5]], dtype=float)
+    camera_vector = target_world @ angle_axis_matrix(rotation).T
+    u, v = camera_vectors_to_uv(camera_vector)
+    east, north, valid = camera_to_ground_xy(u, v, rotation, (10.0, 20.0))
+    assert valid[0]
+    np.testing.assert_allclose([east[0] - 10.0, north[0] - 20.0], [3.0, 5.0], atol=1e-6)
 
 
 def test_pair_requires_separated_views_and_local_component_agreement():
@@ -49,4 +61,5 @@ def test_components_are_clipped_and_require_connected_area():
         "computed_rotation": [0.0, 0.0, 0.0],
     }
     # Empty geometry proves the hard street-space clip does not emit image-only paint.
-    assert extract_components(image, meta, box(100, 100, 101, 101), 0.0, 0.0) == []
+    transformer = Transformer.from_crs(4326, 32610, always_xy=True)
+    assert extract_components(image, meta, box(100, 100, 101, 101), 0.0, 0.0, transformer) == []
