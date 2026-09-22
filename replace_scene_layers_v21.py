@@ -519,6 +519,14 @@ def replace_scene_layers(
         if "mesh" in node:
             if node_index in replacement_mesh_for_base_node:
                 rewritten["mesh"] = copier.copy_mesh("replacement", replacement_mesh_for_base_node[node_index])
+                # A node paired by ordinal (no name match) is a different piece of geometry: it must carry the
+                # replacement's own name, extras and transform. Keeping the base node's name mislabelled most
+                # building nodes, and the viewer derives layer, identity and surface finish from that name.
+                source = replacement.json["nodes"][replacement_node_for_base_node[node_index]]
+                if source.get("name") != node.get("name"):
+                    for key in ("name", "extras", "matrix", "translation", "rotation", "scale"):
+                        rewritten.pop(key, None)
+                        if key in source: rewritten[key] = copy.deepcopy(source[key])
             else:
                 rewritten["mesh"] = copier.copy_mesh("base", node["mesh"])
         if "camera" in node:
