@@ -17,9 +17,9 @@ def publish(candidate,base,public):
  raw=(final/'candidate.glb').read_bytes();sha=hashlib.sha256(raw).hexdigest();packed=gzip.compress(raw,compresslevel=6,mtime=0);chunks=[]
  for i,start in enumerate(range(0,len(packed),4400000)):
   name=f'world-{sha[:12]}-{i:02}.bin';(public/name).write_bytes(packed[start:start+4400000]);chunks.append('/'+name)
- world['previewRevision']='0.22 / SHARED BUILDING ENVELOPE'
- world['updateSummary']='All building layers regenerated with shared wall/roof heights, continuous supported slopes and surface-scoped facade materials. Street layers preserved. Facade source coverage remains incomplete.'
- generation={'pipelineVersion':'0.22','fullFacadeRegeneration':True,'legacyFacadeGeometryPreserved':False,'outputSha256':sha,'readyForFullFeedbackReview':False,'independentRealismGate':'NOT PASSED','streetLayersPreserved':True,'candidate':str(candidate.resolve()),'remaining':'Most facade inputs remain inferred; roof height disagreements remain.'}
+ world['previewRevision']='0.24 / BUILDINGS SEPARATED'
+ world['updateSummary']='Buildings regenerated: observed frontages own their street face again, facade wall heights follow the measured roof returns, unobserved walls continue the frontage material, only storey-high roof steps become tiers, outlines holding several buildings are split at measured steps, and storey-high tiers carry facades. Street layers preserved. Facade source coverage remains incomplete.'
+ generation={'pipelineVersion':'0.24','fullFacadeRegeneration':True,'legacyFacadeGeometryPreserved':False,'outputSha256':sha,'readyForFullFeedbackReview':False,'independentRealismGate':'NOT PASSED','streetLayersPreserved':True,'candidate':str(candidate.resolve()),'remaining':'Most facade inputs remain inferred; roof height disagreements remain.'}
  for name in ['roof-envelope-audit.json','height-audit.json']:
   if (candidate/name).exists():shutil.copy2(candidate/name,public/name)
  shutil.copy2(candidate/'public/facade-evidence.json',public/'facade-evidence.json')

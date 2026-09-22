@@ -1,3 +1,4 @@
+import re
 """Compare rendered roof heights against sampled measured heights, not plan coverage alone."""
 import json,argparse
 from pathlib import Path
@@ -20,6 +21,7 @@ def audit(scene,inputs,output):
   mesh=j['meshes'][node['mesh']];meta=mesh.get('extras',{});name=mesh.get('name','')
   if meta.get('layer',name.split('__')[0])!='roofs':continue
   fid=meta.get('featureId') or name.split('__')[1].split('___')[0]
+  fid=re.sub(r'_p\d+$','',fid)   # a split part's roof belongs to its source footprint
   M=np.array(node.get('matrix',np.eye(4).T.ravel()),float).reshape(4,4).T
   for p in mesh['primitives']:
    v=acc(p['attributes']['POSITION']);v=v@M[:3,:3].T+M[:3,3]
