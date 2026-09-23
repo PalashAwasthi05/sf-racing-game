@@ -1,0 +1,99 @@
+{
+ "version": "0.7",
+ "region": {
+  "addressWayId": "149167949",
+  "label": "188 King Street",
+  "studyRadiusM": 200,
+  "contextRadiusM": 265
+ },
+ "defaults": {
+  "laneWidthM": 3.15,
+  "sidewalkWidthM": 3.0,
+  "curbHeightM": 0.16,
+  "windowRecessM": 0.18,
+  "maxFacadeSampleAgeMonths": 24,
+  "roofRegularizationM": 2.5
+ },
+ "quality": {
+  "facadeCoverageTarget": 0.95,
+  "minimumIndependentViews": 2,
+  "openingPositionToleranceM": 0.15,
+  "curbPositionToleranceM": 0.15,
+  "signPositionToleranceM": 0.3,
+  "unobservedDetailStatus": "inferred",
+  "priority": "driver-view visible error"
+ },
+ "asOfDate": "2026-09-08",
+ "areaSources": [
+  {
+   "name": "Broader frontage evidence",
+   "date": "Street captures Jan/Mar/May 2025; Lusk Jan 2023",
+   "detail": "Twelve additional frontages use region-specific openings, material transitions, raised entries, arched glazing, projecting bays and observed lettering. Undated owner photographs and estimated long-wall counts remain marked as uncertain.",
+   "url": "https://www.google.com/maps/@37.7786884,-122.3930088,3a,95y,315h,108t/data=!3m1!1e1"
+  },
+  {
+   "name": "Articulated building envelopes",
+   "date": "Jan 2025 street view + historic detail photos",
+   "detail": "Beacon, Glassworks and Oracle Park decomposed into separate wings, projecting surfaces, cores, roof profiles and open structures. Image annotations constrain bounded LiDAR level fits; depth is still estimated.",
+   "url": "https://www.perryarchitectsinc.com/glassworks"
+  },
+  {
+   "name": "USGS LiDAR",
+   "date": "April 2023",
+   "detail": "4.6 million sampled points; ground elevations and fitted roof tiers. Absolute accuracy has not been independently tested.",
+   "url": "https://www.fisheries.noaa.gov/inport/item/73386/full-list"
+  },
+  {
+   "name": "DataSF building footprints",
+   "date": "2010-derived geometry",
+   "detail": "Building outlines reconciled against current OpenStreetMap identities and newer LiDAR heights.",
+   "url": "https://data.sfgov.org/d/ynuv-fyni"
+  },
+  {
+   "name": "OpenStreetMap",
+   "date": "Retrieved Sep 2026",
+   "detail": "Address identity, newer buildings, road topology, lane counts, crossings and transit tracks. Capture age varies.",
+   "url": "https://www.openstreetmap.org/copyright"
+  },
+  {
+   "name": "DataSF street trees",
+   "date": "Inventory; dates vary",
+   "detail": "Mapped tree positions and species. Canopies and branches are procedural.",
+   "url": "https://data.sfgov.org/d/tkzw-k3nq"
+  },
+  {
+   "name": "Distinct facade surface families",
+   "date": "Observed family; synthesized appearance",
+   "detail": "Fine-jointed brick, smooth trim, stucco, ribbed terracotta and opaque metal panels use separate metric recipes. Asphalt/concrete retain CC0 scans. Exact colors and wear remain approximate.",
+   "url": "https://ambientcg.com/"
+  },
+  {
+   "name": "Hotel exterior photography",
+   "date": "Capture dates unknown",
+   "detail": "Operator and structural engineer photographs fit bay stacks, terracotta fields and external shades. Historical layouts need current independent checks.",
+   "url": "https://www.hyatt.com/hyatt-place/en-US/sfozs-hyatt-place-san-francisco-downtown/gallery"
+  },
+  {
+   "name": "Mapillary coverage",
+   "date": "Coverage inspected Sep 2026",
+   "detail": "Dense capture coverage is visible around King and Third. Individual images and their capture dates have not been ingested in this pass.",
+   "url": "https://www.mapillary.com/app/?lat=37.7786&lng=-122.3918&z=18"
+  },
+  {
+   "name": "Street-level reference",
+   "date": "January 2025",
+   "detail": "Sparse image landmarks and visual grammars distinguish loft terraces, continuous glazing and separate ground-floor patterns. Source pixels are not embedded.",
+   "url": "https://www.google.com/maps/@37.7786899,-122.3913452,3a,75y,315h,110t/data=!3m4!1e1!3m2!1sS4hs-Kyh3P14aRv9CWeTvg!2e0"
+  }
+ ],
+ "outputPrefix": "king-street",
+ "lidarRole": {
+  "_note": "LiDAR sets each building's envelope (height, ground, separation of buildings under one outline); photographs and readings take priority for detail. Fine roof detail from LiDAR is admitted only when large and unambiguous.",
+  "tierMinAreaM2": 150,
+  "tierMinShare": 0.15,
+  "tierMaxCount": 3,
+  "slopedPatchMinSlope": 0.09,
+  "slopedPatchMinAreaM2": 150,
+  "slopedPatchMinRiseM": 1.5
+ }
+}

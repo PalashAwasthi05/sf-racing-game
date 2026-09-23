@@ -28,3 +28,15 @@ def test_step_between_two_levels_is_not_a_slope():
     rr = np.where(np.arange(40)[None, :] < 20, 10., 20.) * np.ones((30, 1))
     keep, area = roof_envelope.drape_regions(rr, np.ones_like(rr, bool), box(0, 0, 60, 45), 0, 45, 1.5)
     assert area is None
+
+def test_venue_form_has_ring_bowl_and_open_field():
+    from shapely.geometry import Point
+    g = Point(0, 0).buffer(90)
+    xmin, ymin, xmax, ymax = g.bounds; step = 2.
+    H = int(np.ceil((ymax - ymin) / step)); W = int(np.ceil((xmax - xmin) / step))
+    yy, xx = np.mgrid[0:H, 0:W]; x = xmin + (xx + .5) * step; y = ymax - (yy + .5) * step; r = np.hypot(x, y)
+    rr = np.where(r > 45, 5. + (r - 45) * .5, np.nan)              # seats rise outward; the field has no returns
+    known = np.isfinite(rr); rr = np.where(known, rr, 5.)          # the raster is filled everywhere, as in the pipeline
+    v = roof_envelope.venue_form(rr, known, g, xmin, ymax, step, 0.)
+    assert v is not None and v['fieldM2'] > 5000
+    assert v['ringTopZ'] > 20 and np.nanmax(v['bowlZ']) <= v['ringTopZ'] + 1e-6 and v['bowlMask'].any()
