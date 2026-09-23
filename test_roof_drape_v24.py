@@ -16,3 +16,10 @@ def test_flat_roof_drapes_nothing():
     rr = np.full((30, 40), 12.) + np.random.default_rng(1).normal(0, .03, (30, 40))
     keep, area = roof_envelope.drape_regions(rr, np.ones_like(rr, bool), box(0, 0, 60, 45), 0, 45, 1.5)
     assert area is None and not keep.any()
+
+def test_flat_roof_with_plant_drapes_nothing():
+    rng = np.random.default_rng(3)
+    rr = np.full((30, 40), 12.) + rng.normal(0, .15, (30, 40))
+    for i, j in rng.integers(2, 28, (12, 2)): rr[i:i + 2, j:j + 3] += rng.uniform(1.5, 3.5)   # plant boxes
+    keep, area = roof_envelope.drape_regions(rr, np.ones_like(rr, bool), box(0, 0, 60, 45), 0, 45, 1.5)
+    assert area is None, area.area
