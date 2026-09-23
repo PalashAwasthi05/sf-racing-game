@@ -23,3 +23,8 @@ def test_flat_roof_with_plant_drapes_nothing():
     for i, j in rng.integers(2, 28, (12, 2)): rr[i:i + 2, j:j + 3] += rng.uniform(1.5, 3.5)   # plant boxes
     keep, area = roof_envelope.drape_regions(rr, np.ones_like(rr, bool), box(0, 0, 60, 45), 0, 45, 1.5)
     assert area is None, area.area
+
+def test_step_between_two_levels_is_not_a_slope():
+    rr = np.where(np.arange(40)[None, :] < 20, 10., 20.) * np.ones((30, 1))
+    keep, area = roof_envelope.drape_regions(rr, np.ones_like(rr, bool), box(0, 0, 60, 45), 0, 45, 1.5)
+    assert area is None
