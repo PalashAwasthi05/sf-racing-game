@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "method": "Landmark exceptions (user decision 2026-09-24): a few structures the general rules cannot represent get an authored builder. An entry is keyed by the footprint id (a join key) and owns that footprint completely; the general heuristic never reads this file for its own rules. Builders still take their shape from measurements (LiDAR surface, return intensity, mapped outlines); authored parts are named in each entry's props.",
+  "landmarks": {
+    "sf_201006_0000003": {
+      "builder": "ballpark",
+      "label": "waterfront ballpark",
+      "extendBeyondBoundary": true,
+      "apronM": 14,
+      "frontageDepthM": 3,
+      "surfaceStepM": 0.5,
+      "props": [
+        {
+          "type": "bottle",
+          "seed": [
+            297.0,
+            46.0
+          ],
+          "radiusM": 15,
+          "basis": "LiDAR shows a 26 m body tilted up to 21 m in the left-field corner; the contour-bottle shape is authored"
+        },
+        {
+          "type": "glove",
+          "seed": [
+            309.0,
+            34.5
+          ],
+          "radiusM": 5,
+          "basis": "LiDAR shows a smaller mass beside the bottle; the four-finger glove shape is authored"
+        },
+        {
+          "type": "board",
+          "seed": [
+            319.2,
+            -14.1
+          ],
+          "radiusM": 13,
+          "basis": "LiDAR shows a solid slab about 24 m long rising to 49 m behind the outfield; the screen face is authored"
+        }
+      ],
+      "sources": [
+        "USGS LiDAR 2023 (surface and return intensity)",
+        "DataSF footprint with field opening",
+        "OpenStreetMap pitch outlines",
+        "observed street frontages (envelope-observations.json)"
+      ]
+    }
+  }
+}
