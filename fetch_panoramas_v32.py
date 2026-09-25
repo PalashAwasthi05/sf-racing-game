@@ -76,7 +76,7 @@ def main():
                'camera': {'model': 'spherical', 'parameters': [], 'rotationAngleAxis': rot, 'locationWgs84': [lon, lat], 'altitudeM': e.get('computed_altitude'), 'worldRegistrationValidated': False,
                           'providerPoseConsistent': True, 'orientation': 1, 'clusterId': (e.get('sfm_cluster') or {}).get('id'), 'registrationGrade': 'unregistered',
                           'registrationEvidence': {'reason': 'provider computed pose, fetched by fetch_panoramas_v32.py; not registered against the world'}},
-               'admission': 'pose-registration-required'}
+               'admission': 'pose-registration-required', 'batch': 'fetch_panoramas_v32'}
         return iid, rec, None
     with ThreadPoolExecutor(max_workers=a.workers) as ex:
         futs = [ex.submit(one, iid) for iid in cands]
