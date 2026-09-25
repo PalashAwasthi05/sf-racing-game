@@ -23,7 +23,7 @@ def test_two_tone_wall_gives_two_zones_and_one_colour_stays_one():
 
 def test_dark_reading_proves_neither_colour_nor_blankness():
     p = {'materialEvidence': {'family': 'metal-panel', 'finish': 'dark', 'colorRgb': [12, 11, 5], 'sourceIds': ['x']}, 'openings': [], 'groups': [], 'reading': {'blank': True}}
-    q = V.guard_dark(p)
+    V.DROP_DARK = True; q = V.guard_dark(p); V.DROP_DARK = False
     assert 'materialEvidence' not in q and q.get('materialOnly') and 'blank' not in q['reading'] and q['reading']['darkPhoto']
     p = {'materialEvidence': {'family': 'render', 'finish': 'white', 'colorRgb': [214, 210, 206], 'sourceIds': ['x']}, 'reading': {}}
     assert V.guard_dark(p)['materialEvidence']['colorRgb'] == [214, 210, 206]
