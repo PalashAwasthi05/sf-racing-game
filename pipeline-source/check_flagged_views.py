@@ -12,6 +12,7 @@ import frontage_crops_v15 as fc
 
 ROOT = pathlib.Path(__file__).resolve().parent
 FONT = '/System/Library/Fonts/Supplemental/Arial.ttf'
+COLOUR_DE = 18.   # wall colour difference (lightness at half weight) above which a flagged camera blocks publishing
 
 
 def sha(path):
@@ -86,19 +87,31 @@ def main():
         if d is None: continue
         b = R.load(str(glb_of(d)))
         for v in reg['views']:
-            for c in v['cameras']: renders[(label, v['id'], c['name'])] = R.render(b, c['from'], c['at'])
+            for c in v['cameras']: renders[(label, v['id'], c['name'])] = R.render(b, c['from'], c['at'], mask_ids=v['buildings'])
         R.free(b)
     index = {'candidate': str(cand), 'candidateGlbSha256': sha(cand_glb), 'live': str(live) if live else None, 'views': []}
     ev_c = evidence(cand); ev_l = evidence(live) if live else None
     for v in reg['views']:
         rec = {'id': v['id'], 'sheets': [], 'openDefects': [d['id'] for d in v.get('defects', []) if d['status'] != 'fixed'],
                'evidenceChanges': changes(v['buildings'], ev_l, ev_c) if ev_l else []}
+        rec['colour'] = []
         for c in v['cameras']:
-            tiles = []
-            if c.get('panorama'): tiles.append(('photograph', R.photo(c['panorama'], c['from'], c['at'], frame)))
-            if ('live', v['id'], c['name']) in renders: tiles.append(('live', renders[('live', v['id'], c['name'])]))
-            tiles.append(('candidate', renders[('candidate', v['id'], c['name'])]))
+            tiles = []; cand_im, cand_mk = renders[('candidate', v['id'], c['name'])]
+            live_r = renders.get(('live', v['id'], c['name']))
+            if c.get('panorama'):
+                ph = R.photo(c['panorama'], c['from'], c['at'], frame); tiles.append(('photograph', ph))
+                # the flagged building's wall colour, photograph (white-balanced) against each build, under the candidate's wall mask
+                pl = R.wall_colour(R.photo(c['panorama'], c['from'], c['at'], frame, balanced=True), cand_mk)
+                cl = R.wall_colour(cand_im, cand_mk); ll = R.wall_colour(live_r[0], cand_mk) if live_r else None
+                if pl is not None and cl is not None:
+                    col = {'camera': c['name'], 'photoLab': [round(float(x), 1) for x in pl], 'candidateLab': [round(float(x), 1) for x in cl], 'deltaECandidate': round(R.delta_e(pl, cl), 1)}
+                    if ll is not None: col.update(liveLab=[round(float(x), 1) for x in ll], deltaELive=round(R.delta_e(pl, ll), 1))
+                    col['colourMismatch'] = col['deltaECandidate'] > COLOUR_DE; rec['colour'].append(col)
+            if live_r: tiles.append(('live', live_r[0]))
+            tiles.append(('candidate', cand_im))
             p = out / f"{v['id']}__{c['name']}.jpg"; sheet(tiles, v, c).save(p, quality=88); rec['sheets'].append(str(p))
+        for col in rec['colour']:
+            print(f"   colour at {col['camera']}: photo L*a*b* {col['photoLab']} | candidate {col['candidateLab']} dE {col['deltaECandidate']}" + (f" | live dE {col.get('deltaELive')}" if 'deltaELive' in col else '') + ('   MISMATCH' if col['colourMismatch'] else ''))
         index['views'].append(rec)
         print(f"{v['id']}: {len(rec['sheets'])} sheets, open defects {rec['openDefects']}, evidence changes {len(rec['evidenceChanges'])}")
         for s in rec['evidenceChanges'][:40]: print('   ', s)

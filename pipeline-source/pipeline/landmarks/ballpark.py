@@ -340,6 +340,30 @@ def flat_roof(poly, z, step=2.):
     return trimesh.util.concatenate(parts) if parts else None
 
 
+def outline_stretches(samples, ring, max_gap=20.):
+    """Runs of one wall family along the outline from the outline readings (samples carry their position, so any
+    parametrisation of the ring works): same-family runs join across unread gaps up to `max_gap` with nothing
+    contradicting them. Returns [(s0, s1, family, colour)] along `ring`."""
+    pts = sorted((ring.project(Point(*x['xy'])), x['family'], x.get('colour')) for x in samples if x.get('family') and x.get('xy'))
+    out = []
+    for sv, fam, col in pts:
+        if out and out[-1][2] == fam and sv - out[-1][1] <= max_gap: out[-1][1] = sv; out[-1][4].append(col)
+        else: out.append([sv, sv, fam, col, [col]])
+    res = []
+    for s0, s1, fam, _, cols in out:
+        if len(cols) < 3: continue
+        rgb = np.median([[int(c[q:q + 2], 16) for q in (1, 3, 5)] for c in cols], 0).astype(int)
+        res.append((s0 - 2., s1 + 2., fam, '#%02x%02x%02x' % tuple(rgb)))
+    return res
+
+
+def arch_outline(width, sill, spring, rise, n=12):
+    """A window with a segmental head in wall coordinates (u across, z up), counter-clockwise from the sill."""
+    hw = width / 2; R = (hw * hw + rise * rise) / (2 * rise); cz = spring + rise - R; a0 = math.atan2(spring - cz, hw)
+    arc = [(R * math.cos(a), cz + R * math.sin(a)) for a in np.linspace(a0, math.pi - a0, n)]
+    return [(-hw, sill), (hw, sill)] + arc, (R, cz)
+
+
 def build(ctx, c, z0, resolved, lm):
     put, cube, cylinder, elev = ctx['put'], ctx['cube'], ctx['cylinder'], ctx['elev']
     import time; clock = [time.perf_counter()]; timing = {}
@@ -412,6 +436,17 @@ def build(ctx, c, z0, resolved, lm):
                 seat_body = unary_union([seat_body, q]); continue
             for j in range(int(near_idx[i_, j_]) + 1): bands[j] = unary_union([bands[j], q]) if not bands[j].is_empty else bands[j]
     record['standsLevelsM'] = [round(v - z0, 2) for v in levels]
+    # The street wall's material by stretch, read from the panoramas (read_landmark_outline_v29.py): stone or brick in
+    # the measured colour; stretches no photograph reads keep brick.
+    import json as _json, pathlib as _pl
+    ring_ccw = shapely.geometry.polygon.orient(site, 1.0).exterior
+    _rp = _pl.Path(__file__).with_name('outline-readings.json')
+    stretches = outline_stretches(_json.loads(_rp.read_text()).get(fid, {}).get('samples', []), ring_ccw) if _rp.exists() else []
+    record['outlineStretches'] = [{'s0': round(a, 1), 's1': round(b, 1), 'family': f, 'colour': col} for a, b, f, col in stretches]
+    def stretch_at(pt):
+        sv = ring_ccw.project(Point(*pt))
+        return next(((f, col) for a, b, f, col in stretches if a <= sv <= b), (None, None))
+    STONE_STOREY_M = 7.5                                   # the stone arcade storey; anything taller on the outline is brick
 
     # --- The playing field: plate and bearing fitted to the return intensity.
     x0, y0, x1, y1 = field.bounds; st = .5; nx = int((x1 - x0) / st) + 1; ny = int((y1 - y0) / st) + 1
@@ -458,6 +493,13 @@ def build(ctx, c, z0, resolved, lm):
     def ring_u(ring_l, a, b):
         sa, sb = ring_l.project(Point(a)), ring_l.project(Point(b))
         return sa if abs(sb - sa) <= ring_l.length / 2 else sb - math.copysign(np.linalg.norm(b - a), sb - sa)
+    def outline_wall(pa, pb, top_a, top_b, bot_a, bot_b, u0):
+        fam, col = stretch_at((pa + pb) / 2)
+        if fam == 'stone':
+            cut = float(min(max(top_a, top_b), elev(*((pa + pb) / 2)) + STONE_STOREY_M))
+            add_wall('stone' + col, pa, pb, min(top_a, cut), min(top_b, cut), bot_a, bot_b, u0)
+            if max(top_a, top_b) > cut + .03: add_wall('brick_modular', pa, pb, top_a, top_b, max(bot_a, cut), max(bot_b, cut), u0)
+        else: add_wall('brick_modular' + (col if fam == 'brick' else ''), pa, pb, top_a, top_b, bot_a, bot_b, u0)
     SZ = np.zeros(0)
     # Seats: the raked surface, reaching 0.3 m under the floors beside it (never above a lower floor there), steep
     # steps inside it in concrete, and a skirt down to whatever lies beyond each open edge.
@@ -474,17 +516,18 @@ def build(ctx, c, z0, resolved, lm):
         for a_i, b_i in boundary_edges(SF):
             pa, pb = SV[a_i], SV[b_i]; mid = (pa + pb) / 2; pm = Point(mid); t = (pb - pa) / max(np.linalg.norm(pb - pa), 1e-9)
             if fring.distance(pm) < .3: mat, ba, bb, rl = 'padding', zf - .1, zf - .1, fring
-            elif outer.distance(pm) < .3: mat, ba, bb, rl = 'brick_modular', float(elev(*pa)) - .2, float(elev(*pb)) - .2, outer
+            elif outer.distance(pm) < .3: mat, ba, bb, rl = 'outline', float(elev(*pa)) - .2, float(elev(*pb)) - .2, outer
             elif strip_edge is not None and strip_edge.distance(pm) < .3: mat, ba, bb, rl = 'recess', float(elev(*pa)) - .2, float(elev(*pb)) - .2, outer
             else:
                 k = int(level_at(*(mid + np.array([t[1], -t[0]]) * .8)))
                 ba = bb = levels[k] if k >= 0 else float(elev(*mid)) - .2; mat, rl = 'venue_concrete', outer
-            add_wall(mat, pa, pb, SZ[a_i], SZ[b_i], min(ba, SZ[a_i]), min(bb, SZ[b_i]), ring_u(rl, pa, pb))
+            if mat == 'outline': outline_wall(pa, pb, SZ[a_i], SZ[b_i], min(ba, SZ[a_i]), min(bb, SZ[b_i]), ring_u(rl, pa, pb))
+            else: add_wall(mat, pa, pb, SZ[a_i], SZ[b_i], min(ba, SZ[a_i]), min(bb, SZ[b_i]), ring_u(rl, pa, pb))
         record['seatsM2'] = round(float(seat_poly.area))
     # Floors: each band's outline walls rise from the band below (the ground for the first) to its level. On the site
     # outline they are the brick outer wall; against the frontage strip a dark recess; toward the field concrete,
-    # glazed at suite height (6-24 m); back walls above the outline wall are the dark steel structure with a braced
-    # frame, low ones brick. Each band's exposed top is a flat roof.
+    # glazed at suite height (6-24 m); back walls reaching above the street storey (9.5 m) are the dark steel structure
+    # with a braced frame, low ones brick. Each band's exposed top is a flat roof.
     caps = collections.Counter(); bands_rec = []; frames = []
     for k, pk in enumerate(bands):
         if pk.is_empty: continue
@@ -498,7 +541,7 @@ def build(ctx, c, z0, resolved, lm):
                     if L < .05: continue
                     mid = (pa + pb) / 2; pm = Point(mid)
                     ba, bb = (levels[k - 1], levels[k - 1]) if k else (float(elev(*pa)) - .2, float(elev(*pb)) - .2)
-                    if outer.distance(pm) < .3: add_wall('brick_modular', pa, pb, ztop, ztop, ba, bb, ring_u(outer, pa, pb))
+                    if outer.distance(pm) < .3: outline_wall(pa, pb, ztop, ztop, ba, bb, ring_u(outer, pa, pb))
                     elif strip_edge is not None and strip_edge.distance(pm) < .3: add_wall('recess', pa, pb, ztop, ztop, ba, bb, ring_u(outer, pa, pb))
                     elif fring.distance(pm) < .3: add_wall('padding', pa, pb, ztop, ztop, min(ba, zf - .1), min(bb, zf - .1), ring_u(fring, pa, pb))
                     else:
@@ -509,11 +552,11 @@ def build(ctx, c, z0, resolved, lm):
                                 t_top = min(ztop, hi)
                                 if t_top > max(ba, bb, lo) + .03: add_wall(mat, pa, pb, t_top, t_top, max(ba, lo), max(bb, lo), u)
                         else:
-                            # A back wall above the outline wall is the steel structure behind the decks: a dark wall
-                            # (the shadowed interior) with the braced frame standing in front of it.
-                            tall = k and ztop - max(ba, bb) > 5.
+                            # A back wall reaching above the street storey is the steel structure behind the decks, however
+                            # the floors stack it: a dark wall (the shadowed interior) with the braced frame in front of it.
+                            street = float(elev(*mid)); tall = k and ztop - street > 9.5
                             add_wall('recess' if tall else 'brick_modular', pa, pb, ztop, ztop, ba, bb, u)
-                            if tall: frames.append((k, pa, pb, max(ba, bb), ztop))
+                            if tall and ztop - max(ba, bb) > 2.5: frames.append((k, pa, pb, max(ba, bb), ztop))
                     u += L
         nxt = next((bands[j] for j in range(k + 1, len(bands)) if not bands[j].is_empty), None)
         exposed = make_valid(pk.difference(nxt)) if nxt is not None else pk
@@ -546,15 +589,66 @@ def build(ctx, c, z0, resolved, lm):
             members += 5
     record['standsBands'] = bands_rec; record['wallsM2'] = wall_m2; record['roofsM2'] = {k: round(v) for k, v in caps.items()}; record['bracedMembers'] = members
     lap('stands mesh')
-    # Arcade: the brick outline wall is pierced by arches at a steady pitch (dark recesses a hand's width proud of the
-    # wall, so they win its depth), wherever the wall is tall enough and runs straight across the arch.
-    ring_ccw = shapely.geometry.polygon.orient(site, 1.0).exterior; arch = 0
-    for sm in np.arange(2.6, ring_ccw.length - 2.6, lm.get('arcadePitchM', 5.2)):
-        pa, pm, pb = (np.array(ring_ccw.interpolate(v).coords[0]) for v in (sm - 1.5, sm, sm + 1.5))
-        if not strip.is_empty and strip.buffer(1.).contains(Point(*pm)): continue
+    # Arcade: where the photographs read the street wall as stone, it is the glazed arcade they show: segmental arches
+    # (3.0 m wide, sill 0.2 m, springing 4.1 m, rise 0.9 m, 4.5 m apart, measured on rectified panoramas) with a stone
+    # surround, a mullion grid under a transom, louvres in the head, and the terrace railing along the wall top.
+    # Elsewhere the outline wall keeps the dark arches at a steady pitch, wherever it is tall enough and straight.
+    key_l = 'facades__' + fid + '__landmark'; arch = 0; glazed = 0; rail_m = 0.
+    def frame_at(sm, half):
+        pa, pm, pb = (np.array(ring_ccw.interpolate(v).coords[0]) for v in (sm - half, sm, sm + half))
         t1, t2 = pm - pa, pb - pm
-        if np.dot(t1, t2) / (np.linalg.norm(t1) * np.linalg.norm(t2) + 1e-9) < .94: continue          # a corner inside the arch
-        t = (pb - pa) / np.linalg.norm(pb - pa); out = np.array([t[1], -t[0]])
+        if np.dot(t1, t2) / (np.linalg.norm(t1) * np.linalg.norm(t2) + 1e-9) < .94: return None                  # a corner inside the arch
+        t = (pb - pa) / np.linalg.norm(pb - pa); return pa, pm, pb, t, np.array([t[1], -t[0]])
+    def flat(poly_uv, c0, t, out, off, base, mat):
+        V = np.array([[c0[0] + u * t[0] + out[0] * off, c0[1] + u * t[1] + out[1] * off, base + z] for u, z in poly_uv])
+        cu = V.mean(0); V = np.r_[V, [cu]]; n = len(poly_uv); F = [[n, i, (i + 1) % n] for i in range(n)]
+        m = trimesh.Trimesh(V, F, process=False)
+        if np.dot(m.face_normals[:, :2].mean(0), out) < 0: m.faces = m.faces[:, ::-1]
+        put(m, key_l, mat)
+    W_A, SILL, SPRING, RISE, PITCH = 3.0, .2, 4.1, .9, 4.5
+    for s0, s1, fam, col in stretches:
+        if fam != 'stone': continue
+        for sm in np.arange(s0 + PITCH / 2, s1 - PITCH / 2 + 1e-6, PITCH):
+            fr = frame_at(sm, W_A / 2 + .4)
+            if fr is None: continue
+            pa, pm, pb, t, out = fr
+            if not strip.is_empty and strip.buffer(1.).contains(Point(*pm)): continue
+            base = float(elev(*pm)); top = float(top_at(*(pm - out * .8)))
+            if top - base < SPRING + RISE + .6: continue
+            c0 = pm
+            ring_o, (r_arc, cz) = arch_outline(W_A + .5, SILL, SPRING, RISE + .12)            # the stone surround
+            flat(ring_o, c0, t, out, .05, base, 'stone' + col)
+            win, (r_arc, cz) = arch_outline(W_A, SILL, SPRING, RISE)
+            flat(win, c0, t, out, .09, base, 'glass_dark')
+            ang_t = math.atan2(t[1], t[0])
+            def bar(u, z, w, h, mat='charcoal'): cube([c0[0] + t[0] * u + out[0] * .12, c0[1] + t[1] * u + out[1] * .12, base + z], [w, .05, h], key_l, mat, ang_t)
+            tr = SPRING - .7                                                                  # transom; louvres above it
+            for u in (-W_A / 2, -W_A / 4, 0., W_A / 4, W_A / 2): bar(u, (SILL + tr) / 2, .07, tr - SILL)
+            for z in (SILL + .03, 1.45, tr): bar(0., z, W_A, .07)
+            for z in np.arange(tr + .16, SPRING + RISE - .05, .17):
+                hw = W_A / 2 if z <= SPRING else math.sqrt(max(r_arc * r_arc - (z - cz) ** 2, 0.))
+                if hw > .15: bar(0., z, 2 * hw - .1, .05)
+            for (u1, z1), (u2, z2) in zip(win[1:], win[2:]):                                 # the frame round the head
+                cylinder([c0[0] + t[0] * u1 + out[0] * .12, c0[1] + t[1] * u1 + out[1] * .12, base + z1], [c0[0] + t[0] * u2 + out[0] * .12, c0[1] + t[1] * u2 + out[1] * .12, base + z2], .04, key_l, 'charcoal', 5)
+            arch += 1; glazed += 1
+        # the terrace railing along the stone storey's top
+        for sv in np.arange(s0, s1, 1.8):
+            p0, p1 = np.array(ring_ccw.interpolate(sv).coords[0]), np.array(ring_ccw.interpolate(min(s1, sv + 1.8)).coords[0])
+            d = p1 - p0; L = float(np.linalg.norm(d))
+            if L < .2: continue
+            out = np.array([d[1], -d[0]]) / L; q0, q1 = p0 - out * .15, p1 - out * .15
+            base = float(elev(*p0)); top = float(top_at(*(p0 - out * .8)))
+            if not (4.5 < top - base < 9.): continue
+            cylinder([q0[0], q0[1], top], [q0[0], q0[1], top + 1.05], .03, key_l, 'steel', 5)
+            for zr in (top + 1.05, top + .55): cylinder([q0[0], q0[1], zr], [q1[0], q1[1], zr], .025, key_l, 'steel', 5)
+            rail_m += L
+    in_stone = lambda sm: any(a <= sm <= b for a, b, f, _ in stretches if f == 'stone')
+    for sm in np.arange(2.6, ring_ccw.length - 2.6, lm.get('arcadePitchM', 5.2)):
+        if in_stone(sm): continue
+        fr = frame_at(sm, 1.5)
+        if fr is None: continue
+        pa, pm, pb, t, out = fr
+        if not strip.is_empty and strip.buffer(1.).contains(Point(*pm)): continue
         base = float(elev(*pm)); top = float(top_at(*(pm - out * .8)))
         if top - base < 6: continue
         h = min(4.5, .6 * (top - base) - 1.5); ang = np.linspace(0, np.pi, 9)
@@ -564,7 +658,8 @@ def build(ctx, c, z0, resolved, lm):
         AF = [[0, 1, 2]] + [[0, 2 + k, 3 + k] for k in range(len(ang) - 1)]
         m = trimesh.Trimesh(AV, AF, process=False)
         if np.dot(m.face_normals[:, :2].mean(0), out) < 0: m.faces = m.faces[:, ::-1]
-        put(m, 'facades__' + fid + '__landmark', 'recess'); arch += 1
+        put(m, key_l, 'recess'); arch += 1
+    record['glazedArches'] = glazed; record['terraceRailingM'] = round(rail_m)
     record['arcadeArches'] = arch
     if view:
         for slot, z1 in ctx['envelopes'].lids(view, 0.):
