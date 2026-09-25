@@ -1,5 +1,5 @@
 """Apply external surface observations uniformly; no location-specific rules."""
-import argparse, collections, hashlib, json, time
+import argparse, collections, hashlib, json, re, time
 from pathlib import Path
 import numpy as np
 import trimesh
@@ -17,14 +17,35 @@ def fingerprint(material):
         if image is not None: h.update(str(image.size).encode());h.update(image.tobytes())
     return h.hexdigest()
 
+# Readings name a family where the recipes name a kind: the family's usual recipe carries its surface.
+FAMILY_ALIAS={'brick':'brick_modular','terracotta':'terracotta_panel','timber':'timber_tan','panel':'panel_dark','render':'render_white'}
+
 def apply(scene_path, observations_path, output):
     start=time.monotonic();scene=trimesh.load(scene_path,force='scene',process=False)
     observations=json.loads(Path(observations_path).read_text())['observations']
     by_key={r['sourceMaterialFingerprint']:r for r in observations};cache={};fingerprints={};rows=[];counts=collections.Counter(); output=Path(output);output.mkdir(parents=True,exist_ok=True)
+    by_name={r['sourceMaterialName']:r for r in observations}
+    derived={}
+    def variant_observation(source,fp):
+        # A colour variant 'recipe#rrggbb' (a measured colour) keeps its recipe's surface structure, scale and scan;
+        # only the colour changes. Without this, every measured colour lost its material and kept the placeholder.
+        name=getattr(source,'name','') or ''
+        if name.startswith(('auto_','scan_','surface_')):return None      # already a real material from an earlier stage
+        base,_,hexpart=name.partition('#');obs=by_name.get(base) or by_name.get(FAMILY_ALIAS.get(base,''))
+        if obs is None:return None
+        if fp in derived:return derived[fp]
+        o=json.loads(json.dumps(obs));o['sourceMaterialFingerprint']=fp
+        if re.fullmatch('[0-9a-fA-F]{6}',hexpart or ''):
+            rgb=[int(hexpart[i:i+2],16) for i in (0,2,4)];old=o['surface'].get('color_rgb') or rgb
+            o['surface']['color_rgb']=rgb
+            if o['surface'].get('joint_rgb'):o['surface']['joint_rgb']=[int(min(255,j*c/max(q,1))) for j,c,q in zip(o['surface']['joint_rgb'],rgb,old)]
+            o['provenance']=f"colour variant of {base}: structure, scale and scan from the {base} observation; colour measured ({o['provenance']})"
+        derived[fp]=o;return o
     for name,mesh in scene.geometry.items():
         source=mesh.visual.material;mid=id(source)
         if mid not in fingerprints:fingerprints[mid]=fingerprint(source)
-        obs=by_key.get(fingerprints[mid])
+        obs=by_key.get(fingerprints[mid]) or variant_observation(source,fingerprints[mid])
+        if obs is not None and obs['sourceMaterialFingerprint'] not in by_key:counts['variantInherited']+=1
         if obs is None: counts['retainedWithoutNewObservation']+=1;continue
         if mesh.visual.uv is None:counts['retainedMissingUV']+=1;continue
         key=obs['sourceMaterialFingerprint']

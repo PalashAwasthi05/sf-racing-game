@@ -17,10 +17,19 @@ RECIPES={
  'terracotta_ribbed':{'scale':[2.4,1.2],'cell':[.6,.3],'joint':.004,'color':[170,80, 50],'mortar':[ 90,61,45],'relief':.001,'variation':2,'rough':.72,'ribs':.025},
  'stone':{'scale':[2.4,1.2],'color':[199,193,177],'rough':.8,'noise':.9},
  'limestone':{'scale':[2.4,1.2],'color':[199,193,177],'rough':.8,'noise':.9},
+ 'cast_stone':{'scale':[2.4,1.2],'cell':[3.,1.5],'joint':.008,'color':[205,199,184],'mortar':[186,180,166],'relief':.0008,'variation':1,'rough':.86},
  'stucco':{'scale':[2.,2.],'color':[201,198,182],'rough':.9,'noise':1.3},
  'stucco_red':{'scale':[2.,2.],'color':[142,80,65],'rough':.9,'noise':1.3},
  'panel_dark':{'scale':[2.4,1.2],'cell':[1.2,.3],'joint':.003,'color':[55,62,64],'mortar':[36,41,43],'relief':.0006,'variation':1,'rough':.74},
- 'panel_silver':{'scale':[2.4,1.2],'cell':[1.2,.6],'joint':.003,'color':[176,181,177],'mortar':[117,123,121],'relief':.0005,'variation':1,'rough':.37,'metal':.55}
+ 'panel_silver':{'scale':[2.4,1.2],'cell':[1.2,.6],'joint':.003,'color':[176,181,177],'mortar':[117,123,121],'relief':.0005,'variation':1,'rough':.37,'metal':.55},
+ # Venue surfaces. Seating: one tile is 8 rows of 0.85 m treads by 14 m along the row, with a 1.1 m aisle; v runs away
+ # from the field, so each row is a seat band (backs and pans) behind a concrete tread. Turf: a 2 x 2 mowing check of
+ # 5 m squares. Clay: infield and track dirt.
+ 'seats':{'scale':[14,6.8],'pattern':'seats','rows':8,'seat':.5,'aisle':1.1,'color':[33,74,55],'tread':[148,149,144],'rough':.62,'noise':2.},
+ 'turf':{'scale':[10,10],'pattern':'check','color':[74,116,57],'alt':[92,138,68],'rough':.92,'noise':5.},
+ 'clay':{'scale':[4,4],'color':[152,96,64],'rough':.96,'noise':7.},
+ # Painted and weathered structural concrete of a venue: mid grey, darker than new paving.
+ 'venue_concrete':{'scale':[2.4,1.2],'color':[146,147,142],'rough':.88,'noise':4.}
 }
 
 def create(key):
@@ -33,6 +42,14 @@ def create(key):
   color+=variation[np.minimum(row,nr),np.floor((x+offset)/cw).astype(int)][:,:,None]
   color[seam]=a['mortar'];relief[~seam]=a['relief']
  if 'ribs' in a:relief+=.00035*np.sin(y/a['ribs']*2*np.pi)
+ if a.get('pattern')=='seats':
+  row=h/a['rows'];f=np.mod(y,row)/row;tread=f<.36;shadow=f>.94;aisle=np.mod(x,w)<a['aisle']
+  gap=(np.mod(x,a['seat'])<.035)&~tread
+  color[tread|aisle]=np.array(a['tread'],float)[None,:]+noise[tread|aisle][:,None]
+  color[gap&~aisle]*=.55;color[shadow&~aisle]*=.35
+  relief[~tread&~aisle]=.004*np.clip((f[~tread&~aisle]-.36)/.58,0,1)          # seat backs rise toward the next tread
+ if a.get('pattern')=='check':
+  alt=(np.floor(x/(w/2))+np.floor(y/(h/2)))%2==1;color[alt]=np.array(a['alt'],float)[None,:]+noise[alt][:,None]
  gy,gx=np.gradient(relief,h/n,w/n);normal=np.stack([-gx,-gy,np.ones_like(gx)],axis=2);normal/=np.linalg.norm(normal,axis=2,keepdims=True)
  mr=np.zeros((n,n,3),np.uint8);mr[:,:,1]=np.clip(a['rough']*255+noise,0,255);mr[:,:,2]=int(a.get('metal',0)*255)
  mat=PBRMaterial(name=key,baseColorTexture=Image.fromarray(np.clip(color,0,255).astype('uint8')),normalTexture=Image.fromarray(np.clip((normal*.5+.5)*255,0,255).astype('uint8')),metallicRoughnessTexture=Image.fromarray(mr),baseColorFactor=[255,255,255,255],roughnessFactor=1.,metallicFactor=1.)

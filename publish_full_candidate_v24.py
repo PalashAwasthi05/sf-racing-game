@@ -9,6 +9,10 @@ p.add_argument('--flagged-views-waived',default=None,help='publish without the f
 p.add_argument('--known-mismatch',action='append',default=[],help='a flagged view whose colour mismatch is a registered open defect this release does not touch; allowed only when the candidate is no worse than live there; recorded in release.json')
 a=p.parse_args()
 cand,public=a.candidate,a.public;final=cand/'final';final.mkdir(exist_ok=True)
+# Wall-scale surfaces must keep a real material (scan or synthesized maps), never a placeholder or a flat colour.
+import subprocess,sys as _sys
+_am=subprocess.run([_sys.executable,'work/audit_materials_v30.py',str(cand/'materials/candidate.glb')],capture_output=True,text=True)
+if _am.returncode!=0:raise SystemExit('refused: materials dropped to placeholders or flat colours:\n'+_am.stdout)
 # Every view the user has flagged must have been rendered for THIS build (check_flagged_views.py) before it goes live.
 _idx=cand/'flagged-views/index.json';_reg=json.loads(Path('work/review/flagged-views.json').read_text())
 if not a.flagged_views_waived:
