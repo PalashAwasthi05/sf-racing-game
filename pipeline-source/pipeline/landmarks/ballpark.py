@@ -7,7 +7,7 @@ Measured:
   with skirts at its open edges. Everything else is built as floors: the surface's plateau heights give the floor
   levels, every other cell takes the nearest one, and the levels become nested outlines with vertical walls (brick on
   the site outline, pierced by an arcade; toward the field concrete, glazed at suite height; back walls above the outline
-  wall dark with a braced steel frame, as the photographs show the structure behind the decks) and flat roofs. A draped surface over the whole structure read as a brick mountain with drips wherever it was steep.
+  wall dark metal cladding with a braced steel frame, as the photographs show the structure behind the decks) and flat roofs. A draped surface over the whole structure read as a brick mountain with drips wherever it was steep.
 - The playing field is the footprint's opening: warning-track clay, the mapped turf, and a regulation infield placed
   by fitting its dirt/grass pattern to the return intensity (dirt reads darker than grass).
 - Light rigs and the outfield board are the LiDAR clusters standing above the filtered surface, rebuilt as lamp banks
@@ -497,7 +497,7 @@ def build(ctx, c, z0, resolved, lm):
         fam, col = stretch_at((pa + pb) / 2)
         if fam == 'stone':
             cut = float(min(max(top_a, top_b), elev(*((pa + pb) / 2)) + STONE_STOREY_M))
-            add_wall('stone' + col, pa, pb, min(top_a, cut), min(top_b, cut), bot_a, bot_b, u0)
+            add_wall('cast_stone' + col, pa, pb, min(top_a, cut), min(top_b, cut), bot_a, bot_b, u0)
             if max(top_a, top_b) > cut + .03: add_wall('brick_modular', pa, pb, top_a, top_b, max(bot_a, cut), max(bot_b, cut), u0)
         else: add_wall('brick_modular' + (col if fam == 'brick' else ''), pa, pb, top_a, top_b, bot_a, bot_b, u0)
     SZ = np.zeros(0)
@@ -553,9 +553,9 @@ def build(ctx, c, z0, resolved, lm):
                                 if t_top > max(ba, bb, lo) + .03: add_wall(mat, pa, pb, t_top, t_top, max(ba, lo), max(bb, lo), u)
                         else:
                             # A back wall reaching above the street storey is the steel structure behind the decks, however
-                            # the floors stack it: a dark wall (the shadowed interior) with the braced frame in front of it.
+                            # the floors stack it: dark metal cladding with the braced frame in front of it.
                             street = float(elev(*mid)); tall = k and ztop - street > 9.5
-                            add_wall('recess' if tall else 'brick_modular', pa, pb, ztop, ztop, ba, bb, u)
+                            add_wall('panel_dark' if tall else 'brick_modular', pa, pb, ztop, ztop, ba, bb, u)
                             if tall and ztop - max(ba, bb) > 2.5: frames.append((k, pa, pb, max(ba, bb), ztop))
                     u += L
         nxt = next((bands[j] for j in range(k + 1, len(bands)) if not bands[j].is_empty), None)
@@ -617,7 +617,7 @@ def build(ctx, c, z0, resolved, lm):
             if top - base < SPRING + RISE + .6: continue
             c0 = pm
             ring_o, (r_arc, cz) = arch_outline(W_A + .5, SILL, SPRING, RISE + .12)            # the stone surround
-            flat(ring_o, c0, t, out, .05, base, 'stone' + col)
+            flat(ring_o, c0, t, out, .05, base, 'cast_stone' + col)
             win, (r_arc, cz) = arch_outline(W_A, SILL, SPRING, RISE)
             flat(win, c0, t, out, .09, base, 'glass_dark')
             ang_t = math.atan2(t[1], t[0])

@@ -17,6 +17,7 @@ RECIPES={
  'terracotta_ribbed':{'scale':[2.4,1.2],'cell':[.6,.3],'joint':.004,'color':[170,80, 50],'mortar':[ 90,61,45],'relief':.001,'variation':2,'rough':.72,'ribs':.025},
  'stone':{'scale':[2.4,1.2],'color':[199,193,177],'rough':.8,'noise':.9},
  'limestone':{'scale':[2.4,1.2],'color':[199,193,177],'rough':.8,'noise':.9},
+ 'cast_stone':{'scale':[2.4,1.2],'cell':[3.,1.5],'joint':.008,'color':[205,199,184],'mortar':[186,180,166],'relief':.0008,'variation':1,'rough':.86},
  'stucco':{'scale':[2.,2.],'color':[201,198,182],'rough':.9,'noise':1.3},
  'stucco_red':{'scale':[2.,2.],'color':[142,80,65],'rough':.9,'noise':1.3},
  'panel_dark':{'scale':[2.4,1.2],'cell':[1.2,.3],'joint':.003,'color':[55,62,64],'mortar':[36,41,43],'relief':.0006,'variation':1,'rough':.74},
