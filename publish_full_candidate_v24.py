@@ -6,6 +6,7 @@ from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument('--candidate',type=Path,required=True);p.add_argument('--label',default='0.24 / CLEAN REGENERATION')
 p.add_argument('--public',type=Path,default=Path('work/king-street/public'))
 p.add_argument('--flagged-views-waived',default=None,help='publish without the flagged-view sheets; the reason is recorded in release.json')
+p.add_argument('--known-mismatch',action='append',default=[],help='a flagged view whose colour mismatch is a registered open defect this release does not touch; allowed only when the candidate is no worse than live there; recorded in release.json')
 a=p.parse_args()
 cand,public=a.candidate,a.public;final=cand/'final';final.mkdir(exist_ok=True)
 # Every view the user has flagged must have been rendered for THIS build (check_flagged_views.py) before it goes live.
@@ -18,6 +19,10 @@ if not a.flagged_views_waived:
     if _ix.get('candidateGlbSha256')!=_h.hexdigest():raise SystemExit('refused: the flagged-view sheets are for a different build of this candidate; rerun check_flagged_views.py')
     _missing={v['id'] for v in _reg['views']}-{v['id'] for v in _ix.get('views',[])}
     if _missing:raise SystemExit(f'refused: flagged views without sheets: {sorted(_missing)}')
+    _open={v['id'] for v in _reg['views'] if any(d['status']!='fixed' for d in v.get('defects',[]))}
+    _bad=[(v['id'],c['camera'],c['deltaECandidate'],c.get('deltaELive')) for v in _ix.get('views',[]) for c in v.get('colour',[]) if c.get('colourMismatch')]
+    _blocking=[b for b in _bad if not (b[0] in a.known_mismatch and b[0] in _open and b[3] is not None and b[2]<=b[3]+1.)]
+    if _blocking:raise SystemExit(f'refused: the flagged building\'s wall colour differs from its photograph (view, camera, dE candidate, dE live): {_blocking}')
 shutil.copy2(cand/'materials/candidate.glb',final/'candidate.glb')
 raw=(final/'candidate.glb').read_bytes();sha=hashlib.sha256(raw).hexdigest();packed=gzip.compress(raw,compresslevel=6,mtime=0);chunks=[]
 for i,s in enumerate(range(0,len(packed),4400000)):
@@ -32,4 +37,4 @@ if (cand/'public/facade-evidence.json').exists():shutil.copy2(cand/'public/facad
 put(public/'world.json',world)
 put(public/'generation.json',{'pipelineVersion':'0.24','fullRegeneration':True,'layersCarriedOver':[],'outputSha256':sha,'candidate':str(final/'candidate.glb'),'independentRealismGate':'NOT PASSED'})
 put(public/'model.json',dict(compression='gzip',contentHash=sha[:12],chunks=chunks,compressedBytes=len(packed),uncompressedBytes=len(raw)))
-res={'sha256':sha,'localPreview':'http://127.0.0.1:3001/?revision='+sha[:12],'flaggedViews':str(_idx) if not a.flagged_views_waived else {'waived':a.flagged_views_waived}};(cand/'release.json').write_text(json.dumps(res));print(json.dumps(res))
+res={'sha256':sha,'localPreview':'http://127.0.0.1:3001/?revision='+sha[:12],'flaggedViews':str(_idx) if not a.flagged_views_waived else {'waived':a.flagged_views_waived},'knownColourMismatches':a.known_mismatch};(cand/'release.json').write_text(json.dumps(res));print(json.dumps(res))

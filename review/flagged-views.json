@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "rule": "Every view the user has flagged is rendered from its cameras for the candidate and the live release, next to the photograph where a panorama exists, before any publish (check_flagged_views.py writes <candidate>/flagged-views/; publish_full_candidate_v24.py refuses a candidate without it). The sheets are looked at at native resolution. A defect listed here is reported as fixed only when its sheet shows it gone from these cameras; a new defect seen on a sheet is added here. Coordinates are scene metres (x east, y north, z up; ground here is about 2.3 m). This file is review data for checking releases; the generator never reads it.",
+  "rule": "Every view the user has flagged is rendered from its cameras for the candidate and the live release, next to the photograph where a panorama exists, before any publish (check_flagged_views.py writes <candidate>/flagged-views/; publish_full_candidate_v24.py refuses a candidate without it). The sheets are looked at at native resolution. A defect listed here is reported as fixed only when its sheet shows it gone from these cameras; a new defect seen on a sheet is added here. Coordinates are scene metres (x east, y north, z up; ground here is about 2.3 m). This file is review data for checking releases; the generator never reads it. Each flagged camera with a panorama also compares the flagged building's wall colour with the photograph (check_flagged_views.py, dE with lightness at half weight > 18 blocks publishing, --known-mismatch only for a registered open defect the release does not touch and no worse than live).",
   "views": [
     {
       "id": "alley-corner-two-buildings",
@@ -153,9 +153,11 @@
         {
           "id": "arcade-material",
           "since": "v0.27",
-          "status": "open",
-          "text": "The south arcade storey is brick in the model; the photographs show cast stone with large arched glazed openings and a roof terrace railing.",
-          "cause": "The outline wall takes one material all round; only one stretch of the outline has a reading."
+          "status": "fixed",
+          "text": "The south arcade storey is brick in the model; the photographs show cast stone with large arched glazed openings and a roof terrace railing. Fixed: stone read from the panoramas in its measured colour, glazed segmental arches, terrace railing.",
+          "cause": "The outline wall takes one material all round; only one stretch of the outline has a reading.",
+          "fixedIn": "v0.30",
+          "checkedWith": "work/clean-v49/flagged-views/ (wall colour dE 9.7, was 24.5)"
         },
         {
           "id": "low-plaza-blocks",
@@ -163,6 +165,14 @@
           "status": "open",
           "text": "Inside the south edge a few low blocks with rounded outlines stand at different floor levels (pits and raised pieces of the terrace level).",
           "cause": "LiDAR clutter on the terrace larger than the 150 m2 clutter rule, levelled to separate floors."
+        },
+        {
+          "id": "stacked-back-wall-brick",
+          "since": "v0.29",
+          "status": "fixed",
+          "fixedIn": "v0.30",
+          "text": "A set-back brick wall stood above the arcade terrace where the photographs show the steel superstructure.",
+          "cause": "Two short floor walls stacked there were each under the 5 m steel rule; the rule now uses the height above the street."
         }
       ]
     }
