@@ -1,11 +1,13 @@
 """Ballpark landmark builder.
 
 Measured:
-- The stands are the LiDAR surface itself: the highest return per cell, with raised structures narrower than 6.5 m
-  (masts, rigs, the board, rails) replaced by what they stand on and a 2.5 m median against noise, triangulated inside
-  the footprint so the outline stays exact. Each face is typed by slope and
-  by whether it falls toward the field: seating (rows parallel to the field edge), near-vertical deck fronts (glazed
-  at suite height when they face the field, concrete elsewhere), flat concourses and roofs.
+- The stands start from the LiDAR surface: the highest return per cell, with raised structures narrower than 6.5 m
+  (masts, rigs, the board, rails) replaced by what they stand on and a 2.5 m median against noise. Seating (cells
+  raked toward the field edge) stays that surface, triangulated inside the footprint, rows parallel to the field edge,
+  with skirts at its open edges. Everything else is built as floors: the surface's plateau heights give the floor
+  levels, every other cell takes the nearest one, and the levels become nested outlines with vertical walls (brick on
+  the site outline, pierced by an arcade; toward the field concrete, glazed at suite height; back walls above the outline
+  wall dark with a braced steel frame, as the photographs show the structure behind the decks) and flat roofs. A draped surface over the whole structure read as a brick mountain with drips wherever it was steep.
 - The playing field is the footprint's opening: warning-track clay, the mapped turf, and a regulation infield placed
   by fitting its dirt/grass pattern to the return intensity (dirt reads darker than grass).
 - Light rigs and the outfield board are the LiDAR clusters standing above the filtered surface, rebuilt as lamp banks
@@ -13,6 +15,7 @@ Measured:
 Authored: the shapes of the props named in the landmark entry (a contour bottle, a four-finger glove); their position,
 axis and size come from their own LiDAR clusters.
 """
+import collections
 import math
 import numpy as np
 import trimesh
@@ -164,6 +167,179 @@ BOTTLE = [(0, .80), (.03, .95), (.12, 1.), (.24, .9), (.33, .8), (.43, .9), (.52
           (.9, .36), (.97, .37), (1., .4)]
 
 
+def seat_cells(H, gref, inside, ring, min_m2=60.):
+    """Raked seating on the surface grid: cells sloping 0.1-1.35 down toward the field edge, cleaned at 1 m and kept in
+    sections of at least `min_m2`."""
+    x0, y1, st = gref; ny, nx = H.shape
+    XX, YY = np.meshgrid(x0 + (np.arange(nx) + .5) * st, y1 - (np.arange(ny) + .5) * st)
+    gy, gx = np.gradient(H, st); gy = -gy                                 # grid rows run north to south
+    slope = np.hypot(gx, gy); xy = np.c_[XX.ravel(), YY.ravel()]
+    d, i = cKDTree(ring).query(xy); to_f = (ring[i] - xy) / np.maximum(d, 1e-6)[:, None]
+    down = -np.c_[gx.ravel(), gy.ravel()] / np.maximum(slope.ravel(), 1e-6)[:, None]
+    seat = inside & (slope > .1) & (slope < 1.35) & ((down * to_f).sum(1) > .35).reshape(ny, nx)
+    seat = ndi.binary_closing(ndi.binary_opening(seat, iterations=2), iterations=2) & inside
+    lab, _ = ndi.label(seat); keep = np.bincount(lab.ravel()) * st * st >= min_m2; keep[0] = False
+    return keep[lab]
+
+
+def levels_of(h, st, min_m2=60., merge=1.5, min_gap=3.):
+    """The floor levels of a structure: area-weighted peaks of its plateau heights (a 1.25 m window), each level the
+    median of the heights round its peak; levels closer than `min_gap` (less than a storey) become one, weighted by the
+    area each holds."""
+    if len(h) == 0: return []
+    b = np.arange(np.floor(h.min()) - 1, np.ceil(h.max()) + 1.25, .25); hist, e = np.histogram(h, bins=b); c = (e[:-1] + e[1:]) / 2
+    sm = np.convolve(hist, np.ones(5), 'same') * st * st
+    peaks = sorted((k for k in range(1, len(sm) - 1) if sm[k] >= sm[k - 1] and sm[k] > sm[k + 1] and sm[k] >= min_m2), key=lambda k: -sm[k]); out = []
+    for k in peaks:
+        if all(abs(c[k] - q) >= merge for q in out): out.append(c[k])
+    lv = sorted(float(np.median(h[np.abs(h - q) < merge / 2])) for q in out)
+    while len(lv) > 1:
+        gaps = np.diff(lv); k = int(np.argmin(gaps))
+        if gaps[k] >= min_gap: break
+        wa, wb = (np.abs(h - lv[k]) < merge / 2).sum(), (np.abs(h - lv[k + 1]) < merge / 2).sum()
+        lv[k:k + 2] = [lv[k] if wa >= wb else lv[k + 1]]                      # the floor that holds more area stays
+    return lv
+
+
+def level_cells(H, flat, st, inside, seat):
+    """Every structure cell that is not seating takes the nearest floor level; a 7 x 7 majority and the clutter rule
+    clean the map, and specks or narrow strips held by seating become part of the seat surface (a step in it, not a
+    block). Returns (levels, level index per cell or -1, seat mask)."""
+    ns = inside & ~seat; lv = levels_of(H[ns & flat], st)
+    if not lv: return lv, np.full(H.shape, -1), seat
+    idx = np.argmin(np.abs(H[..., None] - np.array(lv)[None, None, :]), axis=2); idx[~ns] = -1
+    K = len(lv)
+    for _ in range(2):
+        pad = np.pad(idx, 3, constant_values=-1)
+        counts = np.zeros((K,) + H.shape, np.int16)
+        for dy in range(7):
+            for dx in range(7):
+                win = pad[dy:dy + H.shape[0], dx:dx + H.shape[1]]
+                for k in range(K): counts[k] += win == k
+        idx = np.where(ns, counts.argmax(0), -1)
+    # Pieces of a floor under 60 m2, and pieces under 150 m2 held by one other floor (four fifths of their rim), are
+    # clutter on that floor (kiosks, planters, terrace furniture): they take the floor round them, unless they stand more
+    # than 6 m above it (a rig base or a stair tower is a structure, not clutter).
+    for _ in range(3):
+        changed = False
+        for k in range(K):
+            lab, n = ndi.label(idx == k); sz = np.bincount(lab.ravel()) * st * st
+            for j in np.flatnonzero((sz < 150) & (np.arange(len(sz)) > 0)):
+                m = lab == j; rim = ndi.binary_dilation(m, iterations=2) & ~m & ns & (idx >= 0) & (idx != k)
+                if not rim.any(): continue
+                cnt = np.bincount(idx[rim], minlength=K); best = int(cnt.argmax())
+                if lv[k] - lv[best] > 6. and sz[j] >= 20: continue           # a structure standing on the floor (a rig base, a stair tower) stays
+                if sz[j] < 60 or cnt[best] >= .8 * (ndi.binary_dilation(m, iterations=2) & ~m).sum(): idx[m] = best; changed = True
+        if not changed: break
+    for k in range(K):
+        m = idx == k; core = ndi.binary_opening(m, iterations=2); lab, n = ndi.label(m)
+        for j in range(1, n + 1):
+            c = lab == j; rim = ndi.binary_dilation(c, iterations=2) & ~c
+            if (seat & rim).sum() >= .6 * max(rim.sum(), 1) and (c.sum() * st * st < 40 or not (core & c).any()):
+                seat = seat | c; idx[c] = -1
+    return lv, idx, seat
+
+
+def polygonize(mask, gref, sigma_m=.5):
+    """Outline of a cell mask as the 0.5 contour of the mask blurred by `sigma_m` (marching squares, saddles resolved by
+    the cell centre): an edge at any angle to the grid comes out straight and where the mask's edge is, not as a
+    staircase of cell sides, and anything narrower than about 2 sigma drops out."""
+    from shapely.ops import polygonize as _faces
+    x0, y1, st = gref
+    F = np.pad(ndi.gaussian_filter(mask.astype(np.float32), sigma_m / st), 2, constant_values=0.)
+    a, b, c, d = F[:-1, :-1], F[:-1, 1:], F[1:, 1:], F[1:, :-1]                 # corners: top-left, top-right, bottom-right, bottom-left
+    code = (a > .5) * 8 + (b > .5) * 4 + (c > .5) * 2 + (d > .5) * 1
+    ii, jj = np.nonzero((code > 0) & (code < 15))
+    if not len(ii): return Polygon()
+    A, B, C, D = a[ii, jj], b[ii, jj], c[ii, jj], d[ii, jj]; k = code[ii, jj]; centre = (A + B + C + D) / 4 > .5
+    t = lambda p, q: np.clip((.5 - p) / np.where(np.abs(q - p) < 1e-9, 1e-9, q - p), 0, 1)
+    pts = {'T': np.c_[ii, jj + t(A, B)], 'R': np.c_[ii + t(B, C), jj + 1], 'B': np.c_[ii + 1, jj + t(D, C)], 'L': np.c_[ii + t(A, D), jj]}
+    table = {1: ['LB'], 2: ['BR'], 3: ['LR'], 4: ['TR'], 6: ['TB'], 7: ['LT'], 8: ['LT'], 9: ['TB'], 11: ['TR'], 12: ['LR'], 13: ['BR'], 14: ['LB']}
+    segs = []
+    for code_v in range(1, 15):
+        sel = k == code_v
+        if not sel.any(): continue
+        if code_v in (5, 10):
+            inside_joined = centre[sel]
+            one = ['LT', 'BR'] if code_v == 5 else ['TR', 'LB']; other = ['TR', 'LB'] if code_v == 5 else ['LT', 'BR']
+            for pair_set, m in ((one, inside_joined), (other, ~inside_joined)):
+                for e in pair_set: segs.append(np.stack([pts[e[0]][sel][m], pts[e[1]][sel][m]], 1))
+        else:
+            for e in table[code_v]: segs.append(np.stack([pts[e[0]][sel], pts[e[1]][sel]], 1))
+    S = np.concatenate(segs)                                                    # (n, 2 ends, row/col)
+    S = np.stack([x0 + (S[..., 1] - 2 + .5) * st, y1 - (S[..., 0] - 2 + .5) * st], -1)
+    S = S[np.hypot(*(S[:, 1] - S[:, 0]).T) > 1e-6]
+    faces = list(_faces([LineString(q) for q in np.round(S, 6)]))
+    keep = []
+    for f in faces:
+        rp = f.representative_point(); j = int((rp.x - x0) / st + 2 - .5 + .5); i = int((y1 - rp.y) / st + 2 - .5 + .5)
+        # a face is solid when the blurred mask is above half at its interior point (bilinear on the padded samples)
+        fx = (rp.x - x0) / st - .5 + 2; fy = (y1 - rp.y) / st - .5 + 2; j0, i0 = int(np.floor(fx)), int(np.floor(fy)); u, v = fx - j0, fy - i0
+        if 0 <= i0 < F.shape[0] - 1 and 0 <= j0 < F.shape[1] - 1:
+            val = F[i0, j0] * (1 - u) * (1 - v) + F[i0, j0 + 1] * u * (1 - v) + F[i0 + 1, j0] * (1 - u) * v + F[i0 + 1, j0 + 1] * u * v
+            if val > .5: keep.append(f)
+    return sharpen(unary_union(keep).buffer(0).simplify(.15, preserve_topology=True)) if keep else Polygon()
+
+
+def sharpen(poly, short=2., run=3., keep_angle=(30., 150.)):
+    """Square up corners a smoothed outline rounded: a run of short segments (each under `short`, together under `run`)
+    between two longer edges that meet at 30-150 degrees is replaced by the point where those edges' lines cross."""
+    def ring(cs):
+        P = [np.asarray(c, float) for c in cs[:-1]]
+        changed = True
+        while changed and len(P) > 4:
+            changed = False; n = len(P); L = [np.linalg.norm(P[(i + 1) % n] - P[i]) for i in range(n)]
+            for i in range(n):
+                if L[i] < short: continue
+                j = (i + 1) % n; tot = 0.; m = 0
+                while L[j] < short and tot + L[j] < run and m < n - 2: tot += L[j]; j = (j + 1) % n; m += 1
+                if m == 0 or L[j] < short: continue
+                a0, a1 = P[i], P[(i + 1) % n]; b0, b1 = P[j], P[(j + 1) % n]
+                da, db = a1 - a0, b1 - b0; cr = da[0] * db[1] - da[1] * db[0]
+                ang = math.degrees(math.acos(np.clip(np.dot(da, db) / (np.linalg.norm(da) * np.linalg.norm(db)), -1, 1)))
+                if abs(cr) < 1e-9 or not (keep_angle[0] <= ang <= keep_angle[1]): continue
+                tpar = ((b0 - a0)[0] * db[1] - (b0 - a0)[1] * db[0]) / cr; X = a0 + da * tpar
+                if np.linalg.norm(X - (a1 + b0) / 2) > run: continue
+                drop = [(i + 1 + q) % n for q in range(m + 1)]                   # a1 .. b0 go, the crossing comes in
+                keep = [P[q] for q in range(n) if q not in drop]; at = keep.index(next(v for v in keep if v is a0)) + 1
+                keep.insert(at, X); P = keep; changed = True; break
+        return P + [P[0]]
+    out = []
+    for q in _polys(poly):
+        try:
+            g = Polygon(ring(list(q.exterior.coords)), [ring(list(r.coords)) for r in q.interiors])
+            g = make_valid(g); out.extend(_polys(g) if g.area > .5 * q.area else [q])
+        except Exception:
+            out.append(q)
+    return unary_union(out) if out else poly
+
+
+def band_outlines(idx, levels, gref, stands):
+    """Nested outlines, one per floor level: band k is the contour of every cell at level k or above, snapped to the band
+    below within 0.45 m and cut to it (walls of consecutive bands stand in one plane), slivers under 0.7 m and pieces
+    under 8 m2 dropped."""
+    out, prev = [], stands
+    for k in range(len(levels)):
+        m = idx >= k
+        pk = polygonize(m, gref).intersection(stands) if m.any() else Polygon()
+        if k and not pk.is_empty: pk = shapely.snap(pk, prev, .45).intersection(prev)
+        if not pk.is_empty:
+            pk = make_valid(pk.buffer(-.35, join_style=2).buffer(.35, join_style=2).intersection(prev))
+            pk = unary_union([q for q in _polys(pk) if q.area >= 8.]) if _polys(pk) else Polygon()
+        out.append(pk)
+        if not pk.is_empty: prev = pk
+    return out
+
+
+def flat_roof(poly, z, step=2.):
+    """A flat roof over a polygon at height z."""
+    parts = []
+    for q in _polys(poly):
+        if q.area < 1.: continue
+        V, F = triangulate(q, step, step * 1.5); parts.append(trimesh.Trimesh(np.c_[V, np.full(len(V), z)], F, process=False))
+    return trimesh.util.concatenate(parts) if parts else None
+
+
 def build(ctx, c, z0, resolved, lm):
     put, cube, cylinder, elev = ctx['put'], ctx['cube'], ctx['cylinder'], ctx['elev']
     import time; clock = [time.perf_counter()]; timing = {}
@@ -206,28 +382,36 @@ def build(ctx, c, z0, resolved, lm):
     zf = float(np.median(P[on_field & (P[:, 3] == 2), 2])) if (on_field & (P[:, 3] == 2)).sum() > 100 else float(z0)
     record['fieldLevelM'] = round(zf, 2)
 
-    # --- Stands: the filtered LiDAR surface inside the footprint.
-    V, F = triangulate(stands, step)
-    edge_grid = ndi.maximum_filter(smooth, size=3)
-    on_edge = ~shapely.contains_xy(stands.buffer(-step * .6), V[:, 0], V[:, 1])
-    Z = np.where(on_edge, sample(edge_grid, gref, V[:, 0], V[:, 1]), sample(smooth, gref, V[:, 0], V[:, 1]))
-    Z = np.maximum(Z, elev(V[:, 0], V[:, 1]) + .4)
-    V3 = np.c_[V, Z]
-    # Direction to the field and position along its edge, for every vertex: the edge runs from centre field round.
+    # --- Stands: the seating stays the raked LiDAR surface; everything else in the stands is built as floors. The
+    # surface's plateau heights give the floor levels, every other cell takes the nearest level, and the levels become
+    # nested outlines with vertical walls between them and flat roofs: a draped surface read as a brick mountain with
+    # drips wherever it was steep.
     ring = np.asarray(segmentize(field.exterior, .5).coords)[:-1]
     fit_plate = None
     kd = cKDTree(ring)
-    T = V3[F]; n = np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0]); n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-9)
-    nz = n[:, 2]; slope = np.sqrt(np.maximum(0, 1 - nz ** 2)) / np.maximum(nz, 1e-6); cen = T.mean(1)
-    d_c, i_c = kd.query(cen[:, :2]); to_field = (ring[i_c] - cen[:, :2]) / np.maximum(d_c, 1e-6)[:, None]
-    downhill = n[:, :2] / np.maximum(np.linalg.norm(n[:, :2], axis=1, keepdims=True), 1e-9)
-    facing = (downhill * to_field).sum(1) > .35
-    seats = (slope > .1) & (slope < 1.35) & facing
-    steep = (nz < .42) & ~seats
-    zmid = cen[:, 2] - z0
-    suites = steep & facing & (zmid > 6) & (zmid < 24)
-    kinds = {'seats': seats, 'glass_dark': suites, 'brick_modular': steep & ~facing,
-             'venue_concrete': (steep & facing & ~suites) | (~seats & ~steep & (zmid <= 30)), 'roofing': ~seats & ~steep & (zmid > 30)}
+    gx0, gy1, gst = gref; gny, gnx = smooth.shape
+    GX, GY = np.meshgrid(gx0 + (np.arange(gnx) + .5) * gst, gy1 - (np.arange(gny) + .5) * gst)
+    in_stands = shapely.contains_xy(stands, GX, GY)
+    seat_m = seat_cells(smooth, gref, in_stands, ring)
+    _, flat_m = plateaus(smooth, gst)
+    levels, lidx, seat_m = level_cells(smooth, flat_m, gst, in_stands, seat_m)
+    bands = band_outlines(lidx, levels, gref, stands)
+    # The top of the stands per cell: a floor's level, the seat surface where there are seats.
+    top_grid = np.where(lidx >= 0, np.array(levels + [0.])[np.maximum(lidx, 0)] if levels else smooth, smooth)
+    seat_poly = polygonize(seat_m, gref).intersection(stands)
+    seat_body = make_valid(seat_poly.buffer(.3, join_style=2).intersection(stands)) if not seat_poly.is_empty else Polygon()
+    # Whatever the outlines left uncovered (pieces the smoothing dropped) joins what it borders: the seat surface, or the
+    # floors up to the nearest floor cell's level, so the stands have no holes.
+    if bands and not bands[0].is_empty:
+        near_idx = lidx[tuple(ndi.distance_transform_edt(lidx < 0, return_distances=False, return_indices=True))]
+        gap = make_valid(stands.difference(unary_union([bands[0], seat_body])))
+        for q in _polys(gap):
+            if q.area < .02: continue
+            rp = q.representative_point(); i_, j_ = int(np.clip((gy1 - rp.y) / gst, 0, gny - 1)), int(np.clip((rp.x - gx0) / gst, 0, gnx - 1))
+            if not seat_body.is_empty and seat_body.distance(q) + .1 < bands[0].distance(q) or (seat_m[i_, j_] and seat_body.distance(q) < .5):
+                seat_body = unary_union([seat_body, q]); continue
+            for j in range(int(near_idx[i_, j_]) + 1): bands[j] = unary_union([bands[j], q]) if not bands[j].is_empty else bands[j]
+    record['standsLevelsM'] = [round(v - z0, 2) for v in levels]
 
     # --- The playing field: plate and bearing fitted to the return intensity.
     x0, y0, x1, y1 = field.bounds; st = .5; nx = int((x1 - x0) / st) + 1; ny = int((y1 - y0) / st) + 1
@@ -255,38 +439,113 @@ def build(ctx, c, z0, resolved, lm):
     if fit_plate is not None:
         far = int(np.argmax(np.linalg.norm(ring - fit_plate[0], axis=1))); ring = np.roll(ring, -far, axis=0); kd = cKDTree(ring)
     s_along = np.r_[0, np.cumsum(np.linalg.norm(np.diff(ring, axis=0), axis=1))]
-    d_v, i_v = kd.query(V[:, :2]); seat_uv = np.c_[s_along[i_v] / SEAT_TILE[0], d_v / SEAT_TILE[1]]
     def along_uv(mat, s_m, z_m):
         # Walls and fronts: u runs along the stands (continuous round every bend), v up the wall, in the material's tiles.
         su, sv = ctx['material_bank'].get(mat)[1]; return np.c_[s_m / su, z_m / sv]
     lap('field fit')
-    for mat, mask in kinds.items():
-        if not mask.any(): continue
-        if mat == 'seats': put(trimesh.Trimesh(V3, F[mask], process=False), 'roofs__' + fid, mat, uv=seat_uv); continue
-        up_f = mask & ~steep; st_f = mask & steep
-        if up_f.any(): put(trimesh.Trimesh(V3, F[up_f], process=False), 'roofs__' + fid, mat)
-        if st_f.any(): put(trimesh.Trimesh(V3, F[st_f], process=False), 'roofs__' + fid, mat, uv=along_uv(mat, s_along[i_v], Z))
-    record['standsFaces'] = {k: int(v.sum()) for k, v in kinds.items()}
-    lap('stands mesh')
-
-    # --- Walls: outline to the ground in brick, the field wall in padding, a dark backdrop against the frontage strip,
-    # concrete round courts. u runs along the ring each wall stands on, so bends never break the texture.
     outer = site.exterior; fring = field.exterior; strip_edge = strip.boundary if not strip.is_empty else None
-    walls = {'brick_modular': [], 'padding': [], 'recess': [], 'venue_concrete': []}
-    for a_i, b_i in boundary_edges(F):
-        a, bb = V[a_i], V[b_i]; mid = Point((a + bb) / 2)
-        if fring.distance(mid) < .05: mat, ring_l, bot = 'padding', fring, (zf - .1, zf - .1)
-        elif strip_edge is not None and strip_edge.distance(mid) < .05: mat, ring_l, bot = 'recess', outer, (float(elev(*a)) - .2, float(elev(*bb)) - .2)
-        elif outer.distance(mid) < .05: mat, ring_l, bot = 'brick_modular', outer, (float(elev(*a)) - .2, float(elev(*bb)) - .2)
-        else: mat, ring_l, bot = 'venue_concrete', outer, (float(elev(*a)) - .2, float(elev(*bb)) - .2)
-        wv, wf = wall(a, bb, Z[a_i], Z[b_i], *bot)
-        sa, sb = ring_l.project(Point(a)), ring_l.project(Point(bb))
-        if abs(sb - sa) > ring_l.length / 2: sb = sa + math.copysign(np.linalg.norm(bb - a), sb - sa)   # across the ring's start
-        walls[mat].append((wv, wf, np.array([sa, sb, sb, sa])))
+    def cell(x, y):
+        j = np.clip(((np.asarray(x, float) - gx0) / gst).astype(int), 0, gnx - 1); i = np.clip(((gy1 - np.asarray(y, float)) / gst).astype(int), 0, gny - 1)
+        return i, j
+    def top_at(x, y): return top_grid[cell(x, y)]
+    def level_at(x, y): return lidx[cell(x, y)]
+    walls = collections.defaultdict(list)
+    def add_wall(mat, a, b, top_a, top_b, bot_a, bot_b, u0):
+        """Quad from bot to top along a->b, facing right of a->b (outward for a ring with the solid on its left)."""
+        if max(top_a - bot_a, top_b - bot_b) < .03: return
+        L = float(np.linalg.norm(b - a))
+        walls[mat].append((np.array([[*a, bot_a], [*b, bot_b], [*b, top_b], [*a, top_a]], float), np.array([u0, u0 + L, u0 + L, u0])))
+    def ring_u(ring_l, a, b):
+        sa, sb = ring_l.project(Point(a)), ring_l.project(Point(b))
+        return sa if abs(sb - sa) <= ring_l.length / 2 else sb - math.copysign(np.linalg.norm(b - a), sb - sa)
+    SZ = np.zeros(0)
+    # Seats: the raked surface, reaching 0.3 m under the floors beside it (never above a lower floor there), steep
+    # steps inside it in concrete, and a skirt down to whatever lies beyond each open edge.
+    if not seat_body.is_empty:
+        SV, SF = triangulate(seat_body, step)
+        SZ = sample(smooth, gref, SV[:, 0], SV[:, 1]); lk = level_at(SV[:, 0], SV[:, 1])
+        SZ = np.where(lk >= 0, np.minimum(SZ, np.array(levels + [0.])[np.maximum(lk, 0)] - .02), SZ)
+        SZ = np.maximum(SZ, elev(SV[:, 0], SV[:, 1]) + .4); S3 = np.c_[SV, SZ]
+        T = S3[SF]; n = np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0]); n /= np.maximum(np.linalg.norm(n, axis=1, keepdims=True), 1e-9)
+        steep = n[:, 2] < .42
+        d_v, i_v = kd.query(SV); seat_uv = np.c_[s_along[i_v] / SEAT_TILE[0], d_v / SEAT_TILE[1]]
+        put(trimesh.Trimesh(S3, SF[~steep], process=False), 'roofs__' + fid, 'seats', uv=seat_uv)
+        if steep.any(): put(trimesh.Trimesh(S3, SF[steep], process=False), 'roofs__' + fid, 'venue_concrete', uv=along_uv('venue_concrete', s_along[i_v], SZ))
+        for a_i, b_i in boundary_edges(SF):
+            pa, pb = SV[a_i], SV[b_i]; mid = (pa + pb) / 2; pm = Point(mid); t = (pb - pa) / max(np.linalg.norm(pb - pa), 1e-9)
+            if fring.distance(pm) < .3: mat, ba, bb, rl = 'padding', zf - .1, zf - .1, fring
+            elif outer.distance(pm) < .3: mat, ba, bb, rl = 'brick_modular', float(elev(*pa)) - .2, float(elev(*pb)) - .2, outer
+            elif strip_edge is not None and strip_edge.distance(pm) < .3: mat, ba, bb, rl = 'recess', float(elev(*pa)) - .2, float(elev(*pb)) - .2, outer
+            else:
+                k = int(level_at(*(mid + np.array([t[1], -t[0]]) * .8)))
+                ba = bb = levels[k] if k >= 0 else float(elev(*mid)) - .2; mat, rl = 'venue_concrete', outer
+            add_wall(mat, pa, pb, SZ[a_i], SZ[b_i], min(ba, SZ[a_i]), min(bb, SZ[b_i]), ring_u(rl, pa, pb))
+        record['seatsM2'] = round(float(seat_poly.area))
+    # Floors: each band's outline walls rise from the band below (the ground for the first) to its level. On the site
+    # outline they are the brick outer wall; against the frontage strip a dark recess; toward the field concrete,
+    # glazed at suite height (6-24 m); back walls above the outline wall are the dark steel structure with a braced
+    # frame, low ones brick. Each band's exposed top is a flat roof.
+    caps = collections.Counter(); bands_rec = []; frames = []
+    for k, pk in enumerate(bands):
+        if pk.is_empty: continue
+        ztop = levels[k]
+        for q in _polys(pk):
+            q = shapely.geometry.polygon.orient(q, 1.0)
+            for r in [q.exterior, *q.interiors]:
+                cs = np.asarray(r.coords); u = 0.
+                for pa, pb in zip(cs[:-1], cs[1:]):
+                    L = float(np.linalg.norm(pb - pa))
+                    if L < .05: continue
+                    mid = (pa + pb) / 2; pm = Point(mid)
+                    ba, bb = (levels[k - 1], levels[k - 1]) if k else (float(elev(*pa)) - .2, float(elev(*pb)) - .2)
+                    if outer.distance(pm) < .3: add_wall('brick_modular', pa, pb, ztop, ztop, ba, bb, ring_u(outer, pa, pb))
+                    elif strip_edge is not None and strip_edge.distance(pm) < .3: add_wall('recess', pa, pb, ztop, ztop, ba, bb, ring_u(outer, pa, pb))
+                    elif fring.distance(pm) < .3: add_wall('padding', pa, pb, ztop, ztop, min(ba, zf - .1), min(bb, zf - .1), ring_u(fring, pa, pb))
+                    else:
+                        t = (pb - pa) / L; out = np.array([t[1], -t[0]]); d_, i_ = kd.query(mid); tf = (ring[i_] - mid) / max(d_, 1e-6)
+                        if out @ tf > .35:
+                            cuts = [z0 + 6., z0 + 24.]
+                            for lo, hi, mat in ((-1e9, cuts[0], 'venue_concrete'), (cuts[0], cuts[1], 'glass_dark'), (cuts[1], 1e9, 'venue_concrete')):
+                                t_top = min(ztop, hi)
+                                if t_top > max(ba, bb, lo) + .03: add_wall(mat, pa, pb, t_top, t_top, max(ba, lo), max(bb, lo), u)
+                        else:
+                            # A back wall above the outline wall is the steel structure behind the decks: a dark wall
+                            # (the shadowed interior) with the braced frame standing in front of it.
+                            tall = k and ztop - max(ba, bb) > 5.
+                            add_wall('recess' if tall else 'brick_modular', pa, pb, ztop, ztop, ba, bb, u)
+                            if tall: frames.append((k, pa, pb, max(ba, bb), ztop))
+                    u += L
+        nxt = next((bands[j] for j in range(k + 1, len(bands)) if not bands[j].is_empty), None)
+        exposed = make_valid(pk.difference(nxt)) if nxt is not None else pk
+        mat = 'venue_concrete' if ztop - z0 < 30 else 'roofing'; m = flat_roof(exposed, ztop)
+        if m is not None: put(m, 'roofs__' + fid, mat); caps[mat] += exposed.area
+        bands_rec.append({'levelM': round(ztop - z0, 2), 'areaM2': round(pk.area), 'pieces': len(_polys(pk))})
+    wall_m2 = {}
     for mat, quads in walls.items():
-        if quads:
-            WV = np.concatenate([q[0] for q in quads]); WF = np.concatenate([q[1] + 4 * i for i, q in enumerate(quads)])
-            put(trimesh.Trimesh(WV, WF, process=False), 'buildings__' + fid, mat, uv=along_uv(mat, np.concatenate([q[2] for q in quads]), WV[:, 2]))
+        WV = np.concatenate([q[0] for q in quads]); WF = np.concatenate([np.array([[0, 1, 2], [0, 2, 3]]) + 4 * i for i in range(len(quads))])
+        put(trimesh.Trimesh(WV, WF, process=False), 'buildings__' + fid, mat, uv=along_uv(mat, np.concatenate([q[1] for q in quads]), WV[:, 2]))
+        wall_m2[mat] = round(float(sum(np.linalg.norm(q[0][1, :2] - q[0][0, :2]) * ((q[0][2, 2] - q[0][1, 2]) + (q[0][3, 2] - q[0][0, 2])) / 2 for q in quads)))
+    # Braced frames on the back walls: posts every ~7 m along each run of back wall, X braces between them and three
+    # rails, 0.45 m proud of the wall, in the painted steel of the rigs.
+    key_f = 'facades__' + fid + '__landmark'; members = 0; runs = []
+    for k, pa, pb, zlo, zhi in frames:
+        if runs and runs[-1][0] == k and np.allclose(runs[-1][1][-1], pa, atol=1e-6) and abs(runs[-1][2] - zlo) < .05: runs[-1][1].append(pb)
+        else: runs.append([k, [pa, pb], zlo, zhi])
+    for k, pts_r, zlo, zhi in runs:
+        P2 = np.asarray(pts_r); seg = np.diff(P2, axis=0); Ls = np.linalg.norm(seg, axis=1); total = Ls.sum()
+        if total < 3.: continue
+        cum = np.r_[0, np.cumsum(Ls)]; nposts = max(2, int(round(total / 7.)) + 1)
+        posts = []
+        for sv in np.linspace(0, total, nposts):
+            i = min(int(np.searchsorted(cum, sv, side='right')) - 1, len(seg) - 1); f = (sv - cum[i]) / max(Ls[i], 1e-9)
+            t = seg[i] / max(Ls[i], 1e-9); out = np.array([t[1], -t[0]]); posts.append(P2[i] + seg[i] * f + out * .45)
+        for q in posts: cylinder([q[0], q[1], zlo], [q[0], q[1], zhi], .16, key_f, 'verdigris', 6); members += 1
+        for q0, q1 in zip(posts, posts[1:]):
+            cylinder([q0[0], q0[1], zlo], [q1[0], q1[1], zhi], .1, key_f, 'verdigris', 6); cylinder([q1[0], q1[1], zlo], [q0[0], q0[1], zhi], .1, key_f, 'verdigris', 6)
+            for zr in (zlo + .15, zhi - .9, zhi - .15): cylinder([q0[0], q0[1], zr], [q1[0], q1[1], zr], .16, key_f, 'verdigris', 6)
+            members += 5
+    record['standsBands'] = bands_rec; record['wallsM2'] = wall_m2; record['roofsM2'] = {k: round(v) for k, v in caps.items()}; record['bracedMembers'] = members
+    lap('stands mesh')
     # Arcade: the brick outline wall is pierced by arches at a steady pitch (dark recesses a hand's width proud of the
     # wall, so they win its depth), wherever the wall is tall enough and runs straight across the arch.
     ring_ccw = shapely.geometry.polygon.orient(site, 1.0).exterior; arch = 0
@@ -296,7 +555,7 @@ def build(ctx, c, z0, resolved, lm):
         t1, t2 = pm - pa, pb - pm
         if np.dot(t1, t2) / (np.linalg.norm(t1) * np.linalg.norm(t2) + 1e-9) < .94: continue          # a corner inside the arch
         t = (pb - pa) / np.linalg.norm(pb - pa); out = np.array([t[1], -t[0]])
-        base = float(elev(*pm)); top = float(sample(edge_grid, gref, *(pm - out * .8)))
+        base = float(elev(*pm)); top = float(top_at(*(pm - out * .8)))
         if top - base < 6: continue
         h = min(4.5, .6 * (top - base) - 1.5); ang = np.linspace(0, np.pi, 9)
         prof = np.r_[[[-1.5, 0.]], [[1.5, 0.]], np.c_[1.5 * np.cos(ang), h + 1.5 * np.sin(ang)]]   # sill, jambs, round head
@@ -371,7 +630,7 @@ def build(ctx, c, z0, resolved, lm):
             if any(np.hypot(*(q[:, :2].mean(0) - seed)) < pr['radiusM'] for pr, seed, _, _ in props_in): continue
             xy = q[:, :2] - q[:, :2].mean(0); ev, vec = np.linalg.eigh(xy.T @ xy); ax = vec[:, -1]; wd = vec[:, 0]
             Lk = float(np.ptp(xy @ ax)); Wk = float(np.ptp(xy @ wd)); ctr = q[:, :2].mean(0)
-            topz = float(np.percentile(q[:, 2], 97)); lowz = float(np.percentile(q[:, 2], 3)); zs = float(sample(smooth, gref, *ctr))
+            topz = float(np.percentile(q[:, 2], 97)); lowz = float(np.percentile(q[:, 2], 3)); zs = float(top_at(*ctr))
             facing_v = plate_xy - ctr; facing_v /= max(np.linalg.norm(facing_v), 1e-6)
             if np.dot(wd, facing_v) < 0: wd = -wd
             ang = math.atan2(ax[1], ax[0]); kind = None
@@ -390,7 +649,7 @@ def build(ctx, c, z0, resolved, lm):
                     lp = ctr + ax * u + wd * .4; cube([lp[0], lp[1], vz], [.8, .12, .7], key, 'lamp', ang)
             posts = [0.] if Lk < 12 else [-.38 * Lk, 0., .38 * Lk]
             for u in posts:
-                pp = ctr + ax * u; foot = float(sample(smooth, gref, *pp))
+                pp = ctr + ax * u; foot = float(top_at(*pp))
                 if topz - bank - foot > .5: cube([pp[0], pp[1], (foot + topz - bank) / 2], [.7, .7, topz - bank - foot], key, 'verdigris', ang)
     record['standingStructures'] = rigs
 
@@ -449,4 +708,5 @@ def build(ctx, c, z0, resolved, lm):
     if not apron.is_empty: ctx['surface'](apron, 'terrain', 'sidewalk', -.01)
     record['extendedBeyondBoundaryM2'] = round(site.difference(ctx['boundary']).area)
     lap('apron'); record['timingS'] = timing
-    return {'height': float(Z.max() - z0), 'roofParts': int(sum(v.any() for v in kinds.values())), 'site': site, 'field': field, 'record': record}
+    top = max([*levels, float(SZ.max()) if len(SZ) else z0])
+    return {'height': float(top - z0), 'roofParts': len([b for b in bands if not b.is_empty]) + (1 if len(SZ) else 0), 'site': site, 'field': field, 'record': record}
