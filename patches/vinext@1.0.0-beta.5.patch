@@ -1,0 +1,70 @@
+diff --git a/dist/shims/internal/als-registry.js b/dist/shims/internal/als-registry.js
+index 20cef33636395a32f4d337bb2f968a445ada3911..c7a1adbae14c66a28e97e5fa1aaeb41733c6061f 100644
+--- a/dist/shims/internal/als-registry.js
++++ b/dist/shims/internal/als-registry.js
+@@ -45,6 +45,16 @@ const _g = globalThis;
+ const _REGISTRY_KEY = Symbol.for("vinext.als.registry");
+ const _registry = _g[_REGISTRY_KEY] ??= /* @__PURE__ */ new Set();
+ /**
++* Module-local stores enrolled through `registerAlsForScopeExit`, held through
++* `WeakRef`s. The module that owns such a store mints a new one every time it
++* is evaluated again (each Vite module-runner full reload does this), so strong
++* references here would keep every superseded store enrolled for the life of
++* the isolate. A collected store can no longer be read by anyone, so dropping
++* it never changes what a callback observes.
++*/
++const _WEAK_REGISTRY_KEY = Symbol.for("vinext.als.registry.weak");
++const _weakRegistry = _g[_WEAK_REGISTRY_KEY] ??= /* @__PURE__ */ new Set();
++/**
+ * No-op AsyncLocalStorage used when the runtime does not provide a usable
+ * `AsyncLocalStorage` constructor.
+ *
+@@ -94,9 +104,21 @@ function getOrCreateAls(key) {
+ * Callers register themselves rather than being imported here, so this module
+ * keeps importing nothing but `node:async_hooks` and stays safe to evaluate in
+ * client bundles where that resolves to a constructor-less stub.
++*
++* The store is held weakly (see `_weakRegistry`), and each registration prunes
++* stores that have since been collected.
+ */
+ function registerAlsForScopeExit(als) {
+-	_registry.add(als);
++	if (typeof WeakRef !== "function") {
++		_registry.add(als);
++		return;
++	}
++	for (const ref of _weakRegistry) {
++		const known = ref.deref();
++		if (known === undefined) _weakRegistry.delete(ref);
++		else if (known === als) return;
++	}
++	_weakRegistry.add(new WeakRef(als));
+ }
+ /**
+ * Run `fn` — and every async continuation it starts — outside every
+@@ -115,12 +137,24 @@ function registerAlsForScopeExit(als) {
+ * particular takes its `getRequestExecutionContext()` fallback precisely when
+ * the unified store is absent, so a partial exit would enable that path rather
+ * than close it.
++*
++* Only stores that currently hold a value are exited. Exiting a store whose
++* `getStore()` is already `undefined` changes nothing, and each wrapped store
++* nests one more `exit()` call, so wrapping every registered store (superseded
++* ones included) grows the stack with the registry until it overflows.
+ */
+ function runOutsideRequestScopes(fn) {
+ 	let run = fn;
+-	for (const als of _registry) {
++	const exitIfEntered = (als) => {
++		if (als.getStore() === undefined) return;
+ 		const inner = run;
+ 		run = () => als.exit(inner);
++	};
++	for (const als of _registry) exitIfEntered(als);
++	for (const ref of _weakRegistry) {
++		const als = ref.deref();
++		if (als === undefined) _weakRegistry.delete(ref);
++		else exitIfEntered(als);
+ 	}
+ 	return run();
+ }
