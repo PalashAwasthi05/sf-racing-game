@@ -1,0 +1,390 @@
+{
+ "schemaVersion": 1,
+ "method": "auto_read_frontages_v31.py --supplements: colour zones, trims and sign boards measured on the photograph of the wall each hand reading draws; merged only where the reading has none of that kind",
+ "supplements": [
+  {
+   "supplementOf": "osm_149167937-f0",
+   "wallMidpoint": [
+    -15.34,
+    74.84
+   ],
+   "camera": "1148745777138459",
+   "panels": [
+    {
+     "rect": [
+      0.0,
+      0.0,
+      1.0,
+      0.1284
+     ],
+     "material": "render_gray#826f6f",
+     "evidence": "image-measured colour zone"
+    },
+    {
+     "rect": [
+      0.0,
+      0.1284,
+      1.0,
+      0.214
+     ],
+     "material": "brick_modular#594646",
+     "evidence": "image-measured colour zone"
+    }
+   ],
+   "piers": [],
+   "bands": [
+    {
+     "height": 0.1669,
+     "thicknessM": 0.2,
+     "depthM": 0.25,
+     "projectionM": 0.08,
+     "material": "brick_modular#987e7e",
+     "evidence": "image-measured band"
+    }
+   ],
+   "reading": {
+    "zones": [
+     [
+      0.0,
+      3.0
+     ],
+     [
+      3.0,
+      5.0
+     ],
+     [
+      5.0,
+      9.5
+     ]
+    ],
+    "bands": [
+     3.9
+    ]
+   }
+  },
+  {
+   "supplementOf": "sf_201006_0001102-f0",
+   "wallMidpoint": [
+    -3.36,
+    125.98
+   ],
+   "camera": "753688944087228",
+   "panels": [
+    {
+     "rect": [
+      0.2622,
+      0.315,
+      0.305,
+      0.6155
+     ],
+     "material": "panel_dark#845c84",
+     "evidence": "image-detected sign"
+    }
+   ],
+   "piers": [
+    {
+     "x": 0.1298,
+     "widthM": 0.5,
+     "projectionM": 0.1,
+     "y": [
+      0.35,
+      1.0
+     ],
+     "material": "render_gray#d7abd4",
+     "evidence": "image-measured trim"
+    }
+   ],
+   "bands": [
+    {
+     "height": 0.7558,
+     "thicknessM": 0.2,
+     "depthM": 0.25,
+     "projectionM": 0.08,
+     "material": "brick_modular#734865",
+     "evidence": "image-measured band"
+    },
+    {
+     "height": 0.8953,
+     "thicknessM": 0.2,
+     "depthM": 0.35,
+     "projectionM": 0.25,
+     "material": "brick_dark#5e3a5a",
+     "evidence": "image-measured cornice"
+    },
+    {
+     "height": 0.9651,
+     "thicknessM": 0.2,
+     "depthM": 0.35,
+     "projectionM": 0.25,
+     "material": "brick_dark#53364c",
+     "evidence": "image-measured cornice"
+    }
+   ],
+   "reading": {
+    "piers": [
+     3.5
+    ],
+    "bands": [
+     6.5,
+     7.7,
+     8.3
+    ],
+    "signs": [
+     2.7
+    ]
+   }
+  },
+  {
+   "supplementOf": "sf_201006_0001103-f0",
+   "wallMidpoint": [
+    72.29,
+    166.43
+   ],
+   "camera": "794306886410093",
+   "panels": [
+    {
+     "rect": [
+      0.7066,
+      0.1412,
+      0.945,
+      0.1985
+     ],
+     "material": "panel_dark#5b5a8b",
+     "evidence": "image-detected sign"
+    }
+   ],
+   "piers": [],
+   "bands": [],
+   "reading": {
+    "signs": [
+     3.3
+    ]
+   }
+  },
+  {
+   "supplementOf": "sf_201006_0001245-f0",
+   "wallMidpoint": [
+    -33.99,
+    95.27
+   ],
+   "camera": "743561541725632",
+   "panels": [],
+   "piers": [
+    {
+     "x": 0.0355,
+     "widthM": 0.5,
+     "projectionM": 0.1,
+     "y": [
+      0.3479,
+      0.994
+     ],
+     "material": "panel_dark#46211f",
+     "evidence": "image-measured trim"
+    }
+   ],
+   "bands": [
+    {
+     "height": 0.7637,
+     "thicknessM": 0.4,
+     "depthM": 0.25,
+     "projectionM": 0.08,
+     "material": "brick_dark#6e2a1e",
+     "evidence": "image-measured band"
+    }
+   ],
+   "reading": {
+    "piers": [
+     0.8
+    ],
+    "bands": [
+     6.4
+    ]
+   }
+  },
+  {
+   "supplementOf": "sf_201006_0002044-f0",
+   "wallMidpoint": [
+    12.86,
+    142.07
+   ],
+   "camera": "4317096991859927",
+   "panels": [],
+   "piers": [
+    {
+     "x": 0.1803,
+     "widthM": 0.75,
+     "projectionM": 0.1,
+     "y": [
+      0.4151,
+      1.2177
+     ],
+     "material": "brick_modular#c38e81",
+     "evidence": "image-measured trim"
+    },
+    {
+     "x": 0.0467,
+     "widthM": 0.75,
+     "projectionM": 0.1,
+     "y": [
+      0.4151,
+      1.2177
+     ],
+     "material": "brick_modular#b28578",
+     "evidence": "image-measured trim"
+    }
+   ],
+   "bands": [],
+   "reading": {
+    "piers": [
+     3.4,
+     0.9
+    ]
+   }
+  },
+  {
+   "supplementOf": "sf_201006_0002333-f0",
+   "wallMidpoint": [
+    73.96,
+    202.29
+   ],
+   "camera": "1272858814248771",
+   "panels": [],
+   "piers": [
+    {
+     "x": 0.2622,
+     "widthM": 0.75,
+     "projectionM": 0.1,
+     "y": [
+      0.35,
+      0.6475
+     ],
+     "material": "panel_dark#140e0f",
+     "evidence": "image-measured trim"
+    },
+    {
+     "x": 0.3075,
+     "widthM": 0.5,
+     "projectionM": 0.1,
+     "y": [
+      0.35,
+      0.6475
+     ],
+     "material": "panel_dark#141414",
+     "evidence": "image-measured trim"
+    },
+    {
+     "x": 0.0271,
+     "widthM": 1.25,
+     "projectionM": 0.1,
+     "y": [
+      0.35,
+      0.6475
+     ],
+     "material": "brick_dark#5a2f2b",
+     "evidence": "image-measured trim"
+    }
+   ],
+   "bands": [],
+   "reading": {
+    "piers": [
+     10.9,
+     12.8,
+     1.1
+    ]
+   }
+  },
+  {
+   "supplementOf": "sf_201006_0003596-f0",
+   "wallMidpoint": [
+    -172.5,
+    -44.62
+   ],
+   "camera": "1515197226517069",
+   "panels": [
+    {
+     "rect": [
+      0.0,
+      0.4047,
+      0.0667,
+      0.5563
+     ],
+     "material": "panel_dark#635e6c",
+     "evidence": "image-detected sign"
+    },
+    {
+     "rect": [
+      0.4931,
+      0.8327,
+      0.6276,
+      0.9133
+     ],
+     "material": "panel_dark#201714",
+     "evidence": "image-detected sign"
+    }
+   ],
+   "piers": [
+    {
+     "x": 0.0355,
+     "widthM": 0.75,
+     "projectionM": 0.1,
+     "y": [
+      0.35,
+      0.8503
+     ],
+     "material": "render_gray#64606f",
+     "evidence": "image-measured trim"
+    }
+   ],
+   "bands": [],
+   "reading": {
+    "piers": [
+     0.9
+    ],
+    "signs": [
+     3.6,
+     7.3
+    ]
+   }
+  },
+  {
+   "supplementOf": "sf_201006_0006227-f0",
+   "wallMidpoint": [
+    86.47,
+    181.04
+   ],
+   "camera": "796988149388548",
+   "panels": [],
+   "piers": [
+    {
+     "x": 0.8817,
+     "widthM": 1.5,
+     "projectionM": 0.1,
+     "y": [
+      0.3776,
+      0.9063
+     ],
+     "material": "brick_dark#422824",
+     "evidence": "image-measured trim"
+    }
+   ],
+   "bands": [
+    {
+     "height": 0.8535,
+     "thicknessM": 0.6,
+     "depthM": 0.25,
+     "projectionM": 0.08,
+     "material": "panel_dark#212730",
+     "evidence": "image-measured band"
+    }
+   ],
+   "reading": {
+    "piers": [
+     11.2
+    ],
+    "bands": [
+     11.3
+    ]
+   }
+  }
+ ]
+}
