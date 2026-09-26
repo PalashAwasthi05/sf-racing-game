@@ -15,6 +15,12 @@ GROUPS = {'opening': {'windowpane', 'door', 'screen door'}, 'sign': {'signboard'
 CODES = {'other': 0, 'opening': 1, 'sign': 2, 'occluder': 3, 'sky': 4}
 
 
+def release(torch):
+    """Return the MPS allocator's cached blocks after each image: across a long run of differently sized walls the
+    cache otherwise grows without bound (25 GB after 18 frontages on 2026-09-25, and the machine swapped)."""
+    if torch.backends.mps.is_available(): torch.mps.empty_cache()
+
+
 class Segmenter:
     def __init__(self, model_glob='.models/models--nvidia--segformer-b2-finetuned-ade-512-512/snapshots/*'):
         import torch
@@ -50,6 +56,7 @@ class Segmenter:
         cls = (acc / np.maximum(cnt, 1)).argmax(0)
         codes = self.lut[cls]
         if scale != 1.: codes = np.asarray(Image.fromarray(codes).resize((W, H), Image.NEAREST))
+        release(torch)
         return codes
 
 
@@ -89,6 +96,7 @@ class Detector:
                     if (b[2] - b[0]) * (b[3] - b[1]) > .8 * tw * th: continue
                     kind = 'window' if 'window' in l else 'door' if 'door' in l else 'awning' if 'awning' in l else 'sign' if 'sign' in l else None
                     if kind: found.append((*b, kind, float(sc)))
+            del inp, out, res; release(torch)                # per batch: the allocator otherwise grows to 16 GB on a long wall
         if not found: return []
         B = torch.tensor([f[:4] for f in found], dtype=torch.float32); S = torch.tensor([f[5] for f in found], dtype=torch.float32)
         return [found[i] for i in nms(B, S, .4).numpy()]
@@ -102,7 +110,7 @@ def glazed_boxes(det, img, threshold=.3, min_share=.25):
     inp = det.processor(images=t, text='a glass facade. a glass curtain wall.', return_tensors='pt').to(det.device)
     with torch.no_grad(): out = det.model(**inp)
     r = det.processor.post_process_grounded_object_detection(out, inp.input_ids, threshold=threshold, text_threshold=threshold - .05, target_sizes=[t.size[::-1]])[0]
-    area = im.width * im.height; res = []
+    area = im.width * im.height; res = []; release(torch)
     for b, sc in zip(r['boxes'].cpu().numpy() / 2, r['scores'].cpu().numpy()):
         if (b[2] - b[0]) * (b[3] - b[1]) >= min_share * area: res.append((*b, float(sc)))
     return res

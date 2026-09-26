@@ -27,6 +27,9 @@ from judge_facades_v27 import to_lab
 FAMILIES = {'brick': {'default': 'brick_modular', 'dark': 'brick_dark'}, 'render': {'default': 'stucco', 'red': 'stucco_red', 'salmon': 'render_salmon', 'gray': 'render_gray', 'white': 'render_white'},
             'metal-panel': {'default': 'panel_silver', 'dark': 'panel_dark'}, 'terracotta': {'default': 'terracotta_panel'}, 'timber': {'default': 'timber_dark'}, 'pale-trim': {'default': 'stone'}}
 ZONE_DE, ZONE_SPLIT_DE, TRIM_DE = 12., 14., 16.
+# The wall colour stays v27's (dominant cluster): replacing it with the body zone's median and dropping dark readings
+# measured worse on the photo judge (median colour error 0.175 -> 0.207); both stay available behind these switches.
+REPLACE_COLOUR, DROP_DARK = False, False
 
 
 def material_for(rgb):
@@ -95,7 +98,7 @@ def guard_dark(p):
     """A near-black wall reading (L* under 22) is shade or occlusion (trees, a dark street), not paint: it proves neither
     the wall's colour nor that the wall is blank. The reading keeps its layout; the building's other evidence colours it."""
     ev = p.get('materialEvidence')
-    if not ev or not ev.get('colorRgb'): return p
+    if not DROP_DARK or not ev or not ev.get('colorRgb'): return p
     if to_lab(np.asarray(ev['colorRgb'], float)[None, None])[0, 0][0] >= 22.: return p
     p.pop('materialEvidence', None); p.setdefault('reading', {})['darkPhoto'] = True
     if p.get('reading', {}).get('blank') and not p.get('openings') and not p.get('groups'):
@@ -125,7 +128,7 @@ def enrich(p, found, wall):
     if ev is not None:
         old_l = to_lab(np.asarray(ev.get('colorRgb') or brgb, float)[None, None])[0, 0][0]
         support = body[3] / max(1, (min(body[1], H) - body[0]) * L * PPM * PPM)
-        if body[2][0] >= DARK and support >= .35 and body[2][0] >= old_l - 15:
+        if REPLACE_COLOUR and body[2][0] >= DARK and support >= .35 and body[2][0] >= old_l - 15:
             ev['colorRgb'] = [int(v) for v in np.clip(brgb, 0, 255)]; ev['family'], ev['finish'] = family(np.asarray(brgb, float) / 255.)
     guard_dark(p)
     # piers inside the body zone

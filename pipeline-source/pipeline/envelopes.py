@@ -6,9 +6,25 @@ import math,re,copy
 import numpy as np
 import trimesh
 from shapely.geometry import Polygon,Point,box,LineString
+from shapely.geometry.polygon import orient
 from shapely.ops import unary_union
 from scipy.ndimage import gaussian_filter1d
 from .surface_evidence import admissible,resolve_material
+
+SKIN=.24   # thickness of every emitted skin slab (prism); returns span only the depth the slabs leave open
+ROOF_TOLERANCE_M=.3
+
+
+def _sheet(ctx,quad,outward,key,mat):
+ """One opaque sheet whose front faces `outward`. The viewer culls back faces (glTF doubleSided is
+ false), so a sheet wound toward its own building is invisible from the street: winding is evidence."""
+ v=np.asarray(quad,float);nrm=np.cross(v[1]-v[0],v[2]-v[0])
+ if np.linalg.norm(nrm)<1e-9:return
+ faces=[[0,1,2],[0,2,3]] if np.dot(nrm,outward)>0 else [[0,2,1],[0,3,2]]
+ ctx['put'](trimesh.Trimesh(v,faces,process=False),key,mat)
+
+def _twosided(ctx,quad,key,mat):
+ v=np.asarray(quad,float);ctx['put'](trimesh.Trimesh(v,[[0,1,2],[0,2,3],[0,2,1],[0,3,2]],process=False),key,mat)
 
 
 def aperture_shape(style):
@@ -19,7 +35,8 @@ def aperture_shape(style):
 
 def return_edges(node,region,nodes,shapes):
  """Adjacent patches own only their exposed depth difference, not two buried walls."""
- for aa,bb in zip(region.exterior.coords,list(region.exterior.coords)[1:]):
+ ring=list(orient(region,1.0).exterior.coords)   # CCW in facade (x right, z up) as seen from the street
+ for aa,bb in zip(ring,ring[1:]):
   edge=LineString([aa,bb]);remaining=edge
   for other in nodes:
    if other['id']==node['id'] or other['parentId']!=node['parentId']:continue
@@ -37,7 +54,7 @@ def _lines(g):
 
 def matches(c,profile):
  m=profile['match']
- return (m.get('featureId')==c['id']) or (c.get('osm') and str(m.get('osmWayId'))==str(c['osm']['id']))
+ return (m.get('featureId')==c.get('sourceId',c['id'])) or (c.get('osm') and str(m.get('osmWayId'))==str(c['osm']['id']))
 
 
 def frame(c,profile):
@@ -147,20 +164,105 @@ def prepare(ctx,c,z0,samples,profiles):
  return resolved
 
 
-def replacement_mask(resolved):
- masks=[]
+def root_slots(resolved):
+ """Plan slot of every root skin: its x-extent on the frontage by the replacement depth. Root returns
+ stand exactly on these x-ends, so the host may be cut here and nowhere else."""
  for r in resolved:
-  f=r['frame'];p=r['profile'];u=f['tangent'];n=f['normal'];left=f['left'];right=left+f['width'];plane=f['plane'];depth=p.get('replaceDepthM',10)
-  masks.append(Polygon([u*x+n*y for x,y in [(left-.05,plane+3),(right+.05,plane+3),(right+.05,plane-depth),(left-.05,plane-depth)]]))
- return unary_union(masks)
+  f=r['frame'];p=r['profile'];u=f['tangent'];n=f['normal'];W,left,plane=f['width'],f['left'],f['plane'];depth=p.get('replaceDepthM',10)
+  for d in r['nodes']:
+   if d['parentId'] is not None:continue
+   x0,z0,x1,z1=d['rect'];a=left+x0*W;b=left+x1*W
+   yield d,Polygon([u*x+n*y for x,y in [(a,plane+3),(b,plane+3),(b,plane-depth),(a,plane-depth)]]),float(z0),float(z1)
+
+def replacement_mask(resolved):
+ """Host walls are removed only where an emitted, closed skin box replaces them (cut domain = emitted
+ skin, the rule surface_coverage.replacement_transaction states). Frame padding produced open slivers."""
+ return unary_union([slot for _,slot,_,_ in root_slots(resolved)])
+
+def roof_mask(resolved,host_height,tolerance=ROOF_TOLERANCE_M):
+ """The host cap is removed only under skins that rise above it (their box gets its own lid, see `lids`). A skin
+ whose top meets the cap keeps the cap as its lid; a lower skin keeps the host roof above it and the host wall
+ band closes the front between skin top and cap. Cutting the cap under a skin that merely reached it left the
+ replacement box open to the sky along every observed frontage."""
+ return unary_union([slot for _,slot,_,z1 in root_slots(resolved) if z1>host_height+tolerance])
+
+def lids(resolved,host_height,tolerance=ROOF_TOLERANCE_M):
+ """Plan slot and top height (above the building base) of every root skin that rises above the host cap: the
+ box that replaces the host there is closed by a lid at that height, so the roof is continuous."""
+ return [(slot,z1) for _,slot,_,z1 in root_slots(resolved) if z1>host_height+tolerance]
+
+def coverage_spans(resolved,z0,host_height,tolerance=ROOF_TOLERANCE_M):
+ """For the facade compiler: per root skin, its plan slot and the absolute height band its closed box
+ replaces. A skin whose top is the roof owns the host height up to the cap, so no sliver band appears."""
+ spans=[]
+ for _,slot,lo,hi in root_slots(resolved):
+  top=max(hi,host_height) if hi>=host_height-tolerance else hi
+  spans.append({'slot':slot,'zlo':z0+lo,'zhi':z0+top})
+ return spans
+
+
+AGREE_DE=15.
+
+
+def _face_colour(cells,face):
+ """Area-weighted median colour of one photograph's 2 m cells over a part's visible face, when they cover 30 % of it."""
+ ws,cols=[],[]
+ for x0,z0,x1,z1,rgb,cov in cells:
+  a=face.intersection(box(x0,z0,x1,z1)).area*cov
+  if a>0:ws.append(a);cols.append(rgb)
+ if not ws or sum(ws)<.3*face.area:return None
+ cols=np.asarray(cols,float);ws=np.asarray(ws);med=[]
+ for k in range(3):
+  o=np.argsort(cols[:,k]);cw=np.cumsum(ws[o]);med.append(cols[o[np.searchsorted(cw,cw[-1]/2)],k])
+ return med
+
+
+def _lab(rgb):
+ c=np.asarray(rgb,float)/255.;c=np.where(c<=.04045,c/12.92,((c+.055)/1.055)**2.4)
+ X=c@np.array([[.4124,.2126,.0193],[.3576,.7152,.1192],[.1805,.0722,.9505]])/np.array([.9505,1.,1.089])
+ f=np.where(X>.008856,np.cbrt(X),7.787*X+16/116);return np.array([116*f[1]-16,500*(f[0]-f[1]),200*(f[1]-f[2])])
+
+
+def agreed_colour(cols):
+ """The colour at least two photographs agree on: the largest set of photographs whose colours all agree pairwise
+ within dE 15 (lightness at half weight), and its median; None when no two agree (one photograph's shade,
+ foliage or pose error is not believed on its own)."""
+ # Photographs under similar light only (dE 15, lightness at half weight): a part takes their median colour, and a
+ # median of sunlit and shaded photographs (which colour_agreement.same_material would group) gave one storey of a
+ # brick wall a lighter colour than the next, a band the wall does not have.
+ from itertools import combinations
+ labs=[_lab(c) for c in cols]
+ def de(i,j):return math.sqrt(((labs[i][0]-labs[j][0])*.5)**2+(labs[i][1]-labs[j][1])**2+(labs[i][2]-labs[j][2])**2)
+ for size in range(len(cols),1,-1):
+  for g in combinations(range(len(cols)),size):
+   if all(de(i,j)<AGREE_DE for i,j in combinations(g,2)):return np.median(np.asarray([cols[i] for i in g],float),0)
+ return None
+
+
+def observed_colour(mat,obs,face):
+ """The photographed colour of an envelope part (read_envelope_colours_v32.py): each photograph's area-weighted median
+ of its 2 m cells over the part's visible face (when they cover 30 % of it), and of those the colour two or more
+ photographs agree on. The part keeps its designed shape and material family (a recipe takes the colour as a
+ variant); designed flat colours (glass, metal, dark panels) stay, and so does the designed colour when the
+ photographs do not agree. A single photograph recoloured a brick wall's upper storeys olive from shaded foliage."""
+ from . import material_recipes
+ base=mat.split('#')[0]
+ if not obs or face.is_empty or face.area<1. or base not in material_recipes.RECIPES:return mat
+ photos=obs.get('photos') or ([{'cells':obs['cells']}] if obs.get('cells') else [])
+ cols=[c for c in (_face_colour(ph.get('cells',[]),face) for ph in photos) if c is not None]
+ med=agreed_colour(cols) if cols else None
+ if med is None:return mat
+ return base+'#%02x%02x%02x'%tuple(int(max(0,min(255,round(v)))) for v in med)
 
 
 def compile(ctx,c,z0,resolved):
  records=[];opening_count=0
  for r in resolved:
   p=r['profile'];f=r['frame'];u,n=f['tangent'],f['normal'];W,left,plane=f['width'],f['left'],f['plane'];angle=math.atan2(u[1],u[0]);nodes=r['nodes'];prefix='__'+c['id']+'__observed_'+p['id'];wallkey='buildings'+prefix;detail='facades'+prefix
-  def point(x,z,depth):return np.r_[u*(left+x)+n*(plane+depth),z0+z]
-  def block(x,z,w,h,d,mat,depth=0,key=detail):
+  # The frontage frame is bound when the helpers are made, not read when they are called: a component's own loop
+  # variable (a clock's tick angle) must never re-aim every box drawn after it on the same frontage.
+  def point(x,z,depth,u=u,n=n,left=left,plane=plane,z0=z0):return np.r_[u*(left+x)+n*(plane+depth),z0+z]
+  def block(x,z,w,h,d,mat,depth=0,key=detail,angle=angle):
    if min(w,h,d)>.002:ctx['cube'](point(x,z,depth),[w,d,h],key,mat,angle)
   def beam(a,b,thickness,mat='verdigris',key=detail):
    # Rectangular members retain the silhouette of beams, rather than round poles.
@@ -175,9 +277,13 @@ def compile(ctx,c,z0,resolved):
    x0,z0,x1,z1=node['rect'];x0*=W;x1*=W
    return Polygon([(x0+a*(x1-x0),z0+b*(z1-z0)) for a,b in node['shape']]) if node.get('shape') else box(x0,z0,x1,z1)
   node_shapes={d['id']:patchshape(d) for d in nodes}
+  photo=ctx.get('ENVELOPE_COLOURS',{}).get(p['id']+'|'+c['id']);recoloured=0
   for node in nodes:
    region=node_shapes[node['id']];x0,zmin,x1,zmax=region.bounds;wid=x1-x0;H=zmax-zmin;depth=node['depthM'];mat=node['material'];children=[node_shapes[d['id']] for d in nodes if d['parentId']==node['id']]
    visible=region.difference(unary_union(children));ops=[]
+   if photo:
+    new_mat=observed_colour(mat,photo,visible)
+    if new_mat!=mat:mat=new_mat;recoloured+=1
    for group in node.get('grids',[]):
     a,b,cc,dd=group.get('rect',[0,0,1,1]);nx,ny=group.get('columns',1),group.get('rows',1);s=group.get('style',{});xs=group.get('xCenters',[(j+.5)/nx for j in range(nx)]);ys=group.get('yCenters',[(j+.5)/ny for j in range(ny)])
     for ix,x in enumerate(xs):
@@ -199,16 +305,31 @@ def compile(ctx,c,z0,resolved):
    return_depth=depth-node['parentDepthM']
    if abs(return_depth)>.02:
     for a,b,back_depth in return_edges(node,region,nodes,node_shapes):
-     aa=np.array(a);bb=np.array(b);v=bb-aa
-     if np.linalg.norm(v)<.002:continue
-     verts=[point(*aa,depth),point(*bb,depth),point(*bb,back_depth),point(*aa,back_depth)]
-     mesh=trimesh.Trimesh(verts,[[0,1,2],[0,2,3]],process=False);ctx['put'](mesh,wallkey,mat)
+     aa=np.array(a);bb=np.array(b);v=bb-aa;le=np.linalg.norm(v)
+     if le<.002:continue
+     # Both skins are closed .24 m slabs; the return spans only the depth they leave open.
+     lo,hi=min(depth,back_depth),max(depth,back_depth)-SKIN
+     if hi-lo<.002:continue
+     out2=np.array([v[1],-v[0]])/le          # outward from this patch along a CCW ring
+     if depth<back_depth:out2=-out2           # a recess: its side walls are seen from inside the niche
+     outward=np.array([u[0]*out2[0],u[1]*out2[0],out2[1]])
+     _sheet(ctx,[point(*aa,lo),point(*bb,lo),point(*bb,hi),point(*aa,hi)],outward,wallkey,mat)
+   if node['parentId'] is None:
+    # Close the back of the replacement box; above the host roof it is seen from behind.
+    x0r,z0r,x1r,z1r=region.bounds;back=node['parentDepthM']
+    _sheet(ctx,[point(x0r,z0r,back),point(x1r,z0r,back),point(x1r,z1r,back),point(x0r,z1r,back)],np.array([-n[0],-n[1],0.]),wallkey,mat)
    for op,s,ix,iy in ops:
     xa,za,xb,zb=op.bounds;ow=xb-xa;oh=zb-za;cx=(xa+xb)/2;cz=(za+zb)/2;recess=s.get('recessM',.16);fw=s.get('frameWidthM',.055);frame_mat=s.get('frameMaterial','silver');gd=depth-recess
     prism(op,gd-.35,.025,'interior',detail);prism(op,gd,.025,s.get('glassMaterial','glass'),detail)
-    for a,b in zip(op.exterior.coords,list(op.exterior.coords)[1:]):
+    ring=list(orient(op,1.0).exterior.coords)
+    for a,b in zip(ring,ring[1:]):
      beam([a[0],a[1],gd+.02],[b[0],b[1],gd+.02],fw,frame_mat)
-     verts=[point(*a,depth),point(*b,depth),point(*b,gd),point(*a,gd)];ctx['put'](trimesh.Trimesh(verts,[[0,1,2],[0,2,3]],process=False),detail,s.get('revealMaterial',mat))
+     # The skin slab's own hole faces line the first .24 m; a deeper recess gets a reveal facing into the opening.
+     if depth-SKIN-gd>.002:
+      e=np.array(b)-np.array(a);le=np.linalg.norm(e)
+      if le>.002:
+       inward=-np.array([e[1],-e[0]])/le
+       _sheet(ctx,[point(*a,gd),point(*b,gd),point(*b,depth-SKIN),point(*a,depth-SKIN)],np.array([u[0]*inward[0],u[1]*inward[0],inward[1]]),detail,s.get('revealMaterial',mat))
     for frac in s.get('mullions',[.5]):
      for ln in _lines(LineString([(xa+ow*frac,za),(xa+ow*frac,zb)]).intersection(op)):beam([*ln.coords[0],gd+.025],[*ln.coords[-1],gd+.025],.043,frame_mat)
     for frac in s.get('transoms',[.76]):
@@ -217,7 +338,7 @@ def compile(ctx,c,z0,resolved):
      aw=ow*.75;ah=min(.66,oh*.23);bot=za+oh*.47;top=bot+ah;proj=.19
      for xx in [cx-aw/2,cx+aw/2]:beam([xx,top,gd+.025],[xx,bot,gd+proj],.035,frame_mat)
      for zz,dep in [(top,gd+.025),(bot,gd+proj)]:block(cx,zz,aw,.035,.04,frame_mat,dep)
-     vv=[point(cx-aw/2,top,gd+.025),point(cx+aw/2,top,gd+.025),point(cx+aw/2,bot,gd+proj),point(cx-aw/2,bot,gd+proj)];ctx['put'](trimesh.Trimesh(vv,[[0,1,2],[0,2,3]],process=False),detail,'glass_light')
+     vv=[point(cx-aw/2,top,gd+.025),point(cx+aw/2,top,gd+.025),point(cx+aw/2,bot,gd+proj),point(cx-aw/2,bot,gd+proj)];_twosided(ctx,vv,detail,'glass_light')
     if s.get('interior'):
      # Stable depth cues; these are priors and never evidence for real interiors.
      for frac in s.get('interiorSlabs',[.38]):block(cx,za+oh*frac,ow,.10,1.15,'stone',gd-.9)
@@ -278,9 +399,9 @@ def compile(ctx,c,z0,resolved):
      radius=component.get('radiusM',2.1);cx=(xa+xb)/2
      ctx['cylinder'](point(cx,zz,dep+.06),point(cx,zz,dep+.18),radius,detail,'stone',64)
      for j in range(60):
-      angle=j*math.pi/30;ro=radius*.88;ri=radius*(.72 if j%5==0 else .82)
-      beam([cx+ri*math.sin(angle),zz+ri*math.cos(angle),dep+.20],[cx+ro*math.sin(angle),zz+ro*math.cos(angle),dep+.20],.06 if j%5==0 else .025,'charcoal')
-     for angle,le in [(1.2,radius*.56),(-.4,radius*.75)]:beam([cx,zz,dep+.23],[cx+math.sin(angle)*le,zz+math.cos(angle)*le,dep+.23],.09,'charcoal')
+      tick=j*math.pi/30;ro=radius*.88;ri=radius*(.72 if j%5==0 else .82)
+      beam([cx+ri*math.sin(tick),zz+ri*math.cos(tick),dep+.20],[cx+ro*math.sin(tick),zz+ro*math.cos(tick),dep+.20],.06 if j%5==0 else .025,'charcoal')
+     for hand,le in [(1.2,radius*.56),(-.4,radius*.75)]:beam([cx,zz,dep+.23],[cx+math.sin(hand)*le,zz+math.cos(hand)*le,dep+.23],.09,'charcoal')
     elif typ=='pyramid':
      dd=component.get('roofDepthM',wid);rise=component.get('riseM',4.5);front=dep+.35;back=dep-dd;cx=(xa+xb)/2
      vv=[point(xa-.35,zz,front),point(xb+.35,zz,front),point(xb+.35,zz,back),point(xa-.35,zz,back),point(cx,zz+rise,(front+back)/2)]
@@ -291,6 +412,7 @@ def compile(ctx,c,z0,resolved):
       beam([xx,zz+.025,front],apex,.028,cm);beam([xx,zz+.025,back],apex,.028,cm)
      ctx['cylinder'](point(cx,zz+rise,(front+back)/2),point(cx,zz+rise+component.get('poleM',5),(front+back)/2),.06,detail,'silver',8)
   # Open structures have no opaque wall behind them: braced frames, decks and lights.
+  decks=[]
   for assembly in p.get('assemblies',[]):
    zlo,zhi=[value(z,r['levels']) for z in assembly['z']];xa,xb=[x*W for x in assembly.get('span',[0,1])];dep=assembly.get('depthM',-2);pitch=assembly.get('pitchM',7);xs=np.linspace(xa,xb,max(2,round((xb-xa)/pitch)+1));cm=assembly.get('material','verdigris');typ=assembly['op']
    if typ=='bracedFrame':
@@ -299,17 +421,26 @@ def compile(ctx,c,z0,resolved):
      beam([a,zlo,dep],[b,zhi,dep],.18,cm);beam([b,zlo,dep],[a,zhi,dep],.18,cm)
     for z in [zlo,zhi,zhi-.9]:beam([xa,z,dep],[xb,z,dep],.30,cm)
     if assembly.get('rearDepthM'):
-     back=dep-assembly['rearDepthM']
-     for x in xs:beam([x,zlo,dep],[x,zhi-1,back],.24,cm)
-     for z in np.arange(zlo,zhi,1.1):
-      d=dep-(z-zlo)/(zhi-zlo)*assembly['rearDepthM'];block((xa+xb)/2,z,xb-xa,.16,1.4,'concrete',d)
+     # Raked seating faces the interior: the back row is the frame top on the frontage and the deck steps down away
+     # from it to the frame foot, carried by rakers just under the treads. A raked deck is one stepped surface: each
+     # tread gets the riser up to the next, so no sky shows between treads (separate thin treads read as a floating
+     # striped sheet from any distance).
+     rear=assembly['rearDepthM'];back=dep-rear;count=max(1,round((zhi-zlo)/1.1));rise=(zhi-zlo)/count;run=rear/count
+     for x in xs:beam([x,zhi-.6,dep],[x,zlo-.6,back],.24,cm)
+     for k in range(count+1):
+      z=zlo+k*rise;d=back+k*run;block((xa+xb)/2,z,xb-xa,.16,max(1.4,run+.1),'concrete',d)
+      if k<count:block((xa+xb)/2,z+rise/2,xb-xa,rise+.16,.16,'concrete',d+run/2)
+     decks.append((xa,xb,dep,back,zhi,zlo))
    elif typ=='lightBank':
     for fraction in assembly.get('centers',[.3,.65]):
      x=xa+fraction*(xb-xa);wid=assembly.get('widthM',14)
-     for dx in [-wid*.38,wid*.38]:beam([x+dx,zlo,dep],[x+dx,zhi,dep],.36,cm)
+     for dx in [-wid*.38,wid*.38]:
+      # A light mast stands on the deck it serves, not on the level datum above it.
+      foot=min([zlo]+[lo+(hi-lo)*(dep-bk)/(fr-bk) for a0,b0,fr,bk,hi,lo in decks if a0<=x+dx<=b0 and bk<=dep<=fr])
+      beam([x+dx,foot,dep],[x+dx,zhi,dep],.36,cm)
      for z in [zhi-2,zhi]:beam([x-wid/2,z,dep],[x+wid/2,z,dep],.22,cm)
      for dx in np.linspace(-wid/2,wid/2,14):
       for z in [zhi-1.65,zhi-.45]:block(x+dx,z,.68,.58,.3,'lamp',dep+.05)
-  record={'buildingId':c['id'],'grammarId':p['id'],'status':'envelope-graph','sourceIds':p.get('sourceIds',[]),'midpoint':(u*(left+W/2)+n*plane).tolist(),'normal':n.tolist(),'lengthM':round(W,2),'heightM':round(max(d['rect'][3] for d in nodes),2),'streetFacing':True,'nodeCount':len(nodes),'depthPlanesM':sorted(set(d['depthM'] for d in nodes)),'levels':r['levelEvidence'],'cornerJoins':r['joins'],'nodes':[{'id':d['id'],'parent':d['parentId'],'rect':d['rect'],'depthM':d['depthM'],'material':d['material'],'surfaceEvidence':d.get('surfaceEvidence',[]),'explicitOpenings':len(d.get('openings',[]))} for d in nodes],'unresolved':p.get('unresolved',[])}
+  record={'buildingId':c['id'],'grammarId':p['id'],'status':'envelope-graph','photoColouredParts':recoloured,'sourceIds':p.get('sourceIds',[])+(['mapillary:'+ph['camera'] for ph in (photo.get('photos') or [photo]) if ph.get('camera')] if recoloured and photo else []),'midpoint':(u*(left+W/2)+n*plane).tolist(),'normal':n.tolist(),'lengthM':round(W,2),'heightM':round(max(d['rect'][3] for d in nodes),2),'streetFacing':True,'nodeCount':len(nodes),'depthPlanesM':sorted(set(d['depthM'] for d in nodes)),'levels':r['levelEvidence'],'cornerJoins':r['joins'],'nodes':[{'id':d['id'],'parent':d['parentId'],'rect':d['rect'],'depthM':d['depthM'],'material':d['material'],'surfaceEvidence':d.get('surfaceEvidence',[]),'explicitOpenings':len(d.get('openings',[]))} for d in nodes],'unresolved':p.get('unresolved',[])}
   records.append(record)
  return records,opening_count
