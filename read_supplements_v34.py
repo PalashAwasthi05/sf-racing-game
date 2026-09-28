@@ -7,8 +7,8 @@ buildings hide masked (frontage_evidence_v34) and photographs hiding more than 6
 is kept when two or more photographs show it: piers within 0.5 m along the wall, bands within 0.35 m in height, sign
 boards overlapping by a third, colour zones overlapping by half in height with colours that can be one material, window
 surrounds within 0.1 m in width. Its measure is the median of the agreeing photographs and its material the
-best-viewed one's. A published component no photograph confirms stays unless three or more photographs that see its
-place clearly (60 % of it unoccluded) show nothing there. Components are written, as v31's, in the hand reading's
+best-viewed one's. Published components all stay: the trim and sign rules are strict, so a photograph that shows
+nothing at a published component's place is weak evidence (dropping them on three such photographs lost real piers). Components are written, as v31's, in the hand reading's
 height frame to work/pipeline/frontage-supplements-v31.json, which the generator merges only for kinds the hand
 reading lacks.
 Usage: read_supplements_v34.py --candidate work/<dir> [--incumbent <published supplements>] [--out ...]"""
@@ -82,7 +82,8 @@ def main():
         cands = fc.wall_candidates(w, cams, occ_fp, trees, fc.MAX_DISTANCE_M)
         if not cands: continue
         bid = w['buildingId']; z0 = buildings[bid]['center'][2]; H, L = float(w['heightM']), float(w['lengthM']); own = E.own_footprints(w, occ_fp)
-        masks = {c['image']: E.hidden_mask(w, cams[c['image']], z0, H, L, surf, own, ground) for c in cands[:16]}
+        unbacked = E.unbacked_mask(w, z0, H, L, surf, own)
+        masks = {c['image']: E.hidden_mask(w, cams[c['image']], z0, H, L, surf, own, ground) | unbacked for c in cands[:16]}
         usable = [c for c in cands[:16] if masks[c['image']].mean() <= MAX_HIDDEN]
         first = (inc.get(gid) or {}).get('camera')
         photos = []
@@ -124,7 +125,7 @@ def main():
                 elif k == 'bands': item['height'] = round(float(np.median([v[1] for v in g])) / H, 4)
                 else: item['rect'] = [round(float(np.median([v[2][0] for v in g])) / L, 4), round(float(np.median([v[2][1] for v in g])) / H, 4),
                                       round(float(np.median([v[2][2] for v in g])) / L, 4), round(float(np.median([v[2][3] for v in g])) / H, 4)]
-                kept[k].append((item, g))
+                kept[k].append((item, g, (lead[1], lead[2])))
         frames = [ph['frame'] for ph in photos if ph.get('frame')]
         frame_ = None
         if len(frames) >= 2:
@@ -138,27 +139,29 @@ def main():
             for q in pub.get(src, []):
                 if k == 'signs' and q.get('evidence') == 'image-measured colour zone': continue
                 if k == 'piers':
-                    x = q['x'] * L; box = (x - q['widthM'] / 2, q['y'][0] / kz * H if False else q['y'][0] * H / kz, x + q['widthM'] / 2, q['y'][1] * H / kz); key = x
+                    x = q['x'] * L; box = (x - q['widthM'] / 2, q['y'][0] * H / kz, x + q['widthM'] / 2, q['y'][1] * H / kz); key = x   # stored in the hand frame (x kz)
                 elif k == 'bands':
                     z = q['height'] * H / kz; box = (0., z - q['thicknessM'] / 2, L, z + q['thicknessM'] / 2); key = z
                 else:
                     r = q['rect']; box = (r[0] * L, r[1] * H / kz, r[2] * L, r[3] * H / kz); key = (box[1] + box[3]) / 2
                 v = (-1, key, box, q)
-                if any(near[k](v, (0, g[0][1], g[0][2], g[0][3])) for _, g in kept[k]): continue
+                if any(near[k](v, (0, kb[0], kb[1], it0)) for it0, _, kb in kept[k]): continue
                 clear = [ph for ph in photos if clear_share(ph['occ'], box, H) >= CLEAR]
                 absent = [ph for ph in clear if not any(near[k](v, (0, kk, bb, it)) for kk, bb, it in ph['comp'][k])]
-                if len(absent) >= 3: stats['publishedDropped'] += 1; continue
+                # absence is weak evidence (the trim and sign rules are strict, so a photograph can miss what is there):
+                # published components stay, and the photographs only add what two or more of them agree on
+                if absent: stats['publishedUnconfirmed'] = stats.get('publishedUnconfirmed', 0) + 1
                 it = dict(q)
                 if k == 'piers': it['y'] = [q['y'][0] / kz, q['y'][1] / kz]
                 elif k == 'bands': it['height'] = q['height'] / kz
                 else: it['rect'] = [q['rect'][0], q['rect'][1] / kz, q['rect'][2], q['rect'][3] / kz]
-                kept[k].append((it, [])); stats['publishedKept'] += 1
+                kept[k].append((it, [], (key, box))); stats['publishedKept'] += 1
         if not frame_ and pub.get('windowFrame'): frame_ = pub['windowFrame']
         def zf(v): return round(float(v) * kz, 4)
         sup = {'supplementOf': gid, 'wallMidpoint': [round(v, 2) for v in w['midpoint']], 'camera': photos[0]['image'], 'photographs': [ph['image'] for ph in photos],
-               'panels': [{**q, 'rect': [q['rect'][0], zf(q['rect'][1]), q['rect'][2], zf(q['rect'][3])]} for q, _ in kept['zones'] + kept['signs']],
-               'piers': [{**q, 'y': [zf(q['y'][0]), zf(q['y'][1])]} for q, _ in kept['piers']],
-               'bands': [{**q, 'height': zf(q['height'])} for q, _ in kept['bands']],
+               'panels': [{**q, 'rect': [q['rect'][0], zf(q['rect'][1]), q['rect'][2], zf(q['rect'][3])]} for q, _, _ in kept['zones'] + kept['signs']],
+               'piers': [{**q, 'y': [zf(q['y'][0]), zf(q['y'][1])]} for q, _, _ in kept['piers']],
+               'bands': [{**q, 'height': zf(q['height'])} for q, _, _ in kept['bands']],
                'reading': {k: len(v) for k, v in kept.items() if v}}
         if frame_: sup['windowFrame'] = frame_
         if sup['panels'] or sup['piers'] or sup['bands'] or sup.get('windowFrame'): out.append(sup)
