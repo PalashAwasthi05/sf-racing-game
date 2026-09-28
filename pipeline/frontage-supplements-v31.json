@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "method": "auto_read_frontages_v31.py --supplements: colour zones, trims and sign boards measured on the photograph of the wall each hand reading draws; merged only where the reading has none of that kind",
+ "method": "read_supplements_v34.py: components two or more photographs agree on, building occlusion masked; published ones kept unless three clear photographs show nothing",
  "supplements": [
   {
    "supplementOf": "osm_149167937-f0",
@@ -9,25 +9,22 @@
     74.84
    ],
    "camera": "1148745777138459",
+   "photographs": [
+    "1148745777138459",
+    "1423584595534293",
+    "3421111574695274",
+    "1436995287347081",
+    "1471919023960346"
+   ],
    "panels": [
     {
      "rect": [
       0.0,
       0.0,
       1.0,
-      0.1284
+      0.1713
      ],
      "material": "render_gray#826f6f",
-     "evidence": "image-measured colour zone"
-    },
-    {
-     "rect": [
-      0.0,
-      0.1284,
-      1.0,
-      0.214
-     ],
-     "material": "brick_modular#594646",
      "evidence": "image-measured colour zone"
     }
    ],
@@ -40,26 +37,62 @@
      "projectionM": 0.08,
      "material": "brick_modular#987e7e",
      "evidence": "image-measured band"
+    },
+    {
+     "height": 0.2311,
+     "thicknessM": 0.2,
+     "depthM": 0.25,
+     "projectionM": 0.08,
+     "material": "render_gray#695a5b",
+     "evidence": "image-measured band"
     }
    ],
    "reading": {
-    "zones": [
-     [
-      0.0,
-      3.0
+    "bands": 2,
+    "zones": 1
+   }
+  },
+  {
+   "supplementOf": "sf_201006_0000645-f0",
+   "wallMidpoint": [
+    -1.28,
+    89.35
+   ],
+   "camera": "1162440382417388",
+   "photographs": [
+    "1162440382417388",
+    "1127870092023192",
+    "1334638974864438",
+    "1961843517977304",
+    "1436995287347081"
+   ],
+   "panels": [],
+   "piers": [
+    {
+     "x": 0.934,
+     "widthM": 1.0,
+     "projectionM": 0.1,
+     "y": [
+      0.7344,
+      0.8812
      ],
-     [
-      3.0,
-      5.0
-     ],
-     [
-      5.0,
-      9.5
-     ]
-    ],
-    "bands": [
-     3.9
-    ]
+     "material": "render_gray#a985b1",
+     "evidence": "image-measured trim"
+    }
+   ],
+   "bands": [
+    {
+     "height": 0.3427,
+     "thicknessM": 0.2,
+     "depthM": 0.25,
+     "projectionM": 0.08,
+     "material": "panel_dark#311a16",
+     "evidence": "image-measured band"
+    }
+   ],
+   "reading": {
+    "piers": 1,
+    "bands": 1
    }
   },
   {
@@ -69,6 +102,11 @@
     125.98
    ],
    "camera": "753688944087228",
+   "photographs": [
+    "753688944087228",
+    "1319139823210692",
+    "1317673733162120"
+   ],
    "panels": [
     {
      "rect": [
@@ -121,17 +159,9 @@
     }
    ],
    "reading": {
-    "piers": [
-     3.5
-    ],
-    "bands": [
-     6.5,
-     7.7,
-     8.3
-    ],
-    "signs": [
-     2.7
-    ]
+    "piers": 1,
+    "bands": 3,
+    "signs": 1
    }
   },
   {
@@ -141,12 +171,19 @@
     166.43
    ],
    "camera": "794306886410093",
+   "photographs": [
+    "794306886410093",
+    "1301089624713568",
+    "1327993242330246",
+    "992071882959976",
+    "1173795384555846"
+   ],
    "panels": [
     {
      "rect": [
-      0.7066,
+      0.7854,
       0.1412,
-      0.945,
+      0.9915,
       0.1985
      ],
      "material": "panel_dark#5b5a8b",
@@ -156,9 +193,7 @@
    "piers": [],
    "bands": [],
    "reading": {
-    "signs": [
-     3.3
-    ]
+    "signs": 1
    }
   },
   {
@@ -168,11 +203,17 @@
     95.27
    ],
    "camera": "743561541725632",
+   "photographs": [
+    "743561541725632",
+    "1825277881721566",
+    "3421111574695274",
+    "1148745777138459"
+   ],
    "panels": [],
    "piers": [
     {
-     "x": 0.0355,
-     "widthM": 0.5,
+     "x": 0.0414,
+     "widthM": 0.75,
      "projectionM": 0.1,
      "y": [
       0.3479,
@@ -184,7 +225,7 @@
    ],
    "bands": [
     {
-     "height": 0.7637,
+     "height": 0.7578,
      "thicknessM": 0.4,
      "depthM": 0.25,
      "projectionM": 0.08,
@@ -193,12 +234,8 @@
     }
    ],
    "reading": {
-    "piers": [
-     0.8
-    ],
-    "bands": [
-     6.4
-    ]
+    "piers": 1,
+    "bands": 1
    }
   },
   {
@@ -208,8 +245,25 @@
     142.07
    ],
    "camera": "4317096991859927",
+   "photographs": [
+    "4317096991859927",
+    "1094573992644769",
+    "1720085161990024",
+    "1319139823210692"
+   ],
    "panels": [],
    "piers": [
+    {
+     "x": 0.0568,
+     "widthM": 0.88,
+     "projectionM": 0.1,
+     "y": [
+      0.4151,
+      1.2177
+     ],
+     "material": "brick_modular#b28578",
+     "evidence": "image-measured trim"
+    },
     {
      "x": 0.1803,
      "widthM": 0.75,
@@ -220,25 +274,11 @@
      ],
      "material": "brick_modular#c38e81",
      "evidence": "image-measured trim"
-    },
-    {
-     "x": 0.0467,
-     "widthM": 0.75,
-     "projectionM": 0.1,
-     "y": [
-      0.4151,
-      1.2177
-     ],
-     "material": "brick_modular#b28578",
-     "evidence": "image-measured trim"
     }
    ],
    "bands": [],
    "reading": {
-    "piers": [
-     3.4,
-     0.9
-    ]
+    "piers": 2
    }
   },
   {
@@ -248,6 +288,13 @@
     202.29
    ],
    "camera": "1272858814248771",
+   "photographs": [
+    "1272858814248771",
+    "1623414011953686",
+    "593600213685774",
+    "1276587553969551",
+    "758631810426977"
+   ],
    "panels": [],
    "piers": [
     {
@@ -286,11 +333,7 @@
    ],
    "bands": [],
    "reading": {
-    "piers": [
-     10.9,
-     12.8,
-     1.1
-    ]
+    "piers": 3
    }
   },
   {
@@ -300,6 +343,13 @@
     -44.62
    ],
    "camera": "1515197226517069",
+   "photographs": [
+    "1515197226517069",
+    "668838748842254",
+    "822572036772191",
+    "1313205307182366",
+    "4147931488761760"
+   ],
    "panels": [
     {
      "rect": [
@@ -337,13 +387,8 @@
    ],
    "bands": [],
    "reading": {
-    "piers": [
-     0.9
-    ],
-    "signs": [
-     3.6,
-     7.3
-    ]
+    "piers": 1,
+    "signs": 2
    }
   },
   {
@@ -353,6 +398,13 @@
     181.04
    ],
    "camera": "796988149388548",
+   "photographs": [
+    "796988149388548",
+    "1454270032561408",
+    "780642424401306",
+    "794306886410093",
+    "4907588557260484"
+   ],
    "panels": [],
    "piers": [
     {
@@ -369,7 +421,7 @@
    ],
    "bands": [
     {
-     "height": 0.8535,
+     "height": 0.8459,
      "thicknessM": 0.6,
      "depthM": 0.25,
      "projectionM": 0.08,
@@ -378,13 +430,17 @@
     }
    ],
    "reading": {
-    "piers": [
-     11.2
-    ],
-    "bands": [
-     11.3
-    ]
+    "piers": 1,
+    "bands": 1
    }
   }
- ]
+ ],
+ "stats": {
+  "facings": 15,
+  "photos": 68,
+  "agreed": 10,
+  "publishedKept": 13,
+  "publishedDropped": 0,
+  "publishedUnconfirmed": 12
+ }
 }

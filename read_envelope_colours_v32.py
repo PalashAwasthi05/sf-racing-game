@@ -5,7 +5,8 @@ wall of a candidate, the closest clear panorama is rectified over the whole fron
 along its tangent from its left edge, z above the building base), openings, signs, trees, vehicles, people and sky
 are masked (v27 detections, cached), and the median colour of each 2 x 2 m cell is kept when at least 30 % of the cell
 is wall and it is not near-black (L* 22: shade or trees); greenish pixels are foliage, not wall, even where the
-segmenter missed a shaded canopy (the rule photo_openings uses). Each wall is read from up to five photographs (v33's choice:
+segmenter missed a shaded canopy (the rule photo_openings uses); what LiDAR building mass hides from the camera is not
+wall either (frontage_evidence_v34), and a photograph hiding more than 60 % of the wall is not read. Each wall is read from up to five photographs (v33's choice:
 the best view, then others taken on another day or 10 m apart); pipeline/envelopes.py takes, per part, each
 photograph's median colour of the cells over its visible face (when they cover 30 % of it) and recolours the part only
 with a colour two or more photographs agree on, keeping the part's shape and material family.
@@ -17,6 +18,7 @@ import frontage_crops_v15 as fc
 import auto_read_frontages_v27 as R27
 import auto_read_frontages_v31 as V
 from auto_read_frontages_v33 import pick_photos
+import frontage_evidence_v34 as E
 from auto_read_frontages_v24 import rectify, PPM
 from judge_facades_v27 import to_lab
 
@@ -31,14 +33,16 @@ def main():
     buildings = {b['id']: b for b in world['buildings']}
     walls = [w for w in json.load(open(a.candidate / 'public/facade-evidence.json'))['walls'] if w.get('status') == 'envelope-graph' and w.get('buildingId') in buildings]
     occ_fp = fc.Occluders(fc.load_footprints(frame)); trees = fc.load_trees(frame); cams = fc.load_cameras(frame)
+    surf = E.building_surface(world, frame); ground = E.ground_grid(world, frame)
     seg = det = None; pano_cache = {}; out = {}
     for w in walls:
         pid = w.get('grammarId'); bid = w['buildingId']
         if not pid or buildings[bid].get('landmark'): continue
         cands = fc.wall_candidates(w, cams, occ_fp, trees, fc.MAX_DISTANCE_M)
         if not cands: print(pid, 'no clear panorama'); continue
-        z0 = buildings[bid]['center'][2]; photos = []
-        for c in pick_photos(cands, cams, a.max_photos):
+        z0 = buildings[bid]['center'][2]; photos = []; own = E.own_footprints(w, occ_fp)
+        hmask = {c['image']: E.hidden_mask(w, cams[c['image']], z0, float(w['heightM']), float(w['lengthM']), surf, own, ground) for c in cands[:16]}   # designs model their setbacks: no depth test
+        for c in pick_photos([c for c in cands[:16] if hmask[c['image']].mean() <= .6], cams, a.max_photos):
             cam = cams[c['image']]
             if c['image'] not in pano_cache:
                 if len(pano_cache) >= 3: pano_cache.pop(next(iter(pano_cache)))
@@ -61,6 +65,7 @@ def main():
                 np.savez_compressed(ck.with_suffix('.npz'), occ=found[2])
             ops, signs, occ, visible, u8, glass = found
             M = V.wall_mask(u8, occ, {'openings': [], 'groups': []}, ops, signs, glass, H, L); lab = to_lab(u8.astype(float))
+            if hmask[c['image']].shape == M.shape: M &= ~hmask[c['image']]                  # another building in front (frontage_evidence_v34)
             r_, g_, b_ = (u8[..., k].astype(float) for k in range(3)); mx = u8.max(2).astype(float)
             M &= ~((g_ > r_ * 1.04) & (g_ > b_ * 1.02) & ((mx - u8.min(2)) / np.maximum(mx, 1) > .12))   # foliage the segmenter missed (shaded canopy)
             cells = []
