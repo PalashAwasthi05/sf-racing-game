@@ -1,0 +1,7449 @@
+{
+  "surfaceSource": "city curb outlines + ROW remainder; historical geometry, not as-built verified",
+  "measuredSidewalkAreaM2": 7250.17,
+  "sidewalkAreaM2": 24099.92,
+  "placements": [
+    {
+      "kind": "tree",
+      "sourceId": "95846",
+      "sourcePosition": [
+        -16.497221018304117,
+        260.36776045989245
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -16.497221018304117,
+        260.36776045989245
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "261146",
+      "sourcePosition": [
+        -145.88707397738472,
+        212.4696123311296
+      ],
+      "radiusM": 0.08,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.289
+    },
+    {
+      "kind": "tree",
+      "sourceId": "100868",
+      "sourcePosition": [
+        -114.19663291459437,
+        135.3131502759643
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 3.321
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190532",
+      "sourcePosition": [
+        -89.83596730430145,
+        132.6356337373145
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -89.83596730430145,
+        132.6356337373145
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190533",
+      "sourcePosition": [
+        -96.03244098590221,
+        137.128371540457
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -96.03244098590221,
+        137.128371540457
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "114493",
+      "sourcePosition": [
+        -228.07379328855313,
+        69.84670286485925
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        -228.07379328855313,
+        69.84670286485925
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "114492",
+      "sourcePosition": [
+        -231.55466096440796,
+        73.33424680354074
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -231.55466096440796,
+        73.33424680354074
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "65076",
+      "sourcePosition": [
+        -228.5164664729964,
+        64.74997376883402
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        -228.5164664729964,
+        64.74997376883402
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "114494",
+      "sourcePosition": [
+        -224.46416488534305,
+        67.02235474204645
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        -224.46416488534305,
+        67.02235474204645
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202543",
+      "sourcePosition": [
+        -2.2476717449026182,
+        92.64763166429475
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        -1.7984649034845361,
+        92.20241884693559
+      ],
+      "displacementM": 0.632,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202544",
+      "sourcePosition": [
+        3.992413159343414,
+        98.52335454104468
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        4.231457328611716,
+        98.28643578055285
+      ],
+      "displacementM": 0.337,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202542",
+      "sourcePosition": [
+        -7.143200717866421,
+        87.56216352246702
+      ],
+      "radiusM": 0.1143,
+      "position": [
+        -6.748961009807211,
+        87.17142911026218
+      ],
+      "displacementM": 0.555,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202545",
+      "sourcePosition": [
+        7.8339631501585245,
+        103.13309511821717
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        8.439856623680267,
+        102.5325888135612
+      ],
+      "displacementM": 0.853,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "261461",
+      "sourcePosition": [
+        109.33603561355267,
+        26.644185005221516
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 4.33
+    },
+    {
+      "kind": "tree",
+      "sourceId": "188090",
+      "sourcePosition": [
+        40.2027794837486,
+        -117.44353884318843
+      ],
+      "radiusM": 0.08,
+      "position": [
+        40.2027794837486,
+        -117.44353884318843
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190839",
+      "sourcePosition": [
+        32.3353536358336,
+        -141.92652565427125
+      ],
+      "radiusM": 0.1397,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 2.337
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195682",
+      "sourcePosition": [
+        113.65517539402936,
+        63.02264612540603
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        113.65517539402936,
+        63.02264612540603
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195693",
+      "sourcePosition": [
+        -61.55865517212078,
+        -93.98945704335347
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -61.55865517212078,
+        -93.98945704335347
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "84748",
+      "sourcePosition": [
+        34.68718354369048,
+        2.4200525893829763
+      ],
+      "radiusM": 0.254,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.666
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195673",
+      "sourcePosition": [
+        171.68564841838088,
+        121.39364814897999
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        171.68564841838088,
+        121.39364814897999
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195676",
+      "sourcePosition": [
+        152.6290939054452,
+        102.51731604896486
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        152.6290939054452,
+        102.51731604896486
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195677",
+      "sourcePosition": [
+        146.99706531502306,
+        97.18487232457846
+      ],
+      "radiusM": 0.127,
+      "position": [
+        146.99706531502306,
+        97.18487232457846
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190525",
+      "sourcePosition": [
+        -55.39390562148765,
+        97.54562613507733
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -55.39390562148765,
+        97.54562613507733
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195720",
+      "sourcePosition": [
+        -39.15832283603959,
+        -89.62278985092416
+      ],
+      "radiusM": 0.08889999999999999,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.552
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190848",
+      "sourcePosition": [
+        -63.65952028683387,
+        -238.84581528324634
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.71
+    },
+    {
+      "kind": "tree",
+      "sourceId": "104108",
+      "sourcePosition": [
+        -68.56048038450535,
+        105.87493970897049
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.839
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190537",
+      "sourcePosition": [
+        -22.58331831358373,
+        72.0615885197185
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -22.174413698095208,
+        71.65631958989074
+      ],
+      "displacementM": 0.576,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28165",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193906",
+      "sourcePosition": [
+        -57.70671067503281,
+        -251.2862724014558
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -57.70671067503281,
+        -251.2862724014558
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28180",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "104105",
+      "sourcePosition": [
+        -68.56048038450535,
+        105.87493970897049
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.839
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195688",
+      "sourcePosition": [
+        -29.99494795652572,
+        -63.00745690520853
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -29.99494795652572,
+        -63.00745690520853
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28178",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "104103",
+      "sourcePosition": [
+        -68.56048038450535,
+        105.87493970897049
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.839
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195718",
+      "sourcePosition": [
+        -24.977788545307703,
+        -75.42453652992845
+      ],
+      "radiusM": 0.127,
+      "position": [
+        -24.977788545307703,
+        -75.42453652992845
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28174",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190846",
+      "sourcePosition": [
+        -47.63457229395863,
+        -222.75521291187033
+      ],
+      "radiusM": 0.08889999999999999,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.69
+    },
+    {
+      "kind": "tree",
+      "sourceId": "104099",
+      "sourcePosition": [
+        -68.56048038450535,
+        105.87493970897049
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.839
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195683",
+      "sourcePosition": [
+        109.84650061221328,
+        58.83066744962707
+      ],
+      "radiusM": 0.127,
+      "position": [
+        109.84650061221328,
+        58.83066744962707
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "121471",
+      "sourcePosition": [
+        177.14438990550116,
+        126.55135346064344
+      ],
+      "radiusM": 0.1143,
+      "position": [
+        177.14438990550116,
+        126.55135346064344
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "84753",
+      "sourcePosition": [
+        -33.71701380691957,
+        87.13817331008613
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.909
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193911",
+      "sourcePosition": [
+        -2.4667183025740087,
+        -195.65042043942958
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -2.4667183025740087,
+        -195.65042043942958
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "104096",
+      "sourcePosition": [
+        -68.56048038450535,
+        105.87493970897049
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.839
+    },
+    {
+      "kind": "tree",
+      "sourceId": "188086",
+      "sourcePosition": [
+        15.664147815667093,
+        -93.54847769998014
+      ],
+      "radiusM": 0.08,
+      "position": [
+        15.664147815667093,
+        -93.54847769998014
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193912",
+      "sourcePosition": [
+        2.280537895159796,
+        -190.7690763976425
+      ],
+      "radiusM": 0.08,
+      "position": [
+        2.280537895159796,
+        -190.7690763976425
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195691",
+      "sourcePosition": [
+        -50.299251538468525,
+        -84.40535284718499
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -50.299251538468525,
+        -84.40535284718499
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193920",
+      "sourcePosition": [
+        52.41322799830232,
+        -141.29804253205657
+      ],
+      "radiusM": 0.1143,
+      "position": [
+        52.41322799830232,
+        -141.29804253205657
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28169",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "257908",
+      "sourcePosition": [
+        -47.20851914328523,
+        10.26785885123536
+      ],
+      "radiusM": 0.08,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 2.155
+    },
+    {
+      "kind": "tree",
+      "sourceId": "37762",
+      "sourcePosition": [
+        -63.562959754490294,
+        -8.075008948333561
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -63.562959754490294,
+        -8.075008948333561
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "30793",
+      "sourcePosition": [
+        95.08828695071861,
+        65.46022147638723
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        95.08828695071861,
+        65.46022147638723
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190841",
+      "sourcePosition": [
+        -10.692861889488995,
+        -185.94248524447903
+      ],
+      "radiusM": 0.2032,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 2.104
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28175",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "84754",
+      "sourcePosition": [
+        -33.71701380691957,
+        87.13817331008613
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.909
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190845",
+      "sourcePosition": [
+        -37.779197818483226,
+        -212.81281394790858
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.748
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193907",
+      "sourcePosition": [
+        -53.69101871014573,
+        -246.95882227038965
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -53.69101871014573,
+        -246.95882227038965
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "46244",
+      "sourcePosition": [
+        63.14670487341937,
+        36.049427945166826
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        63.14670487341937,
+        36.049427945166826
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "194536",
+      "sourcePosition": [
+        10.971258362056687,
+        -163.7073492356576
+      ],
+      "radiusM": 0.08,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.701
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190842",
+      "sourcePosition": [
+        -15.584863112890162,
+        -190.5742062018253
+      ],
+      "radiusM": 0.1397,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 2.123
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195724",
+      "sourcePosition": [
+        -64.32238923653495,
+        -114.57887145550922
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -64.32238923653495,
+        -114.57887145550922
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190849",
+      "sourcePosition": [
+        -69.22672031191178,
+        -244.46206240542233
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.713
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28177",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "30790",
+      "sourcePosition": [
+        95.08828695071861,
+        65.46022147638723
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        95.51598538875716,
+        65.30718852825969
+      ],
+      "displacementM": 0.454,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195681",
+      "sourcePosition": [
+        119.45363695046399,
+        69.57161362795159
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        119.45363695046399,
+        69.57161362795159
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193918",
+      "sourcePosition": [
+        43.5526967253536,
+        -149.59224039921537
+      ],
+      "radiusM": 0.08,
+      "position": [
+        43.5526967253536,
+        -149.59224039921537
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "84745",
+      "sourcePosition": [
+        48.229541469714604,
+        15.854631633963436
+      ],
+      "radiusM": 0.2286,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.792
+    },
+    {
+      "kind": "tree",
+      "sourceId": "188084",
+      "sourcePosition": [
+        -34.95858066389337,
+        -37.22911366913468
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        -34.95858066389337,
+        -37.22911366913468
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "37764",
+      "sourcePosition": [
+        -74.0096522923559,
+        2.1417284244671464
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -74.0096522923559,
+        2.1417284244671464
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190844",
+      "sourcePosition": [
+        -26.039599923882633,
+        -201.50080081773922
+      ],
+      "radiusM": 0.17779999999999999,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 2.141
+    },
+    {
+      "kind": "tree",
+      "sourceId": "104107",
+      "sourcePosition": [
+        -68.56048038450535,
+        105.87493970897049
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.839
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28170",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "104100",
+      "sourcePosition": [
+        -68.56048038450535,
+        105.87493970897049
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.839
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195725",
+      "sourcePosition": [
+        -69.65390514093451,
+        -119.8498370591551
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -69.65390514093451,
+        -119.8498370591551
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "84752",
+      "sourcePosition": [
+        -33.71701380691957,
+        87.13817331008613
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.909
+    },
+    {
+      "kind": "tree",
+      "sourceId": "46243",
+      "sourcePosition": [
+        63.14670487341937,
+        36.049427945166826
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        63.48328353255584,
+        36.3544850600275
+      ],
+      "displacementM": 0.454,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190843",
+      "sourcePosition": [
+        -21.454359351308085,
+        -196.26788823027164
+      ],
+      "radiusM": 0.1905,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.723
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195717",
+      "sourcePosition": [
+        -19.539711518329568,
+        -70.0459803766571
+      ],
+      "radiusM": 0.1143,
+      "position": [
+        -19.539711518329568,
+        -70.0459803766571
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "84751",
+      "sourcePosition": [
+        -33.71701380691957,
+        87.13817331008613
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.909
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195723",
+      "sourcePosition": [
+        -58.99712529708631,
+        -108.34613176854327
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -58.70548731491113,
+        -108.63546321388466
+      ],
+      "displacementM": 0.411,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "37763",
+      "sourcePosition": [
+        -69.10206041752826,
+        -2.7859393707476556
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -69.10206041752826,
+        -2.7859393707476556
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195721",
+      "sourcePosition": [
+        -44.70512541430071,
+        -94.7883017458953
+      ],
+      "radiusM": 0.08,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 3.072
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28179",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195674",
+      "sourcePosition": [
+        165.96426740346942,
+        116.40785634052008
+      ],
+      "radiusM": 0.1143,
+      "position": [
+        165.96426740346942,
+        116.40785634052008
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195689",
+      "sourcePosition": [
+        -39.0350188302109,
+        -72.50901557086036
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -39.0350188302109,
+        -72.50901557086036
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "37761",
+      "sourcePosition": [
+        -57.44281338970177,
+        -14.039028368424624
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -57.44281338970177,
+        -14.039028368424624
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "104104",
+      "sourcePosition": [
+        -68.56048038450535,
+        105.87493970897049
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.839
+    },
+    {
+      "kind": "tree",
+      "sourceId": "257909",
+      "sourcePosition": [
+        -47.20851914328523,
+        10.26785885123536
+      ],
+      "radiusM": 0.08,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 2.155
+    },
+    {
+      "kind": "tree",
+      "sourceId": "84747",
+      "sourcePosition": [
+        39.50170027092099,
+        7.277212729211897
+      ],
+      "radiusM": 0.2413,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.65
+    },
+    {
+      "kind": "tree",
+      "sourceId": "46241",
+      "sourcePosition": [
+        63.14670487341937,
+        36.049427945166826
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        62.84164775855869,
+        36.3860066043033
+      ],
+      "displacementM": 0.454,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "104106",
+      "sourcePosition": [
+        -68.56048038450535,
+        105.87493970897049
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.839
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193915",
+      "sourcePosition": [
+        17.71026825532317,
+        -175.1106797303073
+      ],
+      "radiusM": 0.08,
+      "position": [
+        17.71026825532317,
+        -175.1106797303073
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "188085",
+      "sourcePosition": [
+        -30.051283931126818,
+        -42.10467482218519
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        -30.051283931126818,
+        -42.10467482218519
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195678",
+      "sourcePosition": [
+        138.07558509975206,
+        88.271507314872
+      ],
+      "radiusM": 0.1143,
+      "position": [
+        138.07558509975206,
+        88.271507314872
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193914",
+      "sourcePosition": [
+        13.14327548397705,
+        -179.44175291713327
+      ],
+      "radiusM": 0.08,
+      "position": [
+        13.14327548397705,
+        -179.44175291713327
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190535",
+      "sourcePosition": [
+        -35.31011790945195,
+        58.99433956714347
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -35.01434711665883,
+        58.70119855545211
+      ],
+      "displacementM": 0.416,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190840",
+      "sourcePosition": [
+        5.4828154924325645,
+        -169.77565596764907
+      ],
+      "radiusM": 0.1651,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 3.635
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193908",
+      "sourcePosition": [
+        -47.48467966890894,
+        -240.32920047454536
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -47.48467966890894,
+        -240.32920047454536
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190528",
+      "sourcePosition": [
+        -67.37162221234757,
+        110.40884726587683
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -67.37162221234757,
+        110.40884726587683
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "84746",
+      "sourcePosition": [
+        42.96412492368836,
+        10.466676032170653
+      ],
+      "radiusM": 0.2794,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.9
+    },
+    {
+      "kind": "tree",
+      "sourceId": "46242",
+      "sourcePosition": [
+        63.14670487341937,
+        36.049427945166826
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        62.810126214282896,
+        35.74437083030615
+      ],
+      "displacementM": 0.454,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "188083",
+      "sourcePosition": [
+        -41.07943696214352,
+        -31.16073951451108
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -41.07943696214352,
+        -31.16073951451108
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "84744",
+      "sourcePosition": [
+        50.78580011683516,
+        18.66121827904135
+      ],
+      "radiusM": 0.254,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.656
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195694",
+      "sourcePosition": [
+        -67.36746801319532,
+        -100.11846772581339
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -67.36746801319532,
+        -100.11846772581339
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "104101",
+      "sourcePosition": [
+        -68.56048038450535,
+        105.87493970897049
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.839
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195685",
+      "sourcePosition": [
+        95.46674298017751,
+        44.67288111010566
+      ],
+      "radiusM": 0.1143,
+      "position": [
+        95.46674298017751,
+        44.67288111010566
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193905",
+      "sourcePosition": [
+        -61.90673849883024,
+        -255.52341686282307
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -61.90673849883024,
+        -255.52341686282307
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190534",
+      "sourcePosition": [
+        -40.28287484694738,
+        54.28157782368362
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -39.834807118813,
+        53.83749399143235
+      ],
+      "displacementM": 0.631,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190847",
+      "sourcePosition": [
+        -52.90281475149095,
+        -227.7663381639868
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -53.94681687148098,
+        -226.7306430335214
+      ],
+      "displacementM": 1.471,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28173",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195695",
+      "sourcePosition": [
+        -72.43316561623942,
+        -105.01371721737087
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -72.43316561623942,
+        -105.01371721737087
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "46245",
+      "sourcePosition": [
+        63.14670487341937,
+        36.049427945166826
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        63.45176198828004,
+        35.712849286030355
+      ],
+      "displacementM": 0.454,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190527",
+      "sourcePosition": [
+        -62.27259841246996,
+        105.32406791998073
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -62.27259841246996,
+        105.32406791998073
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "104102",
+      "sourcePosition": [
+        -68.56048038450535,
+        105.87493970897049
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.839
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190838",
+      "sourcePosition": [
+        38.282938953023404,
+        -136.60937567893416
+      ],
+      "radiusM": 0.17779999999999999,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 2.847
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190524",
+      "sourcePosition": [
+        -49.77946678828448,
+        92.24487807834521
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -49.77946678828448,
+        92.24487807834521
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28176",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195690",
+      "sourcePosition": [
+        -46.14715387870092,
+        -79.302388810087
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -46.14715387870092,
+        -79.302388810087
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "188088",
+      "sourcePosition": [
+        24.504205228411593,
+        -102.16275747818872
+      ],
+      "radiusM": 0.08,
+      "position": [
+        24.504205228411593,
+        -102.16275747818872
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190523",
+      "sourcePosition": [
+        -44.0228635444073,
+        87.67607657238841
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -44.0228635444073,
+        87.67607657238841
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28167",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "104098",
+      "sourcePosition": [
+        -68.56048038450535,
+        105.87493970897049
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.839
+    },
+    {
+      "kind": "tree",
+      "sourceId": "194856",
+      "sourcePosition": [
+        28.6157121846918,
+        -105.60468429513276
+      ],
+      "radiusM": 0.08,
+      "position": [
+        28.6157121846918,
+        -105.60468429513276
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "84749",
+      "sourcePosition": [
+        31.377153995097615,
+        -0.9191897050477564
+      ],
+      "radiusM": 0.2667,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.681
+    },
+    {
+      "kind": "tree",
+      "sourceId": "46240",
+      "sourcePosition": [
+        63.14670487341937,
+        36.049427945166826
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        63.78834064741651,
+        36.01790640089103
+      ],
+      "displacementM": 0.642,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193917",
+      "sourcePosition": [
+        38.48401299479883,
+        -154.92442871676758
+      ],
+      "radiusM": 0.08,
+      "position": [
+        38.48401299479883,
+        -154.92442871676758
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193909",
+      "sourcePosition": [
+        -42.73380178073421,
+        -235.9969692551531
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -42.73380178073421,
+        -235.9969692551531
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195684",
+      "sourcePosition": [
+        101.01100246270653,
+        50.09152867132798
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        101.01100246270653,
+        50.09152867132798
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "30791",
+      "sourcePosition": [
+        95.08828695071861,
+        65.46022147638723
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        95.24131989884616,
+        65.88791991442578
+      ],
+      "displacementM": 0.454,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "257910",
+      "sourcePosition": [
+        -47.20851914328523,
+        10.26785885123536
+      ],
+      "radiusM": 0.08,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 2.155
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195692",
+      "sourcePosition": [
+        -55.74568667053245,
+        -88.50162418792024
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        -55.74568667053245,
+        -88.50162418792024
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195722",
+      "sourcePosition": [
+        -49.715989682939835,
+        -99.843558230903
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -49.715989682939835,
+        -99.843558230903
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "30792",
+      "sourcePosition": [
+        95.08828695071861,
+        65.46022147638723
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        94.66058851268006,
+        65.61325442451478
+      ],
+      "displacementM": 0.454,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "188087",
+      "sourcePosition": [
+        20.846073315711692,
+        -98.56701003480703
+      ],
+      "radiusM": 0.08,
+      "position": [
+        20.846073315711692,
+        -98.56701003480703
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190529",
+      "sourcePosition": [
+        -73.57770056044683,
+        116.36383258225396
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -73.57770056044683,
+        116.36383258225396
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195679",
+      "sourcePosition": [
+        131.48973612079863,
+        82.15145386848599
+      ],
+      "radiusM": 0.1143,
+      "position": [
+        131.48973612079863,
+        82.15145386848599
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "84750",
+      "sourcePosition": [
+        -33.71701380691957,
+        87.13817331008613
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.909
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195680",
+      "sourcePosition": [
+        127.07540720573161,
+        77.26102323969826
+      ],
+      "radiusM": 0.1143,
+      "position": [
+        127.07540720573161,
+        77.26102323969826
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28171",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193913",
+      "sourcePosition": [
+        6.479905821732245,
+        -186.4403992779553
+      ],
+      "radiusM": 0.08,
+      "position": [
+        6.479905821732245,
+        -186.4403992779553
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "188089",
+      "sourcePosition": [
+        35.6281576922629,
+        -112.64727678755298
+      ],
+      "radiusM": 0.08,
+      "position": [
+        35.6281576922629,
+        -112.64727678755298
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195675",
+      "sourcePosition": [
+        158.17157767887693,
+        108.19642518088222
+      ],
+      "radiusM": 0.1143,
+      "position": [
+        158.17157767887693,
+        108.19642518088222
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193910",
+      "sourcePosition": [
+        -7.0349252332234755,
+        -199.7983870538883
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -7.0349252332234755,
+        -199.7983870538883
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28166",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28181",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190538",
+      "sourcePosition": [
+        -10.532364775659516,
+        84.14299489464611
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -10.162287014248044,
+        83.77620759844234
+      ],
+      "displacementM": 0.521,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28172",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195719",
+      "sourcePosition": [
+        -30.522488627349958,
+        -80.91064760973677
+      ],
+      "radiusM": 0.1143,
+      "position": [
+        -30.356980236749095,
+        -81.05853413306006
+      ],
+      "displacementM": 0.222,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190526",
+      "sourcePosition": [
+        -59.24395615863614,
+        102.49232854647562
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -59.24395615863614,
+        102.49232854647562
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193916",
+      "sourcePosition": [
+        22.549966217717156,
+        -170.32032276969403
+      ],
+      "radiusM": 0.08,
+      "position": [
+        22.549966217717156,
+        -170.32032276969403
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28168",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "188081",
+      "sourcePosition": [
+        -52.26594284665771,
+        -20.061262046918273
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        -52.26594284665771,
+        -20.061262046918273
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193919",
+      "sourcePosition": [
+        48.030687360907905,
+        -145.71943691466004
+      ],
+      "radiusM": 0.08,
+      "position": [
+        48.030687360907905,
+        -145.71943691466004
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "188082",
+      "sourcePosition": [
+        -47.778011192334816,
+        -24.939556173514575
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        -47.778011192334816,
+        -24.939556173514575
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190536",
+      "sourcePosition": [
+        -30.4185575672891,
+        64.53707421058789
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -29.819152936486155,
+        63.94299905452957
+      ],
+      "displacementM": 0.844,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28182",
+      "sourcePosition": [
+        5.1146136509487405,
+        -64.86464645527303
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.397
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202548",
+      "sourcePosition": [
+        -203.13219174090773,
+        -57.5021712416783
+      ],
+      "radiusM": 0.30479999999999996,
+      "position": [
+        -203.13508719494686,
+        -57.505067524438125
+      ],
+      "displacementM": 0.004,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202549",
+      "sourcePosition": [
+        -198.79895779769868,
+        -62.35101682320237
+      ],
+      "radiusM": 0.127,
+      "position": [
+        -198.79895779769868,
+        -62.35101682320237
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202547",
+      "sourcePosition": [
+        -208.3935642199358,
+        -52.39580843690783
+      ],
+      "radiusM": 0.2286,
+      "position": [
+        -208.3935642199358,
+        -52.39580843690783
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202546",
+      "sourcePosition": [
+        -212.5913806403987,
+        -48.00748083554208
+      ],
+      "radiusM": 0.2286,
+      "position": [
+        -212.5913806403987,
+        -48.00748083554208
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195706",
+      "sourcePosition": [
+        -136.88237756455783,
+        -170.1387843065895
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        -136.88237756455783,
+        -170.1387843065895
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195702",
+      "sourcePosition": [
+        -110.49419652100187,
+        -143.57186564756557
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -110.49419652100187,
+        -143.57186564756557
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "199633",
+      "sourcePosition": [
+        -210.62514064332936,
+        -119.02910016430542
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        -210.62514064332936,
+        -119.02910016430542
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "100858",
+      "sourcePosition": [
+        -116.08419494528789,
+        73.31199793331325
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        -116.08419494528789,
+        73.31199793331325
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195726",
+      "sourcePosition": [
+        -78.71976374380756,
+        -128.4579589436762
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -78.54410249122313,
+        -128.63223090825934
+      ],
+      "displacementM": 0.247,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "50355",
+      "sourcePosition": [
+        -89.04891144589055,
+        29.018776305485517
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 8.249
+    },
+    {
+      "kind": "tree",
+      "sourceId": "70809",
+      "sourcePosition": [
+        -203.17783416598104,
+        45.769045578781515
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -203.17783416598104,
+        45.769045578781515
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195734",
+      "sourcePosition": [
+        -137.89441856916528,
+        -187.83156662574038
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        -137.89441856916528,
+        -187.83156662574038
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "50354",
+      "sourcePosition": [
+        -89.04891144589055,
+        29.018776305485517
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 8.249
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195709",
+      "sourcePosition": [
+        -152.76849750324618,
+        -186.1647514612414
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        -152.76849750324618,
+        -186.1647514612414
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "199636",
+      "sourcePosition": [
+        -196.3699692907976,
+        -104.30610245931894
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -196.18101098614116,
+        -104.49255487414955
+      ],
+      "displacementM": 0.265,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195731",
+      "sourcePosition": [
+        -117.84824762749486,
+        -167.93142934562638
+      ],
+      "radiusM": 0.08,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 2.693
+    },
+    {
+      "kind": "tree",
+      "sourceId": "94226",
+      "sourcePosition": [
+        -152.5598532980075,
+        109.10332077369094
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -152.5598532980075,
+        109.10332077369094
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "192023",
+      "sourcePosition": [
+        -168.72617505677044,
+        -46.00966572854668
+      ],
+      "radiusM": 0.17779999999999999,
+      "position": [
+        -168.72617505677044,
+        -46.00966572854668
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "192025",
+      "sourcePosition": [
+        -176.42035526328254,
+        -53.57263435283676
+      ],
+      "radiusM": 0.1905,
+      "position": [
+        -176.42035526328254,
+        -53.57263435283676
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195711",
+      "sourcePosition": [
+        -163.37804666359443,
+        -196.70640940079466
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -163.37804666359443,
+        -196.70640940079466
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "73475",
+      "sourcePosition": [
+        -215.31083803297952,
+        51.689313027542084
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        -215.73880216088273,
+        52.1221180737609
+      ],
+      "displacementM": 0.609,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195729",
+      "sourcePosition": [
+        -97.9128750632517,
+        -147.49761680839583
+      ],
+      "radiusM": 0.1143,
+      "position": [
+        -97.19664269043695,
+        -147.6206276305209
+      ],
+      "displacementM": 0.727,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "194199",
+      "sourcePosition": [
+        -111.17919740267098,
+        40.30161752179265
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -111.17919740267098,
+        40.30161752179265
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "50356",
+      "sourcePosition": [
+        -89.04891144589055,
+        29.018776305485517
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 8.249
+    },
+    {
+      "kind": "tree",
+      "sourceId": "50358",
+      "sourcePosition": [
+        -89.04891144589055,
+        29.018776305485517
+      ],
+      "radiusM": 0.08,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 8.151
+    },
+    {
+      "kind": "tree",
+      "sourceId": "38808",
+      "sourcePosition": [
+        -93.46711261325981,
+        24.565551633480936
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 3.922
+    },
+    {
+      "kind": "tree",
+      "sourceId": "199641",
+      "sourcePosition": [
+        -134.75544476963114,
+        -42.57735277619213
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -134.75544476963114,
+        -42.57735277619213
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "199643",
+      "sourcePosition": [
+        -124.5707300392678,
+        -32.47406155616045
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -124.5707300392678,
+        -32.47406155616045
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "192013",
+      "sourcePosition": [
+        -122.56490654614754,
+        78.86151569569483
+      ],
+      "radiusM": 0.2794,
+      "position": [
+        -122.56490654614754,
+        78.86151569569483
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195728",
+      "sourcePosition": [
+        -89.38214769947808,
+        -139.10682752775028
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -89.15723029923406,
+        -139.32996607784472
+      ],
+      "displacementM": 0.317,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "50357",
+      "sourcePosition": [
+        -89.04891144589055,
+        29.018776305485517
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 8.249
+    },
+    {
+      "kind": "tree",
+      "sourceId": "94225",
+      "sourcePosition": [
+        -146.90331707708538,
+        102.72232610313222
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -146.90331707708538,
+        102.72232610313222
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "199640",
+      "sourcePosition": [
+        -140.69646731310058,
+        -48.48515283269808
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -140.69646731310058,
+        -48.48515283269808
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "38807",
+      "sourcePosition": [
+        -93.46711261325981,
+        24.565551633480936
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 3.922
+    },
+    {
+      "kind": "tree",
+      "sourceId": "194535",
+      "sourcePosition": [
+        -192.53565770189743,
+        35.30794219765812
+      ],
+      "radiusM": 0.1143,
+      "position": [
+        -192.53565770189743,
+        35.30794219765812
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "193210",
+      "sourcePosition": [
+        -186.11190314101987,
+        29.256690207403153
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        -186.11190314101987,
+        29.256690207403153
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "100860",
+      "sourcePosition": [
+        -128.3503794639837,
+        85.43234510719776
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        -128.3503794639837,
+        85.43234510719776
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "199637",
+      "sourcePosition": [
+        -156.31206878705416,
+        -64.15264009172097
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -156.31206878705416,
+        -64.15264009172097
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195707",
+      "sourcePosition": [
+        -142.4279087401228,
+        -175.51805543154478
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -142.4279087401228,
+        -175.51805543154478
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "199634",
+      "sourcePosition": [
+        -204.5958063065773,
+        -113.54615817870945
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -204.5958063065773,
+        -113.54615817870945
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195733",
+      "sourcePosition": [
+        -129.7914731146302,
+        -179.65723202796653
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        -129.73997156615377,
+        -179.71161989575296
+      ],
+      "displacementM": 0.075,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "192022",
+      "sourcePosition": [
+        -165.44076892919838,
+        -42.36373284179717
+      ],
+      "radiusM": 0.1905,
+      "position": [
+        -165.44076892919838,
+        -42.36373284179717
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "194196",
+      "sourcePosition": [
+        -126.03386915544979,
+        55.16517265699804
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -126.03386915544979,
+        55.16517265699804
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195712",
+      "sourcePosition": [
+        -168.6020184685476,
+        -202.03009275440127
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -168.6020184685476,
+        -202.03009275440127
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195703",
+      "sourcePosition": [
+        -120.8333125479985,
+        -154.43232986843213
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        -120.8333125479985,
+        -154.43232986843213
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "173691",
+      "sourcePosition": [
+        -124.48925412993412,
+        27.711055249441415
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 9.358
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195730",
+      "sourcePosition": [
+        -108.25475461711176,
+        -157.9307428575121
+      ],
+      "radiusM": 0.1016,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 4.196
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195699",
+      "sourcePosition": [
+        -94.29054760350846,
+        -126.90263914922252
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -94.29054760350846,
+        -126.90263914922252
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "173692",
+      "sourcePosition": [
+        -124.48925412993412,
+        27.711055249441415
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 9.358
+    },
+    {
+      "kind": "tree",
+      "sourceId": "38809",
+      "sourcePosition": [
+        -93.46711261325981,
+        24.565551633480936
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 3.922
+    },
+    {
+      "kind": "tree",
+      "sourceId": "192024",
+      "sourcePosition": [
+        -172.07950278522912,
+        -49.392510146368295
+      ],
+      "radiusM": 0.1905,
+      "position": [
+        -172.07950278522912,
+        -49.392510146368295
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "38776",
+      "sourcePosition": [
+        -136.84340065228753,
+        65.80142227606848
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -136.84340065228753,
+        65.80142227606848
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195710",
+      "sourcePosition": [
+        -158.2077749086311,
+        -191.38306979229674
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -158.2077749086311,
+        -191.38306979229674
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "50353",
+      "sourcePosition": [
+        -89.04891144589055,
+        29.018776305485517
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 8.249
+    },
+    {
+      "kind": "tree",
+      "sourceId": "94227",
+      "sourcePosition": [
+        -158.27238580666017,
+        114.27667465759441
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -158.27238580666017,
+        114.27667465759441
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195736",
+      "sourcePosition": [
+        -148.55349028797355,
+        -199.01477632392198
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -148.46101487291915,
+        -199.1065203644236
+      ],
+      "displacementM": 0.13,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195732",
+      "sourcePosition": [
+        -122.75266094086692,
+        -172.8790796166286
+      ],
+      "radiusM": 0.1143,
+      "position": [
+        -122.6083406671462,
+        -173.04585911518222
+      ],
+      "displacementM": 0.221,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195701",
+      "sourcePosition": [
+        -105.05748562945519,
+        -137.97954042861238
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -105.05748562945519,
+        -137.97954042861238
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "194201",
+      "sourcePosition": [
+        -106.04630903783254,
+        34.60137001052499
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        -106.04630903783254,
+        34.60137001052499
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195705",
+      "sourcePosition": [
+        -130.8553753189044,
+        -164.54264871077612
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -130.8553753189044,
+        -164.54264871077612
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190530",
+      "sourcePosition": [
+        -79.63496108178515,
+        122.02732697455212
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -79.63496108178515,
+        122.02732697455212
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "199642",
+      "sourcePosition": [
+        -130.42959549254738,
+        -37.87094338377938
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -130.42959549254738,
+        -37.87094338377938
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "194198",
+      "sourcePosition": [
+        -115.30482496065088,
+        43.76766696292907
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -115.30482496065088,
+        43.76766696292907
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "116717",
+      "sourcePosition": [
+        -124.48925412993412,
+        27.711055249441415
+      ],
+      "radiusM": 0.08,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 9.256
+    },
+    {
+      "kind": "tree",
+      "sourceId": "199635",
+      "sourcePosition": [
+        -201.28886717872228,
+        -109.78195636114106
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -201.28886717872228,
+        -109.78195636114106
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "51147",
+      "sourcePosition": [
+        -203.5690713005606,
+        -86.40914434893057
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 4.465
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195727",
+      "sourcePosition": [
+        -83.62204934109468,
+        -133.7261257097125
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        -83.60346493972715,
+        -133.74456312883183
+      ],
+      "displacementM": 0.026,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "199644",
+      "sourcePosition": [
+        -97.16474970639683,
+        -4.055984923616052
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -97.11998050354032,
+        -4.100160415123632
+      ],
+      "displacementM": 0.063,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "38775",
+      "sourcePosition": [
+        -145.15301819739398,
+        73.43654258269817
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        -145.15301819739398,
+        73.43654258269817
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "30794",
+      "sourcePosition": [
+        -208.8000815110281,
+        51.29565381631255
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -208.8000815110281,
+        51.29565381631255
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "198315",
+      "sourcePosition": [
+        -157.0384621481644,
+        10.133950837422162
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -156.91894832128074,
+        10.254746040438329
+      ],
+      "displacementM": 0.17,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190850",
+      "sourcePosition": [
+        -74.5692346127471,
+        -249.6999645777978
+      ],
+      "radiusM": 0.1651,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.621
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195708",
+      "sourcePosition": [
+        -147.38422755035572,
+        -180.7331484220922
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -147.38422755035572,
+        -180.7331484220922
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "199638",
+      "sourcePosition": [
+        -151.55853869905695,
+        -59.52848485996947
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -151.55853869905695,
+        -59.52848485996947
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "199639",
+      "sourcePosition": [
+        -145.87267725064885,
+        -53.79247846780345
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -145.87267725064885,
+        -53.79247846780345
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "173690",
+      "sourcePosition": [
+        -124.48925412993412,
+        27.711055249441415
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 9.358
+    },
+    {
+      "kind": "tree",
+      "sourceId": "100861",
+      "sourcePosition": [
+        -133.8715270239627,
+        90.60692141903564
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        -133.8715270239627,
+        90.60692141903564
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "194197",
+      "sourcePosition": [
+        -118.9032471004175,
+        47.56672320049256
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        -118.9032471004175,
+        47.56672320049256
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195698",
+      "sourcePosition": [
+        -88.85239276732318,
+        -121.52403300860897
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -88.85239276732318,
+        -121.52403300860897
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "192026",
+      "sourcePosition": [
+        -180.30097968119662,
+        -57.288378143217415
+      ],
+      "radiusM": 0.17779999999999999,
+      "position": [
+        -180.30097968119662,
+        -57.288378143217415
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "173689",
+      "sourcePosition": [
+        -124.48925412993412,
+        27.711055249441415
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 9.358
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195696",
+      "sourcePosition": [
+        -78.29907876672223,
+        -110.60874937055632
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -78.29907876672223,
+        -110.60874937055632
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "190531",
+      "sourcePosition": [
+        -83.77863961842377,
+        126.97213520808145
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -83.77863961842377,
+        126.97213520808145
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "100859",
+      "sourcePosition": [
+        -126.68922360811848,
+        75.81378187192604
+      ],
+      "radiusM": 0.1016,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 2.963
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195704",
+      "sourcePosition": [
+        -126.27428311877884,
+        -159.38346147630364
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        -126.27428311877884,
+        -159.38346147630364
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195700",
+      "sourcePosition": [
+        -99.62104954756796,
+        -132.33393083745614
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        -99.62104954756796,
+        -132.33393083745614
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "194200",
+      "sourcePosition": [
+        -108.64902656280901,
+        37.94548460934311
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -108.64902656280901,
+        37.94548460934311
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "199645",
+      "sourcePosition": [
+        -92.74741542956326,
+        -0.28463080571964383
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -92.74741542956326,
+        -0.28463080571964383
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195697",
+      "sourcePosition": [
+        -83.30380999110639,
+        -116.62566075241193
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        -83.30380999110639,
+        -116.62566075241193
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "70565",
+      "sourcePosition": [
+        -129.79817913251463,
+        -7.269535565748811
+      ],
+      "radiusM": 0.1397,
+      "position": [
+        -130.21265059505467,
+        -6.859538468339327
+      ],
+      "displacementM": 0.583,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "198316",
+      "sourcePosition": [
+        -163.09134622791316,
+        17.379101322498173
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -163.09134622791316,
+        17.379101322498173
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "194855",
+      "sourcePosition": [
+        -196.15810585638974,
+        40.11908294260502
+      ],
+      "radiusM": 0.2032,
+      "position": [
+        -195.99839785062116,
+        39.37749789016316
+      ],
+      "displacementM": 0.759,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195735",
+      "sourcePosition": [
+        -143.43926741345786,
+        -193.31770137604326
+      ],
+      "radiusM": 0.08,
+      "position": [
+        -143.25575224337385,
+        -193.46961041724856
+      ],
+      "displacementM": 0.238,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "116718",
+      "sourcePosition": [
+        -124.48925412993412,
+        27.711055249441415
+      ],
+      "radiusM": 0.08,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 9.256
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195741",
+      "sourcePosition": [
+        -140.58459074876737,
+        -111.4120606337674
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        -140.58459074876737,
+        -111.4120606337674
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195687",
+      "sourcePosition": [
+        -237.00249654834624,
+        -114.19985860772431
+      ],
+      "radiusM": 0.127,
+      "position": [
+        -237.00249654834624,
+        -114.19985860772431
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195686",
+      "sourcePosition": [
+        -232.78747621644288,
+        -110.42889210535213
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        -232.78747621644288,
+        -110.42889210535213
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202514",
+      "sourcePosition": [
+        136.0532313074218,
+        209.9905938305892
+      ],
+      "radiusM": 0.08,
+      "position": [
+        136.0532313074218,
+        209.9905938305892
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202509",
+      "sourcePosition": [
+        163.78952281095553,
+        182.03609718801454
+      ],
+      "radiusM": 0.1651,
+      "position": [
+        163.78952281095553,
+        182.03609718801454
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202540",
+      "sourcePosition": [
+        71.29367006837856,
+        195.61478487029672
+      ],
+      "radiusM": 0.127,
+      "position": [
+        71.29367006837856,
+        195.61478487029672
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202539",
+      "sourcePosition": [
+        80.45359617494978,
+        204.60846278071404
+      ],
+      "radiusM": 0.127,
+      "position": [
+        80.45359617494978,
+        204.60846278071404
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202511",
+      "sourcePosition": [
+        151.66640981973615,
+        193.9154909052886
+      ],
+      "radiusM": 0.08889999999999999,
+      "position": [
+        151.66640981973615,
+        193.9154909052886
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202513",
+      "sourcePosition": [
+        141.98184370005038,
+        204.6736638438888
+      ],
+      "radiusM": 0.17779999999999999,
+      "position": [
+        141.98184370005038,
+        204.6736638438888
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202508",
+      "sourcePosition": [
+        168.79483166278806,
+        177.07986965263262
+      ],
+      "radiusM": 0.1397,
+      "position": [
+        169.08766939430876,
+        177.3695738519982
+      ],
+      "displacementM": 0.412,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202506",
+      "sourcePosition": [
+        180.39757371565793,
+        165.9307194086723
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        180.40991126674732,
+        165.942924940869
+      ],
+      "displacementM": 0.017,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202541",
+      "sourcePosition": [
+        66.38639426266309,
+        190.82904189126566
+      ],
+      "radiusM": 0.1651,
+      "position": [
+        66.38639426266309,
+        190.82904189126566
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202507",
+      "sourcePosition": [
+        174.50604936201125,
+        171.211239725817
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        174.8196179798928,
+        171.52145297913583
+      ],
+      "displacementM": 0.441,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "44517",
+      "sourcePosition": [
+        80.47792117879726,
+        238.78698973730206
+      ],
+      "radiusM": 0.127,
+      "position": [
+        80.47792117879726,
+        238.78698973730206
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202510",
+      "sourcePosition": [
+        158.7471540076658,
+        187.0287082134746
+      ],
+      "radiusM": 0.127,
+      "position": [
+        158.7471540076658,
+        187.0287082134746
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202512",
+      "sourcePosition": [
+        146.91913741850294,
+        198.8366891858168
+      ],
+      "radiusM": 0.1016,
+      "position": [
+        146.91913741850294,
+        198.8366891858168
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "261463",
+      "sourcePosition": [
+        164.25554689532146,
+        138.7614767262712
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        164.25554689532146,
+        138.7614767262712
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "261464",
+      "sourcePosition": [
+        164.25554689532146,
+        138.7614767262712
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        164.69618570043065,
+        138.8718510011054
+      ],
+      "displacementM": 0.454,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "261462",
+      "sourcePosition": [
+        164.25554689532146,
+        138.7614767262712
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        164.36592117015573,
+        139.20211553138037
+      ],
+      "displacementM": 0.454,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "115595",
+      "sourcePosition": [
+        113.9016922187293,
+        230.57083690771833
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.898
+    },
+    {
+      "kind": "tree",
+      "sourceId": "115601",
+      "sourcePosition": [
+        113.9016922187293,
+        230.57083690771833
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.898
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28148",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28162",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28149",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "105508",
+      "sourcePosition": [
+        146.30766234267503,
+        164.77067513391376
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 4.99
+    },
+    {
+      "kind": "tree",
+      "sourceId": "115600",
+      "sourcePosition": [
+        113.9016922187293,
+        230.57083690771833
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.898
+    },
+    {
+      "kind": "tree",
+      "sourceId": "61827",
+      "sourcePosition": [
+        59.472973847645335,
+        156.22080915328115
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.61
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28156",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "68428",
+      "sourcePosition": [
+        113.9016922187293,
+        230.57083690771833
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.898
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28160",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28151",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "196727",
+      "sourcePosition": [
+        63.57904639292974,
+        255.39727725787088
+      ],
+      "radiusM": 0.08,
+      "position": [
+        63.57904639292974,
+        255.39727725787088
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "44227",
+      "sourcePosition": [
+        71.69766423653346,
+        247.33594096871093
+      ],
+      "radiusM": 0.08,
+      "position": [
+        71.69766423653346,
+        247.33594096871093
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "115596",
+      "sourcePosition": [
+        113.9016922187293,
+        230.57083690771833
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.898
+    },
+    {
+      "kind": "tree",
+      "sourceId": "44226",
+      "sourcePosition": [
+        79.00618717446923,
+        242.9233452132903
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        79.00618717446923,
+        242.9233452132903
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28152",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28163",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28157",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "44228",
+      "sourcePosition": [
+        79.00618717446923,
+        242.9233452132903
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        79.27678487827671,
+        243.28820398022256
+      ],
+      "displacementM": 0.454,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "115604",
+      "sourcePosition": [
+        113.9016922187293,
+        230.57083690771833
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.898
+    },
+    {
+      "kind": "tree",
+      "sourceId": "115597",
+      "sourcePosition": [
+        113.9016922187293,
+        230.57083690771833
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.898
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28161",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "27928",
+      "sourcePosition": [
+        195.8504304040689,
+        168.1549585876055
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        195.8504304040689,
+        168.1549585876055
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "202505",
+      "sourcePosition": [
+        160.87962164462078,
+        162.07905970932916
+      ],
+      "radiusM": 0.08,
+      "position": [
+        159.9194017500029,
+        161.12925256059702
+      ],
+      "displacementM": 1.351,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28164",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "115603",
+      "sourcePosition": [
+        113.9016922187293,
+        230.57083690771833
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.898
+    },
+    {
+      "kind": "tree",
+      "sourceId": "115598",
+      "sourcePosition": [
+        113.9016922187293,
+        230.57083690771833
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.898
+    },
+    {
+      "kind": "tree",
+      "sourceId": "196194",
+      "sourcePosition": [
+        130.903860360384,
+        227.81808254029602
+      ],
+      "radiusM": 0.08,
+      "position": [
+        130.903860360384,
+        227.81808254029602
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "60192",
+      "sourcePosition": [
+        56.79331872181501,
+        176.0170791549608
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 2.91
+    },
+    {
+      "kind": "tree",
+      "sourceId": "115594",
+      "sourcePosition": [
+        79.00618717446923,
+        242.9233452132903
+      ],
+      "radiusM": 0.15239999999999998,
+      "position": [
+        78.73558947066175,
+        243.28820398022256
+      ],
+      "displacementM": 0.454,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "115602",
+      "sourcePosition": [
+        113.9016922187293,
+        230.57083690771833
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.898
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28154",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28153",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28158",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "115599",
+      "sourcePosition": [
+        113.9016922187293,
+        230.57083690771833
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.898
+    },
+    {
+      "kind": "tree",
+      "sourceId": "195653",
+      "sourcePosition": [
+        197.98277411155868,
+        167.51220285193995
+      ],
+      "radiusM": 0.1905,
+      "position": [
+        197.6983094590302,
+        167.79286222123005
+      ],
+      "displacementM": 0.4,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28150",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28159",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "28155",
+      "sourcePosition": [
+        187.11031388037372,
+        146.46314181527123
+      ],
+      "radiusM": 0.15239999999999998,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.931
+    },
+    {
+      "kind": "tree",
+      "sourceId": "44516",
+      "sourcePosition": [
+        75.12516475457232,
+        208.37796225445345
+      ],
+      "radiusM": 0.127,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 3.7
+    },
+    {
+      "kind": "tree",
+      "sourceId": "44519",
+      "sourcePosition": [
+        75.12516475457232,
+        208.37796225445345
+      ],
+      "radiusM": 0.127,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 3.7
+    },
+    {
+      "kind": "tree",
+      "sourceId": "44518",
+      "sourcePosition": [
+        75.12516475457232,
+        208.37796225445345
+      ],
+      "radiusM": 0.1143,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 3.687
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:1674",
+      "sourcePosition": [
+        112.4581978166243,
+        220.88269256800413
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 8.023
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:2885",
+      "sourcePosition": [
+        112.4581978166243,
+        220.88269256800413
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 8.023
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:65",
+      "sourcePosition": [
+        -4.784487512661144,
+        -45.28294182009995
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.191
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:1678",
+      "sourcePosition": [
+        112.4581978166243,
+        220.88269256800413
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 8.023
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:1675",
+      "sourcePosition": [
+        195.42212436033878,
+        138.65193162765354
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 3.024
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:51",
+      "sourcePosition": [
+        106.39033346902579,
+        192.54982336005196
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 12.169
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:1394",
+      "sourcePosition": [
+        30.447690892382525,
+        -86.77253998117521
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 9.881
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:1404",
+      "sourcePosition": [
+        62.356874311110005,
+        -118.29775119898841
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 10.732
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:64",
+      "sourcePosition": [
+        11.019058872712776,
+        -64.93000704422593
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 2.498
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:765",
+      "sourcePosition": [
+        -183.06033877981827,
+        149.6157314297743
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.961
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:1403",
+      "sourcePosition": [
+        62.356874311110005,
+        -118.29775119898841
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 10.732
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:82",
+      "sourcePosition": [
+        -123.99902909807861,
+        86.31103865010664
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 2.986
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:2891",
+      "sourcePosition": [
+        -1.4619704907527193,
+        -55.13625679910183
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 4.325
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:764",
+      "sourcePosition": [
+        -87.68875951494556,
+        54.92476922320202
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.338
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:1546",
+      "sourcePosition": [
+        -1.4619704907527193,
+        -55.13625679910183
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 4.325
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:1676",
+      "sourcePosition": [
+        195.42212436033878,
+        138.65193162765354
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 3.024
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:405",
+      "sourcePosition": [
+        2.742054427973926,
+        -254.71540888026357
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 7.383
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:158",
+      "sourcePosition": [
+        27.37474238523282,
+        155.42042869934812
+      ],
+      "radiusM": 0.36,
+      "position": [
+        27.37474238523282,
+        155.42042869934812
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "municipal inventory"
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:331",
+      "sourcePosition": [
+        -109.84246898198035,
+        21.827587109059095
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 2.851
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:353",
+      "sourcePosition": [
+        75.11239230248611,
+        208.43442767392844
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 3.982
+    },
+    {
+      "kind": "bin",
+      "sourceId": "inventory:1380",
+      "sourcePosition": [
+        -131.96037267369684,
+        -16.817004824988544
+      ],
+      "radiusM": 0.36,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 6.295
+    },
+    {
+      "kind": "signal",
+      "sourceId": "65291006",
+      "sourcePosition": [
+        -183.34876291349065,
+        -72.21672175591812
+      ],
+      "radiusM": 0.14,
+      "position": [
+        -181.18051473308984,
+        -61.57799013111638
+      ],
+      "displacementM": 10.857,
+      "status": "inferred-signal-support-from-control-node",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "signal",
+      "sourceId": "65300049",
+      "sourcePosition": [
+        -84.46507879055571,
+        26.363910550717264
+      ],
+      "radiusM": 0.14,
+      "position": [
+        -83.55806446508008,
+        37.60584016217809
+      ],
+      "displacementM": 11.278,
+      "status": "inferred-signal-support-from-control-node",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "signal",
+      "sourceId": "65317058",
+      "sourcePosition": [
+        110.98831197456457,
+        222.11580065637827
+      ],
+      "radiusM": 0.14,
+      "position": [
+        120.16178926845937,
+        220.4224338634937
+      ],
+      "displacementM": 9.328,
+      "status": "inferred-signal-support-from-control-node",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "signal",
+      "sourceId": "65317060",
+      "sourcePosition": [
+        200.08963501791004,
+        157.522426656913
+      ],
+      "radiusM": 0.14,
+      "position": [
+        198.93281762642565,
+        149.1267049873676
+      ],
+      "displacementM": 8.475,
+      "status": "inferred-signal-support-from-control-node",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "signal",
+      "sourceId": "260193242",
+      "sourcePosition": [
+        194.52132444712333,
+        117.45379438251257
+      ],
+      "radiusM": 0.14,
+      "position": [
+        190.963241978697,
+        120.91667006734762
+      ],
+      "displacementM": 4.965,
+      "status": "inferred-signal-support-from-control-node",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "signal",
+      "sourceId": "1723633898",
+      "sourcePosition": [
+        83.24854183313437,
+        44.97420953307301
+      ],
+      "radiusM": 0.14,
+      "position": [
+        86.53297155320259,
+        41.182116121956916
+      ],
+      "displacementM": 5.017,
+      "status": "inferred-signal-support-from-control-node",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "signal",
+      "sourceId": "5326946954",
+      "sourcePosition": [
+        -86.9133780892007,
+        -167.59980374109
+      ],
+      "radiusM": 0.14,
+      "position": [
+        -90.56249622743398,
+        -164.23303053619236
+      ],
+      "displacementM": 4.965,
+      "status": "inferred-signal-support-from-control-node",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "signal",
+      "sourceId": "5326946955",
+      "sourcePosition": [
+        -104.82754922681488,
+        -145.69169315090403
+      ],
+      "radiusM": 0.14,
+      "position": [
+        -107.44990818961689,
+        -145.49567639072595
+      ],
+      "displacementM": 2.63,
+      "status": "inferred-signal-support-from-control-node",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "signal",
+      "sourceId": "5326946958",
+      "sourcePosition": [
+        102.94889132317621,
+        21.968595799524337
+      ],
+      "radiusM": 0.14,
+      "position": [
+        99.43362452708955,
+        25.44747825475864
+      ],
+      "displacementM": 4.946,
+      "status": "inferred-signal-support-from-control-node",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "signal",
+      "sourceId": "6318851270",
+      "sourcePosition": [
+        51.128212689305656,
+        -130.4537525367923
+      ],
+      "radiusM": 0.14,
+      "position": [
+        53.56784672465631,
+        -132.80753370197286
+      ],
+      "displacementM": 3.39,
+      "status": "inferred-signal-support-from-control-node",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "signal",
+      "sourceId": "6318851271",
+      "sourcePosition": [
+        52.21826017834246,
+        -111.20720727322623
+      ],
+      "radiusM": 0.14,
+      "position": [
+        46.73788081628966,
+        -116.74785196709462
+      ],
+      "displacementM": 7.793,
+      "status": "inferred-signal-support-from-control-node",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "signal",
+      "sourceId": "6318866705",
+      "sourcePosition": [
+        5.029214550741017,
+        -36.28731489693746
+      ],
+      "radiusM": 0.14,
+      "position": [
+        1.6842656441298942,
+        -32.968856561066076
+      ],
+      "displacementM": 4.712,
+      "status": "inferred-signal-support-from-control-node",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "signal",
+      "sourceId": "6318866706",
+      "sourcePosition": [
+        19.39827197417617,
+        -79.09982554614544
+      ],
+      "radiusM": 0.14,
+      "position": [
+        14.095694483051462,
+        -84.46071315977609
+      ],
+      "displacementM": 7.54,
+      "status": "inferred-signal-support-from-control-node",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "signal",
+      "sourceId": "6318866707",
+      "sourcePosition": [
+        -1.7520249895751476,
+        -85.01809536898509
+      ],
+      "radiusM": 0.14,
+      "position": [
+        1.8778360676581087,
+        -88.70816749136256
+      ],
+      "displacementM": 5.176,
+      "status": "inferred-signal-support-from-control-node",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "signal",
+      "sourceId": "6384096457",
+      "sourcePosition": [
+        176.80919987766538,
+        156.95996374078095
+      ],
+      "radiusM": 0.14,
+      "position": [
+        183.09778119329494,
+        163.20835082189367
+      ],
+      "displacementM": 8.865,
+      "status": "inferred-signal-support-from-control-node",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "small-pole",
+      "sourceId": "10738339374",
+      "sourcePosition": [
+        -192.08635643997695,
+        178.07245363947004
+      ],
+      "radiusM": 0.09,
+      "position": [
+        -192.08635643997695,
+        178.07245363947004
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "small-pole",
+      "sourceId": "10738339375",
+      "sourcePosition": [
+        -176.3717654927168,
+        193.75226248567924
+      ],
+      "radiusM": 0.09,
+      "position": [
+        -176.3717654927168,
+        193.75226248567924
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "bin",
+      "sourceId": "10780794708",
+      "sourcePosition": [
+        -202.97355547256302,
+        158.07454743189737
+      ],
+      "radiusM": 0.36,
+      "position": [
+        -202.97355547256302,
+        158.07454743189737
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "bin",
+      "sourceId": "10780794736",
+      "sourcePosition": [
+        96.79251508368179,
+        38.28313372004777
+      ],
+      "radiusM": 0.36,
+      "position": [
+        97.26081955745465,
+        37.81658445525963
+      ],
+      "displacementM": 0.661,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "small-pole",
+      "sourceId": "10874867196",
+      "sourcePosition": [
+        -240.47455059795175,
+        82.42725247517228
+      ],
+      "radiusM": 0.09,
+      "position": [
+        -240.47455059795175,
+        82.42725247517228
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "small-pole",
+      "sourceId": "10874867197",
+      "sourcePosition": [
+        -237.76987203862518,
+        79.53776488825679
+      ],
+      "radiusM": 0.09,
+      "position": [
+        -237.76987203862518,
+        79.53776488825679
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "hydrant",
+      "sourceId": "10874867200",
+      "sourcePosition": [
+        -200.42725228355266,
+        155.1618550857529
+      ],
+      "radiusM": 0.23,
+      "position": [
+        -200.42725228355266,
+        155.1618550857529
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "hydrant",
+      "sourceId": "10874913897",
+      "sourcePosition": [
+        -155.22375974874012,
+        83.13493801793084
+      ],
+      "radiusM": 0.23,
+      "position": [
+        -155.22375974874012,
+        83.13493801793084
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "bin",
+      "sourceId": "10917023076",
+      "sourcePosition": [
+        -128.75650425837375,
+        -216.11418769834563
+      ],
+      "radiusM": 0.36,
+      "position": [
+        -128.05392280446176,
+        -216.82842336629602
+      ],
+      "displacementM": 1.002,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "bin",
+      "sourceId": "11041008160",
+      "sourcePosition": [
+        -141.5388275908772,
+        -172.09284211229533
+      ],
+      "radiusM": 0.36,
+      "position": [
+        -141.5388275908772,
+        -172.09284211229533
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "bin",
+      "sourceId": "11041008162",
+      "sourcePosition": [
+        -118.7205454967916,
+        -149.02170598134398
+      ],
+      "radiusM": 0.36,
+      "position": [
+        -118.7205454967916,
+        -149.02170598134398
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "hydrant",
+      "sourceId": "11041008163",
+      "sourcePosition": [
+        -109.67214298981708,
+        -142.83832589630038
+      ],
+      "radiusM": 0.23,
+      "position": [
+        -109.67214298981708,
+        -142.83832589630038
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "hydrant",
+      "sourceId": "11041008167",
+      "sourcePosition": [
+        -73.29819950985257,
+        -105.21066277800128
+      ],
+      "radiusM": 0.23,
+      "position": [
+        -73.29819950985257,
+        -105.21066277800128
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "bin",
+      "sourceId": "11041008175",
+      "sourcePosition": [
+        -28.878574209171347,
+        -58.95378826186061
+      ],
+      "radiusM": 0.36,
+      "position": [
+        -28.878574209171347,
+        -58.95378826186061
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "hydrant",
+      "sourceId": "11041008184",
+      "sourcePosition": [
+        78.70079887809698,
+        48.228834552224725
+      ],
+      "radiusM": 0.23,
+      "position": [
+        78.6305374884587,
+        48.30876062468403
+      ],
+      "displacementM": 0.106,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "hydrant",
+      "sourceId": "11041008193",
+      "sourcePosition": [
+        -28.598153192200698,
+        -60.09479340258986
+      ],
+      "radiusM": 0.23,
+      "position": [
+        -28.598153192200698,
+        -60.09479340258986
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "hydrant",
+      "sourceId": "11041008195",
+      "sourcePosition": [
+        -0.48202219826634973,
+        -31.13050087215379
+      ],
+      "radiusM": 0.23,
+      "position": [
+        -0.48202219826634973,
+        -31.13050087215379
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "bin",
+      "sourceId": "11041008196",
+      "sourcePosition": [
+        -1.1893376159714535,
+        -32.05601989571005
+      ],
+      "radiusM": 0.36,
+      "position": [
+        -1.1893376159714535,
+        -32.05601989571005
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "bin",
+      "sourceId": "11041008197",
+      "sourcePosition": [
+        -27.216640292783268,
+        -46.37188183283433
+      ],
+      "radiusM": 0.36,
+      "position": [
+        -27.181977421380665,
+        -46.33694088828327
+      ],
+      "displacementM": 0.049,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "bin",
+      "sourceId": "11041008199",
+      "sourcePosition": [
+        -77.35901690798346,
+        -107.77788156177849
+      ],
+      "radiusM": 0.36,
+      "position": [
+        -77.35901690798346,
+        -107.77788156177849
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805817",
+      "sourcePosition": [
+        -28.999191935174167,
+        -91.88576159765944
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -28.92662439874551,
+        -91.95948040073576
+      ],
+      "displacementM": 0.103,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805818",
+      "sourcePosition": [
+        -35.975231330958195,
+        -84.92989153368399
+      ],
+      "radiusM": 0.16,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.656
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805819",
+      "sourcePosition": [
+        -48.7982068156125,
+        -111.96396964835003
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -48.7982068156125,
+        -111.96396964835003
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805820",
+      "sourcePosition": [
+        -56.142799443914555,
+        -103.85655417107046
+      ],
+      "radiusM": 0.16,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.626
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805821",
+      "sourcePosition": [
+        -68.15338393906131,
+        -131.24037567945197
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -68.15338393906131,
+        -131.24037567945197
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805822",
+      "sourcePosition": [
+        -75.59066479874309,
+        -123.77707900619134
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -74.59481695077866,
+        -124.76505078902514
+      ],
+      "displacementM": 1.403,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805823",
+      "sourcePosition": [
+        -94.99552912812214,
+        -143.5530362133868
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -94.10787696999229,
+        -144.43366801572128
+      ],
+      "displacementM": 1.25,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805824",
+      "sourcePosition": [
+        -87.81528939364944,
+        -150.76282442826778
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -87.81528939364944,
+        -150.76282442826778
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805825",
+      "sourcePosition": [
+        -106.30438562645577,
+        -170.53280740277842
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -106.30438562645577,
+        -170.53280740277842
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805826",
+      "sourcePosition": [
+        -113.99306747608352,
+        -162.32771549001336
+      ],
+      "radiusM": 0.16,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 5.291
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805827",
+      "sourcePosition": [
+        -126.80630050087348,
+        -192.27969203842804
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -126.80630050087348,
+        -192.27969203842804
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805828",
+      "sourcePosition": [
+        -135.01071693585254,
+        -183.31234315410256
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -134.2764406486691,
+        -184.08777074429048
+      ],
+      "displacementM": 1.068,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805829",
+      "sourcePosition": [
+        -168.3994687317172,
+        -199.25103565771133
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -168.3994687317172,
+        -199.25103565771133
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805830",
+      "sourcePosition": [
+        -136.22552989365067,
+        -167.09873312851414
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -136.22552989365067,
+        -167.09873312851414
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805831",
+      "sourcePosition": [
+        -119.98422000207938,
+        -151.07146049337462
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -119.98422000207938,
+        -151.07146049337462
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805832",
+      "sourcePosition": [
+        -104.30521037895232,
+        -135.25861652335152
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -104.30521037895232,
+        -135.25861652335152
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805833",
+      "sourcePosition": [
+        -87.91568701609503,
+        -119.019502971787
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -87.91568701609503,
+        -119.019502971787
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805834",
+      "sourcePosition": [
+        -71.7319434818346,
+        -102.29349346878007
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -71.7319434818346,
+        -102.29349346878007
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805835",
+      "sourcePosition": [
+        -55.34543329558801,
+        -85.61051507620141
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -55.34543329558801,
+        -85.61051507620141
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805836",
+      "sourcePosition": [
+        -44.792827190831304,
+        -75.11226897221059
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -44.792827190831304,
+        -75.11226897221059
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "lamp",
+      "sourceId": "11110805837",
+      "sourcePosition": [
+        -31.466692210990004,
+        -61.82213040301576
+      ],
+      "radiusM": 0.16,
+      "position": [
+        -31.466692210990004,
+        -61.82213040301576
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false,
+      "source": "OSM"
+    },
+    {
+      "kind": "small-pole",
+      "sourceId": "12461951393",
+      "sourcePosition": [
+        -212.5021535968408,
+        -116.55423508863896
+      ],
+      "radiusM": 0.09,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.569
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "1302",
+      "sourcePosition": [
+        151.9618672307523,
+        -214.0356357546343
+      ],
+      "radiusM": 0.05,
+      "position": [
+        151.9618672307523,
+        -214.0356357546343
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "834052363",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "1302",
+      "sourcePosition": [
+        149.2503571565412,
+        -209.8347176267185
+      ],
+      "radiusM": 0.05,
+      "position": [
+        149.2503571565412,
+        -209.8347176267185
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "834052363",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "1302",
+      "sourcePosition": [
+        146.53884708233014,
+        -205.63379949880266
+      ],
+      "radiusM": 0.05,
+      "position": [
+        146.53884708233014,
+        -205.63379949880266
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "834052363",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "1302",
+      "sourcePosition": [
+        143.82733700811903,
+        -201.43288137088683
+      ],
+      "radiusM": 0.05,
+      "position": [
+        143.82733700811903,
+        -201.43288137088683
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "834052363",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "1302",
+      "sourcePosition": [
+        141.11582693390795,
+        -197.231963242971
+      ],
+      "radiusM": 0.05,
+      "position": [
+        141.11582693390795,
+        -197.231963242971
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "834052363",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "1302",
+      "sourcePosition": [
+        138.40431685969688,
+        -193.0310451150552
+      ],
+      "radiusM": 0.05,
+      "position": [
+        138.40431685969688,
+        -193.0310451150552
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "834052363",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "1302",
+      "sourcePosition": [
+        134.1388899637029,
+        -185.21756738280547
+      ],
+      "radiusM": 0.05,
+      "position": [
+        134.1388899637029,
+        -185.21756738280547
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "834052364",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "1302",
+      "sourcePosition": [
+        131.34941707388373,
+        -181.06800824996208
+      ],
+      "radiusM": 0.05,
+      "position": [
+        131.34941707388373,
+        -181.06800824996208
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "834052364",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "1302",
+      "sourcePosition": [
+        128.55994418406456,
+        -176.9184491171187
+      ],
+      "radiusM": 0.05,
+      "position": [
+        128.55994418406456,
+        -176.9184491171187
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "834052364",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "1302",
+      "sourcePosition": [
+        125.77047129424538,
+        -172.76888998427532
+      ],
+      "radiusM": 0.05,
+      "position": [
+        125.77047129424538,
+        -172.76888998427532
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "834052364",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "1302",
+      "sourcePosition": [
+        122.38515339982465,
+        -169.09617077255248
+      ],
+      "radiusM": 0.05,
+      "position": [
+        122.38515339982465,
+        -169.09617077255248
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "834052364",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "1302",
+      "sourcePosition": [
+        118.87556360840465,
+        -165.53834542280717
+      ],
+      "radiusM": 0.05,
+      "position": [
+        118.87556360840465,
+        -165.53834542280717
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "834052364",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "1302",
+      "sourcePosition": [
+        115.19787472903927,
+        -162.15092686192747
+      ],
+      "radiusM": 0.05,
+      "position": [
+        115.19787472903927,
+        -162.15092686192747
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "834052364",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "1302",
+      "sourcePosition": [
+        111.68202393532127,
+        -158.63085196772536
+      ],
+      "radiusM": 0.05,
+      "position": [
+        111.68202393532127,
+        -158.63085196772536
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "834052364",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        25.283834335906135,
+        -74.52481415215553
+      ],
+      "radiusM": 0.05,
+      "position": [
+        25.283834335906135,
+        -74.52481415215553
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        28.842033547771308,
+        -78.03753651076602
+      ],
+      "radiusM": 0.05,
+      "position": [
+        28.842033547771308,
+        -78.03753651076602
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        32.40023275963648,
+        -81.5502588693765
+      ],
+      "radiusM": 0.05,
+      "position": [
+        32.40023275963648,
+        -81.5502588693765
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        35.95843197150166,
+        -85.06298122798701
+      ],
+      "radiusM": 0.05,
+      "position": [
+        35.95843197150166,
+        -85.06298122798701
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        39.51663118336683,
+        -88.5757035865975
+      ],
+      "radiusM": 0.05,
+      "position": [
+        39.51663118336683,
+        -88.5757035865975
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        43.074830395232006,
+        -92.08842594520799
+      ],
+      "radiusM": 0.05,
+      "position": [
+        43.074830395232006,
+        -92.08842594520799
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        46.63302960709718,
+        -95.60114830381848
+      ],
+      "radiusM": 0.05,
+      "position": [
+        46.63302960709718,
+        -95.60114830381848
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        50.19122881896236,
+        -99.11387066242897
+      ],
+      "radiusM": 0.05,
+      "position": [
+        50.19122881896236,
+        -99.11387066242897
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        53.74942803082753,
+        -102.62659302103947
+      ],
+      "radiusM": 0.05,
+      "position": [
+        53.74942803082753,
+        -102.62659302103947
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        62.948355526743335,
+        -111.70791315644617
+      ],
+      "radiusM": 0.05,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 0.071
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        66.50680967210322,
+        -115.2203772619765
+      ],
+      "radiusM": 0.05,
+      "position": [
+        66.50680967210322,
+        -115.2203772619765
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        75.50618614667438,
+        -124.10051334033221
+      ],
+      "radiusM": 0.05,
+      "position": [
+        75.50618614667438,
+        -124.10051334033221
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        79.82654986787429,
+        -126.5711041585958
+      ],
+      "radiusM": 0.05,
+      "position": [
+        79.82654986787429,
+        -126.5711041585958
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        83.43713150304862,
+        -130.02996238866854
+      ],
+      "radiusM": 0.05,
+      "position": [
+        83.43713150304862,
+        -130.02996238866854
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        87.04771313822295,
+        -133.48882061874127
+      ],
+      "radiusM": 0.05,
+      "position": [
+        87.04771313822295,
+        -133.48882061874127
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        90.65822651761718,
+        -136.94775007390572
+      ],
+      "radiusM": 0.05,
+      "position": [
+        90.65822651761718,
+        -136.94775007390572
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        94.26760781935076,
+        -140.40786085518081
+      ],
+      "radiusM": 0.05,
+      "position": [
+        94.26760781935076,
+        -140.40786085518081
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        97.87698912108434,
+        -143.8679716364559
+      ],
+      "radiusM": 0.05,
+      "position": [
+        97.87698912108434,
+        -143.8679716364559
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        101.4863704228179,
+        -147.32808241773097
+      ],
+      "radiusM": 0.05,
+      "position": [
+        101.4863704228179,
+        -147.32808241773097
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475375",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "2138",
+      "sourcePosition": [
+        105.09575172455148,
+        -150.78819319900606
+      ],
+      "radiusM": 0.05,
+      "status": "rejected",
+      "reason": "source-conflicts-with-street-space",
+      "requiredShiftM": 1.295
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "3557",
+      "sourcePosition": [
+        -69.25554777728395,
+        16.986607417001014
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -69.25554777728395,
+        16.986607417001014
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475378",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "3557",
+      "sourcePosition": [
+        -64.9829490358758,
+        14.597357924236949
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -64.9829490358758,
+        14.597357924236949
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475378",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "3557",
+      "sourcePosition": [
+        -61.42497919248014,
+        11.084403242848776
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -61.42497919248014,
+        11.084403242848776
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475378",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "3557",
+      "sourcePosition": [
+        -57.86700934908448,
+        7.571448561460603
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -57.86700934908448,
+        7.571448561460603
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475378",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "3557",
+      "sourcePosition": [
+        -54.30903950568883,
+        4.058493880072431
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -54.30903950568883,
+        4.058493880072431
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475378",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "3557",
+      "sourcePosition": [
+        -50.75106966229317,
+        0.5455391986842582
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -50.75106966229317,
+        0.5455391986842582
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475378",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "3557",
+      "sourcePosition": [
+        -47.19309981889751,
+        -2.967415482703915
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -47.19309981889751,
+        -2.967415482703915
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475378",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "3557",
+      "sourcePosition": [
+        -43.635129975501854,
+        -6.480370164092088
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -43.635129975501854,
+        -6.480370164092088
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475378",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "3557",
+      "sourcePosition": [
+        -40.0771601321062,
+        -9.993324845480258
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -40.0771601321062,
+        -9.993324845480258
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475378",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "3557",
+      "sourcePosition": [
+        -36.51919028871055,
+        -13.506279526868427
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -36.51919028871055,
+        -13.506279526868427
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475378",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "3557",
+      "sourcePosition": [
+        -32.96122044531488,
+        -17.019234208256606
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -32.96122044531488,
+        -17.019234208256606
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475378",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "3557",
+      "sourcePosition": [
+        -29.403250601919225,
+        -20.53218888964478
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -29.403250601919225,
+        -20.53218888964478
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475378",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "3557",
+      "sourcePosition": [
+        -25.84528075852357,
+        -24.045143571032945
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -25.84528075852357,
+        -24.045143571032945
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475378",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "3557",
+      "sourcePosition": [
+        -22.28731091512791,
+        -27.558098252421118
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -22.28731091512791,
+        -27.558098252421118
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475378",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "3557",
+      "sourcePosition": [
+        -18.729341071732257,
+        -31.07105293380929
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -18.729341071732257,
+        -31.07105293380929
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475378",
+      "spacingM": 5
+    },
+    {
+      "kind": "cycle-separator-post",
+      "sourceId": "3557",
+      "sourcePosition": [
+        -15.171371228336596,
+        -34.584007615197464
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -15.171371228336596,
+        -34.584007615197464
+      ],
+      "displacementM": 0.0,
+      "status": "inferred-spacing-on-inventory-supported-separator",
+      "imageVerified": false,
+      "wayId": "1280475378",
+      "spacingM": 5
+    },
+    {
+      "kind": "sign",
+      "sourceId": "S134316",
+      "sourcePosition": [
+        -81.79729561449494,
+        9.515314455609769
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -81.85573046994509,
+        8.993871684254213
+      ],
+      "displacementM": 0.525,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "sign",
+      "sourceId": "S274923",
+      "sourcePosition": [
+        -66.35008322389331,
+        22.395882178563625
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -65.61529715521088,
+        22.884150118190398
+      ],
+      "displacementM": 0.882,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "sign",
+      "sourceId": "S136287",
+      "sourcePosition": [
+        -98.42513462819625,
+        23.8733449135907
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -98.49928250435653,
+        24.71701511171108
+      ],
+      "displacementM": 0.847,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "sign",
+      "sourceId": "S106927",
+      "sourcePosition": [
+        -83.1547081975732,
+        9.388889422640204
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -83.08294217523496,
+        8.96441352373835
+      ],
+      "displacementM": 0.43,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "sign",
+      "sourceId": "S131500",
+      "sourcePosition": [
+        60.104130538296886,
+        -131.71845260402188
+      ],
+      "radiusM": 0.05,
+      "position": [
+        59.766409059981434,
+        -132.99461599176834
+      ],
+      "displacementM": 1.32,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "sign",
+      "sourceId": "S111612",
+      "sourcePosition": [
+        -2.6069747569272295,
+        -36.15345512703061
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -2.103140372564673,
+        -35.64087991960981
+      ],
+      "displacementM": 0.719,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "sign",
+      "sourceId": "S266692",
+      "sourcePosition": [
+        59.54355034499895,
+        -131.78090765420347
+      ],
+      "radiusM": 0.05,
+      "position": [
+        59.66021216343912,
+        -133.22060742947914
+      ],
+      "displacementM": 1.444,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "sign",
+      "sourceId": "S136270",
+      "sourcePosition": [
+        -34.75881785037927,
+        -8.695489959791303
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -34.54112054625306,
+        -8.478927814501066
+      ],
+      "displacementM": 0.307,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "sign",
+      "sourceId": "S136271",
+      "sourcePosition": [
+        -59.96750071190763,
+        -10.244538201019168
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -60.45248435350945,
+        -10.737908095109267
+      ],
+      "displacementM": 0.692,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "sign",
+      "sourceId": "S111308",
+      "sourcePosition": [
+        -20.52707836974878,
+        -50.1479964684695
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -20.01246429866221,
+        -50.83327065369482
+      ],
+      "displacementM": 0.857,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "sign",
+      "sourceId": "S136288",
+      "sourcePosition": [
+        -40.81556902383454,
+        55.06123906513676
+      ],
+      "radiusM": 0.05,
+      "position": [
+        -39.66026039359707,
+        54.05622371947789
+      ],
+      "displacementM": 1.531,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:0",
+      "sourcePosition": [
+        153.12459881373707,
+        -216.27203727279473
+      ],
+      "radiusM": 0.09,
+      "position": [
+        153.07277607650946,
+        -216.1984546396111
+      ],
+      "displacementM": 0.09,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:1",
+      "sourcePosition": [
+        151.76698288262946,
+        -214.17917205335175
+      ],
+      "radiusM": 0.09,
+      "position": [
+        151.72873925416002,
+        -214.20753546129754
+      ],
+      "displacementM": 0.048,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:2",
+      "sourcePosition": [
+        150.40936695152186,
+        -212.08630683390876
+      ],
+      "radiusM": 0.09,
+      "position": [
+        150.40936695152186,
+        -212.08630683390876
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:3",
+      "sourcePosition": [
+        149.05175102041423,
+        -209.99344161446578
+      ],
+      "radiusM": 0.09,
+      "position": [
+        149.02317533108126,
+        -210.01463479006966
+      ],
+      "displacementM": 0.036,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:4",
+      "sourcePosition": [
+        147.69413508930663,
+        -207.90057639502282
+      ],
+      "radiusM": 0.09,
+      "position": [
+        147.69413508930663,
+        -207.90057639502282
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:5",
+      "sourcePosition": [
+        146.33651915819902,
+        -205.80771117557984
+      ],
+      "radiusM": 0.09,
+      "position": [
+        146.3195190457803,
+        -205.82311917934356
+      ],
+      "displacementM": 0.023,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:6",
+      "sourcePosition": [
+        144.97890322709142,
+        -203.71484595613686
+      ],
+      "radiusM": 0.09,
+      "position": [
+        144.97890322709142,
+        -203.71484595613686
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:7",
+      "sourcePosition": [
+        143.6212872959838,
+        -201.62198073669387
+      ],
+      "radiusM": 0.09,
+      "position": [
+        143.61388775515366,
+        -201.6286872895773
+      ],
+      "displacementM": 0.01,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:8",
+      "sourcePosition": [
+        142.2636713648762,
+        -199.5291155172509
+      ],
+      "radiusM": 0.09,
+      "position": [
+        142.2636713648762,
+        -199.5291155172509
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:9",
+      "sourcePosition": [
+        140.90605543376859,
+        -197.4362502978079
+      ],
+      "radiusM": 0.09,
+      "position": [
+        140.90605543376859,
+        -197.4362502978079
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:10",
+      "sourcePosition": [
+        139.54843950266098,
+        -195.34338507836492
+      ],
+      "radiusM": 0.09,
+      "position": [
+        139.54843950266098,
+        -195.34338507836492
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:11",
+      "sourcePosition": [
+        138.19082357155338,
+        -193.25051985892193
+      ],
+      "radiusM": 0.09,
+      "position": [
+        138.19082357155338,
+        -193.25051985892193
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:12",
+      "sourcePosition": [
+        136.83320764044575,
+        -191.15765463947895
+      ],
+      "radiusM": 0.09,
+      "position": [
+        136.83320764044575,
+        -191.15765463947895
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:13",
+      "sourcePosition": [
+        135.47559170933815,
+        -189.064789420036
+      ],
+      "radiusM": 0.09,
+      "position": [
+        135.47559170933815,
+        -189.064789420036
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:14",
+      "sourcePosition": [
+        134.11797577823054,
+        -186.971924200593
+      ],
+      "radiusM": 0.09,
+      "position": [
+        134.11797577823054,
+        -186.971924200593
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:15",
+      "sourcePosition": [
+        132.76035984712294,
+        -184.87905898115002
+      ],
+      "radiusM": 0.09,
+      "position": [
+        132.76035984712294,
+        -184.87905898115002
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:16",
+      "sourcePosition": [
+        131.4027439160153,
+        -182.78619376170704
+      ],
+      "radiusM": 0.09,
+      "position": [
+        131.4027439160153,
+        -182.78619376170704
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:17",
+      "sourcePosition": [
+        130.0451279849077,
+        -180.69332854226406
+      ],
+      "radiusM": 0.09,
+      "position": [
+        130.0451279849077,
+        -180.69332854226406
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:18",
+      "sourcePosition": [
+        128.6875120538001,
+        -178.60046332282107
+      ],
+      "radiusM": 0.09,
+      "position": [
+        128.6875120538001,
+        -178.60046332282107
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:19",
+      "sourcePosition": [
+        127.3298961226925,
+        -176.5075981033781
+      ],
+      "radiusM": 0.09,
+      "position": [
+        127.3298961226925,
+        -176.5075981033781
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:20",
+      "sourcePosition": [
+        125.97228019158489,
+        -174.4147328839351
+      ],
+      "radiusM": 0.09,
+      "position": [
+        125.97228019158489,
+        -174.4147328839351
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:21",
+      "sourcePosition": [
+        124.52716350039992,
+        -172.389625178988
+      ],
+      "radiusM": 0.09,
+      "position": [
+        124.52716350039992,
+        -172.389625178988
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:22",
+      "sourcePosition": [
+        122.84069206227541,
+        -170.55141411070952
+      ],
+      "radiusM": 0.09,
+      "position": [
+        122.84069206227541,
+        -170.55141411070952
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:23",
+      "sourcePosition": [
+        121.15422062415088,
+        -168.71320304243105
+      ],
+      "radiusM": 0.09,
+      "position": [
+        121.15422062415088,
+        -168.71320304243105
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:24",
+      "sourcePosition": [
+        119.46774918602635,
+        -166.87499197415258
+      ],
+      "radiusM": 0.09,
+      "position": [
+        119.46774918602635,
+        -166.87499197415258
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:25",
+      "sourcePosition": [
+        117.63279365370131,
+        -165.18716701934193
+      ],
+      "radiusM": 0.09,
+      "position": [
+        117.63279365370131,
+        -165.18716701934193
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:26",
+      "sourcePosition": [
+        115.77326683406662,
+        -163.52422809977494
+      ],
+      "radiusM": 0.09,
+      "position": [
+        115.77326683406662,
+        -163.52422809977494
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:27",
+      "sourcePosition": [
+        113.91374001443192,
+        -161.86128918020796
+      ],
+      "radiusM": 0.09,
+      "position": [
+        113.92092977829884,
+        -161.85356499521285
+      ],
+      "displacementM": 0.011,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:28",
+      "sourcePosition": [
+        112.05421319479723,
+        -160.198350260641
+      ],
+      "radiusM": 0.09,
+      "position": [
+        112.09528129698856,
+        -160.15422953225612
+      ],
+      "displacementM": 0.06,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1006830798:29",
+      "sourcePosition": [
+        110.19468637516253,
+        -158.53541134107402
+      ],
+      "radiusM": 0.09,
+      "position": [
+        110.26963281567826,
+        -158.4548940692994
+      ],
+      "displacementM": 0.11,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1169522853:0",
+      "sourcePosition": [
+        32.87799838154587,
+        -75.80831566394922
+      ],
+      "radiusM": 0.09,
+      "position": [
+        32.95538924908577,
+        -75.73014499412079
+      ],
+      "displacementM": 0.11,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1169522853:1",
+      "sourcePosition": [
+        34.538046129331704,
+        -74.06444189946758
+      ],
+      "radiusM": 0.09,
+      "position": [
+        34.538046129331704,
+        -74.06444189946758
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1169522853:2",
+      "sourcePosition": [
+        32.782264756721545,
+        -72.30720750988577
+      ],
+      "radiusM": 0.09,
+      "position": [
+        32.782264756721545,
+        -72.30720750988577
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1169522853:3",
+      "sourcePosition": [
+        31.06286745000911,
+        -70.51457894923972
+      ],
+      "radiusM": 0.09,
+      "position": [
+        31.06286745000911,
+        -70.51457894923972
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1169522853:4",
+      "sourcePosition": [
+        29.496306411143923,
+        -68.60002759391247
+      ],
+      "radiusM": 0.09,
+      "position": [
+        29.496306411143923,
+        -68.60002759391247
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1169522853:5",
+      "sourcePosition": [
+        28.650057078307206,
+        -66.30360637707061
+      ],
+      "radiusM": 0.09,
+      "position": [
+        28.650057078307206,
+        -66.30360637707061
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1169522853:6",
+      "sourcePosition": [
+        28.72156324330596,
+        -63.822113016592894
+      ],
+      "radiusM": 0.09,
+      "position": [
+        28.72156324330596,
+        -63.822113016592894
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1169522853:7",
+      "sourcePosition": [
+        29.702080045456153,
+        -61.55374528752337
+      ],
+      "radiusM": 0.09,
+      "position": [
+        29.702080045456153,
+        -61.55374528752337
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1169522853:8",
+      "sourcePosition": [
+        31.30943896363892,
+        -59.67401064483635
+      ],
+      "radiusM": 0.09,
+      "position": [
+        31.30943896363892,
+        -59.67401064483635
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1169522853:9",
+      "sourcePosition": [
+        33.020055231044964,
+        -57.872779700726284
+      ],
+      "radiusM": 0.09,
+      "position": [
+        33.020055231044964,
+        -57.872779700726284
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
+    },
+    {
+      "kind": "mapped-bollard",
+      "sourceId": "1169522853:10",
+      "sourcePosition": [
+        33.25940798501274,
+        -56.09003253365345
+      ],
+      "radiusM": 0.09,
+      "position": [
+        33.337593302303674,
+        -56.16740860333986
+      ],
+      "displacementM": 0.11,
+      "status": "inferred-bounded-shift",
+      "imageVerified": false
+    }
+  ]
+}
