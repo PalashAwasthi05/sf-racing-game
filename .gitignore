@@ -40,3 +40,12 @@ next-env.d.ts
 # Python generator cache
 __pycache__/
 *.pyc
+
+# World model chunks and generated models (~2.3 GB, content-addressed; the
+# work/ publish scripts rebuild them from candidates). The 2026-09-08 chunks
+# stay in history.
+/public/**/*.bin
+/public/**/*.glb
+
+# TypeScript incremental build state
+*.tsbuildinfo
