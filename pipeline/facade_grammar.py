@@ -7,6 +7,38 @@ from shapely.geometry import Point,Polygon,box
 from .surface_evidence import admissible,resolve_material
 
 
+RIBBON_PIER_M=.3   # lights of a bank standing at most this far apart are one band of glazing per storey
+
+def ribbon_bank(group,W,region,dx,nx):
+ """Whether a repeat bank is ribbon glazing: its lights stand at most RIBBON_PIER_M apart, so what divides them is a
+ mullion, not wall. Drawn light by light, each with its own four-sided frame and sill and a sliver of wall between, a
+ tile office block's continuous bands of glass came out as a grid of punched windows. A style may say so itself."""
+ st=group.get('style') or {}
+ if 'ribbon' in st:return bool(st['ribbon'])
+ if st.get('kind','window')!='window' or W is None or nx<2:return False
+ return dx*(region[2]-region[0])*W*(1-st.get('openingRatio',.7))<=RIBBON_PIER_M
+
+def _ribbons(ops,W):
+ """Each storey of a ribbon bank's lights, consecutive columns joined into one opening: the joints between lights
+ become mullions (`jointFractions`, `jointWidthM` the width the lights stood apart), the lights' own mullions stay."""
+ out=[];rows={}
+ for op in ops:rows.setdefault((op['group'],op['iy']),[]).append(op)
+ for key in sorted(rows):
+  row=sorted(rows[key],key=lambda o:o['ix']);runs=[[row[0]]]
+  for o in row[1:]:
+   if o['ix']==runs[-1][-1]['ix']+1:runs[-1].append(o)
+   else:runs.append([o])
+  for run in runs:
+   x0=run[0]['rect'][0];x1=run[-1]['rect'][2];w=x1-x0;st=dict(run[0]['style'])
+   if len(run)==1 or w<=0:out.append(run[0]);continue
+   gap=float(np.median([b['rect'][0]-a['rect'][2] for a,b in zip(run,run[1:])]))*(W or 1.)
+   own=st.get('mullionFractions',[.25])
+   st.update(ribbon=True,jointWidthM=round(float(np.clip(gap,.05,.12)),3),
+             jointFractions=[round(((a['rect'][2]+b['rect'][0])/2-x0)/w,5) for a,b in zip(run,run[1:])],
+             mullionFractions=[round((o['rect'][0]+f*(o['rect'][2]-o['rect'][0])-x0)/w,5) for o in run for f in own])
+   out.append({**run[0],'rect':[x0,min(o['rect'][1] for o in run),x1,max(o['rect'][3] for o in run)],'style':st,'lights':len(run)})
+ return out
+
 def _grid(g,W=None,H=None):
  """Cell centres and pitch of a repeat bank, by count or by pitch in metres."""
  region=g['region'];nx=g.get('columns',1);ny=g.get('rows',1)
@@ -69,7 +101,7 @@ def openings(profile,fits,W=None,H=None,wallH=None):
  against the wall piece's own height (`wallH`), while the metres of pitches and regions refer to the profile's
  frame height H: a frame of 50 m read on a tower and its 24 m wing must not switch the wing's bank off.
  """
- result=[]
+ result=[];ribbons=set()
  for gi,group in enumerate(profile.get('groups',[])):
   g=dict(group);fit=next((f for f in fits if f['id']==g.get('fitId')),None)
   gate=wallH if wallH is not None else H
@@ -78,6 +110,7 @@ def openings(profile,fits,W=None,H=None,wallH=None):
    region=g.get('region',fit['region']);style=dict(fit['style']);style.update(g.get('style',{}));xs=fit['columns']['centers'];ys=fit['rows']['centers'];dx=fit['columns']['spacing'];dy=fit['rows']['spacing'];cells={(round(c['x'],5),round(c['y'],5)):c['evidence'] for c in fit['cells']}
   else:
    region,nx,ny,xs,ys,dx,dy=_grid(g,W,H);style=g.get('style',{});cells={}
+   if ribbon_bank(g,W,region,dx,nx):ribbons.add(gi)
   x0,y0,x1,y1=region
   for ix,x in enumerate(xs):
    for iy,y in enumerate(ys):
@@ -86,6 +119,7 @@ def openings(profile,fits,W=None,H=None,wallH=None):
     cx=x0+x*(x1-x0);cy=y0+y*(y1-y0)
     result.append(dict(rect=[cx-ow/2,cy-oh/2,cx+ow/2,cy+oh/2],style=style,evidence=cells.get((round(x,5),round(y,5)),'visual-grammar' if profile.get('sourceIds') else 'inferred'),ix=ix,iy=iy,group=gi,fitId=g.get('fitId')))
  result=[op for op in result if admissible(op,profile)]
+ if ribbons:result=[op for op in result if op['group'] not in ribbons]+_ribbons([op for op in result if op['group'] in ribbons],W)
  for opening in profile.get('openings',[]):
   if admissible(opening,profile,explicit=True):result.append(dict(opening,evidence=opening.get('evidence','observed-boundary'),ix=0,iy=0))
  return result
@@ -238,6 +272,11 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
    for f in s.get('mullionFractions',[]):
     stripe=box(ox1+ow*f-.0185,oy1,ox1+ow*f+.0185,oy2).intersection(original).intersection(clip_box)
     prism(stripe,-recess+.035,.065,frame,detail)
+   jw=s.get('jointWidthM',.08)
+   for f in s.get('jointFractions',[]):
+    # the joint between two lights of a ribbon: a full-depth mullion, like the band's jambs
+    stripe=box(ox1+ow*f-jw/2,oy1,ox1+ow*f+jw/2,oy2).intersection(original).intersection(clip_box)
+    prism(stripe,proj,recess+proj,frame,detail)
    for f in s.get('transomFractions',[]):
     stripe=box(ox1,oy1+oh*f-.021,ox2,oy1+oh*f+.021).intersection(original).intersection(clip_box)
     prism(stripe,-recess+.035,.065,frame,detail)
@@ -290,6 +329,7 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
    block(cx,y1+railheight,w,.038,.06,frame,-.08)
    block(cx,y1+railheight*.53,w-.12,railheight*.84,.015,'glass_light',-.10)
   for f in s.get('mullionFractions',[.25]):block(x1+w*f,cy,.037,h,.065,frame,-recess+.035)
+  for f in s.get('jointFractions',[]):block(x1+w*f,cy,s.get('jointWidthM',.08),h,recess+proj,frame,(proj-recess)/2)
   for f in s.get('transomFractions',[.76]):block(cx,y1+h*f,w,.042,.065,frame,-recess+.035)
   block(cx,y1-.035,w+.06,.07,.31,frame,.035)
   if kind=='projected_bay':
@@ -306,8 +346,10 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
    for x in [x1+w*.12,x2-w*.12]:
     p=u*(left+x)+n*plane;ctx['cylinder']([*(p+n*.02),z0+y2+.85],[*(p+n*(d-.15)),z0+y2+.20],.02,detail,'steel',6)
   # Stable blinds, only behind the glazing. Sparse panels reduce geometric cost.
-  if kind not in ['entry','shopfront','terrace_frame'] and j%5 in [1,3]:
-   ch=h*(.22 if j%5==1 else .47);block(cx,y2-ch/2-fw,w-fw*2,ch,.02,'curtain',-recess-.07)
+  if kind not in ['entry','shopfront','terrace_frame']:
+   cuts=[0.]+list(s.get('jointFractions',[]))+[1.]      # a ribbon's lights take their blinds one by one
+   for k,(fa,fb) in enumerate(zip(cuts,cuts[1:])):
+    if (j+k)%5 in [1,3]:ch=h*(.22 if (j+k)%5==1 else .47);block(x1+w*(fa+fb)/2,y2-ch/2-fw,w*(fb-fa)-fw*2,ch,.02,'curtain',-recess-.07)
  for band in profile.get('bands',[]):
   z=band['height']*Hs
   if z>H+.5:continue

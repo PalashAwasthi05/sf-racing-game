@@ -22,12 +22,14 @@ import frontage_crops_v15 as fc
 
 PPM=12.        # pixels per metre of the rectified wall
 MIN_WALL_M=6.
-def rectify(wall,cam,z0,pano):
+def rectify(wall,cam,z0,pano,base=0.):
+    # `base`: height of the wall's foot above the ground z0 (a set-back tier wall stands on a lower roof); the camera
+    # stays at the eye height above the ground.
     m=np.asarray(wall['midpoint'],float);n=np.asarray(wall['normal'],float);n/=np.linalg.norm(n);t=np.array([-n[1],n[0]])
     L=float(wall['lengthM']);H=float(wall['heightM'])
     W=max(8,int(L*PPM));Hp=max(8,int(H*PPM))
     xs=(np.arange(W)+.5)/PPM-L/2;zs=H-(np.arange(Hp)+.5)/PPM
-    P=np.empty((Hp,W,3));P[...,0]=(m[0]+t[0]*xs)[None,:]+n[0]*.05;P[...,1]=(m[1]+t[1]*xs)[None,:]+n[1]*.05;P[...,2]=(z0+zs)[:,None]
+    P=np.empty((Hp,W,3));P[...,0]=(m[0]+t[0]*xs)[None,:]+n[0]*.05;P[...,1]=(m[1]+t[1]*xs)[None,:]+n[1]*.05;P[...,2]=(z0+float(base)+zs)[:,None]
     C=np.array([cam['xy'][0],cam['xy'][1],z0+fc.EYE_HEIGHT_M]);d=P-C
     u,v=fc.world_dirs_to_pano_uv(d,cam['R']);ph,pw=pano.shape[:2]
     img=np.stack([map_coordinates(pano[...,k],[v*(ph-1),u*(pw-1)],order=1,mode='wrap',output=np.float32) for k in range(3)],-1)

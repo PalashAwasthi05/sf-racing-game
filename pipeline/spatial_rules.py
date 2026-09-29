@@ -45,7 +45,159 @@ def foundation(ctx,c,datum):
 def _parts(g):
  if g.is_empty:return []
  if g.geom_type=='Polygon':return [g]
- return [p for p in getattr(g,'geoms',[]) if p.geom_type=='Polygon' and not p.is_empty]
+ return [q for p in getattr(g,'geoms',[]) if not p.is_empty for q in (_parts(p) if p.geom_type in ('MultiPolygon','GeometryCollection') else [p] if p.geom_type=='Polygon' else [])]
+
+def _overlay(op,a,b):
+ """A shapely overlay that falls back to a fixed-precision (1 mm snap-rounded) overlay when GEOS cannot resolve
+ near-coincident edges (a large outline with long collinear walls failed 'unable to determine overlay result')."""
+ import shapely
+ try:return getattr(a,op)(b)
+ except shapely.errors.GEOSException:
+  from shapely import make_valid
+  area=lambda g:unary_union([q for q in _parts(make_valid(g))]) if not g.is_empty else g   # polygons only: no stray lines
+  return getattr(shapely,op)(area(a),area(b),grid_size=1e-3)
+
+def regularise(g,cell,axis_tolerance_deg=15.,original=None):
+ """A tier outline made of walls along the raster's axes. A raster cell straddling a wall reads either side of it, so a
+ straight wall alternated between two cell lines; simplified, the jogs became walls a few degrees off true and short
+ returns between them. Edges within `axis_tolerance_deg` of an axis are turned onto it; parallel walls a jog of at most a
+ cell apart become one wall at their length-weighted line. Oblique edges (a chord across a stepped survey edge, a real
+ diagonal wall) stay, moved onto the least-squares line of the `original` boundary they simplify: the simplified chord
+ of a cell staircase runs through its outer corners, half a step outside the wall. A ring that does not come out a valid
+ polygon of nearly the same area is kept as it was."""
+ samples=None
+ if original is not None and not original.is_empty:
+  from shapely import segmentize
+  samples=np.concatenate([np.asarray(r.coords) for q in _parts(segmentize(original,.25)) for r in [q.exterior]+list(q.interiors)])
+ out=[]
+ for p in _parts(g):
+  rings=[]
+  for ring in [p.exterior]+list(p.interiors):
+   xy=np.asarray(ring.coords)[:-1]
+   r=_regular_ring(xy,cell,axis_tolerance_deg,samples) if len(xy)>=4 else None
+   rings.append(r if r is not None else xy)
+  q=Polygon(rings[0],rings[1:])
+  if not q.is_valid:q=q.buffer(0)
+  ref=original.intersection(p.buffer(cell,join_style=2)).area if original is not None else p.area   # the cells it stands for
+  if q.is_empty or q.geom_type!='Polygon' or abs(q.area-ref)>.08*ref+cell*cell:q=p
+  out.append(q)
+ return unary_union(out) if out else g
+
+def _regular_ring(xy,jog,tolerance_deg,samples=None):
+ tol=np.radians(tolerance_deg);edges=[]
+ n=len(xy)
+ for i in range(n):
+  a,b=xy[i],xy[(i+1)%n];d=b-a;L=float(np.hypot(*d))
+  if L<1e-6:continue
+  ang=abs(np.arctan2(d[1],d[0]))%np.pi
+  if min(ang,np.pi-ang)<=tol:edges.append(['h',(a[1]+b[1])/2,L,a,b])
+  elif abs(ang-np.pi/2)<=tol:edges.append(['v',(a[0]+b[0])/2,L,a,b])
+  else:
+   if L<=1.5*jog:
+    # a single cell cut off a corner (the chord across one missing corner cell) is below the raster's resolution: the
+    # corner is square unless a finer reading says otherwise
+    edges.append(['c',None,L,a,b]);continue
+   if samples is not None and L>=2*jog:
+    # the oblique chord onto the mean line of the boundary it replaced (samples along its middle, within a cell or so)
+    t=d/L;nrm=np.array([-t[1],t[0]]);rel=samples-a;al=rel@t;off=rel@nrm;m=(al>.1*L)&(al<.9*L)&(np.abs(off)<1.5*jog)
+    if m.sum()>=4:
+     shift=float(np.mean(off[m]));a=a+nrm*shift;b=b+nrm*shift
+   edges.append(['o',None,L,a,b])
+ out_=[]
+ for i,e in enumerate(edges):
+  if e[0]=='c':
+   p_,n_=edges[i-1],edges[(i+1)%len(edges)]
+   if {p_[0],n_[0]}=={'h','v'}:continue          # between two perpendicular walls: the corner is theirs
+   e=['o',None,e[2],e[3],e[4]]
+  out_.append(e)
+ edges=out_
+ if len(edges)<4:return None
+ def merge(e,f):
+  L=e[2]+f[2];return [e[0],(e[1]*e[2]+f[1]*f[2])/L,L,e[3],f[4]]
+ changed=True
+ while changed and len(edges)>=4:
+  changed=False
+  for i in range(len(edges)):
+   e,f=edges[i],edges[(i+1)%len(edges)]
+   # neighbours on one axis (an edge turned onto the axis beside another): one wall
+   if e[0]==f[0]!='o' and abs(e[1]-f[1])<=jog+1e-9:
+    edges[i]=merge(e,f);del edges[(i+1)%len(edges)];changed=True;break
+   # a jog: a short return between two parallel walls a cell or less apart
+   g_=edges[(i+2)%len(edges)]
+   if e[0]!='o' and g_[0]==e[0] and f[0] not in ('o',e[0]) and f[2]<=jog+1e-9 and abs(e[1]-g_[1])<=jog+1e-9 and len(edges)>4:
+    m=merge(e,g_);j=(i+1)%len(edges);k=(i+2)%len(edges)
+    for idx in sorted({j,k},reverse=True):del edges[idx]
+    edges[i if i<len(edges) else 0]=m
+    changed=True;break
+ if len(edges)<4:return None
+ pts=[]
+ for i in range(len(edges)):
+  e,f=edges[i],edges[(i+1)%len(edges)]
+  if e[0]=='h' and f[0]=='v':pts.append((f[1],e[1]))
+  elif e[0]=='v' and f[0]=='h':pts.append((e[1],f[1]))
+  elif e[0]==f[0]=='o':
+   a,b,c_,d_=[np.asarray(v,float) for v in (e[3],e[4],f[3],f[4])];r_=b-a;s_=d_-c_;den=r_[0]*s_[1]-r_[1]*s_[0]
+   pts.append(tuple(a+r_*(((c_-a)[0]*s_[1]-(c_-a)[1]*s_[0])/den)) if abs(den)>1e-9 else tuple((b+c_)/2))
+  elif e[0]==f[0]:
+   # two parallel walls a jog apart that stayed apart: a short square return at the joint
+   x=e[4] if True else None
+   pts.append((e[4][0],e[1]) if e[0]=='h' else (e[1],e[4][1]));pts.append((e[4][0],f[1]) if e[0]=='h' else (f[1],e[4][1]))
+  else:
+   # an axis wall meeting an oblique edge: where the oblique edge's line crosses the wall's line
+   ax,ob=(e,f) if e[0]!='o' else (f,e);a,b=np.asarray(ob[3],float),np.asarray(ob[4],float);d=b-a
+   if ax[0]=='h':t=(ax[1]-a[1])/d[1] if abs(d[1])>1e-9 else None
+   else:t=(ax[1]-a[0])/d[0] if abs(d[0])>1e-9 else None
+   pts.append(tuple(a+d*t) if t is not None and -1.<=t<=2. else tuple(e[4]))
+ return np.asarray(pts,float)
+
+def _small_pockets(mask,measured,maximum_cells=4):
+ """Unknown cells in holes of `mask` that it encloses completely, up to `maximum_cells` per hole (a 2 x 2 pocket).
+ A notch open to the outside is never a pocket: filling notches pulled unknown cells beside a wall into the block."""
+ from scipy.ndimage import binary_fill_holes,label
+ holes=binary_fill_holes(mask)&~mask
+ if not holes.any():return holes
+ lab,n=label(holes);sizes=np.bincount(lab.ravel());small=(sizes<=maximum_cells);small[0]=False
+ return small[lab]&~measured
+
+class OutlineFrame:
+ """The outline's own axes, for its roof raster.
+
+ A roof raster laid north-up over a footprint at 45 degrees cuts every wall into a staircase of cells: tier outlines
+ kept about 300 vertices each, their walls stood as scalloped zig-zags, and two tiers of one vertical wall never had
+ the same outline, so a straight block became a stack of boxes. The frame turns about the footprint's centroid by the
+ angle of the long side of its minimum rotated rectangle (the rule building_parts.split uses): `points` and `geom`
+ take world data into the frame, `world_points`, `world_vectors`, `world` and `world_mesh` bring results back. An
+ outline already on the grid axes keeps the identity."""
+ def __init__(self,footprint):
+  import math
+  self.angle=0.;self.ox=self.oy=0.
+  try:rect=footprint.minimum_rotated_rectangle
+  except Exception:return
+  if rect.geom_type!='Polygon' or rect.area<1e-6:return
+  xy=np.asarray(rect.exterior.coords)[:4];e=xy[1]-xy[0] if np.linalg.norm(xy[1]-xy[0])>=np.linalg.norm(xy[2]-xy[1]) else xy[2]-xy[1]
+  ang=math.atan2(e[1],e[0])
+  if abs(math.sin(2*ang))<1e-3:return
+  o=footprint.centroid;self.angle=float(ang);self.ox,self.oy=float(o.x),float(o.y)
+ @property
+ def identity(self):return self.angle==0.
+ def _turn(self,xy,ang,about=True):
+  xy=np.array(xy,dtype=float,copy=True)
+  if self.identity or len(xy)==0:return xy
+  c,s=np.cos(ang),np.sin(ang);ox,oy=(self.ox,self.oy) if about else (0.,0.)
+  x=xy[...,0]-ox;y=xy[...,1]-oy;xy[...,0]=ox+x*c-y*s;xy[...,1]=oy+x*s+y*c
+  return xy
+ def points(self,p):return self._turn(p,-self.angle)
+ def world_points(self,p):return self._turn(p,self.angle)
+ def world_vectors(self,v):return self._turn(v,self.angle,about=False)
+ def geom(self,g):
+  from shapely import affinity
+  return g if self.identity or g is None or g.is_empty else affinity.rotate(g,-self.angle,origin=(self.ox,self.oy),use_radians=True)
+ def world(self,g):
+  from shapely import affinity
+  return g if self.identity or g is None or g.is_empty else affinity.rotate(g,self.angle,origin=(self.ox,self.oy),use_radians=True)
+ def world_mesh(self,mesh):
+  if mesh is None or self.identity:return mesh
+  mesh=mesh.copy();v=np.asarray(mesh.vertices).copy();v[:,:2]=self.world_points(v[:,:2]);mesh.vertices=v;return mesh
 
 def roof_bands(quant,transform,footprint,minimum_area=25,minimum_width_m=3.0,simplify_m=.2,cell_m=None,level_step_m=1.0,measured_mask=None):
  """Nested superlevel regions: adjacent roof tiers never own the same vertical span.
@@ -67,39 +219,102 @@ def roof_bands(quant,transform,footprint,minimum_area=25,minimum_width_m=3.0,sim
  """
  cell=cell_m if cell_m else max(simplify_m,.5)
  if not np.isfinite(level_step_m) or level_step_m<=0:raise ValueError('level_step_m must be positive and finite')
+ # the domain as polygons only: a difference with slope patches can leave stray lines, and a mixed collection breaks overlays
+ if footprint.geom_type not in ('Polygon','MultiPolygon') or not footprint.is_valid:
+  from shapely import make_valid
+  footprint=unary_union(_parts(make_valid(footprint)))
  q=np.asarray(quant)
  if q.ndim!=2:raise ValueError('quant must be a 2-D raster')
  # Quantisation is explicit: a 2.5 m physical step is represented by bins [..,1,2,..],
  # never by truncating a physical value and then treating it as metres.
  q=np.rint(q).astype(np.int64)
- support=None
+ support=None;usable=None;lvl=q
  if measured_mask is not None:
   measured=np.asarray(measured_mask,dtype=bool)
   if measured.shape!=q.shape:raise ValueError('measured_mask must have the same shape as quant')
-  support_parts=[shape(g) for g,v in shapes(measured.astype('uint8'),mask=measured,transform=transform) if v]
+  # A cell holding no roof surface of its own (its returns straddle a wall or a penthouse face, or none came back) that
+  # borders measured roof stands at the lowest level of its measured neighbours: it belongs to every level that
+  # surrounds it and to none above. Left out of all of them, the ring of such cells round a plant room cut a notch into
+  # every level below it, open to the edge where the room stood near a wall. Filled values (prepare_grid copies the
+  # nearest measured cell into unknown ones) never make a level; unknown cells with no measured neighbour stay out.
+  big=np.iinfo(np.int64).max;qm=np.pad(np.where(measured,q,big),1,constant_values=big);H,W=q.shape;near=np.full(q.shape,big)
+  for (dy,dx) in ((0,1),(1,0),(1,1),(1,-1)):
+   # measured on both sides of the cell along one of four directions: the cell lies between them (a ring round a
+   # plant room, a wall's straddling cells), not beyond them (a channel, the edge of the survey, an isolated return)
+   a=qm[1+dy:1+dy+H,1+dx:1+dx+W];b=qm[1-dy:1-dy+H,1-dx:1-dx+W];both=(a<big)&(b<big);near=np.where(both,np.minimum(near,np.minimum(a,b)),near)
+  adjacent=(~measured)&(near<big);lvl=np.where(measured,q,np.where(adjacent,near,-1));usable=measured|adjacent
+  # An unknown pocket a cell or two wide inside measured roof (a missed return, a dark hatch) is roof, not a hole:
+  # punched out of the tiers, each one became a pit with four walls no return had shown.
+  closed=usable|_small_pockets(usable,measured)
+  support_parts=[shape(g) for g,v in shapes(closed.astype('uint8'),mask=closed,transform=transform) if v]
   support=unary_union(support_parts) if support_parts else Polygon()
+  # Support is closed at the tier width: a notch of unknown cells narrower than a tier along the edge of measured roof
+  # is no region of its own. Clipped to the bare cells, every tier kept a 1.5 m tooth at each such cell.
+  # The ground beyond the outline counts as closed for this, so a notch at the building's edge closes like a pocket.
+  if not support.is_empty:
+   r_=max(cell,minimum_width_m)/2-.05;beyond=_overlay('difference',footprint.envelope.buffer(4*cell,join_style=2),footprint)
+   support=_overlay('intersection',unary_union([support,beyond]).buffer(r_,join_style=2).buffer(-r_,join_style=2),footprint)
  levels=sorted(int(x) for x in np.unique(q) if x>0);last=0.;result=[]
  for level in levels:
   mask=(q>=level).astype('uint8')
-  if measured_mask is not None:mask &= measured.astype('uint8')
+  if measured_mask is not None:
+   own=(lvl>=level)&usable;own|=_small_pockets(own,measured);mask=own.astype('uint8')
   parts=[shape(g) for g,v in shapes(mask,mask=mask.astype(bool),transform=transform) if v]
-  g=unary_union(parts).buffer(.45).buffer(-.45).intersection(footprint)
-  g=g.buffer(-minimum_width_m/2).buffer(minimum_width_m/2).simplify(simplify_m,preserve_topology=True).intersection(footprint)
-  if measured_mask is not None:g=g.intersection(support)
+  # Square joins: the raster runs along the outline's axes (OutlineFrame), so a tier's corners are right angles; round
+  # joins turned each into an arc of 1.5 m radius, a fan of short walls at every corner.
+  g=_overlay('intersection',unary_union(parts).buffer(.45,join_style=2).buffer(-.45,join_style=2),footprint)
+  g=_overlay('intersection',g.buffer(-minimum_width_m/2,join_style=2).buffer(minimum_width_m/2,join_style=2),footprint)
+  if measured_mask is not None:g=_overlay('intersection',g,support)
+  # Simplified after every clip (a clip to the cells brings their staircase back), then made of walls along the frame.
+  g=regularise(g.simplify(simplify_m,preserve_topology=True),cell,original=g)
+  # A regularised wall a few millimetres off the outline's own edge leaves a sliver that would join as a 'narrow strip'
+  # and run the whole edge as a hair-thin spike: walls within 5 cm of the outline are put on it.
+  from shapely import snap
+  g=snap(g,footprint,.05);g=_overlay('intersection',g if g.is_valid else g.buffer(0),footprint)
   # The parent of the first tier is the roof outline itself, so the same rules hold at the building's edge.
-  parent=result[-1]['geometry'] if result else footprint;g=g.intersection(parent)
+  parent=result[-1]['geometry'] if result else footprint;g=_overlay('intersection',g,parent)
   if g.is_empty:continue
   # Keep only narrow shared strips which are actually adjacent to this measured tier. The old
   # empty-wide fallback promoted the whole parent, including disconnected/unmeasured regions.
-  strip=parent.difference(g)
-  wide=unary_union([p for p in _parts(strip.buffer(-cell/2,join_style=2).buffer(cell/2,join_style=2)) if p.area>=4*cell*cell])
-  narrow=strip.difference(wide)
+  # A strip of the parent is a roof of its own (a terrace or a setback) only when it is as wide as a tier must be; a
+  # narrower one is the same wall read by two levels (a cell or two of raster drift, a parapet, a cornice), and the tier
+  # takes it, so a vertical wall's levels share one outline and merge below. Joined at a cell's width, the levels of one
+  # straight block kept 1-2 m of drift between them and stood as three stacked boxes, each with its own cornice.
+  strip=_overlay('difference',parent,g);opening=max(cell,minimum_width_m)/2-.05   # strictly narrower than a tier
+  wide=unary_union([p for p in _parts(strip.buffer(-opening,join_style=2).buffer(opening,join_style=2)) if p.area>=4*cell*cell])
+  narrow=_overlay('difference',strip,wide)
   joins=[]
   for p in _parts(narrow):
    if p.area<1e-9 or p.distance(g)>cell+1e-6:continue
-   if measured_mask is not None:p=p.intersection(support)
+   p=p.buffer(-.01,join_style=2).buffer(.01,join_style=2)   # hair-thin slivers of float drift are no strip
+   if p.is_empty:continue
+   # A strip joins only beside the tier (within a tier's width of it): a long thin remnant of the domain touching the
+   # tier at one end (the rim left round a draped courtyard ring) spread a small tower's top along the whole outline.
+   p=_overlay('intersection',p,g.buffer(max(cell,minimum_width_m),join_style=2))
+   if p.is_empty or p.area<1e-6:continue
+   # Only the same wall read twice joins: a strip whose measured cells stand clearly lower than this level (more than a
+   # bin below: a canopy, a lower storey or ledge along the building's edge) is a roof of its own however narrow, and
+   # joined it stood the tier's full height over it. Cells straddling the wall read in between and still join. Every
+   # cell the strip touches counts, so a sliver thinner than a cell answers to the returns under it too.
+   # The parts of a strip no wider than a cell are the wall's own straddling cells (their returns mix the two sides) and
+   # always join; a part at least a cell wide joins only when it stands at this level.
+   core=p.buffer(-(cell/2+.02),join_style=2).buffer(cell/2+.02,join_style=2)
+   if measured_mask is not None and not core.is_empty:
+    from rasterio.features import geometry_mask
+    thin=_overlay('difference',p,core)
+    inside=~geometry_mask([core],out_shape=q.shape,transform=transform,all_touched=True)&measured
+    if inside.sum()>=1 and float(np.mean(lvl[inside]>=level-1))<.5:
+     p=thin
+     if p.is_empty or p.area<1e-6:continue
+   if measured_mask is not None:p=_overlay('intersection',p,support)
    if not p.is_empty:joins.append(p)
   if joins:g=unary_union([g,*joins]).buffer(0)
+  # A last tidy once the strips are joined (their unions leave repeated points, sub-cell jogs and corner chips): the
+  # outline is made of walls again and put back inside its parent.
+  from shapely import snap
+  if not g.is_empty:
+   g=regularise(g.simplify(simplify_m/4,preserve_topology=True),cell);g=snap(g,parent,.05)
+   g=_overlay('intersection',g if g.is_valid else g.buffer(0),parent)
   g=unary_union([p for p in _parts(g) if p.area>=4*cell*cell])
   if g.area>=minimum_area:
    top=float(level*level_step_m)
@@ -107,11 +322,11 @@ def roof_bands(quant,transform,footprint,minimum_area=25,minimum_width_m=3.0,sim
  # Consecutive tiers with the same outline are one tier: the lower level owned no roof of its own.
  merged=[]
  for r in result:
-  if merged and merged[-1]['geometry'].difference(r['geometry']).area<cell*cell:r['bottom']=merged[-1]['bottom'];merged[-1]=r
+  if merged and _overlay('difference',merged[-1]['geometry'],r['geometry']).area<cell*cell:r['bottom']=merged[-1]['bottom'];merged[-1]=r
   else:merged.append(r)
  result=merged
  # Explicit top surfaces exclude any higher volume, eliminating buried duplicate caps.
- for i,r in enumerate(result):r['cap']=r['geometry'].difference(result[i+1]['geometry']) if i+1<len(result) else r['geometry']
+ for i,r in enumerate(result):r['cap']=_overlay('difference',r['geometry'],result[i+1]['geometry']) if i+1<len(result) else r['geometry']
  return result
 
 def measured_tiers(bands,rr,known,transform,base,first_rise_m=3.,next_rise_m=2.5):
@@ -125,14 +340,126 @@ def measured_tiers(bands,rr,known,transform,base,first_rise_m=3.,next_rise_m=2.5
  kept=[]
  for i,b in enumerate(bands):
   above=bands[i+1]['geometry'] if i+1<len(bands) else None
-  cap=b['geometry'].difference(above) if above is not None else b['geometry']
+  cap=_overlay('difference',b['geometry'],above) if above is not None else b['geometry']
   inside=(~geometry_mask([cap],out_shape=rr.shape,transform=transform)&known) if not cap.is_empty else np.zeros(rr.shape,bool)
   rise=float(np.median(rr[inside]-base)) if inside.sum()>=4 else float(b['top'])
   below=kept[-1]['top'] if kept else 0.
   if rise-below<(next_rise_m if kept else first_rise_m):continue
   kept.append({**b,'bottom':below,'top':round(rise,3),'nominalTop':b['top']})
- for i,b in enumerate(kept):b['cap']=b['geometry'].difference(kept[i+1]['geometry']) if i+1<len(kept) else b['geometry']
+ return settle_tops(kept,rr,known,transform,base,next_rise_m)
+
+def settle_tops(kept,rr,known,transform,base,next_rise_m=2.5,minimum_cap_m2=25.):
+ """Each kept tier stands at the median of the roof it actually carries: its region less the next kept tier's, the caps
+ of the tiers dropped between them included. Judged on its own cap alone, a tier whose cap was a thin ring of edge cells
+ stood at that ring's height, and the main roof above it (dropped as rising too little over the ring) was drawn with it,
+ metres low. A tier that settles within next_rise_m of the one below joins it."""
+ from rasterio.features import geometry_mask
+ kept=[dict(b) for b in kept];changed=True
+ while changed:
+  changed=False
+  for i,b in enumerate(kept):
+   cap=_overlay('difference',b['geometry'],kept[i+1]['geometry']) if i+1<len(kept) else b['geometry'];b['cap']=cap
+   if rr is not None and not cap.is_empty:
+    inside=~geometry_mask([cap],out_shape=rr.shape,transform=transform)&known
+    if inside.sum()>=4:b['top']=round(float(np.median(rr[inside]-base)),3)
+  for i in range(1,len(kept)):
+   if kept[i]['top']-kept[i-1]['top']<next_rise_m:
+    # too little rise over the tier below once both are settled: one roof (the lower region holds the upper one)
+    del kept[i];changed=True;break
+  if changed:continue
+  for i in range(len(kept)-1):
+   if kept[i]['cap'].area<minimum_cap_m2:
+    # a tier whose own roof is a sliver beside the tier above (two levels reading one wall) is that tier: the tier
+    # above takes its outline, so the sliver does not fall to the roof below
+    kept[i+1]['geometry']=kept[i]['geometry'];del kept[i];changed=True;break
+ for i,b in enumerate(kept):b['bottom']=kept[i-1]['top'] if i else 0.
+ for i,b in enumerate(kept):b['cap']=_overlay('difference',b['geometry'],kept[i+1]['geometry']) if i+1<len(kept) else b['geometry']
  return kept
+
+def keep_tiers(tiers,maximum,rr=None,known=None,transform=None,base=None):
+ """At most `maximum` tiers, chosen by the size of each one's own roof (the part no higher tier covers). The budget
+ kept the lowest tiers and cut the rest off the top: two slices of one block's wall stayed while the block's set-back top
+ storey went, and the building stood a storey short. A tier whose own roof is a sliver beside the tier above adds nothing
+ anyone sees; dropped, its roof becomes part of the roof below it and the next tier stands on that one."""
+ kept=[dict(t) for t in tiers]
+ def own(i):return _overlay('difference',kept[i]['geometry'],kept[i+1]['geometry']).area if i+1<len(kept) else kept[i]['geometry'].area
+ dropped=False
+ while maximum is not None and len(kept)>max(0,int(maximum)):
+  del kept[int(np.argmin([own(i) for i in range(len(kept))]))];dropped=True
+ if dropped and rr is not None:return settle_tops(kept,rr,known,transform,base)
+ for i,b in enumerate(kept):
+  b['bottom']=kept[i-1]['top'] if i else 0.
+  b['cap']=_overlay('difference',b['geometry'],kept[i+1]['geometry']) if i+1<len(kept) else b['geometry']
+ return kept
+
+def corner_radius(points,corner,ex,ey,top_z,reach=7.,radii=None,minimum_cut_m2=.4,empty_share=.15):
+ """Radius of a rounded building corner measured in the returns: 0 when the corner is square or unmeasured.
+
+ `corner` is the tier outline's corner and ex, ey unit vectors along its two walls into the building (all in the
+ outline frame); `points` are returns (N, 3) in that frame. The walls' true lines are where this tier's roof returns
+ stop beyond the corner zone (a raster edge can sit a cell off); the radius is the largest one whose cut-off area (the
+ square corner less the quarter disc) holds almost no returns while the roof beside it is dense. A rounded 1980s office
+ block's corners were drawn square: the returns showed a 2.5 m radius at every one."""
+ import math
+ radii=np.arange(.5,5.01,.25) if radii is None else radii
+ rel=np.asarray(points,float)[:,:2]-corner;x=rel@ex;y=rel@ey;z=np.asarray(points,float)[:,2]
+ m=(x>-2.)&(y>-2.)&(x<reach)&(y<reach)&(z>=top_z-1.5);x,y=x[m],y[m]
+ if len(x)<40:return 0.
+ fx,fy=x[(y>4.)&(y<reach)],y[(x>4.)&(x<reach)]
+ if len(fx)<10 or len(fy)<10:return 0.
+ x=x-float(np.quantile(fx,.02));y=y-float(np.quantile(fy,.02))
+ dens=((x>2.)&(x<reach)&(y>2.)&(y<reach)).sum()/max(1e-6,(reach-2.)**2)
+ if dens<2.:return 0.
+ # the outermost returns stand about half a return spacing inside the wall line (or the quantile's share of the strip)
+ edge=max(.02*reach,.5/math.sqrt(dens));x=x+edge;y=y+edge
+ best=0.
+ for r in radii:
+  area=(1-math.pi/4)*r*r
+  if area<minimum_cut_m2:continue
+  cut=(x>=0)&(y>=0)&(x<=r)&(y<=r)&((x-r)**2+(y-r)**2>r*r)
+  if cut.sum()/area<empty_share*dens:best=float(r)
+  else:break
+ return best
+
+
+def round_tier_corners(tiers,points,base,outer=None,minimum_radius_m=1.,maximum_share=.4):
+ """Fillet the convex corners of tier outlines (in the outline frame) where the returns show a rounded corner, and the
+ same corner of every tier standing flush under it, so a rounded block is rounded from its foot to its top. Corners on
+ the outer boundary (`outer`, a line) are left square: the outline's own walls stand there. The cap of each tier is
+ recomputed. `points` are returns (N, 3) in the frame."""
+ from shapely.geometry import Point,Polygon,MultiPolygon,box
+ cuts=[]
+ for t in tiers:
+  top=base+t['top']
+  for q in _parts(t['geometry']):
+   xy=np.asarray(q.exterior.coords)[:-1];n=len(xy)
+   if n<4:continue
+   ccw=q.exterior.is_ccw
+   for i in range(n):
+    a,b,c=xy[i-1],xy[i],xy[(i+1)%n];e1,e2=a-b,c-b;L1,L2=float(np.linalg.norm(e1)),float(np.linalg.norm(e2))
+    if L1<3. or L2<3.:continue
+    cross=(b-a)[0]*(c-b)[1]-(b-a)[1]*(c-b)[0]
+    if (cross>0)!=ccw or abs(float(np.dot(e1/L1,e2/L2)))>.2:continue      # convex right angles only
+    if outer is not None and outer.distance(Point(*b))<.5:continue
+    r=corner_radius(points,b,e1/L1,e2/L2,top)
+    r=min(r,maximum_share*min(L1,L2))
+    if r>=minimum_radius_m:
+     sq=Polygon([b,b+e1/L1*r,b+e1/L1*r+e2/L2*r,b+e2/L2*r]);disc=Point(*(b+(e1/L1+e2/L2)*r)).buffer(r,quad_segs=6)
+     same=[k for k,(bb,_,rr) in enumerate(cuts) if float(np.hypot(*(np.asarray(bb)-b)))<.3]   # a corner shared by flush tiers: one cut
+     if same and cuts[same[0]][2]>=r:continue
+     if same:cuts.pop(same[0])
+     cuts.append((b,sq.difference(disc),r))
+ if not cuts:return tiers,[]
+ def polygons(g):
+  q=_parts(g);return Polygon() if not q else q[0] if len(q)==1 else MultiPolygon(q)
+ out=[]
+ for t in tiers:
+  g=t['geometry']
+  for b,cut,_ in cuts:
+   if g.boundary.distance(Point(*b))<.3:g=polygons(_overlay('difference',g,cut))
+  out.append({**t,'geometry':g})
+ for i,t in enumerate(out):t['cap']=polygons(_overlay('difference',t['geometry'],out[i+1]['geometry'])) if i+1<len(out) else t['geometry']
+ return out,[b for b,_,_ in cuts]
 
 def perimeter_strip(ctx,c,profiles,depth=1.0):
  from .envelopes import matches,frame

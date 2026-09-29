@@ -31,6 +31,44 @@ def prepare_grid(raw,footprint,xmin,ymax,step):
     return filled,known,xy,{'measuredCells':int(known.sum()),'insideCells':int(inside.sum()),'unknownInsideCells':int((inside&~known).sum())}
 
 
+def base_level(rr,known,step,footprint_area,quantile=.15,band_m=1.5,minimum_share=.05,minimum_area_m2=25.,minimum_interior=.1):
+    """The base roof every tier stands on: the 15th percentile of the measured roof, unless a lower roof of real extent
+    lies under it. The percentile stands for 'ignore the lowest few cells', but a real lower wing holding 14-18 % of a
+    roof flipped it across the gap between two levels: a small change in how the cells fall moved one building's base
+    from 8 m to 16 m and stood its low wing 8 m too high. A lower level counts as a roof when a connected region of its
+    cells (within band_m of it) holds at least max(minimum_area_m2, minimum_share of the footprint) and a share of them
+    (minimum_interior) have measured roof on all four sides: a ring of cells straddling the walls has no interior. The
+    lowest such level is the base."""
+    from scipy.ndimage import label
+    z=rr[known]
+    if not len(z):return None
+    q=float(np.quantile(z,quantile));need=max(minimum_area_m2,minimum_share*footprint_area)
+    k=np.pad(known,1);interior=k[:-2,1:-1]&k[2:,1:-1]&k[1:-1,:-2]&k[1:-1,2:]&known
+    def roof_at(L):
+        lab,n=label(known&(np.abs(rr-L)<=band_m),structure=np.ones((3,3),bool))
+        for j in range(1,n+1):
+            m=lab==j
+            if m.sum()*step*step>=need and interior[m].mean()>=minimum_interior:return float(np.median(rr[m]))
+        return None
+    for L in np.unique(np.round(z[z<q-3.]*2)/2):          # a storey or more below: nearer levels are the same roof's falls
+        # a step, not a slope: between the lower level and the percentile the heights are nearly empty (a pitched or
+        # sawtooth roof runs through them continuously, and its eave band is no lower roof)
+        if np.mean((z>L+band_m)&(z<q-band_m))>.03:continue
+        r=roof_at(L)
+        if r is not None:return min(q,r)
+    # The percentile itself can land in the empty gap between two levels less than a storey apart (a lower roof holding
+    # 10-15 % of the cells): a base there is neither roof. A roof 36 m high over a lower strip at 33 m took a base of
+    # 34.4 m, with the main roof merged down onto it, 2 m low. It moves to the level below when that is a roof of real
+    # extent (the main roof then stands on it as a tier), else to the level above.
+    if np.mean(np.abs(z-q)<=.5)<.03:
+        below,above=z[z<q-.5],z[z>q+.5]
+        if len(below):
+            L=float(np.median(below[below>=below.max()-band_m]));r=roof_at(L)
+            if r is not None:return r
+        if len(above):return float(np.median(above[above<=above.min()+band_m]))
+    return q
+
+
 PITCH_SLOPE,PITCH_MIN_AREA_M2=.15,25.
 
 
@@ -137,14 +175,20 @@ def drape_regions(rr, known, footprint, xmin, ymax, step, minimum_area_m2=800., 
     smooth = ndimage.gaussian_filter(filled, 2.0)
     gy, gx = np.gradient(smooth, step); grade = np.hypot(gx, gy)
     rough = np.abs(filled - smooth)
+    # A slope rises cell by cell; two flat roofs with a step between them are flat almost everywhere, and only the smoothed
+    # surface shows a grade across them. The unsmoothed grade (3 x 3 median, so single noisy cells do not count) must reach
+    # the minimum over most of a region, or it is a step: a flat roof ring beside a lower court was draped as one slope.
+    ry, rx = np.gradient(ndimage.median_filter(filled, 3), step); raw_grade = np.hypot(rx, ry)
     mask = ((grade >= minimum_grade) & (grade <= 1.0) | sloped_cells(rr, step)) & known   # smoothed grade or a raw continuous slope
     lab, n = ndimage.label(mask)
     keep = np.zeros_like(mask)
     for k in range(1, n + 1):
         m = lab == k
         if m.sum() * step * step < minimum_area_m2: continue
-        if np.nanpercentile(smooth[m], 95) - np.nanpercentile(smooth[m], 5) < minimum_rise_m: continue
-        if np.median(rough[m]) > maximum_roughness_m or np.median(grade[m]) < minimum_grade: continue
+        # the rise is what the returns measure across the region: on the smoothed surface a flat roof ring beside a low
+        # courtyard 'rose' 6 m across itself (the courtyard blurred into it) and the whole ring was draped as a slope
+        if np.nanpercentile(filled[m], 95) - np.nanpercentile(filled[m], 5) < minimum_rise_m: continue
+        if np.median(rough[m]) > maximum_roughness_m or np.median(grade[m]) < minimum_grade or np.median(raw_grade[m]) < minimum_grade: continue
         # A smoothed step between two roof levels also shows a grade. A slope spreads its raw heights evenly over its
         # range; a step clusters them in two groups with a gap. Reject regions whose largest gap between height
         # percentiles exceeds a third of their range.

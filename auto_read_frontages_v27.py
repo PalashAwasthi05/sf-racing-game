@@ -46,11 +46,12 @@ def detect(img, seg, det):
     return ops, signs, occ, float(1 - occ[: max(1, Hp - int(STREET_M * PPM))].mean()), u8, glass
 
 
-def regularise(ops, occ, H, L):
+def regularise(ops, occ, H, L, ground=True):
     """Storeys of windows and the ground storey's openings. Returns (ground height, rows, ground openings); a row is
-    (bottom, top, [(x0, x1)])."""
+    (bottom, top, [(x0, x1)]). `ground` False: the wall stands on a lower roof (a set-back tier face), so it has no
+    ground storey and every band of windows is a storey."""
     # Window-sized boxes; glazing that starts at the pavement may be a whole shopfront (up to 60 m2, 20 m wide).
-    ops = [o for o in ops if .25 <= (o[2] - o[0]) * (o[3] - o[1]) <= (60 if o[1] < 1.5 else 30) and o[3] - o[1] <= 6.5 and o[2] - o[0] <= (20 if o[1] < 1.5 else 12)]
+    ops = [o for o in ops if .25 <= (o[2] - o[0]) * (o[3] - o[1]) <= (60 if (o[1] < 1.5 and ground) else 30) and o[3] - o[1] <= 6.5 and o[2] - o[0] <= (20 if (o[1] < 1.5 and ground) else 12)]
     # The ground storey ends under the first regular upper storey: the lowest row of two or more windows whose rise
     # to the next row is the storey pitch. Transoms, signs and mezzanine lights below it belong to the ground storey.
     probe = sorted([o for o in ops if (o[1] + o[3]) / 2 > 2.2], key=lambda o: (o[1] + o[3]) / 2); bands = []
@@ -69,6 +70,7 @@ def regularise(ops, occ, H, L):
         if r1 > r0 and occ[r0:r1].mean() > .5: gh = min(4.5, H * .45)
     if H <= 6.5 and not (first and min(q[1] for q in first[1]) > 3.):
         gh = H - .4                                                       # a single storey: the whole wall is the ground storey
+    if not ground: gh = 0.
     upper = [o for o in ops if (o[1] + o[3]) / 2 > gh]; ground = [o for o in ops if (o[1] + o[3]) / 2 <= gh]
     upper.sort(key=lambda o: (o[1] + o[3]) / 2); groups = []
     for o in upper:
@@ -162,7 +164,7 @@ def profile(bid, building, wall, img, reading, cam_image, found):
     p['frameU'] = [round(float(m @ u - L / 2), 3), round(float(m @ u + L / 2), 3)]
     if visible < .4:
         p['materialOnly'] = True; p['reading'] = {'visibleShare': round(visible, 2)}; return p
-    gh, rows, gops = regularise(ops, occ, H, L)
+    gh, rows, gops = regularise(ops, occ, H, L, ground=float(wall.get('zBaseM') or 0.) < .5)
     frac = lambda a, b, z0, z1: [round(float(a) / L, 4), round(float(z0) / H, 4), round(float(b) / L, 4), round(float(z1) / H, 4)]
     openings = []; groups = []
     # A second, independent opinion: the periodic-edge reading. Where it finds a confident storey and bay grid and the

@@ -263,19 +263,25 @@ for c in ([] if _args.streets_only else candidates):
  stadium=c['full_area']>18000
  sample=get_points(g.buffer(-.65));z0=float(elev(g.centroid.x,g.centroid.y));roof=sample[sample[:,2]>z0+3]
  roof_step=2.0 if stadium else 1.5
- xmin,ymin,xmax,ymax=g.bounds;nx=max(2,math.ceil((xmax-xmin)/roof_step));ny=max(2,math.ceil((ymax-ymin)/roof_step))
+ wxmin,wymin,wxmax,wymax=g.bounds;wnx=max(2,math.ceil((wxmax-wxmin)/roof_step));wny=max(2,math.ceil((wymax-wymin)/roof_step))
  # Roof heights come from roof SURFACES: each raster cell reads its highest dense thin layer of returns,
  # and returns above that layer (signs, antennas, railings, plant) are dropped before any height statistic.
  rr=None
  panels=[]
  if len(roof)>50:
-  rr,surface_returns=spatial_rules.surface_raster(roof,xmin,ymax,roof_step,nx,ny)
+  rr,surface_returns=spatial_rules.surface_raster(roof,wxmin,wymax,roof_step,wnx,wny)
   # Thin tall linear structures above the roof surface (signs, screens) are panels, not roof volume.
-  around=pts[(pts[:,0]>=xmin-10)&(pts[:,0]<=xmax+10)&(pts[:,1]>=ymin-10)&(pts[:,1]<=ymax+10)&(pts[:,3]!=7)&(pts[:,3]!=18)][:,:3]
-  panel_audit=[];panels=spatial_rules.rooftop_panels(roof,surface_returns,rr,xmin,ymax,roof_step,context=around,audit=panel_audit)
+  around=pts[(pts[:,0]>=wxmin-10)&(pts[:,0]<=wxmax+10)&(pts[:,1]>=wymin-10)&(pts[:,1]<=wymax+10)&(pts[:,3]!=7)&(pts[:,3]!=18)][:,:3]
+  panel_audit=[];panels=spatial_rules.rooftop_panels(roof,surface_returns,rr,wxmin,wymax,roof_step,context=around,audit=panel_audit)
   if panel_audit:panel_audits.append({'buildingId':id,'clusters':panel_audit})
-  if (~surface_returns).sum()>=40:structure_returns[id]=roof[~surface_returns];structure_context[id]=around;structure_raster[id]=(rr,xmin,ymax,roof_step)
+  if (~surface_returns).sum()>=40:structure_returns[id]=roof[~surface_returns];structure_context[id]=around;structure_raster[id]=(rr,wxmin,wymax,roof_step)
   roof=roof[surface_returns]
+ # The tier raster (base roof, tiers, drapes) runs along the outline's own axes (spatial_rules.OutlineFrame), over the
+ # surface returns kept above; its products are turned back to the world. Which returns count as roof surface (for the
+ # plane fits, panels and wall levels) is still decided on the grid those rules were validated on.
+ frame=spatial_rules.OutlineFrame(g);gF=frame.geom(g)
+ xmin,ymin,xmax,ymax=gF.bounds;nx=max(2,math.ceil((xmax-xmin)/roof_step));ny=max(2,math.ceil((ymax-ymin)/roof_step))
+ if rr is not None and len(roof)>50:rr,_=spatial_rules.surface_raster(frame.points(roof),xmin,ymax,roof_step,nx,ny)
  if len(roof)>50:
   lo,top=np.quantile(roof[:,2],[.55,.97]);height=max(3.,float(top-z0));source='USGS LiDAR 2023'
  else:
@@ -303,8 +309,8 @@ for c in ([] if _args.streets_only else candidates):
  roofparts=0
  roof_grid_audit={};roof_patches=[];roof_bands=[];roof_xy=None;venue=None;patch_sides=[]
  if rr is not None and len(roof)>50:
-  rr,roof_known,roof_xy,roof_grid_audit=roof_envelope.prepare_grid(rr,g,xmin,ymax,roof_step)
-  base_roof=float(np.quantile(rr[roof_known],.15)) if rr is not None else z0+height
+  rr,roof_known,roof_xy,roof_grid_audit=roof_envelope.prepare_grid(rr,gF,xmin,ymax,roof_step)
+  base_roof=roof_envelope.base_level(rr,roof_known,roof_step,g.area) if rr is not None else z0+height
   if stadium:base_roof=max(z0+6,min(base_roof,z0+12))
   else:base_roof=max(z0+4,min(base_roof,lo))
  else:base_roof=z0+height;rr=None
@@ -323,13 +329,14 @@ for c in ([] if _args.streets_only else candidates):
   roof_patches,plane_audit=roof_envelope.continuous_patches(roof_g,roof,roof_step,LR.get('slopedPatchMinSlope',.015),LR.get('slopedPatchMinAreaM2',25.),LR.get('slopedPatchMinRiseM',.6))
   slope_area=unary_union([p['geometry'] for p in roof_patches]);tier_domain=roof_g.difference(slope_area)
   # A continuous measured slope no plane fit accepted (a seating bowl, a ramp) is one draped surface, not tiers.
-  drape_keep,drape_area=roof_envelope.drape_regions(rr,roof_known,roof_g.difference(slope_area),xmin,ymax,roof_step)
-  venue=roof_envelope.venue_form(rr,roof_known,roof_g,xmin,ymax,roof_step,z0) if stadium else None
+  drape_keep,drape_area=roof_envelope.drape_regions(rr,roof_known,frame.geom(roof_g.difference(slope_area)),xmin,ymax,roof_step);drape_area=frame.world(drape_area)
+  venue=roof_envelope.venue_form(rr,roof_known,frame.geom(roof_g),xmin,ymax,roof_step,z0) if stadium else None
+  if venue:venue={**venue,'ring':frame.world(venue['ring']),'field':frame.world(venue['field'])}
   if venue:
    # A stadium-scale structure: outer ring at its measured height with walls and a cap, a raked seating bowl down
    # to an open field. No tiers and no drape over the noisy bowl returns.
    base_roof=venue['ringTopZ'];tier_domain=make_valid(tier_domain.intersection(venue['ring'])).buffer(0)
-   drape_keep=venue['bowlMask'];drape_area=roof_envelope.cells_area(drape_keep,roof_g,xmin,ymax,roof_step) if drape_keep.any() else None
+   drape_keep=venue['bowlMask'];drape_area=frame.world(roof_envelope.cells_area(drape_keep,frame.geom(roof_g),xmin,ymax,roof_step)) if drape_keep.any() else None
   if drape_area is not None and not drape_area.is_empty:drape_area=make_valid(drape_area).buffer(0);tier_domain=make_valid(tier_domain.difference(drape_area)).buffer(0) if not venue else tier_domain
   # Quantise bin indices, not metres: a 2.5 m tier must remain 2.5 m.
   step=CONFIG['defaults']['roofRegularizationM'];quant=np.maximum(0,np.round((rr-base_roof)/step)).astype(np.int16)
@@ -340,29 +347,41 @@ for c in ([] if _args.streets_only else candidates):
   # The storey test reads the measured rise of each tier's own roof, after the bins have found the tiers
   # (spatial_rules.measured_tiers): testing the rounded bin dropped a main roof 3.35 m above a lower strip as plant.
   if venue:quant[:]=0
-  roof_bands=spatial_rules.roof_bands(quant,from_origin(xmin,ymax,roof_step,roof_step),tier_domain,max(LR.get('tierMinAreaM2',25),g.area*LR.get('tierMinShare',.012)),simplify_m=roof_step*.75,cell_m=roof_step,level_step_m=step,measured_mask=roof_known)
+  roof_bands=spatial_rules.roof_bands(quant,from_origin(xmin,ymax,roof_step,roof_step),frame.geom(tier_domain),max(LR.get('tierMinAreaM2',25),g.area*LR.get('tierMinShare',.012)),simplify_m=roof_step*.75,cell_m=roof_step,level_step_m=step,measured_mask=roof_known)
   roof_bands=spatial_rules.measured_tiers(roof_bands,rr,roof_known,from_origin(xmin,ymax,roof_step,roof_step),base_roof)
-  # LiDAR sets the envelope, not the detail: at most a few substantial tiers (the lowest, largest ones) are kept.
-  roof_bands=roof_bands[:LR.get('tierMaxCount',len(roof_bands))]
+  # LiDAR sets the envelope, not the detail: at most a few substantial tiers are kept, those with the largest roofs.
+  roof_bands=spatial_rules.keep_tiers(roof_bands,LR.get('tierMaxCount',len(roof_bands)),rr,roof_known,from_origin(xmin,ymax,roof_step,roof_step),base_roof)
+  # Corners the returns show rounded are rounded, in every tier standing flush at them (spatial_rules.round_tier_corners).
+  roof_bands,rounded_corners=spatial_rules.round_tier_corners(roof_bands,np.c_[frame.points(roof[:,:2]),roof[:,2]],base_roof,outer=gF.boundary)
+  _valid=lambda q:q if q.is_empty or q.is_valid else make_valid(q).buffer(0)
+  roof_bands=[{**b,'geometry':_valid(frame.world(b['geometry'])),'cap':_valid(frame.world(b['cap']))} for b in roof_bands]
+  # Review aid (no effect on output): TIER_DEBUG=<id,id> dumps those buildings' roof raster and tiers for inspection.
+  import os as _os
+  if id in _os.environ.get('TIER_DEBUG','').split(','):
+   import pickle as _pk;_pk.dump({'rr':rr,'known':roof_known,'quant':quant,'base':base_roof,'z0':z0,'frame':(frame.angle,frame.ox,frame.oy),'xmin':xmin,'ymax':ymax,'step':roof_step,'g':g,'tier_domain':tier_domain,'drape_area':drape_area,'bands':roof_bands},open(OUT/f'tier-debug-{id}.pkl','wb'))
   if roof_bands:roof_bands[-1]['cap']=roof_bands[-1]['geometry']
   base_cap=tier_domain.difference(roof_bands[0]['geometry']) if roof_bands else tier_domain
   extrude(base_cap,base_roof,.10,'roofs__'+id,'roof')
   c['massHeightM']=float(base_roof-z0)   # the part's main roof level: what a hand reading's frame is compared with
-  for band in roof_bands:
+  for bi,band in enumerate(roof_bands):
    # A tier stops behind the strip an observed frontage owns; its wall would stand in the frontage plane, blank
    # and coplanar with the observed facade.
    part=band['geometry'].difference(profile_strip)
    tier=dict(c);tier['g']=part;tier['elevationOffset']=base_roof+band['bottom']-z0;tier['roofBand']=True;tier['outerBoundary']=g.boundary
+   # The tiers round it decide where its walls stand (facades.compile): a wall with a higher tier flush over it is that
+   # tier's, and a wall comes down to whichever roof stands in front of it.
+   tier['tierBase']=base_roof;tier['tierAbove']=roof_bands[bi+1]['geometry'] if bi+1<len(roof_bands) else None
+   tier['tiersBelow']=[(b['geometry'],base_roof+b['top']) for b in roof_bands[:bi]]
    tier_ctx=dict(globals());tier_ctx['all_buildings']=all_buildings.difference(g);tier_ctx['envelopeMask']=tier_mask;tier_ctx['envelopeSpans']=envelope_spans
    rr_records,rr_components=facades.compile(tier_ctx,tier,base_roof+band['bottom'],float(band['top']-band['bottom']),height,tags,OBS['facades']);facade_records.extend(rr_records);counts['windowAssemblies']+=rr_components
    extrude(band['cap'],base_roof+band['top'],.10,'roofs__'+id,'roof');roofparts+=1
   if drape_area is not None and not drape_area.is_empty:
    # The draped surface follows the smoothed measured surface: seat rows and stairs would crumple it.
    if venue:
-    drape_surface,drape_skirt=roof_envelope.drape_mesh(venue['bowlZ'],drape_keep,xmin,ymax,roof_step,z0)
+    drape_surface,drape_skirt=roof_envelope.drape_mesh(venue['bowlZ'],drape_keep,xmin,ymax,roof_step,z0);drape_surface,drape_skirt=frame.world_mesh(drape_surface),frame.world_mesh(drape_skirt)
     put(drape_surface,'roofs__'+id,'concrete');roofparts+=1   # seating rows read as stepped concrete; the bowl is the roof surface there
    else:
-    drape_surface,drape_skirt=roof_envelope.drape_mesh(np.where(np.isfinite(rr),roof_envelope.drape_regions.smooth,np.nan),drape_keep,xmin,ymax,roof_step,base_roof)
+    drape_surface,drape_skirt=roof_envelope.drape_mesh(np.where(np.isfinite(rr),roof_envelope.drape_regions.smooth,np.nan),drape_keep,xmin,ymax,roof_step,base_roof);drape_surface,drape_skirt=frame.world_mesh(drape_surface),frame.world_mesh(drape_skirt)
     put(drape_surface,'roofs__'+id,'roof');roofparts+=1
    if drape_skirt is not None:put(drape_skirt,'buildings__'+id,color)
   for patch in roof_patches:
@@ -374,7 +393,7 @@ for c in ([] if _args.streets_only else candidates):
    roofparts+=1
   owned_roof=roof_envelope.owned_samples(g,roof_xy,base_roof,roof_bands,roof_patches,[(slot,z0+z1) for slot,z1 in roof_lids])
   height=max(height,float(owned_roof[:,2].max()-z0))
-  roof_envelope_records.append({'buildingId':id,**roof_grid_audit,'continuousPatches':len(roof_patches),'tierCount':len(roof_bands),'baseRoofZ':base_roof,'slopedCellsDroppedToBase':0,'wallHeightSource':'same generated roof envelope','planeFit':plane_audit})
+  roof_envelope_records.append({'buildingId':id,**roof_grid_audit,'continuousPatches':len(roof_patches),'tierCount':len(roof_bands),'roundedCorners':len(rounded_corners),'baseRoofZ':base_roof,'slopedCellsDroppedToBase':0,'wallHeightSource':'same generated roof envelope','planeFit':plane_audit})
  if rr is None:extrude(roof_g,base_roof,.10,'roofs__'+id,'roof')
  if rr is not None:
   # The top of the envelope actually built (base roof, kept tiers, tilted planes, lids), for the wall-height cap.
