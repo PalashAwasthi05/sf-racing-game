@@ -131,9 +131,9 @@ function finishes(){
   disc:std({color:'#a3a6aa',metalness:.55,roughness:.42}),
   hat:std({color:'#3a3c3f',metalness:.7,roughness:.45}),
   caliper:phys({color:'#b0141c',metalness:.1,roughness:.35,clearcoat:.6,clearcoatRoughness:.1}),
-  cabin:std({color:'#171719',metalness:0,roughness:.72}),
-  cabin_soft:std({color:'#1d1d20',metalness:0,roughness:.92}),
-  cabin_trim:std({color:'#202225',metalness:.2,roughness:.5}),
+  cabin:std({color:'#1c1c1f',metalness:0,roughness:.55}),          // leather: a little sheen shows its shape
+  cabin_soft:std({color:'#2b2b2f',metalness:0,roughness:.96}),     // seat centres: suede-like cloth
+  cabin_trim:std({color:'#232529',metalness:.15,roughness:.42}),
   steel:std({color:'#8d9196',metalness:1,roughness:.3}),
   mirror:std({color:'#dfe3e6',metalness:1,roughness:.04}),
  };
