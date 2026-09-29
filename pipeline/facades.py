@@ -9,25 +9,59 @@ from .surface_evidence import resolve_material
 PART_HEIGHT_SHARE=.3
 
 
-def belongs(p,c,height=None):
+def belongs(p,c,height=None,mass=None):
  """Whether a photographed reading describes this building part. It must be of the same feature (or OSM way). An
  automatic reading of this very part (match.partId) always belongs; one of another part only when the two wall heights
  (its frame heightRefM and this part's) are within 30 %: a part that much lower or taller is another mass. A hand
- reading covers its feature's parts as before: excluding it from parts much taller than its frame is right for a low
- building before a tall one, but the one such case in this area is a corner whose tall part's outline wrongly carries
- slivers into the low building's frontage, and there it made the slivers stand out pale (see NEXT_AGENT.md)."""
+ reading names no part: on a split outline it belongs to the parts whose main roof level (`mass`, the height the part's
+ outer walls stand to; not its tallest point, and not a tier's short wall) is within 30 % of its frame. Covering every part, a low building's
+ hand-read brick front was drawn on the tall block standing behind it as a blank brick box that hid the low building's
+ gable; that was kept only while the tall part's outline carried slivers into the low frontage, which it no longer does."""
  m=p['match']
  if not (m.get('featureId')==c.get('sourceId',c['id']) or (c.get('osm') and m.get('osmWayId') is not None and str(m.get('osmWayId'))==str(c['osm']['id']))):return False
  part=m.get('partId')
- if part is not None and part==c['id']:return True
+ if part is not None and part==c['id']:return frame_on_part(p,c)
  ref=p.get('heightRefM')
- if height is None or not ref:return part is None
+ if part is None:
+  if not c.get('partOf') or mass is None or not ref:return True
+  return abs(float(ref)-float(mass))<=PART_HEIGHT_SHARE*max(float(ref),float(mass))
+ if height is None or not ref:return False
  ref,height=float(ref),float(height)
- if part is None:return True
  return abs(ref-height)<=PART_HEIGHT_SHARE*max(ref,height)
 
 
-def observed_material(profiles,c,height=None):
+def frame_cover(g,p):
+ """Metres of a photographed reading's frame (frameU along its wall, within 1.5 m of its plane planeV when it has one)
+ that lie along outline g's walls facing the reading's way."""
+ from shapely.geometry.polygon import orient
+ pn=np.asarray(p['normal'],float)[:2];pn=pn/np.linalg.norm(pn);pu=np.array([-pn[1],pn[0]]);f0,f1=sorted(map(float,p['frameU']));spans=[]
+ for poly in ([g] if g.geom_type=='Polygon' else list(getattr(g,'geoms',[]))):
+  xy=np.asarray(orient(poly,1).exterior.coords)
+  for a,b in zip(xy,xy[1:]):
+   v=b-a;L=float(np.linalg.norm(v))
+   if L<.3 or float(np.array([v[1],-v[0]])@pn)/L<.95:continue
+   if p.get('planeV') is not None and abs(float(((a+b)/2)@pn)-float(p['planeV']))>1.5:continue
+   s0,s1=sorted([float(a@pu),float(b@pu)]);lo,hi=max(s0,f0),min(s1,f1)
+   if hi>lo:spans.append((lo,hi))
+ total=0.;cur=None
+ for lo,hi in sorted(spans):
+  if cur is None or lo>cur[1]:
+   total+=(cur[1]-cur[0]) if cur else 0.;cur=[lo,hi]
+  else:cur[1]=max(cur[1],hi)
+ return total+((cur[1]-cur[0]) if cur else 0.)
+
+def frame_on_part(p,c,share=.5):
+ """Whether a reading filed under this part still lies on it. The reader names the part it read a wall against; when
+ the outline is split differently later, that name can go stale: a frame read mostly on a low building's side was
+ filed under the tall block behind it, and the 1.7 m of it that falls on the tall block's wall stood out as a thin
+ wall in the photograph's colour. The part owns the reading when it holds at least half of the frame the whole
+ outline holds."""
+ whole=c.get('sourceG')
+ if whole is None or not p.get('frameU') or p.get('normal') is None:return True
+ held=frame_cover(whole,p)
+ return held<=0 or frame_cover(c['g'],p)>=share*held
+
+def observed_material(profiles,c,height=None,mass=None):
  """Unobserved walls continue the material of the building's observed frontages.
 
  A building is usually clad in one material all round, so the frontage material is the best prior for its other
@@ -45,7 +79,7 @@ def observed_material(profiles,c,height=None):
   if p['match'].get('partId') is not None or height is None or not p.get('heightRefM'):return True
   return float(height)<=float(p['heightRefM'])*(1+PART_HEIGHT_SHARE)
  # A reading kept only because no better one exists (reader v34 marks it unsupported) draws its own wall and nothing more.
- matches=[p for p in profiles if belongs(p,c,height) and of_this_mass(p) and float((p.get('reading') or {}).get('visibleShare',1.))>=.4
+ matches=[p for p in profiles if belongs(p,c,height,mass) and of_this_mass(p) and float((p.get('reading') or {}).get('visibleShare',1.))>=.4
           and not ((p.get('reading') or {}).get('consensus') or {}).get('unsupported')]
  if not matches:return None
  whole=[p for p in matches if p.get('materialEvidence',{}).get('scope')=='whole-envelope']
@@ -92,7 +126,7 @@ def _vote_by_likeness(matches):
  med=np.median([cols[k] for k in best],0).astype(int)
  return fam if len(set(mats[k] for k in best))==1 and '#' not in mats[best[0]] else f"{fam}#{med[0]:02x}{med[1]:02x}{med[2]:02x}"
 
-def observed_blank_level(profiles,c,height=None):
+def observed_blank_level(profiles,c,height=None,mass=None):
  """Height of a building's photographed frontage that shows no openings at all, or None.
 
  A wall this building was photographed with is blank (a planter or garden wall, a service wall): its unobserved
@@ -100,7 +134,7 @@ def observed_blank_level(profiles,c,height=None):
  describe a storey; put on a 4 m garden wall round the corner they made a glazed base with pilasters.
  """
  for p in profiles:
-  if belongs(p,c,height):
+  if belongs(p,c,height,mass):
    if p.get('materialOnly'):continue   # an automatic reading without a clear grid says nothing about openings
    # Only a low blank wall (a garden or service wall) speaks for the building's other pieces; a tall blank reading is
    # one side (a party or flank wall) and says nothing about the windows of its street front.
@@ -176,20 +210,43 @@ def is_sloped(tops,length):
  x=(np.where(ok)[0]+.5)/len(tops)*length;y=tops[ok];slope,icpt=np.polyfit(x,y,1);residual=y-(slope*x+icpt)
  return abs(slope)>.05 and np.abs(residual).max()<max(.4,.25*(y.max()-y.min()))
 
-def wall_level(along,z,length):
+def gable_eave(tops,length):
+ """The eave height of an end wall under a pitched roof, or None. The bin tops rise to one peak and fall again, each
+ side on its own trend; the eave is where the two rake lines meet the wall's ends (a bin's top reads the high end of
+ its stretch of slope, 0.7 m above the eave on an 18-degree gable). Such a wall stops at its eaves and the triangle
+ above is the roof's end: a flat top at a percentile of the rake stood above the roof slope at both corners and cut
+ the ridge off."""
+ ok=np.isfinite(tops)
+ if ok.sum()<5 or np.nanmax(tops)-np.nanmin(tops)<=1.2:return None
+ x=(np.where(ok)[0]+.5)/len(tops)*length;y=tops[ok];tol=max(.4,.25*(y.max()-y.min()))
+ for k in range(2,len(y)-2):
+  s1,i1=np.polyfit(x[:k+1],y[:k+1],1);s2,i2=np.polyfit(x[k:],y[k:],1)
+  if s1>.05 and s2<-.05 and np.abs(y[:k+1]-(s1*x[:k+1]+i1)).max()<tol and np.abs(y[k:]-(s2*x[k:]+i2)).max()<tol:
+   w=length/len(tops)   # a bin's top is its high end, half a bin up the slope from its centre
+   return float(max(min(i1-s1*w/2,s2*length+i2+s2*w/2),y.min()-1.5))
+ return None
+
+def is_gable(tops,length):
+ return gable_eave(tops,length) is not None
+
+def wall_level(along,z,length,pitched=False):
  """Height a wall piece is raised to, from the roof returns along it.
 
  A level counts only where most of the piece reaches it (30th percentile of the bin tops), so a parapet
  running its whole length raises it while a stray higher return does not. Where the tops follow a trend
  the roof is sloped: the piece is raised only to its eave, the lowest bin, and the roof above it is a
- plain surface. Windows never climb a roof slope.
+ plain surface. Windows never climb a roof slope. Under a pitched roof the built model has (`pitched`), an end wall
+ whose tops rise to a ridge and fall again is raised to its eaves the same way, and the roof solid closes the gable.
  """
  tops=wall_profile(along,z,length);valid=tops[np.isfinite(tops)]
  if len(valid)<2:return float(np.quantile(z,.96))
+ if pitched:
+  eave=gable_eave(tops,length)
+  if eave is not None:return eave
  if is_sloped(tops,length):return float(valid.min())
  return float(np.quantile(valid,.3))
 
-def split_at_roof_steps(a,b,along,z,minimum_piece_m=2.5):
+def split_at_roof_steps(a,b,along,z,minimum_piece_m=2.5,pitched=False):
  """Cut one footprint edge where the roof height along it steps.
 
  A frontage shared by a low wing and a taller block is two walls, each as tall as its own roof; before,
@@ -199,7 +256,7 @@ def split_at_roof_steps(a,b,along,z,minimum_piece_m=2.5):
  a=np.asarray(a,float);b=np.asarray(b,float);u=b-a;length=float(np.linalg.norm(u))
  if length<2*minimum_piece_m:return [(tuple(a),tuple(b))]
  u=u/length;tops=wall_profile(along,z,length);bins=len(tops)
- if is_sloped(tops,length):return [(tuple(a),tuple(b))]
+ if is_sloped(tops,length) or (pitched and is_gable(tops,length)):return [(tuple(a),tuple(b))]
  cuts=[];previous=None
  for i in range(bins):
   if not np.isfinite(tops[i]):continue
@@ -266,10 +323,13 @@ def wall_exposure(ctx,c,mid,n,z0,main_height):
 
 def compile(ctx,c,z0,main_height,height,tags,observations):
  default_height=main_height;g=c['g'].simplify(.18,preserve_topology=True);fid=c['id'];cube=ctx['cube'];cylinder=ctx['cylinder'];records=[];components=0
+ # A hand reading's frame is compared with the part's main roof level, not its tallest point (a tower corner made a
+ # 36 m part of a 22 m frontage and its own hand reading stopped counting) and not a tier's short wall.
+ mass=c.get('massHeightM',height)
  profiles=ctx.get('PROFILES',[]);fits=ctx.get('FITS',[])
  matches=[o for o in observations if str(o['match'].get('osmWayId'))==str(c['osm']['id'] if c['osm'] else '')]
  spans=ctx.get('envelopeSpans') or []
- own=[p for p in profiles if belongs(p,c,main_height)]
+ own=[p for p in profiles if belongs(p,c,main_height,mass)]
  donor=None if own or tags.get('leisure')=='stadium' or c['full_area']>18000 else area_donor(profiles,c.get('sourceId',c['id']),height)
  # A building photographed on one side lends what was measured there to its unseen walls: one building, one character.
  own_measured=next((p for p in own if p.get('reading',{}).get('floorPitchM') and p.get('reading',{}).get('bayPitchM') and not (p.get('reading',{}).get('consensus') or {}).get('unsupported')),None)
@@ -278,7 +338,7 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
   if own_measured:return lend(st,own_measured)
   return lend(st,donor) if donor else st
  host_style=base_style()
- continuity=observed_material(profiles,c,main_height);blank_level=observed_blank_level(profiles,c,main_height)
+ continuity=observed_material(profiles,c,main_height,mass);blank_level=observed_blank_level(profiles,c,main_height,mass)
  if continuity:host_style['material']=continuity
  def host_bands(aa,bb):
   """Host wall removed under a replacement slot is kept wherever the emitted box does not stand:
@@ -311,23 +371,29 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
       for pa,pb in zip(part.coords,list(part.coords)[1:]):host_bands(pa,pb)
     else:remaining=line
     for part in ctx['lines'](remaining):segments.extend(zip(part.coords,list(part.coords)[1:]))
-   samples=ctx.get('roofSamples');levels=None
+   samples=ctx.get('roofSamples');levels=None;gables=None;pitched_roof=ctx.get('pitchedRoof')
+   def under_pitch(p,q):
+    # the piece runs under a pitched roof the model builds (most of its length within 1 m of an accepted plane)
+    if pitched_roof is None or pitched_roof.is_empty:return False
+    line=LineString([tuple(p),tuple(q)]);return line.length>0 and line.intersection(pitched_roof.buffer(1.)).length>=.6*line.length
    if samples is not None and len(samples)>30 and not c.get('roofBand'):
-    pieces=[];levels=[]
+    pieces=[];levels=[];gables=[]
     for aa,bb in segments:
      a,b=np.asarray(aa),np.asarray(bb);u=b-a;length=np.linalg.norm(u)
      if length<5.:parts=[(aa,bb)]
      else:
       u=u/length;n=np.array([u[1],-u[0]]);delta=samples[:,:2]-a;along=delta@u;away=np.abs(delta@n);sel=(along>=0)&(along<=length)&(away<2.0)
-      parts=split_at_roof_steps(a,b,along[sel],samples[sel,2]) if sel.sum()>20 else [(aa,bb)]
+      parts=split_at_roof_steps(a,b,along[sel],samples[sel,2],pitched=under_pitch(a,b)) if sel.sum()>20 else [(aa,bb)]
      # Each piece is raised to the level its own roof returns support; a piece with too few measured bins takes
      # the level of the nearest supported piece of the same edge rather than a percentile of stray returns.
      part_levels=[]
      for pa,pb in parts:
       pa_,pb_=np.asarray(pa),np.asarray(pb);pu=pb_-pa_;plen=np.linalg.norm(pu)
-      if plen<.02:part_levels.append(None);continue
+      if plen<.02:part_levels.append(None);gables.append(False);continue
       pu=pu/plen;pn=np.array([pu[1],-pu[0]]);d=samples[:,:2]-pa_;al=d@pu;aw=np.abs(d@pn);msk=(al>=0)&(al<=plen)&(aw<2.0)
-      part_levels.append(wall_level(al[msk],samples[msk,2],plen) if msk.sum()>20 else None)
+      pitched=under_pitch(pa_,pb_)
+      part_levels.append(wall_level(al[msk],samples[msk,2],plen,pitched=pitched) if msk.sum()>20 else None)
+      gables.append(bool(msk.sum()>20 and pitched and is_gable(wall_profile(al[msk],samples[msk,2],plen),plen)))
      supported=[(i,l) for i,l in enumerate(part_levels) if l is not None]
      for i,l in enumerate(part_levels):
       if l is None and supported:part_levels[i]=min(supported,key=lambda s:abs(s[0]-i))[1]
@@ -349,7 +415,7 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
      if g.contains(Point(*((a_+b_)/2+pn*.2))):pn=-pn
      d=samples[:,:2]-a_;al=d@pu;aw=-(d@pn);msk=(al>=0)&(al<=plen)&(aw>=2.0)&(aw<4.0)
      if msk.sum()>=8 and float(np.quantile(samples[msk,2],.9))>=target-1.5:levels[i]=target
-   frames=[p for p in profiles if p.get('frameU') and not p.get('materialOnly') and (belongs(p,c,main_height))]
+   frames=[p for p in profiles if p.get('frameU') and not p.get('materialOnly') and (belongs(p,c,main_height,mass))]
    if frames:
     cut=split_at_frames(segments,frames)
     if levels is not None and len(cut)!=len(segments):
@@ -357,9 +423,15 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
      def source(ca,cb):
       mid=Point(*((np.asarray(ca)+np.asarray(cb))/2))
       return min(range(len(segments)),key=lambda i:LineString(segments[i]).distance(mid))
-     levels=[levels[source(ca,cb)] for ca,cb in cut]
+     levels=[levels[source(ca,cb)] for ca,cb in cut];gables=[gables[source(ca,cb)] for ca,cb in cut]
     segments=cut
+   gable_mark=None
+   def end_gable():
+    # records of a gable end drawn to its ridge: the roof solid's end face under it is not drawn (the wall is)
+    for r in records[gable_mark:]:r['gableEnd']=True
+    if ctx.get('set_clip'):ctx['set_clip'](None)
    for edge,(aa,bb) in enumerate(segments):
+    if gable_mark is not None:end_gable();gable_mark=None
     a,b=np.asarray(aa),np.asarray(bb);u=b-a;length=np.linalg.norm(u)
     if length<.02:continue
     u=u/length;n=np.array([u[1],-u[0]]);mid=(a+b)/2
@@ -373,14 +445,31 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
     # A wall never rises above the roof envelope actually built plus a parapet: LiDAR returns of a dropped tier or of
     # plant near the edge would otherwise stand a wall open above the roof.
     if ctx.get('wallTopCapZ') is not None:main_height=min(main_height,max(default_height,float(ctx['wallTopCapZ']-z0)))
+    gable_planes=None
+    if gables is not None and gables[edge] and ctx.get('pitchedModels') and ctx.get('set_clip'):
+     # A gable end is drawn to its ridge with whatever its reading shows, and everything on it is cut by the roof's own
+     # planes (10 cm proud of them): the wall's top follows the rake and a band or window in the gable stays. Stopped
+     # at its eaves, a stepped gable lost its hand-read band and peak window and took a cornice along its eaves.
+     from general_world.roof_planes import evaluate as roof_evaluate
+     # Only under a roof patch that runs the wall's whole length, and only as high as the LiDAR along the wall goes: a
+     # plane evaluated past the end of its patch kept rising, and the wall stood a triangle above the real roof.
+     seg=LineString([tuple(a),tuple(b)]);line=np.array([a+u*t for t in np.linspace(0,length,max(3,int(length/.5)))])
+     near=samples[(np.abs((samples[:,:2]-a)@n)<2.)&(((samples[:,:2]-a)@u)>=0)&(((samples[:,:2]-a)@u)<=length)] if samples is not None else None
+     lidar_top=float(np.quantile(near[:,2],.98)) if near is not None and len(near)>20 else None
+     for gg,mm in ctx['pitchedModels']:
+      if seg.intersection(gg.buffer(1.)).length<.9*length:continue
+      top=float(roof_evaluate(mm,line).max())
+      if lidar_top is None or top>lidar_top+.75:continue
+      main_height=max(main_height,top-z0);gable_planes=[((-float(q[0]),-float(q[1]),1.),float(q[2])+.10) for q in mm['planes']]
+      gable_mark=len(records);ctx['set_clip'](gable_planes);break
     angle=math.atan2(u[1],u[0]);style=base_style()
     # A colour-only reading colours every wall of its facing when it saw most of its wall; one that saw under 40 %
     # colours only the wall its frame covers (a quarter-seen corner wall's brick had spread along a whole facade).
-    facing=next((p for p in profiles if p.get('materialOnly') and (belongs(p,c,main_height)) and np.dot(n,p['normal'])>.95
+    facing=next((p for p in profiles if p.get('materialOnly') and (belongs(p,c,main_height,mass)) and np.dot(n,p['normal'])>.95
                  and (float((p.get('reading') or {}).get('visibleShare',1.))>=.4 or (p.get('frameU') and frame_overlap(p,a,b)>=.5*length
                       and (p.get('planeV') is None or abs(float(mid@(n/np.linalg.norm(n)))-float(p['planeV']))<=1.5)))),None)
     if facing:style['material']=resolve_material(facing)   # this facing's measured material, the prior's openings
-    matching=[p for p in profiles if not p.get('materialOnly') and (belongs(p,c,main_height)) and np.dot(n,p['normal'])>.95]
+    matching=[p for p in profiles if not p.get('materialOnly') and (belongs(p,c,main_height,mass)) and np.dot(n,p['normal'])>.95]
     # A hand reading (no frame) covers its whole facing and takes precedence. Otherwise a photographed reading draws
     # the wall it covers: of several, the one covering most of this piece, and only if it covers at least half of it.
     framed=[(frame_overlap(p,a,b),p) for p in matching if p.get('frameU')]
@@ -405,11 +494,12 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
         bins=np.arange(z0+height*.65,z0+height+1,.5);hist,edges=np.histogram(near[:,2],bins);peak=int(np.argmax(hist));cluster=near[(near[:,2]>=edges[peak]-.5)&(near[:,2]<edges[peak]+1)]
         if len(cluster):frame=min(float(height),float(np.quantile(cluster[:,2],.85)-z0+.12))
      wall_top=float(main_height)
-     if profile.get('observedWallTopM'):
+     # a gable end stops at its eaves whatever the photograph's frame: the triangle above is the roof's end
+     if profile.get('observedWallTopM') and not (gables is not None and gables[edge]):
       # A parapet is a thin wall the roof-return statistics do not see; a photograph shows where the frontage
       # ends. The observed top may raise the wall above the LiDAR level, by at most 3 m; it never lowers it.
       wall_top=min(max(wall_top,float(profile['observedWallTopM'])),wall_top+3.)
-     fitted=facade_grammar.compile_wall(ctx,c,a,b,z0,wall_top,{**profile,'heightRefM':round(frame,2)},fits)
+     fitted=facade_grammar.compile_wall(ctx,c,a,b,z0,wall_top,{**profile,'heightRefM':round(frame,2),'gableEnd':gable_planes is not None},fits)
      if fitted:
       fitted['record'].update(wallLevelM=round(float(main_height),2),wallTopM=round(wall_top,2),frameHeightM=round(frame,2))
       records.append(fitted['record']);components+=fitted['components'];continue
@@ -425,7 +515,7 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
     exposure=wall_exposure(ctx,c,mid,n,z0,main_height)
     # A facing a street camera photographed is seen from the street, whatever the mapped streets say (plazas and wide
     # set-backs put the corridor beyond reach); a touching neighbour still makes a party wall.
-    if exposure in ('secondary','gap') and any(np.dot(n,p['normal'])>.95 and (belongs(p,c,main_height)) for p in profiles):exposure='street'
+    if exposure in ('secondary','gap') and any(np.dot(n,p['normal'])>.95 and (belongs(p,c,main_height,mass)) for p in profiles):exposure='street'
     visible=length>=3.5 and exposure in ('street','own-podium','secondary') and ctx['boundary'].boundary.distance(Point(*mid))>.5
     if exposure=='secondary':style=dict(style,bayWidthM=style['bayWidthM']*2,openingRatio=style['openingRatio']*.6)
     if ctx.get('venueField') is not None and ctx['venueField'].distance(Point(*mid))<6.:
@@ -488,8 +578,9 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
          for dx in [-ow*.4,ow*.4]:
           p=a+u*(s+dx);cylinder([*(p+n*.03),z0+top+.8],[*(p+n*1.35),z0+top+.2],.023,detail,'steel',6)
       components+=1
-    # Continuous base, cornice and coping; stone bands only where observed.
-    for zz,hh,dd in [(0.22,.44,.10),(main_height-.22,.15,.15),(main_height+.10,.18,.48)]:block(length/2,zz,length,hh,dd,'concrete',.05)
+    # Continuous base, cornice and coping; stone bands only where observed. A gable end has no cornice at its top.
+    for zz,hh,dd in ([(0.22,.44,.10)] if gable_planes is not None else [(0.22,.44,.10),(main_height-.22,.15,.15),(main_height+.10,.18,.48)]):block(length/2,zz,length,hh,dd,'concrete',.05)
     if style.get('stoneBands'):
      for zz in [gh-.1,gh+fh*1.2]:block(length/2,zz,length,.32,.20,'concrete',.12)
+   if gable_mark is not None:end_gable();gable_mark=None
  return records,components

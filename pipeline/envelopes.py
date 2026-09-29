@@ -52,26 +52,75 @@ def _lines(g):
  if g.geom_type=='LineString':return [g]
  return [p for q in getattr(g,'geoms',[]) for p in _lines(q)]
 
-def matches(c,profile):
+def of_source(c,profile):
  m=profile['match']
- return (m.get('featureId')==c.get('sourceId',c['id'])) or (c.get('osm') and str(m.get('osmWayId'))==str(c['osm']['id']))
+ return bool((m.get('featureId')==c.get('sourceId',c['id'])) or (c.get('osm') and str(m.get('osmWayId'))==str(c['osm']['id'])))
 
 
-def frame(c,profile):
- n=np.array(profile['normal'],float);n/=np.linalg.norm(n);u=np.array([-n[1],n[0]])
+def matches(c,profile):
+ if not of_source(c,profile):return False
+ m=profile['match']
+ if m.get('partId') is not None:return m['partId']==c['id']
+ return owns_frontage(c,profile)
+
+
+def owns_frontage(c,profile):
+ """A part of a split outline takes a profile of its source only where the photographed frontage is its own. Every
+ part used to match by the source identity and frame the profile on its own outermost edge facing that way, so a
+ lower wing whose edge ran behind a tall block's street face carried that face's loft roofs over its own roof."""
+ whole=c.get('sourceG')
+ if whole is None or profile.get('normal') is None:return True
+ if profile.get('referenceLine'):
+  from shapely.geometry import LineString
+  return c['g'].distance(LineString([tuple(q) for q in profile['referenceLine']]))<=profile.get('planeToleranceM',3)
+ try:return part_span(c,profile,_frame_of(whole,profile)) is not None
+ except ValueError:return False
+
+
+def _frontage_edges(g,profile):
+ n=np.array(profile['normal'],float);n/=np.linalg.norm(n);u=np.array([-n[1],n[0]]);edges=[]
+ for p in _polys(g):
+  a=np.array(p.exterior.coords)
+  for pa,pb in zip(a,a[1:]):
+   v=pb-pa;le=np.linalg.norm(v)
+   if le>2 and abs(v/le@u)>.96:edges.append((le,float((pa+pb)@n/2),pa,pb))
+ return n,u,edges
+
+
+def _frame_of(g,profile):
+ n,u,edges=_frontage_edges(g,profile)
  if profile.get('referenceLine'):
   a,b=np.array(profile['referenceLine'],float);left,right=sorted([a@u,b@u]);plane=float(((a+b)/2)@n)
  else:
-  edges=[]
-  for p in _polys(c['g']):
-   a=np.array(p.exterior.coords)
-   for pa,pb in zip(a,a[1:]):
-    v=pb-pa;le=np.linalg.norm(v)
-    if le>2 and abs(v/le@u)>.96:edges.append((le,float((pa+pb)@n/2),pa,pb))
   if not edges:raise ValueError('No compatible footprint frontage: '+profile['id'])
   plane=max(e[1] for e in edges);es=[e for e in edges if e[1]>plane-profile.get('planeToleranceM',3)]
   points=np.concatenate([np.array([e[2],e[3]]) for e in es]);left=float(min(points@u));right=float(max(points@u))
  return {'normal':n,'tangent':u,'left':left,'width':right-left,'plane':plane}
+
+
+def part_span(c,profile,f):
+ """A part's own stretch (tangent coordinates) of a frontage framed on the whole outline: its edges within the plane
+ tolerance of the frame's plane, or None when it has none there."""
+ n,u,edges=_frontage_edges(c['g'],profile);es=[e for e in edges if e[1]>f['plane']-profile.get('planeToleranceM',3)]
+ if not es:return None
+ pts=np.concatenate([np.array([e[2],e[3]]) for e in es]);return float(min(pts@u)),float(max(pts@u))
+
+
+def frame(c,profile):
+ """The frontage frame a profile's fractions refer to. A part of a split outline frames it on the whole outline
+ (`span` is the part's own stretch, which is all the part draws): framed on each part's own edges, one frontage design
+ was squeezed into every part that shared the frontage, and a split that moved put its curtain wall on the wrong bays."""
+ whole=c.get('sourceG')
+ f=_frame_of(whole if whole is not None else c['g'],profile)
+ if whole is not None:f['span']=part_span(c,profile,f)
+ return f
+
+
+def span_clip(f,pad=.02):
+ """Half-spaces (normal, offset: keep normal.p <= offset) holding what a part draws of a frontage to its own stretch."""
+ if not f.get('span'):return None
+ u=np.asarray(f['tangent'],float);a,b=f['span']
+ return [((-u[0],-u[1],0.),-(a-pad)),((u[0],u[1],0.),b+pad)]
 
 
 def _polys(g):
@@ -124,10 +173,16 @@ def resolved_nodes(profile,levels):
 
 
 def prepare(ctx,c,z0,samples,profiles):
+ # Every profile of the source outline is resolved, so the corner joins and shared levels between frontages come out
+ # the same in every part of a split outline; each part keeps (draws, masks) only the frontages it owns.
  resolved=[]
  for p in profiles:
-  if not matches(c,p):continue
-  f=frame(c,p);levels,ev=fit_levels(p,f,samples,z0)
+  if not (of_source(c,p) if c.get('sourceG') is not None else matches(c,p)):continue
+  try:f=frame(c,p)
+  except ValueError:
+   if matches(c,p):raise
+   continue
+  levels,ev=fit_levels(p,f,samples,z0)
   resolved.append({'profile':p,'frame':f,'levels':levels,'levelEvidence':ev,'joins':[]})
  # Explicit observed corner correspondences are solved jointly in the ground plane.
  byid={r['profile']['id']:r for r in resolved}
@@ -161,7 +216,7 @@ def prepare(ctx,c,z0,samples,profiles):
    rr['levels'][name]=joint
    ev=next(e for e in rr['levelEvidence'] if e['level']==name);ev['beforeJointFitM']=ev['heightM'];ev['heightM']=round(joint,3);ev['sharedAcrossFrontages']=len(rs)
  for r in resolved:r['nodes']=resolved_nodes(r['profile'],r['levels'])
- return resolved
+ return [r for r in resolved if matches(c,r['profile'])]
 
 
 def root_slots(resolved):
@@ -259,6 +314,8 @@ def compile(ctx,c,z0,resolved):
  records=[];opening_count=0
  for r in resolved:
   p=r['profile'];f=r['frame'];u,n=f['tangent'],f['normal'];W,left,plane=f['width'],f['left'],f['plane'];angle=math.atan2(u[1],u[0]);nodes=r['nodes'];prefix='__'+c['id']+'__observed_'+p['id'];wallkey='buildings'+prefix;detail='facades'+prefix
+  clip=span_clip(f)
+  if clip and ctx.get('set_clip'):ctx['set_clip'](clip)
   # The frontage frame is bound when the helpers are made, not read when they are called: a component's own loop
   # variable (a clock's tick angle) must never re-aim every box drawn after it on the same frontage.
   def point(x,z,depth,u=u,n=n,left=left,plane=plane,z0=z0):return np.r_[u*(left+x)+n*(plane+depth),z0+z]
@@ -442,5 +499,9 @@ def compile(ctx,c,z0,resolved):
      for dx in np.linspace(-wid/2,wid/2,14):
       for z in [zhi-1.65,zhi-.45]:block(x+dx,z,.68,.58,.3,'lamp',dep+.05)
   record={'buildingId':c['id'],'grammarId':p['id'],'status':'envelope-graph','photoColouredParts':recoloured,'sourceIds':p.get('sourceIds',[])+(['mapillary:'+ph['camera'] for ph in (photo.get('photos') or [photo]) if ph.get('camera')] if recoloured and photo else []),'midpoint':(u*(left+W/2)+n*plane).tolist(),'normal':n.tolist(),'lengthM':round(W,2),'heightM':round(max(d['rect'][3] for d in nodes),2),'streetFacing':True,'nodeCount':len(nodes),'depthPlanesM':sorted(set(d['depthM'] for d in nodes)),'levels':r['levelEvidence'],'cornerJoins':r['joins'],'nodes':[{'id':d['id'],'parent':d['parentId'],'rect':d['rect'],'depthM':d['depthM'],'material':d['material'],'surfaceEvidence':d.get('surfaceEvidence',[]),'explicitOpenings':len(d.get('openings',[]))} for d in nodes],'unresolved':p.get('unresolved',[])}
+  if clip:
+   # the record describes the stretch this part drew
+   a_,b_=f['span'];record.update(midpoint=(u*((a_+b_)/2)+n*plane).tolist(),lengthM=round(b_-a_,2),frameLengthM=round(W,2))
+   if ctx.get('set_clip'):ctx['set_clip'](None)
   records.append(record)
  return records,opening_count

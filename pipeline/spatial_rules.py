@@ -114,6 +114,26 @@ def roof_bands(quant,transform,footprint,minimum_area=25,minimum_width_m=3.0,sim
  for i,r in enumerate(result):r['cap']=r['geometry'].difference(result[i+1]['geometry']) if i+1<len(result) else r['geometry']
  return result
 
+def measured_tiers(bands,rr,known,transform,base,first_rise_m=3.,next_rise_m=2.5):
+ """Tier heights from the returns under each tier's own roof, and tiers kept by that measured rise.
+
+ The 2.5 m bins find where the tiers are; a bin's nominal height does not set them. A main roof 3.35 m above a lower
+ strip rounded to the first bin, was dropped as rooftop plant, and the block stood 3 m under its measured roof. A tier
+ whose own roof rises less than a storey above the roof it stands on (3 m above the base roof, 2.5 m above another
+ tier, as the bins allowed before) is plant, a parapet or a screen, and becomes part of the roof below it."""
+ from rasterio.features import geometry_mask
+ kept=[]
+ for i,b in enumerate(bands):
+  above=bands[i+1]['geometry'] if i+1<len(bands) else None
+  cap=b['geometry'].difference(above) if above is not None else b['geometry']
+  inside=(~geometry_mask([cap],out_shape=rr.shape,transform=transform)&known) if not cap.is_empty else np.zeros(rr.shape,bool)
+  rise=float(np.median(rr[inside]-base)) if inside.sum()>=4 else float(b['top'])
+  below=kept[-1]['top'] if kept else 0.
+  if rise-below<(next_rise_m if kept else first_rise_m):continue
+  kept.append({**b,'bottom':below,'top':round(rise,3),'nominalTop':b['top']})
+ for i,b in enumerate(kept):b['cap']=b['geometry'].difference(kept[i+1]['geometry']) if i+1<len(kept) else b['geometry']
+ return kept
+
 def perimeter_strip(ctx,c,profiles,depth=1.0):
  from .envelopes import matches,frame
  strips=[]

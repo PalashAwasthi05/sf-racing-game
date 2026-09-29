@@ -55,8 +55,13 @@ def compile(ctx,c,z0,observations,resolved):
   if not a.get('sourceIds') or not a.get('text'):raise ValueError('Lettering requires literal observed text and source IDs')
   r=next((r for r in resolved if r['profile']['id']==a.get('profileId')),None)
   f=r['frame'] if r else frame(c,a);u,n=f['tangent'],f['normal'];key='facades__'+c['id']+'__observed_lettering'
+  # a part of a split outline draws only the lettering on its own stretch of the frontage
+  from .envelopes import span_clip
   z,center_u,depth,check=attachment(a,ctx,c,resolved)
   center=f['left']+f['width']*center_u;width=a['widthM'];height=a['heightM'];thick=a.get('thicknessM',.035)
+  if f.get('span') and not (f['span'][0]-.5<=center<=f['span'][1]+.5):continue   # the sign is on another part's stretch
+  clip=span_clip(f)
+  if clip and ctx.get('set_clip'):ctx['set_clip'](clip)
   def point(x,y,d):return np.r_[u*(center+x)+n*(f['plane']+d),z0+z+y]
   textlines=a['text'].split('\n');lineheight=height/len(textlines)
   for i,line in enumerate(textlines):
@@ -70,5 +75,6 @@ def compile(ctx,c,z0,observations,resolved):
   if a.get('canopy'):
    ca=a['canopy'];p=u*center+n*(f['plane']+ca.get('projectionM',1.4)/2)
    ctx['cube']([*p,z0+z-.12],[width+.9,ca.get('projectionM',1.4),.18],key,ca.get('material','panel_dark'),np.arctan2(u[1],u[0]))
+  if clip and ctx.get('set_clip'):ctx['set_clip'](None)
   records.append({**a,'buildingId':c['id'],'attachmentCheck':check,'placementStatus':'image-estimated; support-constrained','fontStatus':'approximate letterforms','worldCenter':point(0,height/2,depth).tolist(),'normal':n.tolist(),'independentValidation':False})
  return records

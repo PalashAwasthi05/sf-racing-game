@@ -105,8 +105,38 @@ def rgba(c):
  c=palette.get(c,c).lstrip('#');return [int(c[i:i+2],16) for i in (0,2,4)]+[255]
 material_bank=Materials(ROOT/'material-assets',palette)
 batches=collections.defaultdict(lambda:[[],[],[],[]])
+CLIP=None
+def set_clip(halfspaces):
+ """While a gable end or a part's stretch of a shared frontage is compiled, everything emitted is cut to the given
+ half-spaces: (normal, offset) keeps normal.p <= offset (a roof plane z <= a*x+b*y+c is ((-a,-b,1), c))."""
+ global CLIP;CLIP=halfspaces
+def _clip(mesh):
+ import manifold3d
+ cut=[]
+ for nrm,off in CLIP:
+  nrm=np.asarray(nrm,float);d=np.asarray(mesh.vertices)@nrm-off
+  if (d<=1e-6).all():continue
+  if (d>=-1e-6).all():return None
+  cut.append((nrm,off))
+ if not cut:return mesh
+ # closed boxes and prisms are trimmed as solids (capped cut faces); anything else is sliced open
+ try:
+  m=manifold3d.Manifold(manifold3d.Mesh64(np.asarray(mesh.vertices,float),np.asarray(mesh.faces,np.uint64)))
+  if m.is_empty():raise ValueError('not a closed solid')
+  for nrm,off in cut:
+   L=float(np.linalg.norm(nrm));m=m.trim_by_plane((-nrm/L).tolist(),-off/L)
+  raw=m.to_mesh64();tri=np.asarray(raw.tri_verts)
+  return trimesh.Trimesh(np.asarray(raw.vert_properties)[:,:3],tri,process=False) if len(tri) else None
+ except Exception:
+  for nrm,off in cut:
+   mesh=trimesh.intersections.slice_mesh_plane(mesh,-nrm,nrm*off/float(nrm@nrm),cap=False)
+   if mesh is None or len(mesh.faces)==0:return None
+  return mesh
 def put(mesh,key,color,uv=None):
  if len(mesh.vertices)==0:return
+ if CLIP is not None and uv is None:
+  mesh=_clip(mesh)
+  if mesh is None or len(mesh.vertices)==0:return
  material,scale=material_bank.get(color);batchkey=key+'___'+material.name
  vertices,faces,uvs,normals=batches[batchkey];off=sum(len(v) for v in vertices)
  # Split face corners to preserve hard normals and per-face, metric texture coordinates.
@@ -217,7 +247,7 @@ for c in candidates:
  _a={};_parts=building_parts.split(c['g'],get_points(c['g'].buffer(-.65))[:,:3],float(elev(c['g'].centroid.x,c['g'].centroid.y)),audit=_a)
  if len(_parts)<2:_split.append(c);continue
  _parts.sort(key=lambda q:-q.area);part_audit.append({'sourceId':c['id'],'parts':[round(q.area,1) for q in _parts],**_a})
- for _i,_q in enumerate(_parts):_split.append({**c,'g':_q,'sourceId':c['id'],'id':c['id'] if _i==0 else f"{c['id']}_p{_i}",'full_area':_q.area,'partOf':c['id']})
+ for _i,_q in enumerate(_parts):_split.append({**c,'g':_q,'sourceId':c['id'],'id':c['id'] if _i==0 else f"{c['id']}_p{_i}",'full_area':_q.area,'partOf':c['id'],'sourceG':c['g']})
 candidates=_split
 
 landmark_sites=[];landmark_records=[]
@@ -253,7 +283,8 @@ for c in ([] if _args.streets_only else candidates):
   except:height=12.
   lo=z0+height;top=lo;source='Catalog estimate'
  foundation_records.append(spatial_rules.foundation(globals(),c,z0))
- resolved=envelopes.prepare(globals(),c,z0,sample,ENVELOPES);envelope_mask=envelopes.replacement_mask(resolved)
+ # A split part fits a shared frontage's levels on the whole outline's returns, as it frames it on the whole outline.
+ resolved=envelopes.prepare(globals(),c,z0,get_points(c['sourceG'].buffer(-.65)) if c.get('sourceG') is not None else sample,ENVELOPES);envelope_mask=envelopes.replacement_mask(resolved)
  profile_strip=spatial_rules.perimeter_strip(globals(),c,PROFILES);tier_mask=envelope_mask.union(profile_strip)
  if resolved:name=resolved[0]['profile'].get('displayName',name)
  lm=landmarks.entry(c)
@@ -270,7 +301,7 @@ for c in ([] if _args.streets_only else candidates):
   print(name,round(height,1),'landmark',flush=True);continue
  style=facades.prior(tags,height,c['full_area']);color=style['material']
  roofparts=0
- roof_grid_audit={};roof_patches=[];roof_bands=[];roof_xy=None;venue=None
+ roof_grid_audit={};roof_patches=[];roof_bands=[];roof_xy=None;venue=None;patch_sides=[]
  if rr is not None and len(roof)>50:
   rr,roof_known,roof_xy,roof_grid_audit=roof_envelope.prepare_grid(rr,g,xmin,ymax,roof_step)
   base_roof=float(np.quantile(rr[roof_known],.15)) if rr is not None else z0+height
@@ -306,14 +337,17 @@ for c in ([] if _args.streets_only else candidates):
   if drape_area is not None and not drape_area.is_empty:quant[drape_keep]=0
   # A tier is a storey or more above the base roof. The first level bin (2.5 m) is parapets, plant and screens
   # standing on the roof, not a volume with its own walls; making it a tier covered roofs in stacked boxes.
-  quant[quant*step<3]=0
+  # The storey test reads the measured rise of each tier's own roof, after the bins have found the tiers
+  # (spatial_rules.measured_tiers): testing the rounded bin dropped a main roof 3.35 m above a lower strip as plant.
   if venue:quant[:]=0
   roof_bands=spatial_rules.roof_bands(quant,from_origin(xmin,ymax,roof_step,roof_step),tier_domain,max(LR.get('tierMinAreaM2',25),g.area*LR.get('tierMinShare',.012)),simplify_m=roof_step*.75,cell_m=roof_step,level_step_m=step,measured_mask=roof_known)
+  roof_bands=spatial_rules.measured_tiers(roof_bands,rr,roof_known,from_origin(xmin,ymax,roof_step,roof_step),base_roof)
   # LiDAR sets the envelope, not the detail: at most a few substantial tiers (the lowest, largest ones) are kept.
   roof_bands=roof_bands[:LR.get('tierMaxCount',len(roof_bands))]
   if roof_bands:roof_bands[-1]['cap']=roof_bands[-1]['geometry']
   base_cap=tier_domain.difference(roof_bands[0]['geometry']) if roof_bands else tier_domain
   extrude(base_cap,base_roof,.10,'roofs__'+id,'roof')
+  c['massHeightM']=float(base_roof-z0)   # the part's main roof level: what a hand reading's frame is compared with
   for band in roof_bands:
    # A tier stops behind the strip an observed frontage owns; its wall would stand in the frontage plane, blank
    # and coplanar with the observed facade.
@@ -336,7 +370,7 @@ for c in ([] if _args.streets_only else candidates):
    solid=roof_solid(patch['geometry'],patch['model'],bottom)
    up=solid.face_normals[:,2]>.05;side=np.abs(solid.face_normals[:,2])<=.05
    put(solid.submesh([np.where(up)[0]],append=True,repair=False),'roofs__'+id,'roof')
-   put(solid.submesh([np.where(side)[0]],append=True,repair=False),'buildings__'+id,color)
+   patch_sides.append(solid.submesh([np.where(side)[0]],append=True,repair=False))   # coloured once the walls are known
    roofparts+=1
   owned_roof=roof_envelope.owned_samples(g,roof_xy,base_roof,roof_bands,roof_patches,[(slot,z0+z1) for slot,z1 in roof_lids])
   height=max(height,float(owned_roof[:,2].max()-z0))
@@ -346,11 +380,21 @@ for c in ([] if _args.streets_only else candidates):
   # The top of the envelope actually built (base roof, kept tiers, tilted planes, lids), for the wall-height cap.
   _tops=[base_roof]+[base_roof+b['top'] for b in roof_bands]+[z0+z1 for _,z1 in roof_lids]
   for _p in roof_patches:
-   _xy=np.concatenate([np.asarray(q.exterior.coords) for q in polys(_p['geometry'])]);_tops.append(float(roof_evaluate(_p['model'],_xy).max()))
+   # along the whole outline, not only at its corners: a gable's ridge meets its end walls between two corners
+   _xy=np.concatenate([np.asarray([q.exterior.interpolate(t).coords[0] for t in np.linspace(0,q.exterior.length,max(8,int(q.exterior.length/.5)))]) for q in polys(_p['geometry'])]);_tops.append(float(roof_evaluate(_p['model'],_xy).max()))
   wall_top_cap=max(_tops)+1.5
  else:wall_top_cap=None
+ c['massHeightM']=float(base_roof-z0)
  outer_ctx=dict(globals());outer_ctx['venueField']=venue['field'] if (rr is not None and venue) else None;outer_ctx['wallTopCapZ']=wall_top_cap;outer_ctx['roofSamplesOwned']=False;outer_ctx['roofSamples']=roof;outer_ctx['envelopeMask']=envelope_mask;outer_ctx['envelopeSpans']=envelope_spans
+ pitched=[p['geometry'] for p in roof_patches if max(float(np.linalg.norm(q[:2])) for q in p['model']['planes'])>=roof_envelope.PITCH_SLOPE]
+ outer_ctx['pitchedRoof']=unary_union(pitched) if pitched else None
+ outer_ctx['pitchedModels']=[(p['geometry'],p['model']) for p in roof_patches if max(float(np.linalg.norm(q[:2])) for q in p['model']['planes'])>=roof_envelope.PITCH_SLOPE]
  records,component_count=facades.compile(outer_ctx,c,z0,base_roof-z0,height,tags,OBS['facades']);facade_records.extend(records);counts['windowAssemblies']+=component_count
+ for side_mesh in patch_sides:
+  # The vertical faces of a pitched roof (a gable's triangle over its end wall) are that wall's material; a face on no
+  # wall (between two roof planes) keeps the building's.
+  for key,faces in roof_envelope.side_materials(side_mesh,records,color).items():
+   if key is not None:put(side_mesh.submesh([np.asarray(faces)],append=True,repair=False),'buildings__'+id,key)
  for panel in panels:
   # A LiDAR-measured sign panel: a thin slab on the roof with two posts; appearance unresolved (no imagery).
   pa=panel['axis'];pangle=math.atan2(pa[1],pa[0]);pc=panel['centre'];hgt=panel['topZ']-panel['bottomZ']

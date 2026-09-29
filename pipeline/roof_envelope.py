@@ -31,6 +31,9 @@ def prepare_grid(raw,footprint,xmin,ymax,step):
     return filled,known,xy,{'measuredCells':int(known.sum()),'insideCells':int(inside.sum()),'unknownInsideCells':int((inside&~known).sum())}
 
 
+PITCH_SLOPE,PITCH_MIN_AREA_M2=.15,25.
+
+
 def continuous_patches(footprint,points,step,min_slope=.015,min_area_m2=25.,min_rise_m=.6):
     """Tilted roof planes the fit supports. The thresholds come from the area config's LiDAR role: a drainage
     fall of a percent or two is a flat roof, and splitting it into separately tilted planes painted the roof
@@ -39,12 +42,64 @@ def continuous_patches(footprint,points,step,min_slope=.015,min_area_m2=25.,min_
     accepted=[]
     for p in patches:
         if not any(np.linalg.norm(c[:2])>=min_slope for c in p['model']['planes']):continue
+        # A pitched roof (15 % or steeper: a gable's planes, a hip) is a roof shape, not a drainage fall mistaken for
+        # one; it keeps its planes from 25 m2. The area floor for gentle slopes flattened a small building's gable
+        # (two planes of 100 m2 each fitted to 5-7 cm, 18 degrees) into a flat roof at its eaves.
+        pitched=max(np.linalg.norm(c[:2]) for c in p['model']['planes'])>=PITCH_SLOPE
         for g in ([p['geometry']] if p['geometry'].geom_type=='Polygon' else list(p['geometry'].geoms)):
-            if g.area<min_area_m2 or g.buffer(-1.5).is_empty:continue
+            if g.area<(min(min_area_m2,PITCH_MIN_AREA_M2) if pitched else min_area_m2) or g.buffer(-1.5).is_empty:continue
             xy=np.asarray(g.exterior.coords);z=evaluate(p['model'],xy)
             if z.max()-z.min()<min_rise_m:continue
             accepted.append({**p,'geometry':g})
-    return accepted,report
+    return join_ridges(accepted,points),report
+
+
+def join_ridges(patches,points,tolerance_m=.30):
+    """Adjacent pitched planes that meet in a ridge are one roof: the lower of their planes everywhere (a gable, a hip).
+    Built separately, each half ended at the raster line between them, so the halves stood at different heights along
+    the ridge with a wall between. A pair joins only when each plane is the lower one over its own half (a valley is
+    not a ridge) and the joined roof explains the returns under both halves as well as the halves do."""
+    from shapely import contains_xy
+    from shapely.ops import unary_union
+    pitched=[i for i,p in enumerate(patches) if len(p['model']['planes'])==1 and np.linalg.norm(np.asarray(p['model']['planes'][0])[:2])>=PITCH_SLOPE]
+    group={i:{i} for i in range(len(patches))}
+    pts=np.asarray(points)[:,:3]
+    def own(i):
+        g=patches[i]['geometry'];m=contains_xy(g,pts[:,0],pts[:,1]);return pts[m]
+    def err(model,q):
+        return np.quantile(np.abs(evaluate(model,q[:,:2])-q[:,2]),.8) if len(q) else 0.
+    for a in pitched:
+        for b in pitched:
+            if b<=a or group[a] is group[b]:continue
+            ga,gb=patches[a]['geometry'],patches[b]['geometry']
+            if ga.buffer(.8).intersection(gb.buffer(.8)).area<1.:continue
+            qa,qb=own(a),own(b)
+            if len(qa)<20 or len(qb)<20:continue
+            pa,pb=np.asarray(patches[a]['model']['planes'][0]),np.asarray(patches[b]['model']['planes'][0])
+            za=lambda q,pl:np.c_[q[:,:2],np.ones(len(q))]@pl
+            # each plane lower than the other over its own half (the ridge between them is a maximum)
+            if np.quantile(za(qa,pa)-za(qa,pb),.9)>tolerance_m or np.quantile(za(qb,pb)-za(qb,pa),.9)>tolerance_m:continue
+            joined={'planes':[pa.tolist(),pb.tolist()],'operation':'min'}
+            if err(joined,qa)>err(patches[a]['model'],qa)+.05 or err(joined,qb)>err(patches[b]['model'],qb)+.05:continue
+            merged=group[a]|group[b]
+            for k in merged:group[k]=merged
+    out=[];seen=set()
+    for i,p in enumerate(patches):
+        members=sorted(group[i])
+        if id(group[i]) in seen:continue
+        seen.add(id(group[i]))
+        if len(members)==1:out.append(p);continue
+        # the whole group, not only each adjacent pair: the lowest plane must explain every member's returns
+        joined={'planes':[pl for k in members for pl in patches[k]['model']['planes']],'operation':'min'}
+        if any(err(joined,own(k))>err(patches[k]['model'],own(k))+.05 for k in members):
+            out.extend(patches[k] for k in members);continue
+        g=unary_union([patches[k]['geometry'].buffer(.05) for k in members]).buffer(-.05)
+        planes=[pl for k in members for pl in patches[k]['model']['planes']]
+        unexplained=[patches[k].get('unexplained') for k in members if patches[k].get('unexplained') is not None]
+        for piece in ([g] if g.geom_type=='Polygon' else list(g.geoms)):
+            out.append({**patches[members[0]],'geometry':piece,'model':{'planes':planes,'operation':'min'},'ridgeOf':len(members),
+                        'unexplained':unary_union(unexplained) if unexplained else None})
+    return out
 
 
 def owned_samples(footprint,xy,base,bands,patches,lids=()):
@@ -188,3 +243,26 @@ def venue_form(rr, known, footprint, xmin, ymax, step, z0, row_rise_m=.9, minimu
     ring_poly = cells_area(ring, footprint, xmin, ymax, step).buffer(0)
     return {'ring': ring_poly, 'field': cells_area(field, footprint, xmin, ymax, step).buffer(0), 'ringTopZ': z0 + ring_h, 'ringDepthM': ring_depth, 'bowlMask': bowl, 'bowlZ': bowl_z,
             'fieldM2': float(field.sum() * step * step)}
+
+
+def side_materials(mesh,records,default):
+    """Faces of a roof solid's vertical sides grouped by the material of the wall each stands over: within .6 m of the
+    wall's plane, inside its length, facing the same way. A frontage drawn as an envelope graph gives its top node's
+    material. Faces over no wall keep `default`; faces over a gable end drawn to its ridge (the wall fills them) go under
+    None, not to be drawn."""
+    walls=[]
+    for r in records:
+        mat=r.get('material') or (max(r['nodes'],key=lambda d:d['rect'][1]+d['rect'][3]).get('material') if r.get('nodes') else None)
+        if not (mat or r.get('gableEnd')) or r.get('midpoint') is None or r.get('normal') is None or not r.get('lengthM'):continue
+        n=np.asarray(r['normal'][:2],float);L=np.linalg.norm(n)
+        if L<1e-6:continue
+        n=n/L;walls.append((np.asarray(r['midpoint'][:2],float),n,np.array([-n[1],n[0]]),float(r['lengthM'])/2+.3,None if r.get('gableEnd') else mat))
+    out={}
+    for i,(p,q) in enumerate(zip(mesh.triangles_center,mesh.face_normals)):
+        key=default
+        for m,n,t,half,mat in walls:
+            if float(q[:2]@n)<.9:continue
+            d=p[:2]-m
+            if abs(float(d@n))<=.6 and abs(float(d@t))<=half:key=mat;break
+        out.setdefault(key,[]).append(i)
+    return out

@@ -24,6 +24,8 @@ class RoofPolicy:
     maximum_planes: int = 6
     ransac_attempts: int = 240
     minimum_interior_explained: float = .90   # share of interior cells under a patch its plane must explain
+    equipment_m: float = 1.5                  # a return this far above a plane can be something standing on the roof
+    equipment_share: float = .25              # ... while such returns cover at most this share of the patch
 
 def sample_cells(footprint, points, policy):
     p=np.asarray(points,float)[:,:3]
@@ -200,7 +202,14 @@ def fit_patches(footprint,points,policy=None):
         # from the outline) may not disagree beyond an allowance for rooftop equipment. A plane drawn
         # through a staircase of tiers, or through two surfaces, fails here even when its own cells fit.
         under=contains_xy(g,samples[:,0],samples[:,1]);interior=contains_xy(g.buffer(-1.5*policy.cell_m),samples[:,0],samples[:,1])
-        fits=residual[:,k]<=policy.maximum_p95_error_m
+        fits=on_plane=residual[:,k]<=policy.maximum_p95_error_m
+        # A skylight, chimney or vent stands on the roof: cells up to equipment_m above the plane, together covering at
+        # most equipment_share of the patch, are not evidence against it (one on a gable half left 4 of its 14 interior
+        # cells unexplained and the roof was built flat). Cells below the plane, a storey above it, or a raised area
+        # larger than equipment still are: a plane through a staircase of tiers has cells on both sides of it.
+        above=samples[:,2]-(np.c_[samples[:,:2],np.ones(len(samples))]@np.asarray(c))
+        on_top=~fits&(above>0)&(above<=policy.equipment_m)
+        if under.any() and float(np.mean(on_top[under]))<=policy.equipment_share:fits=fits|on_top
         explained=float(np.mean(fits[under])) if under.any() else 0.;explained_interior=float(np.mean(fits[interior])) if interior.sum()>=10 else explained
         report={'areaM2':g.area,'heldOutSamples':held_count,'heldOutP95M':p95,'sloped':bool(np.linalg.norm(c[:2])>=.015),
                 'outlineVertices':int(sum(len(q.exterior.coords)-1 for q in polygons(g))),'cellsUnderOutline':int(under.sum()),'explainedUnderOutline':explained,
@@ -210,7 +219,7 @@ def fit_patches(footprint,points,policy=None):
         reports.append(report)
         # Cells under the outline the plane does not explain carry something the returns did measure (a
         # rooftop structure, a parapet): the solid passes under them, but nothing standing there is trimmed.
-        unexplained=unary_union([box(*(origin+keys[i]*policy.cell_m),*(origin+(keys[i]+1)*policy.cell_m)) for i in np.where(under&~fits)[0]]) if (under&~fits).any() else None
+        unexplained=unary_union([box(*(origin+keys[i]*policy.cell_m),*(origin+(keys[i]+1)*policy.cell_m)) for i in np.where(under&~on_plane)[0]]) if (under&~on_plane).any() else None
         patches.append({'geometry':g,'model':model,'heldOutP95M':p95,'explainedUnderOutline':explained,'explainedInterior':explained_interior,'unexplained':unexplained})
     return patches,{'status':'spatially-validated-patches','observedCoverage':coverage,'patches':reports,
                     'acceptedPatchAreaM2':sum(p['geometry'].area for p in patches),'unobservedCellsFilled':int((joined&~measured).sum()),'edgeCellsJoined':int(joined.sum())}

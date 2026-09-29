@@ -582,7 +582,18 @@
           "otherEnd": "end",
           "maxAdjustmentM": 5
         }
-      ]
+      ],
+      "referenceLine": [
+        [
+          -45.172,
+          -32.271
+        ],
+        [
+          -82.655,
+          5.213
+        ]
+      ],
+      "referenceLineSource": "the frame release 0.34 drew this design in, where it was tuned against photographs; fixed so that a changed outline split does not move it (see NEXT_AGENT v0.35)"
     },
     {
       "sourceIds": [
@@ -921,7 +932,18 @@
       "shareLevels": [
         "glassRoof",
         "corner"
-      ]
+      ],
+      "referenceLine": [
+        [
+          -98.485,
+          -125.328
+        ],
+        [
+          -26.756,
+          -53.599
+        ]
+      ],
+      "referenceLineSource": "the frame release 0.34 drew this design in, where it was tuned against photographs; fixed so that a changed outline split does not move it (see NEXT_AGENT v0.35)"
     },
     {
       "sourceIds": [
@@ -1199,7 +1221,18 @@
           "otherEnd": "start",
           "maxAdjustmentM": 3
         }
-      ]
+      ],
+      "referenceLine": [
+        [
+          42.534,
+          -123.093
+        ],
+        [
+          6.415,
+          -86.974
+        ]
+      ],
+      "referenceLineSource": "the frame release 0.34 drew this design in, where it was tuned against photographs; fixed so that a changed outline split does not move it (see NEXT_AGENT v0.35)"
     },
     {
       "sourceIds": [
@@ -1517,7 +1550,18 @@
       "shareLevels": [
         "loftRoof",
         "core"
-      ]
+      ],
+      "referenceLine": [
+        [
+          0.959,
+          -92.352
+        ],
+        [
+          -79.39,
+          -172.7
+        ]
+      ],
+      "referenceLineSource": "the frame release 0.34 drew this design in, where it was tuned against photographs; fixed so that a changed outline split does not move it (see NEXT_AGENT v0.35)"
     },
     {
       "sourceIds": [

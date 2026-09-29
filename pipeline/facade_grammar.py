@@ -365,5 +365,5 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
     xx=cx_+(v[:,0]-ww/2)*scale;yy=cy_-gh/2+(hh-v[:,1])*scale
     mesh.vertices=np.array([point(x,y,dep+d) for x,y,d in zip(xx,yy,v[:,2])]);mesh.fix_normals();ctx['put'](mesh,detail,sg.get('textMaterial','white'))
  block((low+high)/2,.16,high-low,.32,.1,'stone',.045)
- block((low+high)/2,H+.025,high-low,.10,.4,profile.get('copingMaterial','charcoal'),.015)
+ if not profile.get('gableEnd'):block((low+high)/2,H+.025,high-low,.10,.4,profile.get('copingMaterial','charcoal'),.015)
  return dict(record={'buildingId':c['id'],'midpoint':mid.tolist(),'normal':n.tolist(),'lengthM':round(high-low,2),'heightM':round(H,2),'edge':'grammar','floors':None,'columns':None,'archetype':profile['id'],'material':mat,'sourceIds':profile['sourceIds'],'status':('image-layout-fit' if any(o.get('fitId') for o in ops) else 'visual-grammar'),'grammarId':profile['id'],'openingCount':len(ops),'openingEvidence':{'explicitBoundaries':sum(o.get('evidence')=='observed-boundary' for o in ops),'negativeRegions':len(profile.get('surfaceEvidence',[]))},'fitIds':list(set(o['fitId'] for o in ops if o.get('fitId'))),'unresolved':profile.get('unresolved',[]),'streetFacing':True},components=len(ops))
