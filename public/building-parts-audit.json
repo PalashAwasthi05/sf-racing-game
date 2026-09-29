@@ -1,0 +1,74 @@
+[
+  {
+    "sourceId": "osm_149167937",
+    "parts": 2,
+    "regions": 3,
+    "heights": [
+      31.6,
+      23.5
+    ]
+  },
+  {
+    "sourceId": "osm_573287814",
+    "parts": 2,
+    "regions": 2,
+    "heights": [
+      35.5,
+      5.0
+    ]
+  },
+  {
+    "sourceId": "sf_201006_0001245",
+    "parts": 2,
+    "regions": 2,
+    "heights": [
+      18.8,
+      8.1
+    ]
+  },
+  {
+    "sourceId": "sf_201006_0001497",
+    "parts": 2,
+    "regions": 2,
+    "heights": [
+      18.4,
+      11.7
+    ]
+  },
+  {
+    "sourceId": "sf_201006_0003021",
+    "parts": 2,
+    "regions": 2,
+    "heights": [
+      8.2,
+      13.2
+    ]
+  },
+  {
+    "sourceId": "sf_201006_0000213",
+    "parts": 2,
+    "regions": 3,
+    "heights": [
+      23.1,
+      34.8
+    ]
+  },
+  {
+    "sourceId": "sf_201006_0000227",
+    "parts": 2,
+    "regions": 2,
+    "heights": [
+      26.2,
+      55.2
+    ]
+  },
+  {
+    "sourceId": "sf_201006_0000306",
+    "parts": 2,
+    "regions": 2,
+    "heights": [
+      15.9,
+      28.3
+    ]
+  }
+]
