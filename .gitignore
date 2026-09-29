@@ -1,0 +1,45 @@
+# work/ is ~100 GB, nearly all generated: candidates, imagery, judge sheets,
+# model weights and caches. This repository tracks only source and small
+# config. Everything is ignored by default and re-included by type below.
+# To track something else, add a narrow ! rule here (never a data folder).
+*
+!*/
+!.gitignore
+
+# Source and tests
+!*.py
+!*.sh
+!*.mjs
+!*.ts
+!*.md
+
+# Small config and inputs read by tracked scripts
+!*requirements*.txt
+!/pipeline/**/*.json
+!/review/**/*.json
+!/car/reference_outline.json
+!/viewer-bench/index.html
+
+# Generated, downloaded or large folders; git never walks these
+/geoenv/
+/.models/
+/imagery-*/
+/clean-v*/
+/detailed-v*/
+/building-v*/
+/street-v*/
+/judge-*/
+/material-final-*/
+/history/
+*cache*/
+node_modules/
+
+# The viewer is its own repository
+/king-street/
+
+# Binary data, even inside tracked folders
+*.glb
+*.npz
+*.bin
+*.jpg
+*.png
