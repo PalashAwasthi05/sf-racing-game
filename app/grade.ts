@@ -22,7 +22,7 @@ const GRADE={
  }`};
 type Look={contrast:number;vibrance:number;saturation:number;warm:number;vignette:number;bloom:number;threshold:number};
 const LOOKS:Record<string,Look>={
- afternoon:{contrast:1.12,vibrance:.22,saturation:.04,warm:1,vignette:.22,bloom:.28,threshold:1.15},
+ afternoon:{contrast:1.16,vibrance:.3,saturation:.07,warm:1.1,vignette:.22,bloom:.3,threshold:1.1},
  golden:{contrast:1.08,vibrance:.2,saturation:.06,warm:1.5,vignette:.26,bloom:.36,threshold:1},
  overcast:{contrast:1.05,vibrance:.18,saturation:.02,warm:.25,vignette:.18,bloom:.18,threshold:1.3},
 };
