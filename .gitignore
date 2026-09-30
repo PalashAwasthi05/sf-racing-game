@@ -43,3 +43,6 @@ node_modules/
 *.bin
 *.jpg
 *.png
+
+# A/B copies of viewer modules made by viewer-bench/snapshot.sh
+/viewer-bench/variants/
