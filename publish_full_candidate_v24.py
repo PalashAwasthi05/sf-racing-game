@@ -9,6 +9,7 @@ p.add_argument('--flagged-views-waived',default=None,help='publish without the f
 p.add_argument('--known-mismatch',action='append',default=[],help='a flagged view whose colour mismatch is a registered open defect this release does not touch; allowed only when the candidate is no worse than live there; recorded in release.json')
 p.add_argument('--waive-colour',action='append',default=[],metavar='VIEW/CAMERA',help='one flagged camera whose colour check the USER waived for this release (e.g. a photograph whose wall mask lands on another building); needs --waiver-reason; recorded in release.json. Every other check still runs.')
 p.add_argument('--waiver-reason',default=None,help='why the user waived the --waive-colour cameras, and when; recorded in release.json')
+p.add_argument('--accept-inferred-changes',default=None,metavar='REASON',help='publish although walls no photograph covers changed without evidence of their own (a rule change meant to change them); the reason is recorded in release.json')
 a=p.parse_args()
 if a.waive_colour and not a.waiver_reason:raise SystemExit('refused: --waive-colour needs --waiver-reason')
 cand,public=a.candidate,a.public;final=cand/'final';final.mkdir(exist_ok=True)
@@ -32,6 +33,12 @@ if not a.flagged_views_waived:
     _unused=set(a.waive_colour)-{f'{b[0]}/{b[1]}' for b in _bad}
     if _unused:raise SystemExit(f'refused: --waive-colour names cameras that do not mismatch in this build: {sorted(_unused)}')
     if _blocking:raise SystemExit(f'refused: the flagged building\'s wall colour differs from its photograph (view, camera, dE candidate, dE live): {_blocking}')
+# Walls no photograph covers must not change unless their own evidence did (the flagged views only see a few buildings):
+# review_inferred_changes.py lists every such change against live and exits 2 on one with no cause of its own.
+_ic=subprocess.run([_sys.executable,'work/review_inferred_changes.py','--candidate',str(cand)],capture_output=True,text=True)
+if _ic.returncode not in (0,2):raise SystemExit('refused: review_inferred_changes.py failed:\n'+_ic.stdout+_ic.stderr)
+if _ic.returncode==2 and not a.accept_inferred_changes:raise SystemExit('refused: walls no photograph covers changed with no evidence of their own (a rule change); look at them, then pass --accept-inferred-changes "<reason>" if it is meant:\n'+_ic.stdout)
+_inferred=json.loads((cand/'inferred-changes.json').read_text())
 shutil.copy2(cand/'materials/candidate.glb',final/'candidate.glb')
 raw=(final/'candidate.glb').read_bytes();sha=hashlib.sha256(raw).hexdigest();packed=gzip.compress(raw,compresslevel=6,mtime=0);chunks=[]
 for i,s in enumerate(range(0,len(packed),4400000)):
@@ -46,4 +53,7 @@ if (cand/'public/facade-evidence.json').exists():shutil.copy2(cand/'public/facad
 put(public/'world.json',world)
 put(public/'generation.json',{'pipelineVersion':'0.24','fullRegeneration':True,'layersCarriedOver':[],'outputSha256':sha,'candidate':str(final/'candidate.glb'),'independentRealismGate':'NOT PASSED'})
 put(public/'model.json',dict(compression='gzip',contentHash=sha[:12],chunks=chunks,compressedBytes=len(packed),uncompressedBytes=len(raw)))
-res={'sha256':sha,'localPreview':'http://127.0.0.1:3001/?revision='+sha[:12],'flaggedViews':str(_idx) if not a.flagged_views_waived else {'waived':a.flagged_views_waived},'knownColourMismatches':a.known_mismatch,'colourWaivers':[{'camera':w,'reason':a.waiver_reason} for w in a.waive_colour]};(cand/'release.json').write_text(json.dumps(res));print(json.dumps(res))
+res={'sha256':sha,'localPreview':'http://127.0.0.1:3001/?revision='+sha[:12],'flaggedViews':str(_idx) if not a.flagged_views_waived else {'waived':a.flagged_views_waived},'knownColourMismatches':a.known_mismatch,'colourWaivers':[{'camera':w,'reason':a.waiver_reason} for w in a.waive_colour],
+     'inferredChanges':{'byCause':_inferred['byCause'],'unexplained':_inferred['unexplained'],'accepted':a.accept_inferred_changes}};(cand/'release.json').write_text(json.dumps(res));print(json.dumps(res))
+# The buildings drawn from an area donor keep this release's donor, material and grid in later builds (pipeline/facades.donor_for).
+_wd=subprocess.run([_sys.executable,'work/write_donor_incumbents.py','--candidate',str(cand)],capture_output=True,text=True);print(_wd.stdout.strip() or _wd.stderr.strip())

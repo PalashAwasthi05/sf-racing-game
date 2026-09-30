@@ -363,28 +363,467 @@
      "cause": "The reader classes the red-brown colour as brick; no tile family is read."
     }
    ]
+  },
+  {
+   "id": "ballpark-gate-see-through",
+   "reported": [
+    "2026-09-10"
+   ],
+   "buildings": [
+    "sf_201006_0000003"
+   ],
+   "report": {
+    "text": "the urgent problem to fix right now is walls going invisible and revealing buildings behind them. here's one example but there are many across the map.",
+    "source": "Claude session 8f2e7e8e, 2026-09-10T22:53Z; camera URL sent at 23:14Z",
+    "screenshot": "review/flagged-screens/2026-09-10-gate-see-through.webp (local, not in git)"
+   },
+   "cameras": [
+    {
+     "name": "user-report-0910",
+     "from": [
+      52.0,
+      -34.0,
+      2.0
+     ],
+     "at": [
+      76.0,
+      -12.0,
+      20.0
+     ],
+     "note": "the viewer URL the user sent with the report (?viewFrom=52,-34,2&viewAt=76,-12,20); the screenshot is framed tighter, on the wall between the two clock towers"
+    },
+    {
+     "name": "gate-tower-photo",
+     "from": [
+      48.0,
+      -34.0,
+      2.1
+     ],
+     "at": [
+      76.0,
+      -12.0,
+      20.0
+     ],
+     "panorama": "2065550060641831",
+     "note": "at the panorama 4 m from the user's camera (provider pose, unregistered)"
+    },
+    {
+     "name": "gate-close",
+     "from": [
+      62.0,
+      -32.0,
+      5.0
+     ],
+     "at": [
+      83.0,
+      -18.0,
+      7.0
+     ],
+     "note": "the close-up the v0.14 fix was checked from (2026-09-11)"
+    },
+    {
+     "name": "gate-overhead",
+     "from": [
+      60.0,
+      -60.0,
+      70.0
+     ],
+     "at": [
+      85.0,
+      -25.0,
+      15.0
+     ],
+     "note": "box tops closed from above"
+    }
+   ],
+   "expected": "The ballpark's clock-tower gate on the main street: red-brick towers with a clock, lettering and a pale cast-stone cap and cornice, joined to the ballpark's brick street wall with tall glazed openings over a cast-stone base; the light rigs' dark steel behind. The walls are closed from every side: nothing shows through them, neither sky nor a pale building behind.",
+   "defects": [
+    {
+     "id": "walls-show-through",
+     "since": "v0.13",
+     "status": "fixed",
+     "text": "Walls vanish and reveal the buildings or sky behind them (here, between the two gate towers).",
+     "cause": "Envelope return sheets were wound toward the box interior and the viewer culls back faces; replacement cuts left open slivers at frame ends and open box tops.",
+     "fixedIn": "v0.14 (d7be3f163209); the gate has been drawn by the ballpark landmark builder since v0.27",
+     "checkedWith": "live v0.36 (9712e3b064ad) in the viewer at every camera of this view, 2026-09-30: solid towers and walls, nothing shows through"
+    }
+   ]
+  },
+  {
+   "id": "townsend-shed-and-fire-hq-roofs",
+   "reported": [
+    "2026-09-15",
+    "2026-09-16"
+   ],
+   "buildings": [
+    "sf_201006_0003021",
+    "sf_201006_0003021_p1",
+    "sf_201006_0002333"
+   ],
+   "report": {
+    "text": "two buildings on townsend street are incorrectly rendered due to rooftop features. One of them is becuase its roof is sloped, the other is because there's a billboard on top. Follow-ups: 'it removed the roof and the billboard - we want both' (09-16 00:08Z); 'now update the heuristic to handle the sloped roof. this is incorrect' (00:54Z, second screenshot); 'the roof still isn't built properly' (18:30Z).",
+    "source": "Claude session ee4ad8df, 2026-09-15T22:58Z and follow-ups",
+    "screenshot": "review/flagged-screens/2026-09-15-townsend-rooftops.webp, review/flagged-screens/2026-09-16-shed-sloped-roof.webp (local, not in git)",
+    "note": "The shed and the fire headquarters were the two buildings the 2026-09-15 session identified (the only two caps the v0.9 roof refit had rewritten). The billboard is pinned under corner-store-billboard. No camera of the user's own was recorded; the cameras below are the ones the fixes were checked from."
+   },
+   "cameras": [
+    {
+     "name": "shed-street-photo",
+     "from": [
+      37.4,
+      152.2,
+      4.6
+     ],
+     "at": [
+      10.2,
+      171.6,
+      9.0
+     ],
+     "panorama": "3771189959840750",
+     "note": "the 2026-09-15 street camera, at its panorama"
+    },
+    {
+     "name": "shed-view-0916",
+     "from": [
+      40.0,
+      150.0,
+      2.5
+     ],
+     "at": [
+      8.0,
+      160.0,
+      10.0
+     ],
+     "note": "computed on 2026-09-16 to reproduce the second screenshot; not the user's own pose"
+    },
+    {
+     "name": "townsend-roofs-above",
+     "from": [
+      50.0,
+      130.0,
+      50.0
+     ],
+     "at": [
+      8.0,
+      172.0,
+      6.0
+     ],
+     "note": "the street's roofs from above, the shed among them"
+    },
+    {
+     "name": "fire-hq-street-photo",
+     "from": [
+      79.8,
+      194.9,
+      4.4
+     ],
+     "at": [
+      67.3,
+      215.0,
+      9.0
+     ],
+     "panorama": "796988149388548"
+    },
+    {
+     "name": "fire-hq-above",
+     "from": [
+      100.0,
+      180.0,
+      40.0
+     ],
+     "at": [
+      67.0,
+      215.0,
+      14.0
+     ]
+    }
+   ],
+   "expected": "136 Townsend is a grey parking shed: corrugated grey metal upper walls under one sloped roof, a dark grey painted base with small windows, a parking entrance with 'PARK HERE' signs. The fire headquarters beside it is grey render with tall arched windows in red frames between pilasters and a row of diamonds under the cornice; on its flat roof stand a railing and a water tank (the raised strip the LiDAR measures).",
+   "defects": [
+    {
+     "id": "shed-sloped-roof",
+     "since": "v0.13",
+     "status": "fixed",
+     "text": "The shed's sloped roof is drawn as a huge blank brick wall with a climbing top (first screenshot) and the frontage under it as a brick loft with a diagonal cornice (second screenshot).",
+     "cause": "Every LiDAR return counted as roof surface and the wall raise took a high percentile of returns near the wall; the sloped plane fit was refused on the minor cap.",
+     "fixedIn": "v0.14b-j roof rules (486831f4c136, 05030add7116); photo-read frontage from v0.15",
+     "checkedWith": "live v0.36 (9712e3b064ad) in the viewer at every camera of this view, 2026-09-30: grey panelled shed with the parking signs under a sloped roof"
+    },
+    {
+     "id": "brick-tier-boxes",
+     "since": "v0.13",
+     "status": "fixed",
+     "text": "Stair-stepped blank brick boxes stand on a flat roof (first screenshot).",
+     "cause": "Raised strips of structure returns became tier boxes and a brick tent from the v0.9 plane fit.",
+     "fixedIn": "v0.14b (surface_level) and v0.23 (tiers rise at least 5 m)",
+     "checkedWith": "live v0.36 (9712e3b064ad) in the viewer at every camera of this view, 2026-09-30"
+    },
+    {
+     "id": "fire-hq-roof-features",
+     "since": "v0.14b",
+     "status": "open",
+     "text": "The fire headquarters' railing and water tank are not drawn; its roof is a bare flat cap.",
+     "cause": "surface_level drops the raised strip's returns as structure and nothing draws rooftop railings or tanks; rooftop_panels only makes sign panels."
+    }
+   ]
+  },
+  {
+   "id": "corner-store-billboard",
+   "reported": [
+    "2026-09-15",
+    "2026-09-16",
+    "2026-09-18"
+   ],
+   "buildings": [
+    "sf_201006_0005523"
+   ],
+   "report": {
+    "text": "2026-09-15: 'the other is because there's a billboard on top'; 09-16: 'it removed the roof and the billboard - we want both'. 2026-09-18, first of two screenshots: 'quite a few issues going on here... theres more than what i catalogued here' (the second screenshot is the alley corner).",
+    "source": "Claude sessions ee4ad8df (09-15/16) and 7f61c84b (2026-09-18T00:19Z; re-sent as text in b0f468ff, so the session that worked on it never saw the images)",
+    "screenshot": "review/flagged-screens/2026-09-18-corner-store.webp (local, not in git)",
+    "note": "The transcripts never name the billboard's building. The rooftop-panel rule (2026-09-15/16) put its only panel on this street above this corner building, a 14.4 m face on 3.7 m posts. The 2026-09-18 screenshot is matched to this building by its boarded windows over a dark red ground and the arched brick neighbour; the transcripts name no building for it. Neither report carried a camera."
+   },
+   "cameras": [
+    {
+     "name": "store-billboard-photo",
+     "from": [
+      -60.9,
+      53.0,
+      4.5
+     ],
+     "at": [
+      -86.0,
+      61.0,
+      12.0
+     ],
+     "panorama": "1279003250335285",
+     "note": "the 2026-09-16 'corner billboard' camera, at its panorama"
+    },
+    {
+     "name": "store-across-intersection-photo",
+     "from": [
+      -68.8,
+      34.2,
+      4.4
+     ],
+     "at": [
+      -80.0,
+      55.0,
+      8.0
+     ],
+     "panorama": "1116788053715766",
+     "note": "the camera the frontage reading was made from"
+    }
+   ],
+   "expected": "A one- and two-storey corner building: salmon-pink render upper walls with boarded (plywood) windows, each bay under a small red tile hood, a brick corner piece carrying the 'TOWNSEND CORNER STORE' sign, and across the ground floor a large painted mural (orange, black and white: 'RESILIENT' and a San Francisco script with a figure). Above the roof an advertising billboard stands on steel posts facing the corner, with a second one set back behind it; a fire ladder runs up one side; an arched red-brick building stands beside it.",
+   "defects": [
+    {
+     "id": "corner-brick-slab",
+     "since": "v0.16",
+     "status": "fixed",
+     "text": "A tall thin brick slab rises at the corner, far above the building (2026-09-18 screenshot).",
+     "fixedIn": "by v0.36 (release not traced)",
+     "checkedWith": "live v0.36 (9712e3b064ad) in the viewer at every camera of this view, 2026-09-30: no slab at the corner"
+    },
+    {
+     "id": "billboard",
+     "since": "v0.14b",
+     "status": "open",
+     "text": "The billboard is back since v0.14h as a panel on posts, but its face is blank dark grey where the photographs show an advertisement; the set-back second billboard is not drawn.",
+     "cause": "LiDAR measures a panel's shape, not its face; nothing reads sign faces from the photographs."
+    },
+    {
+     "id": "store-colours",
+     "since": "v0.16",
+     "status": "open",
+     "text": "The upper wall is drawn tan over a dark red ground floor and brick ends; the photographs show salmon-pink render over a large orange, black and white mural.",
+     "cause": "The reading draws a mural as its ground colour; the render recipe's colour variant is lighter and yellower than the photographed pink."
+    },
+    {
+     "id": "tile-hoods",
+     "since": "v0.16",
+     "status": "open",
+     "text": "The red tile hoods over each bay are not drawn.",
+     "cause": "The grammar has no tiled hood or pent-roof component."
+    }
+   ]
+  },
+  {
+   "id": "roof-holes-poles-towers",
+   "reported": [
+    "2026-09-21",
+    "2026-09-22"
+   ],
+   "buildings": [
+    "osm_149167949",
+    "osm_149167937",
+    "osm_149167937_p1",
+    "sf_201006_0000227",
+    "sf_201006_0000227_p1",
+    "osm_945538326",
+    "osm_346093777",
+    "sf_201006_0001245",
+    "sf_201006_0001245_p1"
+   ],
+   "report": {
+    "text": "roofs are being generated with random holes in them, with random poles and towers... (like the side of 188 king or driving into the roundabout on the south side of townsend, between 3d and 4th). Follow-up in Codex, 2026-09-22 16:00 PDT, two screenshots: 'it seems claude didnt fix that roof hole issue'.",
+    "source": "Claude session 2a142884, 2026-09-21T06:54Z; Codex rollout 2026-09-22T23:00Z",
+    "screenshot": "review/flagged-screens/2026-09-22-roof-holes-alley.png, review/flagged-screens/2026-09-22-roof-holes-tall.png (local, not in git)",
+    "note": "The buildings are the ones the 2026-09-21 session named: the 23 m pole and tower boxes (170 King, 689-699 3rd St), the worst holes (The Beacon 41% open, 255 King, Cruise) and 188 King. The first Codex screenshot matches the alley corner by its arched door and large arched opening. None of the cameras is the user's own; the turning-circle approach was never pinned (see 'pending')."
+   },
+   "cameras": [
+    {
+     "name": "king-tall-frontage",
+     "from": [
+      48.0,
+      -30.0,
+      6.0
+     ],
+     "at": [
+      8.0,
+      10.0,
+      16.0
+     ],
+     "note": "2026-09-21: the tall frontage beside 188 King"
+    },
+    {
+     "name": "king-orbit",
+     "from": [
+      45.0,
+      -45.0,
+      55.0
+     ],
+     "at": [
+      0.0,
+      0.0,
+      28.0
+     ],
+     "note": "188 King's roof from above (2026-09-30)"
+    },
+    {
+     "name": "beacon-above",
+     "from": [
+      -172.0,
+      -215.0,
+      135.0
+     ],
+     "at": [
+      -172.0,
+      -146.0,
+      30.0
+     ],
+     "note": "2026-09-21: the building with the most open roof, from above"
+    },
+    {
+     "name": "alley-corner-top",
+     "from": [
+      -20.0,
+      75.0,
+      60.0
+     ],
+     "at": [
+      -48.0,
+      100.0,
+      5.0
+     ],
+     "note": "the alley corner's roofs from above, as in the first Codex screenshot"
+    },
+    {
+     "name": "world-overhead",
+     "from": [
+      0.0,
+      -70.0,
+      430.0
+     ],
+     "at": [
+      0.0,
+      -69.0,
+      0.0
+     ],
+     "note": "2026-09-21 whole-world overhead"
+    }
+   ],
+   "expected": "Every roof is a closed surface at its measured height: no holes, no free-standing poles or thin towers, no floating slabs; small rooftop volumes only where the LiDAR measures them.",
+   "defects": [
+    {
+     "id": "roof-holes",
+     "since": "v0.14",
+     "status": "fixed",
+     "text": "Roofs with holes (open slots behind observed frontages; one footprint 40% open).",
+     "cause": "roof_mask cut the host cap under every observed-frontage box whose top reached the roof and nothing closed the box top.",
+     "fixedIn": "v0.20 (da9007335e1d, lids) and v0.22 (6002d077e3de, roof height ownership)",
+     "checkedWith": "live v0.36 (9712e3b064ad) in the viewer at every camera of this view, 2026-09-30: roofs closed"
+    },
+    {
+     "id": "poles-and-towers",
+     "since": "v0.14",
+     "status": "fixed",
+     "text": "Free-standing poles (one 1.1 m square and 23 m tall) and thin towers on roofs.",
+     "cause": "Independently simplified tier outlines left cell-wide strips extruded to full tier height; 2.5 m roof bumps were walled as tiers.",
+     "fixedIn": "v0.20 (roof_bands snapping) and v0.23 (b8b498c55b5c, 5 m minimum tier rise)",
+     "checkedWith": "live v0.36 (9712e3b064ad) in the viewer at every camera of this view, 2026-09-30: none seen"
+    }
+   ]
+  },
+  {
+   "id": "pale-blocks-over-roofs",
+   "reported": [
+    "2026-09-22"
+   ],
+   "buildings": [
+    "osm_149167937",
+    "osm_149167937_p1"
+   ],
+   "report": {
+    "text": "not sure whats going on in the second image but its no good",
+    "source": "Claude session 2a142884, 2026-09-22T20:13Z (the first image of that message is the alley corner)",
+    "screenshot": "review/flagged-screens/2026-09-22-pale-blocks.webp (local, not in git)",
+    "note": "The camera is the assistant's reconstruction of 2026-09-22 ('the spot from your second image'); a raycast from it met 170 King's upper tiers."
+   },
+   "cameras": [
+    {
+     "name": "reconstructed-0922",
+     "from": [
+      -75.0,
+      95.0,
+      42.0
+     ],
+     "at": [
+      0.0,
+      15.0,
+      22.0
+     ]
+    }
+   ],
+   "expected": "The upper floors above the brick bases read as the buildings they are, with windows where they have them: no tall pale windowless prisms or rib-striped towers standing over the roofs.",
+   "defects": [
+    {
+     "id": "pale-windowless-blocks",
+     "since": "v0.22",
+     "status": "fixed",
+     "text": "Tall pale windowless blocks and towers stand over the brick roofs.",
+     "cause": "Node names were scrambled by replace_scene_layers_v21 (brick walls took the glass finish and read white) and tier walls were always drawn blank.",
+     "fixedIn": "v0.24 (f6daf81bb8d3)",
+     "checkedWith": "live v0.36 (9712e3b064ad) in the viewer at every camera of this view, 2026-09-30: the tiers carry windows"
+    },
+    {
+     "id": "tier-prior-material",
+     "since": "v0.24",
+     "status": "open",
+     "text": "The upper tiers are pale lilac render with generic windows; no photograph reads them, so their material is the prior.",
+     "cause": "No panorama sees these tiers; unread walls take the prior or a donor."
+    }
+   ]
   }
  ],
  "pending": [
   {
    "reported": "2026-09-10",
-   "note": "Walls going invisible and showing the buildings behind (several places). Cameras not pinned."
-  },
-  {
-   "reported": "2026-09-15/16",
-   "note": "Two frontages on the main street wrong because of rooftop features (a sloped roof, a billboard on top). Cameras not pinned."
-  },
-  {
-   "reported": "2026-09-18",
-   "note": "First image of that report: a tall brick piece and boarded upper windows on a corner. Camera not pinned."
+   "note": "'there are many across the map': the other places where walls showed the buildings behind were never given. Only the ballpark gate is pinned (ballpark-gate-see-through); the v0.14 audit of 30 generated street views found no building surface culled."
   },
   {
    "reported": "2026-09-21",
-   "note": "Roof holes, poles and towers, including the approach to the roundabout on the far side of the main street. Cameras not pinned."
-  },
-  {
-   "reported": "2026-09-22",
-   "note": "Second image of that report: pale blocks and towers over roofs seen from above. Camera not pinned."
+   "note": "'driving into the roundabout on the south side of townsend, between 3d and 4th': no turning circle is mapped there and the approach was never driven or pinned (see roof-holes-poles-towers)."
   }
  ]
 }

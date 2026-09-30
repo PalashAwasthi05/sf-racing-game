@@ -241,6 +241,39 @@ def area_donor(profiles,fid,height):
  pool.sort(key=lambda p:(abs(math.log(max(float(p['heightRefM']),1.)/max(float(height),1.))),p['id']))
  near=pool[:5];return near[int(hashlib.md5(fid.encode()).hexdigest(),16)%len(near)]
 
+# A building no photograph covers keeps the donor it was published with, and the material and grid it lent then
+# (pipeline/donor-incumbents.json, written from the live release by write_donor_incumbents.py after every publish),
+# while that reading is still in the pool and within a factor of 1.6 of the building's height. Otherwise any change
+# elsewhere in the pool re-rolls area_donor's pick (a re-read, a reading added or dropped), or a re-read of the donor's
+# own building changes what it lends, and the building's unseen walls change material and windows with no evidence of
+# their own: from v0.35 to v0.36, 2 such buildings were re-rolled and 14 took their donor's new reading. "keep": false in
+# the file turns this off for a rule change that is meant to choose donors afresh (review_inferred_changes.py lists
+# what that changes).
+_INCUMBENTS=None
+def donor_incumbents():
+ global _INCUMBENTS
+ if _INCUMBENTS is None:
+  import os
+  from pathlib import Path
+  try:d=json.loads(Path(os.environ.get('DONOR_INCUMBENTS') or Path(__file__).resolve().parent/'donor-incumbents.json').read_text())   # the variable: a trial file
+  except (OSError,ValueError):d={}
+  _INCUMBENTS=d.get('donors',{}) if d.get('keep',True) else {}
+ return _INCUMBENTS
+
+def donor_for(profiles,building_id,key,height):
+ """area_donor, unless the building's published donor still qualifies (see above)."""
+ inc=donor_incumbents().get(building_id)
+ if inc:
+  for p in profiles:
+   r=p.get('reading') or {}
+   if p.get('id')!=inc.get('donorId') or not str(p.get('status','')).startswith('image-measured-auto') or not (r.get('floorPitchM') and r.get('bayPitchM') and p.get('heightRefM')):continue
+   # reading ids repeat across facings: the published facing picks the one
+   if inc.get('normal') is not None and p.get('normal') is not None and float(np.dot(p['normal'][:2],inc['normal'][:2]))<.98:continue
+   if abs(math.log(max(float(p['heightRefM']),1.)/max(float(height),1.)))>math.log(1.6):continue
+   if not (inc.get('material') and inc.get('grid')):return p
+   q=dict(p);q.pop('materialEvidence',None);q['material']=inc['material'];q['reading']={**r,**inc['grid']};return q
+ return area_donor(profiles,key,height)
+
 def measured_grid(p):
  """A reading's measured storey and bay grid: its reading's pitches, or else those of a pitch-given bank (a reading whose
  windows were laid out from the photograph's periodic edges carries them only there). None when neither exists."""
@@ -450,7 +483,7 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
  matches=[o for o in observations if str(o['match'].get('osmWayId'))==str(c['osm']['id'] if c['osm'] else '')]
  spans=ctx.get('envelopeSpans') or []
  own=[p for p in profiles if belongs(p,c,main_height,mass)]
- donor=None if own or tags.get('leisure')=='stadium' or c['full_area']>18000 else area_donor(profiles,c.get('sourceId',c['id']),height)
+ donor=None if own or tags.get('leisure')=='stadium' or c['full_area']>18000 else donor_for(profiles,fid,c.get('sourceId',c['id']),height)
  # A building photographed on one side lends what was measured there to its unseen walls: one building, one character.
  own_measured=next((p for p in own if measured_grid(p) and not p.get('materialOnly') and not (p.get('reading',{}).get('consensus') or {}).get('unsupported')),None)
  # A part whose own upper storeys were read as glazing and metal over a lower part of its outline (an agreed curtain
@@ -736,12 +769,12 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
      block(length/2,main_height/2,length,main_height,.24,mat,-.12,layer);continue
     if not visible:
      block(length/2,main_height/2,length,main_height,.38,mat,-.19,layer)
-     records.append({'buildingId':fid,'edge':edge,'midpoint':mid.tolist(),'normal':n.tolist(),'lengthM':round(length,2),'heightM':round(main_height,2),'floors':0,'columns':0,'archetype':style['archetype'],'material':mat,'sourceIds':[],'status':'blank','exposure':exposure,'unresolved':[],**({'zBaseM':round(zs-(z0-c.get('elevationOffset',0.)),2)} if c.get('roofBand') else {})})
+     records.append({'buildingId':fid,'edge':edge,'midpoint':mid.tolist(),'normal':n.tolist(),'lengthM':round(length,2),'heightM':round(main_height,2),'floors':0,'columns':0,'archetype':style['archetype'],'material':mat,**({'donorId':style['donorId']} if style.get('donorId') else {}),'sourceIds':[],'status':'blank','exposure':exposure,'unresolved':[],**({'zBaseM':round(zs-(z0-c.get('elevationOffset',0.)),2)} if c.get('roofBand') else {})})
      continue
     cols=1 if edge in arc_ids else max(1,round(length/style['bayWidthM']));bay=length/cols;ground_level=c.get('elevationOffset',0)<.5;gh=min(style['groundHeightM'],main_height*.42) if ground_level else 0
     rows=max(1,round((main_height-gh)/style['floorHeightM']));fh=(main_height-gh)/rows
     wid=bay*style['openingRatio'];opening_h=fh*style['openingHeightRatio'];fw=style['frameWidthM'];projection=style['frameProjectionM'];recess=.18
-    records.append({'buildingId':fid,'edge':edge,'midpoint':mid.tolist(),'normal':n.tolist(),'lengthM':round(length,2),'heightM':round(main_height,2),'floors':rows+1,'columns':cols,'archetype':style['archetype'],'material':mat,'sourceIds':obs.get('sourceIds',[]) if obs else [],'exposure':exposure,'status':'visual-fit' if obs else 'inferred','unresolved':obs.get('unresolved',[]) if obs else ['complete facade has no direct image fit; material and openings remain unverified priors'],**({'zBaseM':round(zs-(z0-c.get('elevationOffset',0.)),2)} if c.get('roofBand') else {})})
+    records.append({'buildingId':fid,'edge':edge,'midpoint':mid.tolist(),'normal':n.tolist(),'lengthM':round(length,2),'heightM':round(main_height,2),'floors':rows+1,'columns':cols,'archetype':style['archetype'],'material':mat,**({'donorId':style['donorId']} if style.get('donorId') and not obs else {}),'sourceIds':obs.get('sourceIds',[]) if obs else [],'exposure':exposure,'status':'visual-fit' if obs else 'inferred','unresolved':obs.get('unresolved',[]) if obs else ['complete facade has no direct image fit; material and openings remain unverified priors'],**({'zBaseM':round(zs-(z0-c.get('elevationOffset',0.)),2)} if c.get('roofBand') else {})})
     for row in range(0 if ground_level else 1,rows+1):
      low=0 if row==0 else gh+(row-1)*fh;rh=gh if row==0 else fh
      if row==0 and exposure=='secondary':

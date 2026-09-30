@@ -408,6 +408,142 @@
    },
    "samples": 1916,
    "overlay": "/private/tmp/claude-501/-Users-palash-Documents-reflex-code/b4c6e246-5bce-4a48-9d2c-ac4ac32303e3/scratchpad/corner/reg/1423584595534293.jpg"
+  },
+  "2065550060641831": {
+   "build": "work/clean-v99/final/candidate.glb",
+   "xy": [
+    45.416,
+    -31.179
+   ],
+   "z": 2.329,
+   "rotationAngleAxis": [
+    1.4907926853477882,
+    -0.6137101123237364,
+    0.638488495564001
+   ],
+   "shiftM": [
+    -2.54,
+    2.82,
+    0.11
+   ],
+   "rotationDeg": [
+    0.16,
+    -0.21,
+    -0.5
+   ],
+   "groundZ": -0.38,
+   "skylineBefore": {
+    "medianAbsDeg": 12.84,
+    "inlierShare": 0.083
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 13.56,
+    "inlierShare": 0.156
+   },
+   "samples": 1920,
+   "overlay": "/Users/palash/Documents/Codex/2026-09-08/i-want-to-create-a-heuristic/work/review/panorama-registration/2065550060641831.jpg"
+  },
+  "3771189959840750": {
+   "build": "work/clean-v99/final/candidate.glb",
+   "xy": [
+    33.519,
+    150.28
+   ],
+   "z": 4.938,
+   "rotationAngleAxis": [
+    0.7265681322676403,
+    1.7571691729578358,
+    -1.751743525324981
+   ],
+   "shiftM": [
+    -3.86,
+    -1.97,
+    -0.11
+   ],
+   "rotationDeg": [
+    -0.29,
+    -0.4,
+    -0.88
+   ],
+   "groundZ": 2.45,
+   "skylineBefore": {
+    "medianAbsDeg": 3.27,
+    "inlierShare": 0.225
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 0.98,
+    "inlierShare": 0.504
+   },
+   "samples": 1916,
+   "overlay": "/Users/palash/Documents/Codex/2026-09-08/i-want-to-create-a-heuristic/work/review/panorama-registration/3771189959840750.jpg"
+  },
+  "1279003250335285": {
+   "build": "work/clean-v99/final/candidate.glb",
+   "xy": [
+    -65.187,
+    48.22
+   ],
+   "z": 5.101,
+   "rotationAngleAxis": [
+    0.745757322483865,
+    1.7647699386362934,
+    -1.7412373906630392
+   ],
+   "shiftM": [
+    -4.33,
+    -4.81,
+    0.43
+   ],
+   "rotationDeg": [
+    0.8,
+    0.99,
+    -0.69
+   ],
+   "groundZ": 2.07,
+   "skylineBefore": {
+    "medianAbsDeg": 2.78,
+    "inlierShare": 0.212
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 1.79,
+    "inlierShare": 0.399
+   },
+   "samples": 1916,
+   "overlay": "/Users/palash/Documents/Codex/2026-09-08/i-want-to-create-a-heuristic/work/review/panorama-registration/1279003250335285.jpg"
+  },
+  "1116788053715766": {
+   "build": "work/clean-v99/final/candidate.glb",
+   "xy": [
+    -72.048,
+    31.907
+   ],
+   "z": 4.597,
+   "rotationAngleAxis": [
+    1.4948591054928801,
+    -0.5862810511537623,
+    0.5568365545053148
+   ],
+   "shiftM": [
+    -3.21,
+    -2.25,
+    0.34
+   ],
+   "rotationDeg": [
+    0.38,
+    -0.27,
+    -1.67
+   ],
+   "groundZ": 1.65,
+   "skylineBefore": {
+    "medianAbsDeg": 3.28,
+    "inlierShare": 0.07
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 1.89,
+    "inlierShare": 0.378
+   },
+   "samples": 1538,
+   "overlay": "/Users/palash/Documents/Codex/2026-09-08/i-want-to-create-a-heuristic/work/review/panorama-registration/1116788053715766.jpg"
   }
  },
  "rule": "Panorama poses refined against a build by skyline (register_panoramas.py). Review tooling reads them in place of the provider pose; the generator never reads this file."
