@@ -1,0 +1,307 @@
+{
+ "rule": "Donors of the buildings no photograph covers, as published, with the material and grid each lent. pipeline/facades.donor_for keeps a building's donor and that material and grid while the donor is still an automatic reading with a measured grid, of the same facing, and the building's own height stays within 30 % of buildingHeightM; otherwise area_donor chooses afresh. Set \"keep\" to false only for a rule change meant to choose donors afresh, and read review_inferred_changes.py's list for it. Written by write_donor_incumbents.py after each publish.",
+ "keep": true,
+ "release": {
+  "candidate": "work/clean-v99",
+  "contentHash": "9712e3b064ad",
+  "written": "2026-09-30"
+ },
+ "donors": {
+  "osm_129176917": {
+   "donorId": "sf_201006_0001081-auto-45",
+   "normal": [
+    0.703,
+    0.711
+   ],
+   "heightRefM": 15.3,
+   "material": "render_salmon#d4aa83",
+   "grid": {
+    "floorPitchM": 2.75,
+    "bayPitchM": 2.5,
+    "openingRatio": 0.4,
+    "openingHeightRatio": 0.58,
+    "shopfront": false
+   },
+   "buildingHeightM": 13.84
+  },
+  "osm_129176919": {
+   "donorId": "sf_201006_0001081-auto-45",
+   "normal": [
+    0.703,
+    0.711
+   ],
+   "heightRefM": 15.3,
+   "material": "render_salmon#d4aa83",
+   "grid": {
+    "floorPitchM": 2.75,
+    "bayPitchM": 2.5,
+    "openingRatio": 0.4,
+    "openingHeightRatio": 0.58,
+    "shopfront": false
+   },
+   "buildingHeightM": 16.45
+  },
+  "sf_201006_0002604": {
+   "donorId": "sf_201006_0000645-auto-315",
+   "normal": [
+    0.713,
+    -0.701
+   ],
+   "heightRefM": 30.69,
+   "material": "brick_modular#b5968d",
+   "grid": {
+    "floorPitchM": 3.94,
+    "bayPitchM": 4.57,
+    "openingRatio": 0.71,
+    "openingHeightRatio": 0.62,
+    "shopfront": true
+   },
+   "buildingHeightM": 28.41
+  },
+  "sf_201006_0002834": {
+   "donorId": "sf_201006_0002014-auto-116",
+   "normal": [
+    -0.433,
+    0.902
+   ],
+   "heightRefM": 9.88,
+   "material": "render_gray#333838",
+   "grid": {
+    "floorPitchM": 3.06,
+    "bayPitchM": 3.33,
+    "openingRatio": 0.9,
+    "openingHeightRatio": 0.9,
+    "shopfront": false
+   },
+   "buildingHeightM": 10.1
+  },
+  "sf_201006_0002920": {
+   "donorId": "sf_201006_0000645-auto-315",
+   "normal": [
+    0.713,
+    -0.701
+   ],
+   "heightRefM": 30.69,
+   "material": "brick_modular#b5968d",
+   "grid": {
+    "floorPitchM": 3.94,
+    "bayPitchM": 4.57,
+    "openingRatio": 0.71,
+    "openingHeightRatio": 0.62,
+    "shopfront": true
+   },
+   "buildingHeightM": 26.92
+  },
+  "sf_201006_0003021_p1": {
+   "donorId": "sf_201006_0002014-auto-116",
+   "normal": [
+    -0.433,
+    0.902
+   ],
+   "heightRefM": 9.88,
+   "material": "render_gray#333838",
+   "grid": {
+    "floorPitchM": 3.06,
+    "bayPitchM": 3.33,
+    "openingRatio": 0.9,
+    "openingHeightRatio": 0.9,
+    "shopfront": false
+   },
+   "buildingHeightM": 13.77
+  },
+  "sf_201006_0003254": {
+   "donorId": "sf_201006_0002680-auto-225",
+   "normal": [
+    -0.704,
+    -0.71
+   ],
+   "heightRefM": 16.49,
+   "material": "render_gray#4b4653",
+   "grid": {
+    "floorPitchM": 3.71,
+    "bayPitchM": 4.98,
+    "openingRatio": 0.3,
+    "openingHeightRatio": 0.54,
+    "shopfront": false
+   },
+   "buildingHeightM": 15.25
+  },
+  "sf_201006_0005190": {
+   "donorId": "osm_46264108-auto-314-z22",
+   "normal": [
+    0.7,
+    -0.714
+   ],
+   "heightRefM": 4.84,
+   "material": "render_gray#68686c",
+   "grid": {
+    "floorPitchM": 4.05,
+    "bayPitchM": 6.08,
+    "openingRatio": 0.56,
+    "openingHeightRatio": 0.43,
+    "shopfront": false,
+    "ribbon": false
+   },
+   "buildingHeightM": 8.19
+  },
+  "sf_201006_0006801": {
+   "donorId": "sf_201006_0002014-auto-116",
+   "normal": [
+    -0.433,
+    0.902
+   ],
+   "heightRefM": 9.88,
+   "material": "render_gray#333838",
+   "grid": {
+    "floorPitchM": 3.06,
+    "bayPitchM": 3.33,
+    "openingRatio": 0.9,
+    "openingHeightRatio": 0.9,
+    "shopfront": false
+   },
+   "buildingHeightM": 11.67
+  },
+  "sf_201006_0006942": {
+   "donorId": "sf_201006_0002680-auto-225",
+   "normal": [
+    -0.704,
+    -0.71
+   ],
+   "heightRefM": 16.49,
+   "material": "render_gray#4b4653",
+   "grid": {
+    "floorPitchM": 3.71,
+    "bayPitchM": 4.98,
+    "openingRatio": 0.3,
+    "openingHeightRatio": 0.54,
+    "shopfront": false
+   },
+   "buildingHeightM": 12.73
+  },
+  "sf_201006_0010890": {
+   "donorId": "sf_201006_0001081-auto-45",
+   "normal": [
+    0.703,
+    0.711
+   ],
+   "heightRefM": 15.3,
+   "material": "render_salmon#d4aa83",
+   "grid": {
+    "floorPitchM": 2.75,
+    "bayPitchM": 2.5,
+    "openingRatio": 0.4,
+    "openingHeightRatio": 0.58,
+    "shopfront": false
+   },
+   "buildingHeightM": 14.95
+  },
+  "sf_201006_0015276": {
+   "donorId": "osm_46264108-auto-314-z22",
+   "normal": [
+    0.7,
+    -0.714
+   ],
+   "heightRefM": 4.84,
+   "material": "render_gray#68686c",
+   "grid": {
+    "floorPitchM": 4.05,
+    "bayPitchM": 6.08,
+    "openingRatio": 0.56,
+    "openingHeightRatio": 0.43,
+    "shopfront": false,
+    "ribbon": false
+   },
+   "buildingHeightM": 5.06
+  },
+  "sf_201006_0019339": {
+   "donorId": "sf_201006_0002680-auto-225",
+   "normal": [
+    -0.704,
+    -0.71
+   ],
+   "heightRefM": 16.49,
+   "material": "render_gray#4b4653",
+   "grid": {
+    "floorPitchM": 3.71,
+    "bayPitchM": 4.98,
+    "openingRatio": 0.3,
+    "openingHeightRatio": 0.54,
+    "shopfront": false
+   },
+   "buildingHeightM": 14.42
+  },
+  "sf_201006_0028162": {
+   "donorId": "sf_201006_0005523-auto-225",
+   "normal": [
+    -0.705,
+    -0.709
+   ],
+   "heightRefM": 7.4,
+   "material": "brick_modular#684a3e",
+   "grid": {
+    "floorPitchM": 3.92,
+    "bayPitchM": 5.69,
+    "openingRatio": 0.53,
+    "openingHeightRatio": 0.42,
+    "shopfront": false
+   },
+   "buildingHeightM": 9.63
+  },
+  "sf_201006_0029858": {
+   "donorId": "sf_201006_0002333-auto-45",
+   "normal": [
+    0.703,
+    0.711
+   ],
+   "heightRefM": 10.43,
+   "material": "brick_dark#50463f",
+   "grid": {
+    "floorPitchM": 4.38,
+    "bayPitchM": 1.98,
+    "openingRatio": 0.83,
+    "openingHeightRatio": 0.3,
+    "shopfront": false
+   },
+   "buildingHeightM": 11.65
+  },
+  "sf_201006_0056871": {
+   "donorId": "sf_201006_0002210-auto-45",
+   "normal": [
+    0.707,
+    0.707
+   ],
+   "heightRefM": 19.93,
+   "material": "render_gray#626673",
+   "grid": {
+    "floorPitchM": 3.33,
+    "bayPitchM": 6.52,
+    "openingRatio": 0.45,
+    "openingHeightRatio": 0.45,
+    "shopfront": false
+   },
+   "buildingHeightM": 19.03
+  },
+  "sf_201006_0136107": {
+   "donorId": "sf_201006_0001081-auto-45",
+   "normal": [
+    0.703,
+    0.711
+   ],
+   "heightRefM": 15.3,
+   "material": "render_salmon#d4aa83",
+   "grid": {
+    "floorPitchM": 2.75,
+    "bayPitchM": 2.5,
+    "openingRatio": 0.4,
+    "openingHeightRatio": 0.58,
+    "shopfront": false
+   },
+   "buildingHeightM": 15.42
+  }
+ },
+ "skipped": {
+  "sf_201006_0000227": "recomputed donor sf_201006_0000645-auto-315 gives brick_modular#bd9f95, walls are render_gray#6b6a5d",
+  "sf_201006_0001245": "recomputed donor sf_201006_0000213_p1-auto-138-z29 gives render_gray#989a94, walls are panel_dark#5c676c",
+  "sf_201006_0001497": "recomputed donor osm_346093777-auto-112 gives panel_dark#0b0d09, walls are stucco#ac917b"
+ }
+}
