@@ -176,8 +176,13 @@ class EngineSound{
  private ctx:AudioContext|null=null;private master:GainNode|null=null;private tone:GainNode|null=null;private filter:BiquadFilterNode|null=null;
  private osc:{o:OscillatorNode;ratio:number}[]=[];private noise:AudioBuffer|null=null;
  private exhaust:{src:AudioBufferSourceNode;band:BiquadFilterNode;gain:GainNode}|null=null;private wind:{src:AudioBufferSourceNode;band:BiquadFilterNode;gain:GainNode}|null=null;
- private lastGear=0;private lope=0;private t=0;
- start(){if(this.ctx)return;try{const ctx=new AudioContext();this.ctx=ctx;
+ private lastGear=0;private lope=0;private t=0;private engaged=false;private idle=0;
+ // The page's first AudioContext blocks the main thread for about 0.2 s while the browser starts its audio stack.
+ // Listing the audio devices starts that stack in the background, so the context costs a few ms when it is made.
+ constructor(){void navigator.mediaDevices?.enumerateDevices?.().catch(()=>{});}
+ start(){if(this.engaged&&this.ctx)return;this.engaged=true;clearTimeout(this.idle);if(this.ctx){void this.ctx.resume();return;}this.prepare();}   // called on every frame a pedal is down
+ // Builds the voice ahead of the first throttle (on entering Drive) and leaves it suspended, silent, until start().
+ prepare(){if(this.ctx)return;try{const ctx=new AudioContext();this.ctx=ctx;
   const master=ctx.createGain();master.gain.value=0;master.connect(ctx.destination);this.master=master;
   const shaper=ctx.createWaveShaper();const curve=new Float32Array(1024);for(let i=0;i<1024;i++){const x=i/511.5-1;curve[i]=Math.tanh(2.4*x);}shaper.curve=curve;shaper.oversample='2x';
   const filter=ctx.createBiquadFilter();filter.type='lowpass';filter.frequency.value=500;filter.Q.value=1.1;this.filter=filter;
@@ -186,9 +191,9 @@ class EngineSound{
   const noise=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);const data=noise.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;this.noise=noise;
   const shaped=(type:BiquadFilterType,freq:number,q:number)=>{const src=ctx.createBufferSource();src.buffer=noise;src.loop=true;const band=ctx.createBiquadFilter();band.type=type;band.frequency.value=freq;band.Q.value=q;const gain=ctx.createGain();gain.gain.value=0;src.connect(band);band.connect(gain);gain.connect(master);src.start();return {src,band,gain};};
   this.exhaust=shaped('bandpass',260,.8);this.wind=shaped('lowpass',420,.6);
-  if(ctx.state==='suspended')void ctx.resume();}catch{this.ctx=null;}}
+  if(!this.engaged)void ctx.suspend();else if(ctx.state==='suspended')void ctx.resume();}catch{this.ctx=null;}}
  update(rpm:number,throttle:number,speed:number,gear:number,dt:number){
-  if(!this.ctx||!this.master||!this.filter)return;const now=this.ctx.currentTime;
+  if(!this.engaged||!this.ctx||!this.master||!this.filter)return;const now=this.ctx.currentTime;
   this.t+=dt;this.lope+=(Math.sin(this.t*9.2)+.6*Math.sin(this.t*13.7+1.3)+.3*(Math.random()-.5)-this.lope)*Math.min(1,dt*8);
   const idleness=Math.max(0,1-(rpm-SPEC.idleRpm)/1200);const f0=rpm/20*(1+.018*this.lope*idleness);
   for(const {o,ratio} of this.osc)o.frequency.setTargetAtTime(f0*ratio,now,.025);
@@ -207,8 +212,11 @@ class EngineSound{
   const pg=ctx.createGain();pg.gain.setValueAtTime(0,now);pg.gain.linearRampToValueAtTime(up?.35:.2,now+.012);pg.gain.exponentialRampToValueAtTime(.001,now+(up?.22:.14));
   pop.connect(band);band.connect(pg);pg.connect(this.master);pop.start(now);pop.stop(now+.3);
  }
- stop(){if(!this.ctx)return;const ctx=this.ctx;this.master?.gain.setTargetAtTime(0,ctx.currentTime,.1);
-  setTimeout(()=>{for(const {o} of this.osc){try{o.stop()}catch{}}for(const n of [this.exhaust,this.wind]){try{n?.src.stop()}catch{}}void ctx.close();this.ctx=null;this.osc=[];this.exhaust=null;this.wind=null;},400);}
+ // Leaving Drive fades the voice out and suspends it, so the next drive resumes it rather than building a new one.
+ stop(){this.engaged=false;if(!this.ctx)return;const ctx=this.ctx;this.master?.gain.setTargetAtTime(0,ctx.currentTime,.1);
+  clearTimeout(this.idle);this.idle=window.setTimeout(()=>{if(!this.engaged)void ctx.suspend();},400);}
+ close(){this.stop();clearTimeout(this.idle);const ctx=this.ctx,osc=this.osc,noises=[this.exhaust,this.wind];if(!ctx)return;this.ctx=null;this.osc=[];this.exhaust=null;this.wind=null;
+  setTimeout(()=>{for(const {o} of osc){try{o.stop()}catch{}}for(const n of noises){try{n?.src.stop()}catch{}}void ctx.close();},400);}
 }
 
 // ---- instrument cluster --------------------------------------------------------------------------------------
@@ -240,7 +248,7 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
  let cameraMode:'chase'|'bonnet'='chase';let lookYaw=0;let hudTimer=0;let reverseHold=0;let shiftTimer=0;
  const camPos=new THREE.Vector3(),camLook=new THREE.Vector3();
  const {massKg:m,wheelbaseM:L,cgToFrontM:a,cgHeightM:h,yawInertia:Iz,wheelRadiusM:Rw}=SPEC;const b=L-a;
- function placeAt(x:number,z:number,yaw:number){Object.assign(s,{x,z,yaw,u:0,v:0,r:0,steer:0,gear:1,reverse:false,ax:0,ay:0,rpm:SPEC.idleRpm});lookYaw=0;hud.style.display='';syncCamera(0,true);}
+ function placeAt(x:number,z:number,yaw:number){Object.assign(s,{x,z,yaw,u:0,v:0,r:0,steer:0,gear:1,reverse:false,ax:0,ay:0,rpm:SPEC.idleRpm});lookYaw=0;hud.style.display='';syncCamera(0,true);if(navigator.userActivation?.hasBeenActive)sound.prepare();}
  function forward(){return [-Math.sin(s.yaw),-Math.cos(s.yaw)];}
  function left(){const [fx,fz]=forward();return [fz,-fx];}
  function step(hdt:number,input:CarInput){
@@ -383,6 +391,6 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
   position:()=>[s.x,s.z,s.yaw] as [number,number,number],
   debug:()=>({...trace}),
   stop:()=>{sound.stop();hud.style.display='none';},
-  dispose:()=>{sound.stop();hud.remove();scene.remove(car);car.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();(Array.isArray(o.material)?o.material:[o.material]).forEach(mm=>mm.dispose());}});}};
+  dispose:()=>{sound.close();hud.remove();scene.remove(car);car.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();(Array.isArray(o.material)?o.material:[o.material]).forEach(mm=>mm.dispose());}});}};
 }
 export type Car=ReturnType<typeof createCar>;

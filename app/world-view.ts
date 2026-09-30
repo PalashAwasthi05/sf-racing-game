@@ -14,6 +14,7 @@ import {glazeMaterials,isGlazing} from './glazing';
 import {buildFoliage,finishFoliage} from './foliage';
 import {createGrade} from './grade';
 import {MultisampledRenderPass,buildDepthProxies,installDepthProxies,cullTransmission,cacheArrayUniforms} from './render-budget';
+import {attachCarLod} from './car-lod';
 
 export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(id:string)=>void,onProgress:(message:string)=>void,modelUrl?:string){
  const scene=new THREE.Scene();
@@ -111,11 +112,11 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // Depth-only passes (the shadow cascades and the occlusion normals) never read a material, so they draw merged
  // copies of the static world (render-budget.ts), a hundred-odd meshes instead of one per material and cell; the
  // scene pass is unchanged. The occlusion pass also stops redrawing the shadow maps it never reads.
- const budget={proxies:true,glass:true};
+ const budget={proxies:true,glass:true,carLod:true};
  const staticMeshes=[...batches.filter(b=>!foliageBatches.includes(b)),...objects.filter(o=>!o.userData.batched&&o.visible)];
  const depth=buildDepthProxies(staticMeshes,getLayer);scene.add(depth.root);
  const proxiedStatics=depth.skipped.length?staticMeshes.filter(o=>!depth.skipped.includes(o)):[batchRoot,model.scene];
- installDepthProxies({renderer,scene,ao,proxies:depth.root,statics:proxiedStatics,aoHidden:()=>foliageBatches,enabled:()=>budget.proxies});
+ const depthPasses=installDepthProxies({renderer,scene,ao,proxies:depth.root,statics:proxiedStatics,aoHidden:()=>foliageBatches,enabled:()=>budget.proxies});
  const shown=(o:THREE.Object3D)=>{const b=o.userData.batched as THREE.Mesh|undefined;return b?b.visible:o.visible;};
  // Street-local surroundings are needed for glossy materials; a sky-only
  // environment makes glazing and metal read as flat painted surfaces.
@@ -226,8 +227,11 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  const resize=new ResizeObserver(applySize);resize.observe(host);
  // The car is built now and hidden, so its shaders compile with the rest of the scene rather than on the first drive.
  field=buildDistanceField(objects,getLayer);const carSource=await roadster;car=carSource?createCar(scene,host,camera,groundAt,field,carSource):null;car?.group.traverse(o=>{if(!(o instanceof THREE.Mesh))return;atmosphere.setupMaterial(o.material);for(const m of Array.isArray(o.material)?o.material:[o.material]){if(m instanceof THREE.MeshStandardMaterial&&m.roughness<.5&&!reflectiveMaterials.includes(m)){m.userData.envIntensity=.7;reflectiveMaterials.push(m);}}});car?.stop();let carPlaced=false;
+ // Lighter stand-ins for the car (car-lod.ts): merged, simplified parts in the depth-only passes, simplified parts in the
+ // scene pass when the car is far from the camera. Built from whatever model loaded, so a rebuilt car needs nothing else.
+ const carLod=car?attachCarLod(car.group,{enabled:()=>budget.carLod}):null;if(carLod)depthPasses.addSwap(carLod.depthSwap);
  const glassCandidates=[...renderables,atmosphere.sky,atmosphere.clouds,ring,highlight];const patchUniforms=cacheArrayUniforms(renderer);
- const glass=cullTransmission({renderer,camera,scenePass,candidates:()=>glassCandidates,glassRoot:()=>car&&mode==='car'?car.group:null,enabled:()=>budget.glass});
+ const glass=cullTransmission({renderer,camera,scenePass,candidates:()=>glassCandidates,glassRoot:()=>car?.group??null,enabled:()=>budget.glass});
  // The world does not move: its matrices are composed once, and the matrix walk of every render call skips it (about
  // 2,000 nodes; the scene root is frozen too, or it would make every descendant recompute).
  scene.matrixAutoUpdate=false;for(const r of [model.scene,batchRoot,depth.root,...foliageBatches]){r.updateMatrixWorld(true);r.traverse(o=>{o.matrixAutoUpdate=false;});r.updateMatrixWorld=()=>{};}
@@ -274,7 +278,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
   }else{if(targetPosition&&targetLook){camera.position.lerp(targetPosition,.07);controls.target.lerp(targetLook,.07);if(camera.position.distanceTo(targetPosition)<.05){targetPosition=null;targetLook=null;}}controls.update();}
   atmosphere.update(now);
   updateReflections(now);
-  glass.prepare();patchUniforms();renderer.info.reset();composer.render(dt);lastCalls=renderer.info.render.calls;
+  carLod?.update(camera);glass.prepare();patchUniforms();renderer.info.reset();composer.render(dt);lastCalls=renderer.info.render.calls;
  }
  frame=requestAnimationFrame(animate);
  // Review hook: `pose` puts the orbit camera at metric ENU coordinates (as ?viewFrom/?viewAt do) without a reload,
@@ -284,8 +288,8 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
    renderer.setPixelRatio(1);renderer.setSize(w,h,false);composer.setPixelRatio(1);composer.setSize(w,h);ao.setSize(Math.round(w*.6),Math.round(h*.6));camera.aspect=w/h;camera.updateProjectionMatrix();atmosphere.resize();
    // the animation loop may be throttled (hidden pane): place the shadow cascades and the reflection probe for this pose
    controls.update();atmosphere.update(performance.now()+1000);atmosphere.csm.lights[1].shadow.needsUpdate=true;updateReflections(performance.now()+1e7,true);
-   glass.prepare();patchUniforms();composer.render(1/60);renderer.domElement.toBlob(b=>{applySize();resolve(b);},'image/png');}),
+   carLod?.update(camera);glass.prepare();patchUniforms();composer.render(1/60);renderer.domElement.toBlob(b=>{applySize();resolve(b);},'image/png');}),
   lockQuality:(on:boolean)=>{qualityLocked=on;if(on){ao.enabled=true;grade.bloom.enabled=true;}},
-  renderOnce:()=>{const t0=performance.now();composer.render(1/60);renderer.getContext().finish();return performance.now()-t0;},budget:{flags:budget,glass:glass.stats,proxies:depth.meshes.length,proxySkipped:depth.skipped.length},info:()=>({calls:lastCalls,triangles:renderer.info.render.triangles,frameMs:+frameMs.toFixed(1),renderScale:+renderScale.toFixed(2),ao:ao.enabled,bloom:grade.bloom.enabled,batches:batches.length,sceneTriangles:objects.reduce((n,o)=>n+(o.geometry.index?o.geometry.index.count:o.geometry.attributes.position.count)/3,0)}),atmosphere,scene,camera,objects,renderer,composer};
+  renderOnce:()=>{const t0=performance.now();composer.render(1/60);renderer.getContext().finish();return performance.now()-t0;},budget:{flags:budget,glass:glass.stats,proxies:depth.meshes.length,proxySkipped:depth.skipped.length,car:carLod?.stats??null},info:()=>({calls:lastCalls,triangles:renderer.info.render.triangles,frameMs:+frameMs.toFixed(1),renderScale:+renderScale.toFixed(2),ao:ao.enabled,bloom:grade.bloom.enabled,batches:batches.length,sceneTriangles:objects.reduce((n,o)=>n+(o.geometry.index?o.geometry.index.count:o.geometry.attributes.position.count)/3,0)}),atmosphere,scene,camera,objects,renderer,composer};
  return {downloadUrl,view,select,lighting,nextStreet,drive,car:driveCar,layer:(layer:string,on:boolean)=>{const wanted=(l:string)=>l===layer||(layer==='street_objects'&&l==='signs');for(const o of objects)if(!o.userData.batched&&wanted(getLayer(o)))o.visible=on;for(const b of batches)if(wanted(String(b.userData.layer)))b.visible=on;for(const p of depth.meshes)if(wanted(String(p.userData.layer)))p.visible=on;},evidence:(on:boolean)=>{const tint=(layer:string,evidence:unknown)=>['roofs','terrain'].includes(layer)?'#56b3c4':evidence==='visual-fit'?'#7caf8c':'#d2a25e';const paint=(o:THREE.Mesh,layer:string,evidence:unknown,original:THREE.Material|THREE.Material[])=>{if(on){let m=evidences.get(o);if(!m){m=new THREE.MeshStandardMaterial({color:tint(layer,evidence),roughness:.9});atmosphere.setupMaterial(m);evidences.set(o,m);}o.material=m;}else o.material=original;};for(const o of objects)if(!o.userData.batched)paint(o,getLayer(o),o.userData.evidence,originals.get(o)!);for(const b of batches)paint(b,String(b.userData.layer),b.userData.evidence,b.userData.original as THREE.Material);},dispose:()=>{cancelAnimationFrame(frame);car?.dispose();resize.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',down);window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',blur);objects.forEach(o=>o.geometry.dispose());batches.forEach(b=>{b.geometry.dispose();b.removeFromParent();if(b.name==='vegetation___foliage'){const m=b.material as THREE.MeshStandardMaterial;m.map?.dispose();m.dispose();}});wxGround.dispose();new Set([...originals.values()].flat()).forEach(m=>m.dispose());evidences.forEach(m=>m.dispose());localReflection?.dispose();reflectionTarget.dispose();reflectionFilter.dispose();depth.dispose();scenePass.dispose();ao.dispose();grade.dispose();output.dispose();composer.dispose();atmosphere.dispose();ring.geometry.dispose();(ring.material as THREE.Material).dispose();highlight.geometry.dispose();(highlight.material as THREE.Material).dispose();URL.revokeObjectURL(downloadUrl);renderer.dispose();renderer.domElement.remove();}};
 }

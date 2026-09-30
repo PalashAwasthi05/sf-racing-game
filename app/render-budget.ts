@@ -96,26 +96,31 @@ export function buildDepthProxies(meshes: THREE.Mesh[], layerOf: Layered, cellM 
   return {root, meshes: root.children as THREE.Mesh[], skipped, dispose() { for (const m of root.children as THREE.Mesh[]) m.geometry.dispose(); materials.forEach(m => m.dispose()); }};
 }
 
+export type DepthSwap = {enter(): void; leave(): void};
 /** Draws the depth-only passes with the proxies in place of the static world it stands for. `statics` are the roots
- *  that hold that world (hidden for the pass), `keep` the static meshes the proxies could not stand for. */
+ *  that hold that world (hidden for the pass), `keep` the static meshes the proxies could not stand for. More stand-ins
+ *  (the car's) join through `addSwap`; every swap enters before a depth pass draws and leaves after it. */
 export function installDepthProxies(o: {renderer: THREE.WebGLRenderer; scene: THREE.Scene; ao: GTAOPass; proxies: THREE.Group; statics: THREE.Object3D[]; aoHidden: () => THREE.Object3D[]; enabled: () => boolean}) {
   const {renderer, scene, ao, proxies, statics} = o;
-  const swap = (on: boolean, saved: boolean[]) => {
-    if (on) { statics.forEach((s, i) => { saved[i] = s.visible; s.visible = false; }); proxies.visible = true; }
-    else { statics.forEach((s, i) => { s.visible = saved[i]; }); proxies.visible = false; }
+  const saved: boolean[] = []; let swapped = false;
+  const world: DepthSwap = {
+    enter() { if (!o.enabled() || swapped) return; swapped = true; statics.forEach((s, i) => { saved[i] = s.visible; s.visible = false; }); proxies.visible = true; },
+    leave() { if (!swapped) return; swapped = false; statics.forEach((s, i) => { s.visible = saved[i]; }); proxies.visible = false; },
   };
-  const shadowMap = renderer.shadowMap, renderShadows = shadowMap.render.bind(shadowMap), savedShadow: boolean[] = [];
+  const swaps: DepthSwap[] = [world];
+  const enter = () => { for (const s of swaps) s.enter(); };
+  const leave = () => { for (let i = swaps.length - 1; i >= 0; i--) swaps[i].leave(); };
+  const shadowMap = renderer.shadowMap, renderShadows = shadowMap.render.bind(shadowMap);
   shadowMap.render = (lights, shadowScene, camera) => {
-    // the pass returns early when nothing needs drawing; only swap in the proxies when a map will be drawn
-    const draws = lights.length > 0 && shadowScene === scene && o.enabled() && (shadowMap.autoUpdate || shadowMap.needsUpdate);
-    if (!draws) { renderShadows(lights, shadowScene, camera); return; }
-    swap(true, savedShadow);
-    try { renderShadows(lights, shadowScene, camera); } finally { swap(false, savedShadow); }
+    // the pass returns early when nothing needs drawing; only swap in the stand-ins when a map will be drawn
+    if (!(lights.length > 0 && shadowScene === scene && shadowMap.enabled && (shadowMap.autoUpdate || shadowMap.needsUpdate))) { renderShadows(lights, shadowScene, camera); return; }
+    enter();
+    try { renderShadows(lights, shadowScene, camera); } finally { leave(); }
   };
   // The occlusion pass renders the scene once more for its normals and depth. The shadow maps were drawn for this
   // frame by the scene pass and the normal material never reads them, so they are not redrawn here; the static world
   // is drawn as its proxies; and only the scene's few loose lines are hidden instead of walking every node for them.
-  const renderAo = ao.render.bind(ao), savedAo: boolean[] = [];
+  const renderAo = ao.render.bind(ao);
   const aoPass = ao as unknown as {_overrideVisibility: () => void; _visibilityCache: THREE.Object3D[]};
   aoPass._overrideVisibility = () => {
     for (const child of scene.children) {
@@ -124,10 +129,11 @@ export function installDepthProxies(o: {renderer: THREE.WebGLRenderer; scene: TH
     }
   };
   ao.render = (...args: Parameters<GTAOPass['render']>) => {
-    const autoUpdate = shadowMap.autoUpdate, hidden = o.aoHidden(), was = hidden.map(h => h.visible), proxied = o.enabled();
-    shadowMap.autoUpdate = false; hidden.forEach(h => { h.visible = false; }); if (proxied) swap(true, savedAo);
-    try { renderAo(...args); } finally { if (proxied) swap(false, savedAo); hidden.forEach((h, i) => { h.visible = was[i]; }); shadowMap.autoUpdate = autoUpdate; }
+    const autoUpdate = shadowMap.autoUpdate, hidden = o.aoHidden(), was = hidden.map(h => h.visible);
+    shadowMap.autoUpdate = false; hidden.forEach(h => { h.visible = false; }); enter();
+    try { renderAo(...args); } finally { leave(); hidden.forEach((h, i) => { h.visible = was[i]; }); shadowMap.autoUpdate = autoUpdate; }
   };
+  return {addSwap(s: DepthSwap) { swaps.push(s); }};
 }
 
 /** The glass's transmission copy: three.js redraws every opaque object into a full-size multisampled target whenever a
