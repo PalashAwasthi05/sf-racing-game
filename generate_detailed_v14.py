@@ -20,17 +20,24 @@ from general_world.roof_planes import roof_solid,evaluate as roof_evaluate
 from trimesh.visual.texture import TextureVisuals
 
 import argparse
-_args=argparse.ArgumentParser(description='Detailed pilot generator; writes a candidate (raw GLB, chunks, world.json, evidence) into --output instead of the live preview.');_args.add_argument('--output',required=True);_args.add_argument('--streets-only',action='store_true',help='Emit street layers only for validated layer replacement; never publish this partial scene directly.');_args=_args.parse_args()
+_args=argparse.ArgumentParser(description='Detailed pilot generator; writes a candidate (raw GLB, chunks, world.json, evidence) into --output instead of the live preview.');_args.add_argument('--output',required=True);_args.add_argument('--regen-profiles',default=None);_args.add_argument('--streets-only',action='store_true',help='Emit street layers only for validated layer replacement; never publish this partial scene directly.');_args=_args.parse_args()
 ROOT=pathlib.Path(__file__).parent;DATA=ROOT/'data';OUTDIR=pathlib.Path(_args.output);PUBLIC=OUTDIR/'public';PUBLIC.mkdir(parents=True,exist_ok=True)
+# --regen-profiles FILE: the facade readings of a regeneration are the only facade inputs; hand-annotated profiles,
+# observation packets, supplements, boundary fits, lettering, envelope descriptions and envelope colours are all left out
+import sys as _sys
+REGEN=None
+if '--regen-profiles' in _sys.argv:
+ REGEN=json.load(open(_sys.argv[_sys.argv.index('--regen-profiles')+1]))
 OUT=OUTDIR;OUT.mkdir(parents=True,exist_ok=True)
 PROFILES=json.load(open(ROOT/'pipeline/facade-profiles.json'))['profiles'];FITS=json.load(open(ROOT/'pipeline/facade-layouts.json'))['fits']
+if REGEN is not None:PROFILES=list(REGEN['profiles']);FITS=[]
 # Observation packets produced by the frontage-reading step (one file per run) join the hand-annotated profiles.
-EXTRA_OBSERVATIONS=[json.load(open(f)) for f in sorted((ROOT/'pipeline').glob('frontage-observations*.json'))]
+EXTRA_OBSERVATIONS=[json.load(open(f)) for f in sorted((ROOT/'pipeline').glob('frontage-observations*.json'))] if REGEN is None else []
 for _extra in EXTRA_OBSERVATIONS:PROFILES+=_extra.get('profiles',[])
 # Colour zones, trims and sign boards measured on the photograph of each hand-read frontage (auto_read_frontages_v31.py
 # --supplements): the hand reading keeps its layout and material; a kind it has none of is added from the photograph.
 _SUP=ROOT/'pipeline/frontage-supplements-v31.json'
-if _SUP.exists():
+if _SUP.exists() and REGEN is None:
  _by_id={p['id']:p for p in PROFILES}
  for _s in json.load(open(_SUP)).get('supplements',[]):
   _t=_by_id.get(_s['supplementOf'])
@@ -56,14 +63,19 @@ if _SUP.exists():
     if _st.get('kind','window')=='window' and float(_st.get('frameWidthM',.06))<.12:_st.update(frameMaterial=_wf['frameMaterial'],frameWidthM=_wf['frameWidthM'])
   _signs=[q for q in _s.get('panels',[]) if 'sign' in q.get('evidence','')]
   if _signs and not any('sign' in str(q.get('evidence','')) for q in _t.get('panels',[])):_t['panels']=_t.get('panels',[])+_signs
-BOUNDARY_FITS=json.load(open(ROOT/'pipeline/boundary-layouts.json'))['fits']
+BOUNDARY_FITS=json.load(open(ROOT/'pipeline/boundary-layouts.json'))['fits'] if REGEN is None else []
 for fit in BOUNDARY_FITS:
  profile=next(p for p in PROFILES if p['id']==fit['profileId']);profile.setdefault('openings',[]).extend(fit['openings'])
 LETTERING_DATA=json.load(open(ROOT/'pipeline/lettering-observations.json'));lettering_records=[]
+if REGEN is not None:LETTERING_DATA={**LETTERING_DATA,'signs':[]}
 ENVELOPE_DATA=json.load(open(ROOT/'pipeline/envelope-observations.json'));ENVELOPES=ENVELOPE_DATA['profiles'];envelope_records=[];envelope_frontages=[]
+if REGEN is not None:ENVELOPES=[]
 # Photographed colours of envelope-designed frontages (read_envelope_colours_v32.py), by envelope profile id.
 ENVELOPE_COLOURS=json.load(open(ROOT/'pipeline/envelope-colours-v32.json'))['envelopes'] if (ROOT/'pipeline/envelope-colours-v32.json').exists() else {}
+if REGEN is not None:ENVELOPE_COLOURS={}
 CONFIG=json.load(open(ROOT/'pipeline/config.json'));OBS=json.load(open(ROOT/'pipeline/observations.json'));facade_records=[];sign_records=[]
+if REGEN is not None:
+ OBS={**OBS,'facades':[]};facades._PARAPETS=[];facades._INCUMBENTS={}
 ll=Transformer.from_crs(4326,32610,always_xy=True);inv=Transformer.from_crs(32610,4326,always_xy=True)
 web=Transformer.from_crs(3857,32610,always_xy=True)
 osm=ET.parse(DATA/'osm.xml').getroot()
