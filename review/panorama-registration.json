@@ -1,0 +1,244 @@
+{
+ "schema": 1,
+ "panoramas": {
+  "4047190205531944": {
+   "build": "clean-v77/final/candidate.glb",
+   "xy": [
+    -51.786,
+    61.375
+   ],
+   "z": 4.837,
+   "rotationAngleAxis": [
+    0.7695444626278329,
+    1.74392360757228,
+    -1.698829216023302
+   ],
+   "shiftM": [
+    -3.86,
+    -4.12,
+    -0.0
+   ],
+   "rotationDeg": [
+    0.0,
+    0.17,
+    -0.35
+   ],
+   "groundZ": 2.24,
+   "skylineBefore": {
+    "medianAbsDeg": 2.0,
+    "inlierShare": 0.382
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 1.29,
+    "inlierShare": 0.431
+   },
+   "samples": 1909,
+   "overlay": "review/panorama-registration/4047190205531944.jpg"
+  },
+  "743561541725632": {
+   "build": "clean-v77/final/candidate.glb",
+   "xy": [
+    -27.682,
+    75.674
+   ],
+   "z": 4.364,
+   "rotationAngleAxis": [
+    1.4879329897811322,
+    -0.589429132732448,
+    0.572856449151669
+   ],
+   "shiftM": [
+    -2.0,
+    -4.01,
+    -0.46
+   ],
+   "rotationDeg": [
+    0.39,
+    -0.13,
+    -0.92
+   ],
+   "groundZ": 2.22,
+   "skylineBefore": {
+    "medianAbsDeg": 2.59,
+    "inlierShare": 0.151
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 0.88,
+    "inlierShare": 0.53
+   },
+   "samples": 1920,
+   "overlay": "review/panorama-registration/743561541725632.jpg"
+  },
+  "1443360237091048": {
+   "build": "clean-v77/final/candidate.glb",
+   "xy": [
+    165.347,
+    -137.011
+   ],
+   "z": 1.348,
+   "rotationAngleAxis": [
+    1.2453237495152276,
+    -1.323674804824799,
+    1.243214647429999
+   ],
+   "shiftM": [
+    -1.61,
+    1.32,
+    -0.18
+   ],
+   "rotationDeg": [
+    -0.48,
+    0.39,
+    2.98
+   ],
+   "groundZ": -1.07,
+   "skylineBefore": {
+    "medianAbsDeg": 4.6,
+    "inlierShare": 0.172
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 2.67,
+    "inlierShare": 0.342
+   },
+   "samples": 1841,
+   "overlay": "review/panorama-registration/1443360237091048.jpg"
+  },
+  "1119729133373399": {
+   "build": "clean-v77/final/candidate.glb",
+   "xy": [
+    -205.189,
+    -101.898
+   ],
+   "z": 2.385,
+   "rotationAngleAxis": [
+    1.4872760640545613,
+    -0.5929481453914318,
+    0.6439212253760794
+   ],
+   "shiftM": [
+    -2.25,
+    -6.04,
+    -0.42
+   ],
+   "rotationDeg": [
+    0.26,
+    -0.11,
+    -1.75
+   ],
+   "groundZ": 0.21,
+   "skylineBefore": {
+    "medianAbsDeg": 4.28,
+    "inlierShare": 0.097
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 2.77,
+    "inlierShare": 0.353
+   },
+   "samples": 1813,
+   "overlay": "review/panorama-registration/1119729133373399.jpg"
+  },
+  "1508611923632207": {
+   "build": "clean-v77/final/candidate.glb",
+   "xy": [
+    -217.792,
+    -105.271
+   ],
+   "z": 2.301,
+   "rotationAngleAxis": [
+    0.7247993387990542,
+    1.7783666759573848,
+    -1.7385598543024885
+   ],
+   "shiftM": [
+    0.95,
+    -2.09,
+    -0.16
+   ],
+   "rotationDeg": [
+    0.16,
+    -0.04,
+    -1.43
+   ],
+   "groundZ": -0.14,
+   "skylineBefore": {
+    "medianAbsDeg": 3.77,
+    "inlierShare": 0.096
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 5.59,
+    "inlierShare": 0.329
+   },
+   "samples": 1883,
+   "overlay": "review/panorama-registration/1508611923632207.jpg"
+  },
+  "741612348844109": {
+   "build": "clean-v77/final/candidate.glb",
+   "xy": [
+    -215.357,
+    -112.081
+   ],
+   "z": 2.297,
+   "rotationAngleAxis": [
+    1.4726648417936015,
+    -0.5982364750722772,
+    0.626881287617633
+   ],
+   "shiftM": [
+    2.04,
+    -2.02,
+    -0.2
+   ],
+   "rotationDeg": [
+    0.19,
+    -0.31,
+    -1.75
+   ],
+   "groundZ": -0.11,
+   "skylineBefore": {
+    "medianAbsDeg": 5.57,
+    "inlierShare": 0.109
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 7.11,
+    "inlierShare": 0.264
+   },
+   "samples": 1848,
+   "overlay": "review/panorama-registration/741612348844109.jpg"
+  },
+  "2850792881787599": {
+   "build": "clean-v77/final/candidate.glb",
+   "xy": [
+    -188.697,
+    -72.24
+   ],
+   "z": 2.599,
+   "rotationAngleAxis": [
+    0.7125619327888754,
+    1.794503365016455,
+    -1.7240707913456799
+   ],
+   "shiftM": [
+    -5.51,
+    -4.33,
+    -0.27
+   ],
+   "rotationDeg": [
+    -0.67,
+    -0.82,
+    -0.72
+   ],
+   "groundZ": 0.27,
+   "skylineBefore": {
+    "medianAbsDeg": 8.12,
+    "inlierShare": 0.165
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 3.71,
+    "inlierShare": 0.337
+   },
+   "samples": 1905,
+   "overlay": "review/panorama-registration/2850792881787599.jpg"
+  }
+ },
+ "rule": "Panorama poses refined against a build by skyline (register_panoramas.py). Review tooling reads them in place of the provider pose; the generator never reads this file."
+}

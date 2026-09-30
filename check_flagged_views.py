@@ -87,7 +87,14 @@ def main():
         if d is None: continue
         b = R.load(str(glb_of(d)))
         for v in reg['views']:
-            for c in v['cameras']: renders[(label, v['id'], c['name'])] = R.render(b, c['from'], c['at'], mask_ids=v['buildings'])
+            for c in v['cameras']:
+                renders[(label, v['id'], c['name'])] = R.render(b, c['from'], c['at'], mask_ids=v['buildings'])
+                # the colour check renders from the panorama's registered position, along the camera's direction, so the
+                # wall mask and the photograph show the same thing (the flagged camera itself may stand metres away)
+                pose = R.registered_pose(c['panorama']) if c.get('panorama') else None
+                if pose is not None:
+                    eye = pose[0]; at = eye + np.asarray(c['at'], float) - np.asarray(c['from'], float)
+                    renders[(label, v['id'], c['name'], 'registered')] = R.render(b, eye, at, mask_ids=v['buildings'])
         R.free(b)
     index = {'candidate': str(cand), 'candidateGlbSha256': sha(cand_glb), 'live': str(live) if live else None, 'views': []}
     ev_c = evidence(cand); ev_l = evidence(live) if live else None
@@ -100,18 +107,30 @@ def main():
             live_r = renders.get(('live', v['id'], c['name']))
             if c.get('panorama'):
                 ph = R.photo(c['panorama'], c['from'], c['at'], frame); tiles.append(('photograph', ph))
+                pose = R.registered_pose(c['panorama']); reg_c = renders.get(('candidate', v['id'], c['name'], 'registered'))
+                if pose is not None and reg_c is not None:
+                    # registered: photograph, mask and both builds from the panorama's refined pose
+                    eye = pose[0]; at = eye + np.asarray(c['at'], float) - np.asarray(c['from'], float)
+                    photo_bal = R.photo(c['panorama'], eye, at, frame, balanced=True, rotation=pose[1])
+                    c_im, c_mk = reg_c; l_r = renders.get(('live', v['id'], c['name'], 'registered'))
+                    tiles.append(('photograph + wall mask (registered)', R.outline(R.photo(c['panorama'], eye, at, frame, rotation=pose[1]), c_mk)))
+                else:
+                    # unregistered: the provider pose, from the flagged camera (the mask may land on another building)
+                    photo_bal = R.photo(c['panorama'], c['from'], c['at'], frame, balanced=True)
+                    c_im, c_mk, l_r = cand_im, cand_mk, live_r
+                    tiles.append(('photograph + wall mask (UNREGISTERED)', R.outline(ph, cand_mk)))
                 # the flagged building's wall colour, photograph (white-balanced) against each build, under the candidate's wall mask
-                pl = R.wall_colour(R.photo(c['panorama'], c['from'], c['at'], frame, balanced=True), cand_mk)
-                cl = R.wall_colour(cand_im, cand_mk); ll = R.wall_colour(live_r[0], cand_mk) if live_r else None
+                pl = R.wall_colour(photo_bal, c_mk)
+                cl = R.wall_colour(c_im, c_mk); ll = R.wall_colour(l_r[0], c_mk) if l_r else None
                 if pl is not None and cl is not None:
-                    col = {'camera': c['name'], 'photoLab': [round(float(x), 1) for x in pl], 'candidateLab': [round(float(x), 1) for x in cl], 'deltaECandidate': round(R.delta_e(pl, cl), 1)}
+                    col = {'camera': c['name'], 'registered': pose is not None and reg_c is not None, 'photoLab': [round(float(x), 1) for x in pl], 'candidateLab': [round(float(x), 1) for x in cl], 'deltaECandidate': round(R.delta_e(pl, cl), 1)}
                     if ll is not None: col.update(liveLab=[round(float(x), 1) for x in ll], deltaELive=round(R.delta_e(pl, ll), 1))
                     col['colourMismatch'] = col['deltaECandidate'] > COLOUR_DE; rec['colour'].append(col)
             if live_r: tiles.append(('live', live_r[0]))
             tiles.append(('candidate', cand_im))
             p = out / f"{v['id']}__{c['name']}.jpg"; sheet(tiles, v, c).save(p, quality=88); rec['sheets'].append(str(p))
         for col in rec['colour']:
-            print(f"   colour at {col['camera']}: photo L*a*b* {col['photoLab']} | candidate {col['candidateLab']} dE {col['deltaECandidate']}" + (f" | live dE {col.get('deltaELive')}" if 'deltaELive' in col else '') + ('   MISMATCH' if col['colourMismatch'] else ''))
+            print(f"   colour at {col['camera']}: photo L*a*b* {col['photoLab']} | candidate {col['candidateLab']} dE {col['deltaECandidate']}" + (f" | live dE {col.get('deltaELive')}" if 'deltaELive' in col else '') + ('   MISMATCH' if col['colourMismatch'] else '') + ('' if col['registered'] else '   (unregistered panorama)'))
         index['views'].append(rec)
         print(f"{v['id']}: {len(rec['sheets'])} sheets, open defects {rec['openDefects']}, evidence changes {len(rec['evidenceChanges'])}")
         for s in rec['evidenceChanges'][:40]: print('   ', s)

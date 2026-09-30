@@ -5,6 +5,7 @@ same camera. Used by check_flagged_views.py; carries no location."""
 import gc
 import json
 import mmap
+import pathlib
 import struct
 import numpy as np
 from PIL import Image, ImageDraw
@@ -82,13 +83,29 @@ def render(build, eye, at, radius=140., mask_ids=None):
     return (im, mk) if mask_ids else im
 
 
-def photo(image_id, eye, at, frame, balanced=False):
+REGISTRATION = pathlib.Path(__file__).resolve().parent / 'review/panorama-registration.json'
+
+
+def registered_pose(image_id):
+    """(eye, R) of a panorama refined against a build by register_panoramas.py, or None if it has not been."""
+    if not REGISTRATION.exists(): return None
+    r = json.load(open(REGISTRATION))['panoramas'].get(image_id)
+    if not r: return None
+    from scipy.spatial.transform import Rotation
+    return np.array([*r['xy'], r['z']], float), Rotation.from_rotvec(r['rotationAngleAxis']).as_matrix()
+
+
+def photo(image_id, eye, at, frame, balanced=False, rotation=None):
     """The panorama's view along the same direction (the panorama's own position; poses are coarse). balanced: white
-    balance against the road under the camera, as the frontage readers do."""
+    balance against the road under the camera, as the frontage readers do. rotation: a registered rotation in place of
+    the provider's."""
     cam = fc.load_cameras(frame)[image_id]; f, _, _ = basis(eye, at); fx = (WIDTH / 2) / np.tan(np.radians(HFOV / 2))
+    if rotation is not None: cam = {**cam, 'R': rotation}
     pano = np.asarray(fc.load_pano(cam['path']))
     if balanced:
-        pf = pano.astype(np.float32); road = pf[int(pf.shape[0] * .74):int(pf.shape[0] * .9):4, ::4].reshape(-1, 3); road = road[(road.max(1) - road.min(1)) < 40]
+        # the road just below the horizon (9-20 degrees down): lower in the frame, a roof-mounted rig's panoramas show
+        # the capture vehicle (its roof rack and decal), which read as the road gave every such panorama a magenta cast
+        pf = pano.astype(np.float32); road = pf[int(pf.shape[0] * .55):int(pf.shape[0] * .61):4, ::4].reshape(-1, 3); road = road[(road.max(1) - road.min(1)) < 40]
         gain = np.clip((road.mean(0).mean() / np.maximum(road.mean(0), 1.)) if len(road) > 500 else np.ones(3), .85, 1.15)
         pano = np.clip(pf * gain, 0, 255).astype(np.uint8)
     img, _ = fc.render_perspective(pano, cam['R'], f, HFOV, 2 * np.degrees(np.arctan((HEIGHT / 2) / fx)), width=WIDTH, max_height=HEIGHT)
@@ -104,6 +121,13 @@ def wall_colour(img, mask, erode_px=18):
     lum = a.max(1) * .5 + a.min(1) * .5; keep = (lum > 60) & ~((a[:, 2] > a[:, 0] + 15) & (lum > 140))
     if keep.sum() < 800: return None
     return np.median(J.to_lab(a[keep][None])[0], 0)
+
+
+def outline(img, mask, colour=(255, 0, 255)):
+    """img with the edge of a mask drawn over it, to see where a wall mask lands on a photograph."""
+    from PIL import ImageFilter
+    m = mask.filter(ImageFilter.FIND_EDGES).point(lambda v: 255 if v > 0 else 0).filter(ImageFilter.MaxFilter(3))
+    out = img.copy(); out.paste(colour, (0, 0), m); return out
 
 
 def delta_e(p, q):
