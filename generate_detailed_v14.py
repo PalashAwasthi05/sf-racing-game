@@ -328,7 +328,7 @@ for c in ([] if _args.streets_only else candidates):
   print(name,round(height,1),'landmark',flush=True);continue
  style=facades.prior(tags,height,c['full_area']);color=style['material']
  roofparts=0
- roof_grid_audit={};roof_patches=[];roof_bands=[];roof_xy=None;venue=None;patch_sides=[]
+ roof_grid_audit={};roof_patches=[];roof_bands=[];roof_xy=None;venue=None;patch_sides=[];outer_rounded=[]
  if rr is not None and len(roof)>50:
   rr,roof_known,roof_xy,roof_grid_audit=roof_envelope.prepare_grid(rr,gF,xmin,ymax,roof_step)
   base_roof=roof_envelope.base_level(rr,roof_known,roof_step,g.area) if rr is not None else z0+height
@@ -373,7 +373,11 @@ for c in ([] if _args.streets_only else candidates):
   # LiDAR sets the envelope, not the detail: at most a few substantial tiers are kept, those with the largest roofs.
   roof_bands=spatial_rules.keep_tiers(roof_bands,LR.get('tierMaxCount',len(roof_bands)),rr,roof_known,from_origin(xmin,ymax,roof_step,roof_step),base_roof)
   # Corners the returns show rounded are rounded, in every tier standing flush at them (spatial_rules.round_tier_corners).
-  roof_bands,rounded_corners=spatial_rules.round_tier_corners(roof_bands,np.c_[frame.points(roof[:,:2]),roof[:,2]],base_roof,outer=gF.boundary)
+  outer_rounded=[]
+  roof_bands,rounded_corners=spatial_rules.round_tier_corners(roof_bands,np.c_[frame.points(roof[:,:2]),roof[:,2]],base_roof,outer=gF.boundary,records=outer_rounded)
+  # A rounded corner standing on the outline: the outline's wall stops under the rounded tiers over the arc and the tier
+  # draws the arc (facades.compile, roundedOuterCorners / roundedZones).
+  outer_rounded=[{'corner':frame.world_points(np.asarray(r['corner'])[None])[0],'along':[frame.world_vectors(np.asarray(r[a])[None])[0] for a in r['outerAxes']],'radiusM':r['radiusM'],'marginM':r['marginM'],'bottomZ':r['bottomZ'],'cut':frame.world(r['cut'])} for r in outer_rounded]
   _valid=lambda q:q if q.is_empty or q.is_valid else make_valid(q).buffer(0)
   roof_bands=[{**b,'geometry':_valid(frame.world(b['geometry'])),'cap':_valid(frame.world(b['cap']))} for b in roof_bands]
   # Review aid (no effect on output): TIER_DEBUG=<id,id> dumps those buildings' roof raster and tiers for inspection.
@@ -387,13 +391,18 @@ for c in ([] if _args.streets_only else candidates):
   for bi,band in enumerate(roof_bands):
    # A tier stops behind the strip an observed frontage owns; its wall would stand in the frontage plane, blank
    # and coplanar with the observed facade.
-   part=band['geometry'].difference(profile_strip)
+   # ... except at a rounded corner standing on the outline: the arc is the tier's (the frontage's strip covered it and
+   # nobody drew it)
+   rounded_zone=unary_union([r['cut'].buffer(.3) for r in outer_rounded]) if outer_rounded else None
+   own_strip=profile_strip.difference(rounded_zone) if rounded_zone is not None else profile_strip
+   part=band['geometry'].difference(own_strip)
    tier=dict(c);tier['g']=part;tier['elevationOffset']=base_roof+band['bottom']-z0;tier['roofBand']=True;tier['outerBoundary']=g.boundary
    # The tiers round it decide where its walls stand (facades.compile): a wall with a higher tier flush over it is that
    # tier's, and a wall comes down to whichever roof stands in front of it.
    tier['tierBase']=base_roof;tier['tierAbove']=roof_bands[bi+1]['geometry'] if bi+1<len(roof_bands) else None
    tier['tiersBelow']=[(b['geometry'],base_roof+b['top']) for b in roof_bands[:bi]]
-   tier_ctx=dict(globals());tier_ctx['all_buildings']=all_buildings.difference(g);tier_ctx['envelopeMask']=tier_mask;tier_ctx['envelopeSpans']=envelope_spans
+   tier_ctx=dict(globals());tier_ctx['all_buildings']=all_buildings.difference(g);tier_ctx['envelopeMask']=envelope_mask.union(own_strip);tier_ctx['envelopeSpans']=envelope_spans
+   tier_ctx['roundedZones']=rounded_zone
    rr_records,rr_components=facades.compile(tier_ctx,tier,base_roof+band['bottom'],float(band['top']-band['bottom']),height,tags,OBS['facades']);facade_records.extend(rr_records);counts['windowAssemblies']+=rr_components
    extrude(band['cap'],base_roof+band['top'],.10,'roofs__'+id,'roof');roofparts+=1
   if drape_area is not None and not drape_area.is_empty:
@@ -418,7 +427,7 @@ for c in ([] if _args.streets_only else candidates):
    roofparts+=1
   owned_roof=roof_envelope.owned_samples(g,roof_xy,base_roof,roof_bands,roof_patches,[(slot,z0+z1) for slot,z1 in roof_lids])
   height=max(height,float(owned_roof[:,2].max()-z0))
-  roof_envelope_records.append({'buildingId':id,**roof_grid_audit,'continuousPatches':len(roof_patches),'tierCount':len(roof_bands),'roundedCorners':len(rounded_corners),'baseRoofZ':base_roof,'slopedCellsDroppedToBase':0,'wallHeightSource':'same generated roof envelope','planeFit':plane_audit})
+  roof_envelope_records.append({'buildingId':id,**roof_grid_audit,'continuousPatches':len(roof_patches),'tierCount':len(roof_bands),'roundedCorners':len(rounded_corners),'roundedOuterCorners':len(outer_rounded),'baseRoofZ':base_roof,'slopedCellsDroppedToBase':0,'wallHeightSource':'same generated roof envelope','planeFit':plane_audit})
  if rr is None:extrude(roof_g,base_roof,.10,'roofs__'+id,'roof')
  if rr is not None:
   # The top of the envelope actually built (base roof, kept tiers, tilted planes, lids), for the wall-height cap.
@@ -429,7 +438,7 @@ for c in ([] if _args.streets_only else candidates):
   wall_top_cap=max(_tops)+1.5
  else:wall_top_cap=None
  c['massHeightM']=float(base_roof-z0)
- outer_ctx=dict(globals());outer_ctx['venueField']=venue['field'] if (rr is not None and venue) else None;outer_ctx['wallTopCapZ']=wall_top_cap;outer_ctx['roofSamplesOwned']=False;outer_ctx['roofSamples']=roof;outer_ctx['envelopeMask']=envelope_mask;outer_ctx['envelopeSpans']=envelope_spans
+ outer_ctx=dict(globals());outer_ctx['venueField']=venue['field'] if (rr is not None and venue) else None;outer_ctx['wallTopCapZ']=wall_top_cap;outer_ctx['roofSamplesOwned']=False;outer_ctx['roofSamples']=roof;outer_ctx['envelopeMask']=envelope_mask;outer_ctx['envelopeSpans']=envelope_spans;outer_ctx['roundedOuterCorners']=outer_rounded
  pitched=[p['geometry'] for p in roof_patches if max(float(np.linalg.norm(q[:2])) for q in p['model']['planes'])>=roof_envelope.PITCH_SLOPE]
  outer_ctx['pitchedRoof']=unary_union(pitched) if pitched else None
  outer_ctx['pitchedModels']=[(p['geometry'],p['model']) for p in roof_patches if max(float(np.linalg.norm(q[:2])) for q in p['model']['planes'])>=roof_envelope.PITCH_SLOPE]

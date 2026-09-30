@@ -475,6 +475,36 @@ def tier_runs(c,g,segments,step=.5):
     i0=i
  return out
 
+def cap_rounded_spans(segments,levels,gables,rounded,parents=None):
+ """Outline wall pieces under a rounded tier corner standing on the outline stop at the rounded tiers' bottom.
+
+ `rounded` are spatial_rules.round_tier_corners records in the world frame (corner, along = the wall directions that run
+ on the outline, radiusM, marginM, bottomZ). Over the span from the margin beyond the corner to the arc's tangent point
+ the outline's wall stands only to bottomZ; above it the tier draws the arc. A block flush on its lot outline kept a
+ square corner from foot to top there: the outline's wall ran on to the corner at the block's height. `levels` are
+ absolute wall tops (None = unmeasured); segments and levels (and gables) are split at the span ends. Also returned: each
+ piece's parent length, the length of the wall it was cut from (a 2.6 m rest of a 7.6 m windowed wall is that wall, not a
+ stub too short for windows)."""
+ parents=[float(np.linalg.norm(np.asarray(bb,float)-np.asarray(aa,float))) for aa,bb in segments] if parents is None else list(parents)
+ for rc in rounded:
+  b=np.asarray(rc['corner'],float);m=float(rc['marginM']);r=float(rc['radiusM']);z=float(rc['bottomZ'])
+  for e in rc['along']:
+   # past the corner the span reaches a minimum piece further (split_at_roof_steps merges steps closer than 2.5 m, so
+   # the outline wall's step can land that far beyond the block: it stood there as a free post once the corner was round)
+   e=np.asarray(e,float);e=e/np.linalg.norm(e);s0,s1=-m-2.5,r+.05
+   out_s,out_l,out_g,out_p=[],[],[],[]
+   for (aa,bb),lv,gb,pl in zip(segments,levels,gables,parents):
+    a,c=np.asarray(aa,float),np.asarray(bb,float);u=c-a;L=float(np.linalg.norm(u))
+    if L<.02 or abs(float(u@e))/L<.98 or abs(float((a-b)@np.array([-e[1],e[0]])))>m+.5:
+     out_s.append((aa,bb));out_l.append(lv);out_g.append(gb);out_p.append(pl);continue
+    ta,tc=float((a-b)@e),float((c-b)@e);cuts=sorted({t for t in (s0,s1) if min(ta,tc)+.02<t<max(ta,tc)-.02})
+    ts=[ta]+(cuts if tc>ta else cuts[::-1])+[tc];pts=[a+(c-a)*((t-ta)/(tc-ta)) for t in ts]
+    for p,q,t0,t1 in zip(pts,pts[1:],ts,ts[1:]):
+     inside=s0-.02<=min(t0,t1) and max(t0,t1)<=s1+.02
+     out_s.append((tuple(p),tuple(q)));out_l.append(min(lv,z) if (inside and lv is not None) else lv);out_g.append(gb and not inside);out_p.append(pl)
+   segments,levels,gables,parents=out_s,out_l,out_g,out_p
+ return segments,levels,gables,parents
+
 def compile(ctx,c,z0,main_height,height,tags,observations):
  default_height=main_height;g=c['g'].simplify(.18,preserve_topology=True);fid=c['id'];cube=ctx['cube'];cylinder=ctx['cylinder'];records=[];components=0
  # A hand reading's frame is compared with the part's main roof level, not its tallest point (a tower corner made a
@@ -585,21 +615,25 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
       return min(range(len(segments)),key=lambda i:LineString(segments[i]).distance(mid))
      levels=[levels[source(ca,cb)] for ca,cb in cut];gables=[gables[source(ca,cb)] for ca,cb in cut]
     segments=cut
+   parent_len=None
+   if levels is not None and not c.get('roofBand') and ctx.get('roundedOuterCorners'):
+    segments,levels,gables,parent_len=cap_rounded_spans(segments,levels,gables,ctx['roundedOuterCorners'])
    # Pieces of a rounded corner (short segments turning a little each, a quarter turn or so together) are one curved wall:
    # each piece is a bay of the facade it turns between, not a stub too short to carry a window.
    arc_ids=set();run=[]
    dirs=[(np.asarray(bb,float)-np.asarray(aa,float)) for aa,bb in segments];lens=[float(np.linalg.norm(d)) for d in dirs]
+   def turn(i,j):return math.degrees(math.acos(float(np.clip((dirs[i]/lens[i])@(dirs[j]/lens[j]),-1.,1.))))
+   def close_run():
+    # three or more pieces, or two that turn 30 degrees or more together: simplified to 18 cm, a 2.25 m radius comes
+    # out as two 45-degree facets, which stood as blank stubs while the walls either side carried ribbon windows
+    if len(run)>=3 or (len(run)==2 and turn(run[0],run[1])>=30.):arc_ids.update(run)
    for i in range(len(segments)):
     if not 0.<lens[i]<3.5:                     # the outline is simplified to 18 cm: a larger radius comes out in longer facets
-     if len(run)>=3:arc_ids.update(run)
-     run=[];continue
-    if run:
-     ang=math.degrees(math.acos(float(np.clip((dirs[run[-1]]/lens[run[-1]])@(dirs[i]/lens[i]),-1.,1.))))
-     if not 3.<ang<35.:
-      if len(run)>=3:arc_ids.update(run)
-      run=[i];continue
+     close_run();run=[];continue
+    if run and not 3.<turn(run[-1],i)<50.:
+     close_run();run=[i];continue
     run.append(i)
-   if len(run)>=3:arc_ids.update(run)
+   close_run()
    ring_blank,blank_src=blank_level,None
    if ring_blank is None and levels is not None and not c.get('roofBand'):ring_blank,blank_src=framed_blank_level(profiles,c,g,segments,levels,z0,main_height,mass)
    gable_mark=None
@@ -614,7 +648,10 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
     u=u/length;n=np.array([u[1],-u[0]]);mid=(a+b)/2
     if g.contains(Point(*(mid+n*.2))):n=-n
     main_height=default_height
-    if c.get('elevationOffset',0)>0 and c.get('outerBoundary') is not None and c['outerBoundary'].distance(Point(*mid))<.18:continue
+    # A tier wall on the outline is the outline's wall, except the arc of a rounded corner standing on it
+    # (spatial_rules.round_tier_corners): the outline's wall stops under it and the tier draws it.
+    rz=ctx.get('roundedZones')
+    if c.get('elevationOffset',0)>0 and c.get('outerBoundary') is not None and c['outerBoundary'].distance(Point(*mid))<.18 and not (rz is not None and rz.contains(Point(*mid))):continue
     zs=z0
     if c.get('roofBand') and c.get('tierBase') is not None:
      # Walls of stacked tiers standing in one plane are one wall. A tier wall with a higher tier flush over it (reaching
@@ -739,7 +776,7 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
     # A facing a street camera photographed is seen from the street, whatever the mapped streets say (plazas and wide
     # set-backs put the corridor beyond reach); a touching neighbour still makes a party wall.
     if exposure in ('secondary','gap') and any(np.dot(n,p['normal'])>.95 and (belongs(p,c,main_height,mass)) for p in profiles):exposure='street'
-    visible=(length>=3.5 or edge in arc_ids) and exposure in ('street','own-podium','secondary') and ctx['boundary'].boundary.distance(Point(*mid))>.5
+    visible=(length>=3.5 or edge in arc_ids or (parent_len is not None and parent_len[edge]>=3.5 and length>=1.2)) and exposure in ('street','own-podium','secondary') and ctx['boundary'].boundary.distance(Point(*mid))>.5
     if exposure=='secondary':style=dict(style,bayWidthM=style['bayWidthM']*2,openingRatio=style['openingRatio']*.6)
     if ctx.get('venueField') is not None and ctx['venueField'].distance(Point(*mid))<6.:
      # The edge of a venue's footprint that faces its field is the seating bowl's front: a low plain wall.

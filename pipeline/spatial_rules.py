@@ -392,14 +392,16 @@ def keep_tiers(tiers,maximum,rr=None,known=None,transform=None,base=None):
   b['cap']=_overlay('difference',b['geometry'],kept[i+1]['geometry']) if i+1<len(kept) else b['geometry']
  return kept
 
-def corner_radius(points,corner,ex,ey,top_z,reach=7.,radii=None,minimum_cut_m2=.4,empty_share=.15):
+def corner_radius(points,corner,ex,ey,top_z,reach=7.,radii=None,minimum_cut_m2=.4,empty_share=.15,max_wall_shift=None):
  """Radius of a rounded building corner measured in the returns: 0 when the corner is square or unmeasured.
 
  `corner` is the tier outline's corner and ex, ey unit vectors along its two walls into the building (all in the
  outline frame); `points` are returns (N, 3) in that frame. The walls' true lines are where this tier's roof returns
  stop beyond the corner zone (a raster edge can sit a cell off); the radius is the largest one whose cut-off area (the
  square corner less the quarter disc) holds almost no returns while the roof beside it is dense. A rounded 1980s office
- block's corners were drawn square: the returns showed a 2.5 m radius at every one."""
+ block's corners were drawn square: the returns showed a 2.5 m radius at every one. With `max_wall_shift`, a corner
+ whose measured wall lines stand further than that from `corner` is unmeasured (0): the cut is made at `corner`, so the
+ walls it rounds must be the ones the returns show."""
  import math
  radii=np.arange(.5,5.01,.25) if radii is None else radii
  rel=np.asarray(points,float)[:,:2]-corner;x=rel@ex;y=rel@ey;z=np.asarray(points,float)[:,2]
@@ -407,7 +409,9 @@ def corner_radius(points,corner,ex,ey,top_z,reach=7.,radii=None,minimum_cut_m2=.
  if len(x)<40:return 0.
  fx,fy=x[(y>4.)&(y<reach)],y[(x>4.)&(x<reach)]
  if len(fx)<10 or len(fy)<10:return 0.
- x=x-float(np.quantile(fx,.02));y=y-float(np.quantile(fy,.02))
+ sx,sy=float(np.quantile(fx,.02)),float(np.quantile(fy,.02))
+ if max_wall_shift is not None and max(abs(sx),abs(sy))>max_wall_shift:return 0.
+ x=x-sx;y=y-sy
  dens=((x>2.)&(x<reach)&(y>2.)&(y<reach)).sum()/max(1e-6,(reach-2.)**2)
  if dens<2.:return 0.
  # the outermost returns stand about half a return spacing inside the wall line (or the quantile's share of the strip)
@@ -422,44 +426,113 @@ def corner_radius(points,corner,ex,ey,top_z,reach=7.,radii=None,minimum_cut_m2=.
  return best
 
 
-def round_tier_corners(tiers,points,base,outer=None,minimum_radius_m=1.,maximum_share=.4):
+def wall_corners(q,between_m=12.,long_m=3.,tolerance_m=1.5):
+ """Convex right-angle corners of polygon q's exterior: a long edge (`long_m` or more) and
+ the next long edge perpendicular to it, with what lies between (a chamfer, an arc of facets, small jogs) spanning at
+ most `between_m` from the end of the one to the start of the other. The corner is the crossing of the two lines; ex,
+ ey point along the walls into the building, L1, L2 are the walls' lengths and G1, G2 how far each stops short of the
+ crossing: (corner, ex, ey, L1, L2, G1, G2)."""
+ xy=np.asarray(q.simplify(.05,preserve_topology=True).exterior.coords)[:-1];n=len(xy)
+ if n<3:return []
+ ccw=q.exterior.is_ccw;d=[xy[(i+1)%n]-xy[i] for i in range(n)];L=[float(np.linalg.norm(v)) for v in d]
+ longs=[i for i in range(n) if L[i]>=long_m]
+ out=[]
+ for k,i in enumerate(longs):
+  u=d[i]/L[i];end=xy[(i+1)%n];cands=[]
+  for s in range(1,len(longs)):
+   j=longs[(k+s)%len(longs)]
+   if j==i or float(np.linalg.norm(xy[j]-end))>between_m:break
+   v=d[j]/L[j]
+   if abs(float(u@v))>.2:continue
+   cross=u[0]*v[1]-u[1]*v[0]
+   if (cross>0)!=ccw:break                        # a concave turn: no convex corner here
+   try:t,w=np.linalg.solve(np.array([u,-v]).T,xy[j]-xy[i])
+   except np.linalg.LinAlgError:continue
+   # the crossing stands past the end of the one wall and before the start of the other (a corner, not the far side of
+   # a narrow wing)
+   if t<L[i]-tolerance_m or -w<-tolerance_m:continue
+   cands.append((j,xy[i]+u*t))
+  if not cands:continue
+  # the nearest such wall, or a longer piece of the same wall line further on (a jog broke it), not a parallel wall
+  # standing further in
+  j0=cands[0][0];v0=d[j0]/L[j0];n0=np.array([-v0[1],v0[0]])
+  j,b=max((cc for cc in cands if abs(float((xy[cc[0]]-xy[j0])@n0))<=tolerance_m),key=lambda cc:L[cc[0]])
+  # how far each wall stops short of the crossing (the chamfer and jogs run that far)
+  out.append((b,-u,d[j]/L[j],L[i],L[j],max(0.,float(np.linalg.norm(b-end))),max(0.,float(np.linalg.norm(xy[j]-b)))))
+ return out
+
+def round_tier_corners(tiers,points,base,outer=None,minimum_radius_m=1.,maximum_share=.4,between_m=12.,margin_m=1.5,records=None):
  """Fillet the convex corners of tier outlines (in the outline frame) where the returns show a rounded corner, and the
- same corner of every tier standing flush under it, so a rounded block is rounded from its foot to its top. Corners on
- the outer boundary (`outer`, a line) are left square: the outline's own walls stand there. The cap of each tier is
- recomputed. `points` are returns (N, 3) in the frame."""
- from shapely.geometry import Point,Polygon,MultiPolygon,box
+ same corner of every tier standing flush under it, so a rounded block is rounded from its foot to its top. The cap of
+ each tier is recomputed. `points` are returns (N, 3) in the frame.
+
+ A corner is where two long walls (3 m or more) meet at a right angle, at the crossing of their lines, with at most
+ `between_m` of short edges between them: the raster draws a rounded corner as a chamfer, and canopy and tree returns
+ beside an entrance broke a rounded block's corner into 2-4 m jogs, so no single vertex was a right angle and the corner
+ stood square. Within r + `margin_m` of the corner a flush tier is replaced by the rounded corner: the square less the
+ quarter disc is cut, the chamfer and jogs are filled out to the wall lines and whatever stands up to the margin outside
+ them goes.
+ A tier is flush at a corner when nothing of it stands beyond the wall lines by more than the margin within r + margin
+ of the corner: a lower terrace running on past the corner keeps its wall, while an entrance canopy's jog 7 m along the
+ wall does not stop the block above it being rounded (it did: the tier below was rounded alone and stood open).
+
+ Corners on the outer boundary (`outer`, a line) are rounded too: a block standing flush on its lot outline kept square
+ corners there. Along the outline the outline's own wall draws the face (facades.compile), so each such corner is
+ returned in `records` (dicts: corner, ex, ey, radiusM, marginM, bottomZ = base of the lowest tier cut, outerAxes = which
+ of ex/ey runs along the outline, cut = the cut polygon): the outline wall stops at bottomZ over the arc's span and the
+ tier draws the arc."""
+ from shapely.geometry import Point,Polygon,MultiPolygon
+ import math
+ def quadrant(b,ex,ey,lo,hi):return Polygon([b+ex*lo+ey*lo,b+ex*hi+ey*lo,b+ex*hi+ey*hi,b+ex*lo+ey*hi])
  cuts=[]
  for t in tiers:
   top=base+t['top']
   for q in _parts(t['geometry']):
-   xy=np.asarray(q.exterior.coords)[:-1];n=len(xy)
-   if n<4:continue
-   ccw=q.exterior.is_ccw
-   for i in range(n):
-    a,b,c=xy[i-1],xy[i],xy[(i+1)%n];e1,e2=a-b,c-b;L1,L2=float(np.linalg.norm(e1)),float(np.linalg.norm(e2))
-    if L1<3. or L2<3.:continue
-    cross=(b-a)[0]*(c-b)[1]-(b-a)[1]*(c-b)[0]
-    if (cross>0)!=ccw or abs(float(np.dot(e1/L1,e2/L2)))>.2:continue      # convex right angles only
-    if outer is not None and outer.distance(Point(*b))<.5:continue
-    r=corner_radius(points,b,e1/L1,e2/L2,top)
+   for b,ex,ey,L1,L2,G1,G2 in wall_corners(q,between_m):
+    r=corner_radius(points,b,ex,ey,top,max_wall_shift=margin_m)
     r=min(r,maximum_share*min(L1,L2))
-    if r>=minimum_radius_m:
-     sq=Polygon([b,b+e1/L1*r,b+e1/L1*r+e2/L2*r,b+e2/L2*r]);disc=Point(*(b+(e1/L1+e2/L2)*r)).buffer(r,quad_segs=6)
-     same=[k for k,(bb,_,rr) in enumerate(cuts) if float(np.hypot(*(np.asarray(bb)-b)))<.3]   # a corner shared by flush tiers: one cut
-     if same and cuts[same[0]][2]>=r:continue
-     if same:cuts.pop(same[0])
-     cuts.append((b,sq.difference(disc),r))
+    if r<minimum_radius_m:continue
+    disc=Point(*(b+(ex+ey)*r)).buffer(r,quad_segs=6)
+    same=[k for k,cc in enumerate(cuts) if float(np.hypot(*(np.asarray(cc['corner'])-b)))<max(r,cc['radiusM'])+margin_m and max(float(cc['ex']@ex+cc['ey']@ey),float(cc['ex']@ey+cc['ey']@ex))>1.8]   # one corner seen from several tiers: one cut
+    # tiers run bottom to top: a corner several tiers show is measured on the highest (canopies and trees stand lower)
+    if same:cuts.pop(same[0])
+    # within R of the corner a flush tier becomes the rounded corner itself: straight walls to the arc, the arc, nothing
+    # outside the wall lines (a chamfer already inside the arc was left as it was, with the canopy's jogs)
+    R=min(max(r+margin_m,G1+.1,G2+.1),min(L1,L2))
+    rel=np.asarray(points,float)[:,:2]-b;u_,v_=rel@ex,rel@ey;hi=np.asarray(points,float)[:,2]>=top-1.5
+    ref=(hi&(u_>R)&(u_<R+4.)&(v_>R)&(v_<R+4.)).sum()/16.
+    inner=hi&(u_>=0)&(v_>=0)&(u_<=R)&(v_<=R)&~((u_<r)&(v_<r)&((u_-r)**2+(v_-r)**2>r*r))
+    supported=bool(ref>0 and inner.sum()/max(1e-6,R*R-(1-math.pi/4)*r*r)>=.5*ref)
+    cuts.append({'corner':b,'ex':ex,'ey':ey,'radiusM':float(r),'marginM':margin_m,'cut':quadrant(b,ex,ey,-margin_m,r).difference(disc),
+                 'supported':supported,'box':quadrant(b,ex,ey,-margin_m,R),'fill':quadrant(b,ex,ey,0.,R).difference(quadrant(b,ex,ey,0.,r).difference(disc))})
  if not cuts:return tiers,[]
  def polygons(g):
   q=_parts(g);return Polygon() if not q else q[0] if len(q)==1 else MultiPolygon(q)
- out=[]
+ def flush(g,cc):
+  b,ex,ey,r,m=cc['corner'],cc['ex'],cc['ey'],cc['radiusM'],cc['marginM']
+  if g.boundary.distance(Point(*b))>=r+.3:return False      # a chamfered corner stands up to r inside the crossing
+  # the rounded corner is roof in the returns at the measured height (a crossing out beyond a diagonal wall is not)
+  if not cc['supported']:return False
+  # near the corner itself (a jog further along a wall is not a terrace running on past the corner)
+  beyond=Point(*b).buffer(r+m).difference(quadrant(b,ex,ey,-m,r+m))
+  return _overlay('intersection',g,beyond).area<.5
+ out=[];bottoms=[None]*len(cuts)
  for t in tiers:
   g=t['geometry']
-  for b,cut,_ in cuts:
-   if g.boundary.distance(Point(*b))<.3:g=polygons(_overlay('difference',g,cut))
+  for k,cc in enumerate(cuts):
+   if flush(g,cc):
+    g=_overlay('union',_overlay('difference',g,cc['box']),cc['fill'])
+    g=polygons(g.buffer(-.02,join_style=2).buffer(.02,join_style=2))   # the fill's edges on the wall lines leave zero-width spurs
+    z=base+t['bottom'];bottoms[k]=z if bottoms[k] is None else min(bottoms[k],z)
   out.append({**t,'geometry':g})
  for i,t in enumerate(out):t['cap']=polygons(_overlay('difference',t['geometry'],out[i+1]['geometry'])) if i+1<len(out) else t['geometry']
- return out,[b for b,_,_ in cuts]
+ if records is not None and outer is not None:
+  for cc,z in zip(cuts,bottoms):
+   b,m=cc['corner'],cc['marginM']
+   if z is None or outer.distance(Point(*b))>=m+.5:continue
+   axes=[ax for ax in ('ex','ey') if outer.distance(Point(*(b+cc[ax]*(cc['radiusM']+1.))))<m+.5]
+   if axes:records.append({**cc,'bottomZ':float(z),'outerAxes':axes})
+ return out,[cc['corner'] for cc in cuts]
 
 def perimeter_strip(ctx,c,profiles,depth=1.0):
  from .envelopes import matches,frame
