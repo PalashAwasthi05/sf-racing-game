@@ -5,16 +5,16 @@
   {
    "supplementOf": "osm_149167937-f0",
    "wallMidpoint": [
-    -15.34,
-    74.84
+    -13.58,
+    76.67
    ],
    "camera": "1148745777138459",
    "photographs": [
     "1148745777138459",
-    "1423584595534293",
+    "4182614022009569",
     "3421111574695274",
-    "1436995287347081",
-    "1471919023960346"
+    "1288347822799469",
+    "798479055850177"
    ],
    "panels": [
     {
@@ -22,14 +22,38 @@
       0.0,
       0.0,
       1.0,
-      0.1713
+      0.2248
      ],
-     "material": "render_gray#826f6f",
+     "material": "render_gray#47433f",
      "evidence": "image-measured colour zone"
     }
    ],
    "piers": [],
    "bands": [
+    {
+     "height": 0.0685,
+     "thicknessM": 0.8,
+     "depthM": 0.25,
+     "projectionM": 0.08,
+     "material": "panel_dark#1b1916",
+     "evidence": "image-measured band"
+    },
+    {
+     "height": 0.1134,
+     "thicknessM": 0.2,
+     "depthM": 0.25,
+     "projectionM": 0.08,
+     "material": "render_gray#7e7b74",
+     "evidence": "image-measured band"
+    },
+    {
+     "height": 0.2205,
+     "thicknessM": 0.2,
+     "depthM": 0.25,
+     "projectionM": 0.08,
+     "material": "render_gray#827e7a",
+     "evidence": "image-measured band"
+    },
     {
      "height": 0.1669,
      "thicknessM": 0.2,
@@ -37,18 +61,10 @@
      "projectionM": 0.08,
      "material": "brick_modular#987e7e",
      "evidence": "image-measured band"
-    },
-    {
-     "height": 0.2311,
-     "thicknessM": 0.2,
-     "depthM": 0.25,
-     "projectionM": 0.08,
-     "material": "render_gray#695a5b",
-     "evidence": "image-measured band"
     }
    ],
    "reading": {
-    "bands": 2,
+    "bands": 4,
     "zones": 1
    }
   },
@@ -69,14 +85,14 @@
    "panels": [],
    "piers": [
     {
-     "x": 0.934,
-     "widthM": 1.0,
+     "x": 0.9423,
+     "widthM": 0.75,
      "projectionM": 0.1,
      "y": [
       0.7344,
       0.8812
      ],
-     "material": "render_gray#a985b1",
+     "material": "render_gray#9698a8",
      "evidence": "image-measured trim"
     }
    ],
@@ -86,7 +102,7 @@
      "thicknessM": 0.2,
      "depthM": 0.25,
      "projectionM": 0.08,
-     "material": "panel_dark#311a16",
+     "material": "panel_dark#2c1b16",
      "evidence": "image-measured band"
     }
    ],
@@ -186,7 +202,7 @@
       0.9915,
       0.1985
      ],
-     "material": "panel_dark#5b5a8b",
+     "material": "panel_dark#545e8c",
      "evidence": "image-detected sign"
     }
    ],
@@ -199,8 +215,8 @@
   {
    "supplementOf": "sf_201006_0001245-f0",
    "wallMidpoint": [
-    -33.99,
-    95.27
+    -33.81,
+    95.45
    ],
    "camera": "743561541725632",
    "photographs": [
@@ -211,6 +227,17 @@
    ],
    "panels": [],
    "piers": [
+    {
+     "x": 0.127,
+     "widthM": 0.5,
+     "projectionM": 0.1,
+     "y": [
+      0.4231,
+      1.2088
+     ],
+     "material": "render_gray#4a4d53",
+     "evidence": "image-measured trim"
+    },
     {
      "x": 0.0414,
      "widthM": 0.75,
@@ -225,6 +252,22 @@
    ],
    "bands": [
     {
+     "height": 1.1814,
+     "thicknessM": 0.2,
+     "depthM": 0.35,
+     "projectionM": 0.25,
+     "material": "brick_modular#594943",
+     "evidence": "image-measured cornice"
+    },
+    {
+     "height": 1.1993,
+     "thicknessM": 0.4,
+     "depthM": 0.35,
+     "projectionM": 0.25,
+     "material": "render_gray#595a5b",
+     "evidence": "image-measured cornice"
+    },
+    {
      "height": 0.7578,
      "thicknessM": 0.4,
      "depthM": 0.25,
@@ -234,8 +277,8 @@
     }
    ],
    "reading": {
-    "piers": 1,
-    "bands": 1
+    "piers": 2,
+    "bands": 3
    }
   },
   {
@@ -261,7 +304,7 @@
       0.4151,
       1.2177
      ],
-     "material": "brick_modular#b28578",
+     "material": "render_gray#978e84",
      "evidence": "image-measured trim"
     },
     {
@@ -408,29 +451,40 @@
    "panels": [],
    "piers": [
     {
-     "x": 0.8817,
+     "x": 0.8915,
      "widthM": 1.5,
      "projectionM": 0.1,
      "y": [
       0.3776,
       0.9063
      ],
-     "material": "brick_dark#422824",
+     "material": "panel_dark#3f2924",
+     "evidence": "image-measured trim"
+    },
+    {
+     "x": 0.9355,
+     "widthM": 0.62,
+     "projectionM": 0.1,
+     "y": [
+      0.3776,
+      0.9063
+     ],
+     "material": "brick_dark#4f413e",
      "evidence": "image-measured trim"
     }
    ],
    "bands": [
     {
-     "height": 0.8459,
+     "height": 0.8384,
      "thicknessM": 0.6,
      "depthM": 0.25,
      "projectionM": 0.08,
-     "material": "panel_dark#212730",
+     "material": "panel_dark#1f2930",
      "evidence": "image-measured band"
     }
    ],
    "reading": {
-    "piers": 1,
+    "piers": 2,
     "bands": 1
    }
   }
@@ -438,9 +492,9 @@
  "stats": {
   "facings": 15,
   "photos": 68,
-  "agreed": 10,
-  "publishedKept": 13,
+  "agreed": 14,
+  "publishedKept": 15,
   "publishedDropped": 0,
-  "publishedUnconfirmed": 12
+  "publishedUnconfirmed": 14
  }
 }

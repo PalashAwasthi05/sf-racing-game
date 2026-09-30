@@ -238,6 +238,176 @@
    },
    "samples": 1905,
    "overlay": "review/panorama-registration/2850792881787599.jpg"
+  },
+  "1350027239890904": {
+   "build": "work/clean-v92/materials/candidate.glb",
+   "xy": [
+    -32.284,
+    71.019
+   ],
+   "z": 4.653,
+   "rotationAngleAxis": [
+    1.4885658546368612,
+    -0.6035606004279781,
+    0.5871901736719455
+   ],
+   "shiftM": [
+    -2.62,
+    -4.08,
+    -0.19
+   ],
+   "rotationDeg": [
+    0.68,
+    -0.19,
+    -0.37
+   ],
+   "groundZ": 2.24,
+   "skylineBefore": {
+    "medianAbsDeg": 2.11,
+    "inlierShare": 0.171
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 1.04,
+    "inlierShare": 0.479
+   },
+   "samples": 1920,
+   "overlay": "/private/tmp/claude-501/-Users-palash-Documents-reflex-code/b4c6e246-5bce-4a48-9d2c-ac4ac32303e3/scratchpad/corner/reg/1350027239890904.jpg"
+  },
+  "659475139881716": {
+   "build": "work/clean-v92/materials/candidate.glb",
+   "xy": [
+    -21.776,
+    82.895
+   ],
+   "z": 4.443,
+   "rotationAngleAxis": [
+    1.4863931730739983,
+    -0.5989926066024721,
+    0.5829288930682578
+   ],
+   "shiftM": [
+    -0.97,
+    -2.17,
+    -0.39
+   ],
+   "rotationDeg": [
+    0.19,
+    -0.1,
+    -2.22
+   ],
+   "groundZ": 2.24,
+   "skylineBefore": {
+    "medianAbsDeg": 2.02,
+    "inlierShare": 0.167
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 0.88,
+    "inlierShare": 0.545
+   },
+   "samples": 1920,
+   "overlay": "/private/tmp/claude-501/-Users-palash-Documents-reflex-code/b4c6e246-5bce-4a48-9d2c-ac4ac32303e3/scratchpad/corner/reg/659475139881716.jpg"
+  },
+  "1825277881721566": {
+   "build": "work/clean-v94/materials/candidate.glb",
+   "xy": [
+    -19.963,
+    85.353
+   ],
+   "z": 4.376,
+   "rotationAngleAxis": [
+    1.4792055024457622,
+    -0.5942887903006324,
+    0.5916924933941607
+   ],
+   "shiftM": [
+    -1.97,
+    -2.63,
+    -0.43
+   ],
+   "rotationDeg": [
+    -0.24,
+    0.03,
+    -2.51
+   ],
+   "groundZ": 2.2,
+   "skylineBefore": {
+    "medianAbsDeg": 2.06,
+    "inlierShare": 0.159
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 1.04,
+    "inlierShare": 0.486
+   },
+   "samples": 1920,
+   "overlay": "/private/tmp/claude-501/-Users-palash-Documents-reflex-code/b4c6e246-5bce-4a48-9d2c-ac4ac32303e3/scratchpad/corner/reg/1825277881721566.jpg"
+  },
+  "4182614022009569": {
+   "build": "work/clean-v94/materials/candidate.glb",
+   "xy": [
+    -28.9,
+    87.315
+   ],
+   "z": 4.768,
+   "rotationAngleAxis": [
+    0.7178987799507295,
+    1.772569492983604,
+    -1.7304672302535054
+   ],
+   "shiftM": [
+    -4.43,
+    -1.66,
+    -0.05
+   ],
+   "rotationDeg": [
+    -0.67,
+    0.16,
+    -0.27
+   ],
+   "groundZ": 2.22,
+   "skylineBefore": {
+    "medianAbsDeg": 3.49,
+    "inlierShare": 0.114
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 2.04,
+    "inlierShare": 0.29
+   },
+   "samples": 1914,
+   "overlay": "/private/tmp/claude-501/-Users-palash-Documents-reflex-code/b4c6e246-5bce-4a48-9d2c-ac4ac32303e3/scratchpad/corner/reg/4182614022009569.jpg"
+  },
+  "1423584595534293": {
+   "build": "work/clean-v94/materials/candidate.glb",
+   "xy": [
+    -32.622,
+    81.532
+   ],
+   "z": 5.167,
+   "rotationAngleAxis": [
+    0.6973573824066739,
+    1.773419477457525,
+    -1.7856570730102272
+   ],
+   "shiftM": [
+    -3.01,
+    -2.12,
+    0.34
+   ],
+   "rotationDeg": [
+    1.0,
+    0.11,
+    -1.5
+   ],
+   "groundZ": 2.22,
+   "skylineBefore": {
+    "medianAbsDeg": 3.44,
+    "inlierShare": 0.172
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 1.85,
+    "inlierShare": 0.339
+   },
+   "samples": 1916,
+   "overlay": "/private/tmp/claude-501/-Users-palash-Documents-reflex-code/b4c6e246-5bce-4a48-9d2c-ac4ac32303e3/scratchpad/corner/reg/1423584595534293.jpg"
   }
  },
  "rule": "Panorama poses refined against a build by skyline (register_panoramas.py). Review tooling reads them in place of the provider pose; the generator never reads this file."

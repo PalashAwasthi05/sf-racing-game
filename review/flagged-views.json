@@ -8,7 +8,8 @@
     "2026-09-18",
     "2026-09-22",
     "2026-09-25",
-    "2026-09-28"
+    "2026-09-28",
+    "2026-09-29"
    ],
    "buildings": [
     "sf_201006_0001245",
@@ -27,7 +28,8 @@
       92.0,
       8.3
      ],
-     "panorama": "4047190205531944"
+     "panorama": "4047190205531944",
+     "note": "colour check misregistered (2026-09-29): the panorama pose is coarse and the check's wall mask lands on the neighbouring building's grey base and white band, not on the flagged buildings; its dE (live 19.1, v0.35 21.8) measures that building. The user waived this camera's colour check for v0.35 (clean-v77/release.json colourWaivers). Register the photograph before its number can block again. Registered 2026-09-29 (review/panorama-registration.json, register_panoramas.py): the check now renders from the panorama's refined pose and the mask lands on the flagged buildings; dE v0.35 12.9, v0.34 11.7."
     },
     {
      "name": "front-square-on",
@@ -69,7 +71,21 @@
       9.0
      ],
      "panorama": "743561541725632",
-     "note": "reported 2026-09-28 (Street mode): the tall building's alley frontage in white render with lilac and salmon panels and a thin wall at the corner; photographs show a set-back dark glass and metal block with a glazed rooftop pavilion"
+     "note": "reported 2026-09-28 (Street mode): the tall building's alley frontage in white render with lilac and salmon panels and a thin wall at the corner; photographs show a set-back dark glass and metal block with a glazed rooftop pavilion | colour check (2026-09-29): its panorama was taken at the front-square-on position, 19 m from this camera, so the check compares that photograph with a mask drawn from here. Since 2026-09-29 the colour check renders from the registered panorama pose instead (dE 4.5)."
+    },
+    {
+     "name": "user-report-0929",
+     "from": [
+      -27.0,
+      76.0,
+      4.1
+     ],
+     "at": [
+      -50.0,
+      101.0,
+      9.0
+     ],
+     "note": "reported 2026-09-29 ('regressed AGAIN'): the live v0.34 seen at street level, a thin brick wall with dark window strips rising at the alley corner, a flat-topped brick front and the pale stepped block behind. The fix existed only in the unpublished v0.35 candidate. Pose approximated from the screenshot."
     }
    ],
    "expected": "One outline holds two buildings. On the corner, a one-storey brick building: stepped parapet on the main-street front, a pitched roof behind it (LiDAR eaves about 6.8 m, ridge about 9.9 m, ridge running front to back), an arched door and a large arched opening. Set back behind it and running along the alley, a taller, newer building of dark glass and dark metal with a glazed rooftop pavilion and roof planting. No tall wall stands at the alley corner. No panorama sees the tall building's alley facade.",
@@ -77,16 +93,20 @@
     {
      "id": "tall-corner-wall",
      "since": "v0.24",
-     "status": "open",
+     "status": "fixed",
      "text": "A thin wall of the tall part stands at the alley corner and rises about 15 m past the low building.",
-     "cause": "building_parts.split hands the leftover edge strip (0.3-0.7 m wide) to the largest part."
+     "cause": "building_parts.split hands the leftover edge strip (0.3-0.7 m wide) to the largest part.",
+     "fixedIn": "v0.35 (f07ba7618595), published 2026-09-29",
+     "checkedWith": "work/clean-v77/flagged-views/ and live viewer captures at every camera of this view (2026-09-29)"
     },
     {
      "id": "staircase",
      "since": "v0.24",
-     "status": "open",
+     "status": "fixed",
      "text": "Stepped volumes behind the low building.",
-     "cause": "The part boundary follows the 2 m LiDAR grid, which runs at 45 degrees to this outline."
+     "cause": "The part boundary follows the 2 m LiDAR grid, which runs at 45 degrees to this outline.",
+     "fixedIn": "v0.35 (f07ba7618595), published 2026-09-29",
+     "checkedWith": "front-square-on and alley-walk live captures (2026-09-29); the remaining upper-edge sawtooth is upper-tier-sawtooth"
     },
     {
      "id": "alley-facade-flips",
@@ -105,16 +125,48 @@
     {
      "id": "flat-pitched-roof",
      "since": "v0.25",
-     "status": "open",
+     "status": "fixed",
      "text": "The low building's pitched roof is drawn flat.",
-     "cause": "Tilted roof planes need 150 m2 each; each slope here is about 100 m2."
+     "cause": "Tilted roof planes need 150 m2 each; each slope here is about 100 m2.",
+     "fixedIn": "v0.35 (f07ba7618595), published 2026-09-29",
+     "checkedWith": "work/clean-v77/flagged-views/ and live viewer captures (2026-09-29); the stepped parapet is the separate defect stepped-parapet"
     },
     {
      "id": "tall-building-appearance",
      "since": "v0.14",
      "status": "open",
      "text": "The taller building shows pale render or brick; the photographs show dark glass and dark metal.",
-     "cause": "Its photographed part (seen above the low building from the main street) is never read; the main-street reading covers only the low building's frontage, and it is the one that votes for the tall building's material."
+     "cause": "Its photographed part (seen above the low building from the main street) is never read; the main-street reading covers only the low building's frontage, and it is the one that votes for the tall building's material.",
+     "candidate": "clean-v92 (2026-09-29, unpublished): the reader masks the low building as an occluder (frontage_parts_v36) and reads the glass band above its parapet (2 agreeing photographs, [91,101,107]); every tall-block wall takes panel_dark#5b656b. Reads dark, but as matte dark panel with the prior's punched windows and pale sills, not a glazed curtain wall; and from the street corner the model shows about four storeys above the gable where the photograph shows one glass storey."
+    },
+    {
+     "id": "upper-tier-sawtooth",
+     "since": "v0.35",
+     "status": "open",
+     "text": "A sawtooth of small dark steps along the tall block's upper tier edge above the alley (alley-walk camera).",
+     "cause": "Tier outline traced on the 2 m roof raster; gone in the v0.36 line candidates (clean-v84, clean-v86: outline-frame tier raster and regulariser), not released."
+    },
+    {
+     "id": "stepped-parapet",
+     "since": "v0.35",
+     "status": "open",
+     "text": "The main-street front ends in a straight rake; the photographs show a stepped, corbelled parapet with square studs.",
+     "cause": "The gable end is drawn to the roof planes; parapet steps above the rake are not read (the corbelled parapet lies above the rectified image)."
+    },
+    {
+     "id": "corner-pier-dark-panel",
+     "since": "v0.32",
+     "status": "open",
+     "text": "A glossy black strip (0.75 m wide, 2.9-8.3 m up) at the left end of the main-street front; the photographs show a brick pilaster with a wall lamp and its shadow.",
+     "cause": "Supplement pier of sf_201006_0001245-f0 (pipeline/frontage-supplements-v31.json) read from the pilaster's shaded side as panel_dark#46211f; the viewer finishes panel as a dark gloss."
+    },
+    {
+     "id": "alley-flank-reading-dropped",
+     "since": "v0.36 line (clean-v84, clean-v86; never released)",
+     "status": "fixed-in-code",
+     "text": "The low building's alley flank drawn as a two-storey grid of windows.",
+     "cause": "facades.compile's new plane-aware match compared the wall's plane offset along the wall's normal with the reading's planeV along its own normal (5.9 degrees apart, 10.3 m at ~100 m from the origin), so reading sf_201006_0001245_p1-auto-231 was rejected and the wall fell to the residential prior. Fixed by the facade session (plane_gap along the reading's normal, test_ribbon_glazing_v36.py); check on the next candidate's sheets.",
+     "checkedWith": "work/clean-v89/flagged-views/ (facade session, 2026-09-29): across-main-street shows the flank as blank brick again; not yet released"
     }
    ]
   },
