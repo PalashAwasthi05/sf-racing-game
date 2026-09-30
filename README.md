@@ -1,3 +1,5 @@
+> **Historical (marked 2026-09-29):** this describes detail pilot 02 (heuristic v0.3, 2026-09-08). Its hosted viewer link below is from that run and does not show the current world, which is hosted locally only (`./dev-server.sh`, http://127.0.0.1:3001/). For the current state read [agent-handoff/START_HERE.md](../../agent-handoff/START_HERE.md) in the workspace root.
+
 # 188 King Street — detail pilot 02
 
 [Open the rebuilt private viewer](https://king-street-world-pilot.reflex-4683.chatgpt.site).
