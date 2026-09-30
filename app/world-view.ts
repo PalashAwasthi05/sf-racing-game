@@ -7,6 +7,7 @@ import {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import type {World} from './king-pilot';
 import {createCar,buildDistanceField,loadRoadster,type Car,type CarInput} from './car';
+import {buildCarGround} from './car-ground';
 import {createAtmosphere,PRESET_ORDER,type Preset} from './atmosphere';
 import {finishMaterials,classOf} from './finish';
 import {weatherMaterials,groundTexture,WEATHERED_LAYERS,UNWEATHERED} from './weathering';
@@ -226,7 +227,10 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  function applySize(){const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();atmosphere.resize();renderer.setPixelRatio(renderScale);renderer.setSize(w,h);composer.setPixelRatio(renderScale);composer.setSize(w,h);ao.setSize(Math.max(1,Math.round(w*renderScale*.6)),Math.max(1,Math.round(h*renderScale*.6)));}
  const resize=new ResizeObserver(applySize);resize.observe(host);
  // The car is built now and hidden, so its shaders compile with the rest of the scene rather than on the first drive.
- field=buildDistanceField(objects,getLayer);const carSource=await roadster;car=carSource?createCar(scene,host,camera,groundAt,field,carSource):null;car?.group.traverse(o=>{if(!(o instanceof THREE.Mesh))return;atmosphere.setupMaterial(o.material);for(const m of Array.isArray(o.material)?o.material:[o.material]){if(m instanceof THREE.MeshStandardMaterial&&m.roughness<.5&&!reflectiveMaterials.includes(m)){m.userData.envIntensity=.7;reflectiveMaterials.push(m);}}});car?.stop();let carPlaced=false;
+ // What the car stands on and runs into: the drivable surface, street objects and cells it cannot enter (car-ground.ts),
+ // then the building distance field at the surface raster's resolution with those cells marked in.
+ const carGround=buildCarGround(objects,getLayer,groundAt);
+ const fieldStart=performance.now();field=buildDistanceField(objects,getLayer,275,.25,carGround.blocked);carGround.stats.fieldMs=Math.round(performance.now()-fieldStart);const carSource=await roadster;car=carSource?createCar(scene,host,camera,groundAt,field,carSource,carGround):null;car?.group.traverse(o=>{if(!(o instanceof THREE.Mesh))return;atmosphere.setupMaterial(o.material);for(const m of Array.isArray(o.material)?o.material:[o.material]){if(m instanceof THREE.MeshStandardMaterial&&m.roughness<.5&&!reflectiveMaterials.includes(m)){m.userData.envIntensity=.7;reflectiveMaterials.push(m);}}});car?.stop();let carPlaced=false;
  // Lighter stand-ins for the car (car-lod.ts): merged, simplified parts in the depth-only passes, simplified parts in the
  // scene pass when the car is far from the camera. Built from whatever model loaded, so a rebuilt car needs nothing else.
  const carLod=car?attachCarLod(car.group,{enabled:()=>budget.carLod}):null;if(carLod)depthPasses.addSwap(carLod.depthSwap);
@@ -246,7 +250,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
   updateReflections(performance.now(),true);if(car)car.group.visible=true;
   // compiled for the target the scene pass draws into: against the canvas it builds tone-mapped variants nothing uses
   renderer.setRenderTarget(scenePass.target);renderer.compile(scene,camera);renderer.setRenderTarget(null);}
- if(car)car.group.visible=false;(window as unknown as {__car?:unknown}).__car={car,field,objects,getLayer};
+ if(car)car.group.visible=false;(window as unknown as {__car?:unknown}).__car={car,field,ground:carGround,objects,getLayer};
  let frame=0,previous=performance.now();const forward=new THREE.Vector3(),right=new THREE.Vector3(),worldUp=new THREE.Vector3(0,1,0),delta=new THREE.Vector3();
  let frameMs=16,frames=0,lastCalls=0,qualityLocked=false;renderer.info.autoReset=false;
  function animate(now:number){frame=requestAnimationFrame(animate);const raw=now-previous;const dt=Math.min(raw/1000,.05);previous=now;
