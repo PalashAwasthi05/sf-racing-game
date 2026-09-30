@@ -95,94 +95,224 @@ def hoops():
 
 
 # ---- mirrors ---------------------------------------------------------------------------------------------------------------
-def mirrors():
-    def cap(x, y, z):
-        e = ellipsoid(x, y, z, (.262, .905, .928), (.115, .062, .085))
-        back = .188 - x                       # flat face carrying the glass
-        return smax(e, back, .012)
+# Door mirror housing: a rounded, slightly wedge-shaped face (taller outboard) carrying the glass, domed forward to a
+# blunt nose; it sits clear of the belt on a slim arm that rises from the door's upper front corner.
+_MC = np.array([.205, .945, .905])        # centre of the glass face (x is the face plane)
+_MA, _MB, _MD = .100, .049, .088          # half width (z), half height at the centre (y), depth forward (x)
 
-    def stalk(x, y, z):
-        return capsule(x, y, z, (.35, .862, .80), (.285, .885, .905), .014)
-    V, T = mesh_solid(cap, (.12, .82, .82), (.4, .99, 1.04), .004, tolerance=.00035)
-    capm = Mesh(V, T).with_normals(cap)
-    V, T = mesh_solid(stalk, (.24, .82, .76), (.40, .93, .93), .004, tolerance=.0002)
-    stm = Mesh(V, T).with_normals(stalk)
-    glass = patch(lambda u, v: (np.full_like(u, .1865), .905 + (v - .5) * .096 * np.sqrt(1 - .55 * u * u), .928 + .07 * u),
-                  12, 8, (-1, 1), (0, 1))
+
+def _mirror_face(w, v):
+    """Normalised radius in the face: 1 on the housing outline (a superellipse, taller toward the outboard end)."""
+    b = _MB * (1 + .16 * np.clip(w / _MA, -1, 1))
+    vv = v - .004 * (w / _MA)                          # the outline's top rises a little outboard
+    return (np.abs(w / _MA) ** 3.2 + np.abs(vv / b) ** 3.2) ** (1 / 3.2)
+
+
+def _mirror_cap(x, y, z):
+    w, v = z - _MC[2], y - _MC[1]
+    u = np.maximum(x - _MC[0], 0) / _MD
+    r = np.sqrt(_mirror_face(w, v) ** 2 + u ** 2.4)
+    e = (r - 1) * .045
+    return smax(e, _MC[0] - x, .005)
+
+
+def _mirror_arm(x, y, z):
+    a = capsule(x, y, z, (.312, .872, .793), (.262, .905, .845), .0085)
+    b = capsule(x, y, z, (.322, .866, .789), (.300, .869, .791), .012)      # the arm's foot on the door
+    return smin(a, b, .012)
+
+
+def mirrors():
+    V, T = mesh_solid(_mirror_cap, (.18, .87, .78), (.32, 1.02, 1.03), .003, tolerance=.0002)
+    capm = Mesh(V, T).with_normals(_mirror_cap)
+    from mesher import split
+    # the housing's rear face is dark round the glass, up to where it rolls into the painted shell
+    def frame(x, y, z):
+        return x - _MC[0] - .004
+    rim, body = split(capm, frame, _mirror_cap)
+    V, T = mesh_solid(_mirror_arm, (.22, .83, .75), (.39, .94, .88), .003, tolerance=.0002)
+    arm = Mesh(V, T).with_normals(_mirror_arm)
+
+    def gl(u, v):
+        a = np.pi * u
+        cw, sv = np.cos(a) * _MA, np.sin(a) * _MB
+        k = .92 / np.maximum(_mirror_face(cw, sv), 1e-9)       # scale of this direction that meets the 90% outline
+        return np.full_like(u, _MC[0] - .003), _MC[1] + sv * k * v, _MC[2] + cw * k * v
+    glass = patch(gl, 48, 6, (-1, 1), (0, 1))
     glass.N = np.tile([-1., 0, 0], (len(glass.V), 1))
-    glass.T = glass.T[:, ::-1]
-    return [('mirror', 'paint', both_sides_z(capm)), ('mirror', 'black_satin', both_sides_z(stm)),
-            ('mirror', 'mirror', both_sides_z(glass))]
+    fn = glass.face_normals()
+    if (fn[:, 0] > 0).sum() > len(fn) / 2:
+        glass.T = glass.T[:, ::-1]
+    return [('mirror', 'paint', both_sides_z(body)), ('mirror', 'black_gloss', both_sides_z(rim)),
+            ('mirror', 'black_satin', both_sides_z(arm)), ('mirror', 'mirror', both_sides_z(glass))]
 
 
 # ---- cabin -------------------------------------------------------------------------------------------------------------------
+SEAT_FOOT = (-.25, .365)              # where the backrest meets the cushion (x, y)
+SEAT_LEAN = np.deg2rad(15)            # backrest rake
+
+
+def _seat_frame(x, y):
+    """Coordinates along (w, up the backrest) and through (u, forward from it) the backrest."""
+    c, s = np.cos(SEAT_LEAN), np.sin(SEAT_LEAN)
+    dx, dy = x - SEAT_FOOT[0], y - SEAT_FOOT[1]
+    return dx * c + dy * s, -dx * s + dy * c
+
+
 def seat_solid(zc):
+    """A sports bucket with an integrated headrest: cushion and backrest with raised side bolsters, the head section
+    narrower at the neck and wider at the top."""
     def f(x, y, z):
-        # cushion
-        cush = box3(x, y, z, (-.08, .355, zc), (.24, .05, .215), .04)
-        # backrest leaning back 22 degrees about its foot at (-.33, .38)
-        ang = np.deg2rad(22)
-        u = (x + .33) * np.cos(ang) + (y - .38) * np.sin(ang)
-        w = -(x + .33) * np.sin(ang) + (y - .38) * np.cos(ang)
-        back = box3(u, w, z, (-.045, .33, zc), (.05, .33, .215), .04)
-        head = box3(u, w, z, (-.04, .66, zc), (.045, .07, .13), .04)
-        # side bolsters on cushion and back
-        bol = np.minimum(capsule(x, y, z, (.12, .43, zc + .19), (-.28, .41, zc + .19), .055),
-                         capsule(x, y, z, (.12, .43, zc - .19), (-.28, .41, zc - .19), .055))
-        bb = np.minimum(capsule(u, w, z, (-.02, .08, zc + .19), (-.02, .55, zc + .17), .06),
-                        capsule(u, w, z, (-.02, .08, zc - .19), (-.02, .55, zc - .17), .06))
-        s = smin(cush, back, .05)
-        s = smin(s, head, .06)
-        s = smin(s, bol, .04)
-        return smin(s, bb, .05)
+        dz = z - zc
+        cush = box3(x, y, z, (.0, .345, zc), (.235, .045, .19), .035)
+        u, w = _seat_frame(x, y)
+        back = box3(u, w, z, (.04, .30, zc), (.045, .30, .19), .035)
+        # the head section: waisted at the neck
+        head = smin(box3(u, w, z, (.04, .695, zc), (.04, .06, .125), .035),
+                    box3(u, w, z, (.04, .60, zc), (.036, .07, .095), .03), .035)     # waisted at the neck
+        head = smax(head, -box3(u, w, z, (.05, .625, zc), (.06, .016, .05), .012), .006)   # the belt slot
+        bol = np.minimum(capsule(x, y, z, (.20, .415, zc + .175), (-.21, .40, zc + .175), .05),
+                         capsule(x, y, z, (.20, .415, zc - .175), (-.21, .40, zc - .175), .05))
+        bb = np.minimum(capsule(u, w, z, (.075, .06, zc + .17), (.075, .52, zc + .15), .055),
+                        capsule(u, w, z, (.075, .06, zc - .17), (.075, .52, zc - .15), .055))
+        s = smin(cush, back, .04)
+        s = smin(s, head, .03)
+        s = smin(s, bol, .035)
+        return smin(s, bb, .04)
     return f
 
 
-def cabin():
-    parts = []
-    seat = seat_solid(.36)
-    V, T = mesh_solid(seat, (-.72, .27, .08), (.28, 1.14, .64), .006, tolerance=.001)
-    seatm = Mesh(V, T).with_normals(seat)
-    parts.append(('seat', 'cabin_soft', both_sides_z(seatm)))
+def smoothstep_(t):
+    t = np.clip(t, 0, 1)
+    return t * t * (3 - 2 * t)
 
-    def dash(x, y, z):
-        za = np.abs(z)
-        top = box3(x, y, z, (.53, .70, 0), (.17, .13, .70), .05)
-        # instrument hood over the gauges, in front of the left seat
-        hood = box3(x, y, z, (.42, .83, -.36), (.10, .035, .17), .03)
-        tunnel = box3(x, y, z, (.18, .42, 0), (.42, .13, .11), .04)
-        s = smin(top, hood, .04)
-        s = smin(s, tunnel, .06)
-        return np.maximum(s, za - .74)
-    V, T = mesh_solid(dash, (-.3, .28, -.76), (.75, .9, .76), .007, tolerance=.0004)
-    parts.append(('dash', 'cabin_trim', Mesh(V, T).with_normals(dash)))
-    # steering wheel: rim, three spokes and the boss, in front of the left seat
+
+def _dash(x, y, z):
+    za = np.abs(z)
+    # the dash: its top runs from the screen base back to a rounded brow over the cockpit
+    top = box3(x, y, z, (.62, .64, 0), (.22, .15, .76), .06)
+    brow = capsule(x, y, z, (.44, .76, -.70), (.44, .76, .70), .045)
+    s = smin(top, brow, .05)
+    # instrument hood over the gauges in front of the driver
+    hood = box3(x, y, z, (.47, .815, -.36), (.075, .035, .165), .03)
+    s = smin(s, hood, .03)
+    s = smax(s, -box3(x, y, z, (.40, .79, -.36), (.07, .03, .15), .02), .01)          # the hood's open face
+    # centre console: a sloping face under the screen, running back between the seats as the tunnel
+    fx, fy = .46, .66
+    cu = (x - fx) * -.6 + (y - fy) * .8          # the console's face looks back and up at the occupants
+    console = np.maximum(np.maximum(cu, za - .115), np.maximum(np.maximum(y - .70, .40 - x), np.maximum(.32 - y, x - .80)))
+    tunnel = box3(x, y, z, (.02, .43, 0), (.45, .13, .11), .04)
+    s = smin(s, smin(console, tunnel, .05), .05)
+    return np.maximum(s, za - .745)
+
+
+def cabin():
+    from mesher import split
+    parts = []
+    for zc in (.36, -.36):
+        seat = seat_solid(zc)
+        V, T = mesh_solid(seat, (-.62, .27, zc - .29), (.30, 1.18, zc + .29), .004, tolerance=.0005)
+        m = Mesh(V, T).with_normals(seat)
+        # cloth centre panels on cushion and backrest, leather bolsters and head section
+        def centre(x, y, z, zc=zc):
+            u, w = _seat_frame(x, y)
+            front = np.where(w > .1, np.maximum(.04 - u, w - .56), .345 - y)     # backrest front / cushion top
+            return np.maximum(np.abs(z - zc) - .115, front)
+        soft, leather = split(m, centre, seat)
+        parts += [('seat', 'cabin_soft', soft), ('seat', 'cabin', leather)]
+    from mesher import mesh_solid_sharp, autosmooth
+    V, T = mesh_solid_sharp(_dash, (-.45, .28, -.77), (.86, .92, .77), .005, tolerance=.0004)
+    parts.append(('dash', 'cabin_trim', autosmooth(Mesh(V, T), _dash)))
+    parts += _instruments() + _steering_wheel()
+    return parts
+
+
+def _disc(c, n, r, depth=0., segments=40):
+    """A flat disc of radius r centred at c facing along n."""
+    n = np.asarray(n, float) / np.linalg.norm(n)
+    e1 = np.cross(n, [0, 1., 0]); e1 /= np.linalg.norm(e1)
+    e2 = np.cross(e1, n)
+    a = np.linspace(0, 2 * np.pi, segments, endpoint=False)
+    V = np.concatenate([[c], c + r * (np.cos(a)[:, None] * e1 + np.sin(a)[:, None] * e2)])
+    T = np.array([[0, 1 + k, 1 + (k + 1) % segments] for k in range(segments)])
+    m = Mesh(V, T, np.tile(n, (len(V), 1)))
+    if (m.face_normals() @ n).mean() < 0:
+        m.T = m.T[:, ::-1]
+    return m
+
+
+def _ring(c, n, r, t, segments=40):
+    n = np.asarray(n, float) / np.linalg.norm(n)
+    e1 = np.cross(n, [0, 1., 0]); e1 /= np.linalg.norm(e1)
+    e2 = np.cross(e1, n)
+    C = np.array([c + r * (np.cos(a) * e1 + np.sin(a) * e2) for a in np.linspace(0, 2 * np.pi, segments + 1)])
+    prof = [(t * np.cos(a), t * np.sin(a)) for a in np.linspace(0, 2 * np.pi, 8, endpoint=False)]
+    return sweep(C, prof, lambda i, p: n, caps=False)
+
+
+def _instruments():
+    """Three round dials under the hood, the centre screen, round vents and the gear lever."""
+    parts = []
+    face = np.array([-1., .25, 0])                     # dials look back and a little up at the driver
+    for dz, r in ((-.105, .042), (0, .05), (.105, .042)):
+        c = np.array([.448, .792 + (.004 if dz == 0 else -.004), -.36 + dz])
+        parts.append(('dash', 'black_gloss', _disc(c, face, r)))
+        parts.append(('dash', 'lamp_chrome', _ring(c - .002 * face, face, r + .002, .0022)))
+        # the needle and tick ring read as a pale arc on each dial
+        parts.append(('dash', 'drl', _ring(c - .0015 * face, face, r * .82, .0009)))
+    # centre screen on the sloping console face
+    nrm = np.array([-.6, .8, 0])
+    tang = np.array([.8, .6, 0])
+    c0 = np.array([.46, .66, 0]) + .003 * nrm + .005 * tang
+    sq = patch(lambda u, v: tuple(c0[k] + u * .095 * np.array([0, 0, 1.])[k] + v * .055 * tang[k] for k in range(3)), 2, 2, (-1, 1), (-1, 1))
+    sq.N = np.tile(nrm, (len(sq.V), 1))
+    if (sq.face_normals() @ nrm).mean() < 0:
+        sq.T = sq.T[:, ::-1]
+    parts.append(('dash', 'black_gloss', sq))
+    # round vents: two in the centre above the screen, one at each end of the dash
+    for c in ((.43, .705, .085), (.43, .705, -.085), (.40, .74, .64), (.40, .74, -.64)):
+        c = np.array(c)
+        parts.append(('dash', 'lamp_chrome', _ring(c, (-1, 0, 0), .034, .004)))
+        parts.append(('dash', 'black_matte', _disc(c + np.array([.004, 0, 0]), (-1, 0, 0), .033)))
+    # gear lever
+    knob = lambda x, y, z: smin(capsule(x, y, z, (.12, .54, 0), (.10, .62, 0), .008), ellipsoid(x, y, z, (.10, .635, 0), (.026, .022, .022)), .01)
+    V, T = mesh_solid(knob, (.05, .50, -.05), (.16, .68, .05), .003, tolerance=.0002)
+    parts.append(('dash', 'cabin', Mesh(V, T).with_normals(knob)))
+    return parts
+
+
+def _steering_wheel():
+    """A sports wheel: thick rim, three flat spokes (left, right, bottom) and a padded centre, on its column."""
     c = np.array([.265, .725, -.36])       # left-hand drive: +z is the car's right side
     n = np.array([np.cos(np.deg2rad(25)), -np.sin(np.deg2rad(25)), 0])      # column axis: forward and down into the dash
     e1 = np.array([0, 0, 1.])
     e2 = np.cross(n, e1)
-    ring = np.array([c + .185 * (np.cos(a) * e1 + np.sin(a) * e2) for a in np.linspace(0, 2 * np.pi, 72, endpoint=False)])
-    prof = [(.016 * np.cos(a), .013 * np.sin(a)) for a in np.linspace(0, 2 * np.pi, 12, endpoint=False)]
-    rim = sweep(np.concatenate([ring, ring[:1]]), prof, lambda i, p: n, caps=False)
-    parts.append(('wheel', 'cabin', rim))
+    parts = []
+    ring = np.array([c + .182 * (np.cos(a) * e1 + np.sin(a) * e2) for a in np.linspace(0, 2 * np.pi, 96, endpoint=False)])
+    prof = [(.0165 * np.cos(a), .0135 * np.sin(a)) for a in np.linspace(0, 2 * np.pi, 16, endpoint=False)]
+    parts.append(('wheel', 'cabin', sweep(np.concatenate([ring, ring[:1]]), prof, lambda i, p: n, caps=False)))
 
-    def boss(x, y, z):
+    def hub(x, y, z):
         d = np.stack([x - c[0], y - c[1], z - c[2]])
         along = np.tensordot(n, d, 1)
-        rad = np.sqrt(np.maximum((d * d).sum(0) - along * along, 0))
-        hub = np.maximum(rad - .06, np.abs(along + .01) - .03)
-        sp = []
-        for a in (0, np.pi, -np.pi / 2):
-            dirv = np.cos(a) * e1 + np.sin(a) * e2
-            end = c + .175 * dirv
-            sp.append(capsule(x, y, z, c, end, .014))
-        s = hub
-        for q in sp:
-            s = smin(s, q, .02)
-        col = capsule(x, y, z, c + .02 * n, c + .30 * n, .03)
-        return smin(s, col, .02)
-    V, T = mesh_solid(boss, (c[0] - .25, c[1] - .25, c[2] - .22), (c[0] + .3, c[1] + .3, c[2] + .22), .005, tolerance=.0003)
-    parts.append(('wheel', 'cabin_trim', Mesh(V, T).with_normals(boss)))
+        a1 = np.tensordot(e1, d, 1)
+        a2 = np.tensordot(e2, d, 1)
+        # the padded centre: a rounded, slightly wider-than-tall cushion
+        pad = (np.abs(a1 / .078) ** 3 + np.abs((a2 + .005) / .062) ** 3) ** (1 / 3) - 1
+        pad = np.maximum(pad * .05, np.abs(along + .012) - .026)
+        s = pad
+        for a, w in ((0, .022), (np.pi, .022), (np.pi / 2, .03)):
+            dv = np.cos(a) * e1 + np.sin(a) * e2
+            t = np.clip(d[0] * dv[0] + d[1] * dv[1] + d[2] * dv[2], 0, .175)
+            q = [d[k] - t * dv[k] for k in range(3)]                    # from the spoke's centre line
+            al = q[0] * n[0] + q[1] * n[1] + q[2] * n[2]
+            lat = np.sqrt(np.maximum(q[0] ** 2 + q[1] ** 2 + q[2] ** 2 - al * al, 0))
+            s = smin(s, np.maximum(lat - w, np.abs(al + .004) - .007), .012)
+        col = capsule(x, y, z, c + .03 * n, c + .30 * n, .032)
+        return smin(s, col, .015)
+    from mesher import mesh_solid_sharp, autosmooth
+    V, T = mesh_solid_sharp(hub, (c[0] - .23, c[1] - .23, c[2] - .22), (c[0] + .3, c[1] + .25, c[2] + .22), .003, tolerance=.0002)
+    parts.append(('wheel', 'cabin_trim', autosmooth(Mesh(V, T), hub)))
     return parts
 
 
