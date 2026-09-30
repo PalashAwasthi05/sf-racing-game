@@ -234,10 +234,14 @@ def prior(tags,height,area):
 def area_donor(profiles,fid,height):
  """A measured facade of this area to lend its character to a building no photograph covers: among the
  automatic readings with a measured grid, the five closest in wall height, one chosen by the building's own id
- (deterministic, so neighbours differ). Its values come from photographs of this area, never a fixed palette."""
- import hashlib
+ (deterministic, so neighbours differ). Its values come from photographs of this area, never a fixed palette.
+ A wall of a building some other side of which was photographed takes that building's own reading first: its
+ unseen sides are far likelier to share its material and windows than any other building's."""
+ import hashlib,re
  pool=[p for p in profiles if str(p.get('status','')).startswith('image-measured-auto') and p.get('reading',{}).get('floorPitchM') and p.get('reading',{}).get('bayPitchM') and p.get('heightRefM')]
  if not pool:return None
+ own=[p for p in pool if re.sub(r'_p\d+$','',str((p.get('match') or {}).get('featureId') or ''))==re.sub(r'_p\d+$','',str(fid))]
+ if own:pool=own
  pool.sort(key=lambda p:(abs(math.log(max(float(p['heightRefM']),1.)/max(float(height),1.))),p['id']))
  near=pool[:5];return near[int(hashlib.md5(fid.encode()).hexdigest(),16)%len(near)]
 
