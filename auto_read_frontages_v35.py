@@ -54,6 +54,7 @@ import frontage_crops_v15 as fc
 import auto_read_frontages_v27 as R27
 import auto_read_frontages_v31 as V
 import frontage_evidence_v34 as E
+import frontage_fences_v36 as FN
 import frontage_parts_v36 as FP
 from auto_read_frontages_v24 import rectify, read, MIN_WALL_M
 from auto_read_frontages_v33 import colour_of, dark, pick_photos, agreeing
@@ -123,6 +124,7 @@ def main():
              and not buildings[w['buildingId']].get('landmark') and (only is None or re.sub(r'_p\d+$', '', w['buildingId']) in only)]
     occ_fp = fc.Occluders(fc.load_footprints(frame)); trees = fc.load_trees(frame); cams = fc.load_cameras(frame)
     surf = E.building_surface(world, frame); ground = E.ground_grid(world, frame)
+    fences = FN.fence_surface(world, frame, surf, ground)   # see-through fences the segmenter does not label (frontage_fences_v36)
     # a split outline's parts are each other's occluders (frontage_parts_v36): the outline's own footprints are not one mass
     glb = a.candidate / 'materials/candidate.glb'; parts = FP.part_outlines(str(glb if glb.exists() else a.candidate / 'final/candidate.glb'))
     def plane_of(w):
@@ -202,6 +204,12 @@ def main():
                 if sbk.get('share', 0.) > 0: hm_ |= E.setback_other(w, cams[c['image']], zw, H, L, surf, own, sbk['cols'], ground) & ~unbacked
                 hidden[c['image']] = hm_
             return hidden[c['image']]
+        fenced = {}
+        def fence_of(c):
+            # the wall behind a fence: not read for colour, and no opening is believed that stands a third behind it (a
+            # chain-link fence in front of a low wall was read as three shopfronts from the ground to the wall's top)
+            if c['image'] not in fenced: fenced[c['image']] = E.hidden_mask(w, cams[c['image']], zw, H, L, fences, own, ground)
+            return fenced[c['image']]
         inc_p = incumbent_profile(w, bid) if incumbents else None; inc = inc_p['camera']['image'] if inc_p else None
         if inc: used_incumbents.add((inc_p['id'], inc))
         inc_c = next((c for c in cands if c['image'] == inc), None)
@@ -226,7 +234,7 @@ def main():
                 gain = road_gain(pano)   # the road below the horizon, not the capture vehicle (panorama_balance)
                 pano_cache[c['image']] = np.clip(pano * gain, 0, 255).astype(np.uint8)
             img, H_, L_ = rectify(w, cam, z0, pano_cache[c['image']], base=zb); hm = hidden_of(c)
-            reading = read(img, H_, L_, exclude=hm)
+            fm = fence_of(c); reading = read(img, H_, L_, exclude=hm | fm if fm.shape == hm.shape else hm)
             ck = a.cache / (f"{re.sub(r'[^A-Za-z0-9_]', '', bid)}_{int(round(math.degrees(math.atan2(w['normal'][1], w['normal'][0]))))%360}_{c['image']}"
                             + (f"_z{int(round(zb))}h{int(round(H))}" if zb >= .5 else ''))   # a tier wall's image depends on its foot and height
             if ck.with_suffix('.json').exists():
@@ -239,6 +247,9 @@ def main():
                                                               'visible': found[3], 'glass': [list(map(float, g)) for g in found[5]]}))
                 np.savez_compressed(ck.with_suffix('.npz'), occ=found[2])
             found = E.mask_found(found, hm, H_)
+            if fm.any() and fm.shape == hm.shape:
+                behind = lambda bs: [b for b in bs if E.box_hidden(b, fm, H_) < .3]
+                found = (behind(found[0]), behind(found[1]), found[2] | fm if found[2] is not None and found[2].shape == fm.shape else found[2], found[3], found[4], behind(found[5]))
             p = V.profile(bid, buildings[bid], w, img, reading, c['image'], found)
             if zb >= .5:
                 p['zBaseM'] = round(zb, 2); p['id'] += f"-z{int(round(zb))}"
@@ -326,11 +337,17 @@ def main():
         nn = np.asarray(q['normal'], float)[:2]; nn /= np.linalg.norm(nn); uu = np.array([-nn[1], nn[0]]); f0, f1 = map(float, q['frameU'])
         seg = LineString([nn * float(q['planeV']) + uu * f0, nn * float(q['planeV']) + uu * f1])
         return seg.length <= 0 or seg.intersection(g.buffer(1.)).length >= .5 * seg.length
+    top_of = lambda r: float(r.get('zBaseM') or 0.) + float(r.get('heightRefM') or 0.)
+    def same_mass(q, r):
+        # a wall whose top stands 30 % lower or taller than the reading's is another mass (facades.belongs): a 4 m low
+        # structure beside a tile block was withheld for not being the block's tile, and drawn as the block's podium
+        a, b = top_of(q), top_of(r)
+        return not a or not b or abs(a - b) <= .3 * max(a, b)
     def refs_of(q):
         part = part_ref(q); ph = float((buildings.get(part) or {}).get('height') or 0.)
         out = []
         for rp, href, rgb, r in published.get(q['match'].get('featureId'), []):
-            if rp is not None: ok = rp == part and frame_on(r, part)
+            if rp is not None: ok = rp == part and frame_on(r, part) and same_mass(q, r)
             else: ok = not ph or not href or abs(float(href) - ph) <= .3 * max(float(href), ph)
             if ok: out.append(rgb)
         return out

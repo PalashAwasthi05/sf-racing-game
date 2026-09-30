@@ -2006,6 +2006,158 @@
    "planeV": 222.4
   },
   {
+   "id": "osm_149167937_p1-auto-315",
+   "status": "image-measured-auto-v31",
+   "match": {
+    "featureId": "osm_149167937",
+    "osmWayId": "149167937",
+    "partId": "osm_149167937_p1"
+   },
+   "normal": [
+    0.707,
+    -0.707
+   ],
+   "sourceIds": [
+    "mapillary:189544996950718",
+    "mapillary:1992856421469376",
+    "mapillary:2598093703873761",
+    "mapillary:805796471973151",
+    "mapillary:986197569213975"
+   ],
+   "heightRefM": 32.14,
+   "materialEvidence": {
+    "family": "brick",
+    "finish": "default",
+    "colorRgb": [
+     170,
+     145,
+     137
+    ],
+    "sourceIds": [
+     "mapillary:2598093703873761"
+    ]
+   },
+   "frameU": [
+    19.322,
+    49.712
+   ],
+   "reading": {
+    "visibleShare": 0.75,
+    "groundStoreyM": 3.0,
+    "storeys": 4,
+    "windows": 7,
+    "groundOpenings": 4,
+    "signs": 2,
+    "awnings": 1,
+    "wallRgb": [
+     170,
+     145,
+     137
+    ],
+    "family": [
+     "brick",
+     "default"
+    ],
+    "curtainWall": true,
+    "glazedAreas": 1,
+    "gridFallback": false,
+    "ribbon": false,
+    "shopfront": false,
+    "v31": {
+     "zones": [
+      [
+       0.0,
+       4.0
+      ],
+      [
+       4.0,
+       29.5
+      ],
+      [
+       29.5,
+       32.1
+      ]
+     ],
+     "piers": [
+      11.0,
+      25.5
+     ],
+     "bands": [
+      2.5,
+      3.9,
+      4.3,
+      4.6,
+      11.4
+     ],
+     "signs": [
+      2.8,
+      2.9
+     ]
+    },
+    "consensus": {
+     "photos": 5,
+     "kept": "2598093703873761",
+     "keptRank": 0,
+     "agreeing": 4,
+     "unagreed": false,
+     "incumbent": null,
+     "incumbentHidden": null,
+     "unsupported": false,
+     "replacesPublished": null,
+     "others": [
+      {
+       "image": "189544996950718",
+       "colorRgb": [
+        73,
+        76,
+        84
+       ],
+       "storeys": 7,
+       "dark": false
+      },
+      {
+       "image": "1992856421469376",
+       "colorRgb": [
+        59,
+        54,
+        50
+       ],
+       "storeys": 13,
+       "dark": false
+      },
+      {
+       "image": "805796471973151",
+       "colorRgb": [
+        153,
+        136,
+        129
+       ],
+       "storeys": 4,
+       "dark": false
+      },
+      {
+       "image": "986197569213975",
+       "colorRgb": [
+        84,
+        85,
+        92
+       ],
+       "storeys": 16,
+       "dark": false
+      }
+     ]
+    }
+   },
+   "camera": {
+    "image": "2598093703873761",
+    "distanceM": 13.6,
+    "incidence": 0.99,
+    "hiddenShare": 0.0
+   },
+   "planeV": 19.28,
+   "materialOnly": true
+  },
+  {
    "id": "osm_46264108-auto-45",
    "status": "image-measured-auto-v27",
    "match": {
@@ -3777,9 +3929,9 @@
       {
        "image": "1433728244622419",
        "colorRgb": [
-        61,
-        66,
-        71
+        58,
+        64,
+        69
        ],
        "storeys": 1,
        "dark": false
@@ -3825,9 +3977,9 @@
     "family": "brick",
     "finish": "default",
     "colorRgb": [
-     104,
-     74,
-     62
+     101,
+     68,
+     57
     ],
     "sourceIds": [
      "mapillary:1261143188568831"
@@ -3986,9 +4138,9 @@
       {
        "image": "1082843567369903",
        "colorRgb": [
-        60,
-        52,
-        59
+        59,
+        51,
+        57
        ],
        "storeys": 1,
        "dark": false
@@ -3996,9 +4148,9 @@
       {
        "image": "1513393373406733",
        "colorRgb": [
-        103,
-        94,
-        107
+        116,
+        110,
+        123
        ],
        "storeys": 0,
        "dark": false
@@ -4006,9 +4158,9 @@
       {
        "image": "3465832336910251",
        "colorRgb": [
-        98,
-        90,
-        90
+        95,
+        87,
+        87
        ],
        "storeys": 2,
        "dark": false
@@ -4016,11 +4168,11 @@
       {
        "image": "593165970393918",
        "colorRgb": [
-        95,
-        84,
-        99
+        66,
+        63,
+        73
        ],
-       "storeys": 3,
+       "storeys": 2,
        "dark": false
       }
      ]
@@ -6456,9 +6608,9 @@
     "family": "render",
     "finish": "gray",
     "colorRgb": [
-     124,
-     120,
-     113
+     136,
+     132,
+     126
     ],
     "sourceIds": [
      "mapillary:1506230517461660"
@@ -6751,9 +6903,9 @@
       {
        "image": "1652995815385508",
        "colorRgb": [
-        133,
-        130,
-        124
+        117,
+        114,
+        107
        ],
        "storeys": 2,
        "dark": false
@@ -7289,7 +7441,7 @@
       {
        "image": "1724868934857561",
        "colorRgb": [
-        105,
+        104,
         64,
         60
        ],
@@ -7319,11 +7471,11 @@
       {
        "image": "2475678589483314",
        "colorRgb": [
-        97,
-        100,
+        98,
+        101,
         114
        ],
-       "storeys": 3,
+       "storeys": 2,
        "dark": false
       }
      ]
@@ -11822,9 +11974,9 @@
     "family": "render",
     "finish": "gray",
     "colorRgb": [
-     87,
-     86,
-     86
+     102,
+     104,
+     107
     ],
     "sourceIds": [
      "mapillary:669163096220768"
@@ -12301,12 +12453,12 @@
    ],
    "heightRefM": 24.51,
    "materialEvidence": {
-    "family": "metal-panel",
-    "finish": "dark",
+    "family": "render",
+    "finish": "gray",
     "colorRgb": [
-     7,
-     9,
-     5
+     70,
+     77,
+     76
     ],
     "sourceIds": [
      "mapillary:1496768761335145"
@@ -12942,6 +13094,131 @@
     "hiddenShare": 0.0
    },
    "planeV": 15.43
+  },
+  {
+   "id": "osm_149253145-auto-226",
+   "status": "image-measured-auto-v31",
+   "match": {
+    "featureId": "osm_149253145",
+    "osmWayId": "149253145",
+    "partId": "osm_149253145"
+   },
+   "normal": [
+    -0.696,
+    -0.718
+   ],
+   "sourceIds": [
+    "mapillary:1493955812040235",
+    "mapillary:670655879412758"
+   ],
+   "heightRefM": 4.0,
+   "materialEvidence": {
+    "family": "render",
+    "finish": "white",
+    "colorRgb": [
+     208,
+     211,
+     205
+    ],
+    "sourceIds": [
+     "mapillary:1493955812040235"
+    ]
+   },
+   "frameU": [
+    -105.916,
+    -93.146
+   ],
+   "openings": [
+    {
+     "rect": [
+      0.0,
+      0.025,
+      0.1762,
+      0.825
+     ],
+     "style": {
+      "kind": "shopfront",
+      "mullionFractions": [],
+      "transomFractions": [
+       0.8
+      ]
+     },
+     "evidence": "image-detected"
+    },
+    {
+     "rect": [
+      0.1697,
+      0.025,
+      0.3198,
+      0.825
+     ],
+     "style": {
+      "kind": "shopfront",
+      "mullionFractions": [],
+      "transomFractions": [
+       0.8
+      ]
+     },
+     "evidence": "image-detected"
+    }
+   ],
+   "panels": [],
+   "bands": [],
+   "groups": [],
+   "reading": {
+    "visibleShare": 0.98,
+    "groundStoreyM": 3.6,
+    "storeys": 0,
+    "windows": 0,
+    "groundOpenings": 2,
+    "signs": 0,
+    "awnings": 0,
+    "wallRgb": [
+     208,
+     211,
+     205
+    ],
+    "family": [
+     "render",
+     "white"
+    ],
+    "curtainWall": false,
+    "glazedAreas": 0,
+    "gridFallback": false,
+    "ribbon": false,
+    "shopfront": true,
+    "v31": {},
+    "consensus": {
+     "photos": 2,
+     "kept": "1493955812040235",
+     "keptRank": 0,
+     "agreeing": 2,
+     "unagreed": false,
+     "incumbent": null,
+     "incumbentHidden": null,
+     "unsupported": false,
+     "replacesPublished": null,
+     "others": [
+      {
+       "image": "670655879412758",
+       "colorRgb": [
+        137,
+        137,
+        136
+       ],
+       "storeys": 0,
+       "dark": false
+      }
+     ]
+    }
+   },
+   "camera": {
+    "image": "1493955812040235",
+    "distanceM": 23.9,
+    "incidence": 0.82,
+    "hiddenShare": 0.0
+   },
+   "planeV": 218.9
   },
   {
    "id": "osm_46264108-auto-45-z22",
@@ -16687,136 +16964,6 @@
    "planeV": -102.58
   },
   {
-   "id": "sf_201006_0000213-auto-135-z22",
-   "status": "image-measured-auto-v27",
-   "match": {
-    "featureId": "sf_201006_0000213",
-    "osmWayId": null,
-    "partId": "sf_201006_0000213"
-   },
-   "normal": [
-    -0.709,
-    0.705
-   ],
-   "sourceIds": [
-    "mapillary:1703527837017233",
-    "mapillary:791107783262694"
-   ],
-   "heightRefM": 6.46,
-   "materialEvidence": {
-    "family": "render",
-    "finish": "default",
-    "colorRgb": [
-     240,
-     233,
-     221
-    ],
-    "sourceIds": [
-     "mapillary:791107783262694"
-    ]
-   },
-   "frameU": [
-    62.832,
-    74.122
-   ],
-   "openings": [
-    {
-     "rect": [
-      0.251,
-      0.2546,
-      0.31,
-      0.7804
-     ],
-     "style": {
-      "kind": "window",
-      "mullionFractions": [],
-      "transomFractions": []
-     },
-     "evidence": "image-detected, regular layout"
-    },
-    {
-     "rect": [
-      0.6108,
-      0.2546,
-      0.9964,
-      0.7804
-     ],
-     "style": {
-      "kind": "window",
-      "mullionFractions": [
-       0.5
-      ],
-      "transomFractions": []
-     },
-     "evidence": "image-detected, regular layout"
-    }
-   ],
-   "panels": [],
-   "bands": [],
-   "groups": [],
-   "reading": {
-    "visibleShare": 1.0,
-    "groundStoreyM": 0.0,
-    "storeys": 1,
-    "windows": 2,
-    "groundOpenings": 0,
-    "signs": 0,
-    "awnings": 0,
-    "wallRgb": [
-     240,
-     233,
-     221
-    ],
-    "family": [
-     "render",
-     "default"
-    ],
-    "curtainWall": false,
-    "glazedAreas": 0,
-    "gridFallback": false,
-    "ribbon": false,
-    "shopfront": false,
-    "consensus": {
-     "photos": 2,
-     "kept": "791107783262694",
-     "keptRank": 0,
-     "agreeing": 2,
-     "unagreed": false,
-     "incumbent": null,
-     "incumbentHidden": null,
-     "unsupported": false,
-     "replacesPublished": null,
-     "others": [
-      {
-       "image": "1703527837017233",
-       "colorRgb": [
-        247,
-        243,
-        230
-       ],
-       "storeys": 3,
-       "dark": false
-      }
-     ]
-    },
-    "layout": {
-     "storeys": 1,
-     "bayPitchM": null,
-     "rowsWithPitch": 0,
-     "windowsSnapped": 0,
-     "sliversDropped": 0
-    }
-   },
-   "zBaseM": 21.77,
-   "camera": {
-    "image": "791107783262694",
-    "distanceM": 31.4,
-    "incidence": 0.67,
-    "hiddenShare": 0.0
-   },
-   "planeV": 9.3
-  },
-  {
    "id": "osm_945538326-auto-315-z6",
    "status": "image-measured-auto-v27",
    "match": {
@@ -19266,9 +19413,9 @@
     "family": "brick",
     "finish": "default",
     "colorRgb": [
-     156,
-     113,
-     92
+     160,
+     116,
+     95
     ],
     "sourceIds": [
      "mapillary:1666987637270881"
@@ -19388,9 +19535,9 @@
     "signs": 0,
     "awnings": 0,
     "wallRgb": [
-     156,
-     113,
-     92
+     160,
+     116,
+     95
     ],
     "family": [
      "brick",
@@ -19438,7 +19585,7 @@
        "colorRgb": [
         53,
         35,
-        31
+        30
        ],
        "storeys": 4,
        "dark": true
@@ -19446,9 +19593,9 @@
       {
        "image": "1119729133373399",
        "colorRgb": [
-        155,
-        110,
-        91
+        145,
+        103,
+        83
        ],
        "storeys": 3,
        "dark": false
@@ -19672,179 +19819,6 @@
     "hiddenShare": 0.0
    },
    "planeV": -55.07
-  },
-  {
-   "id": "sf_201006_0000213_p1-auto-115-z29",
-   "status": "image-measured-auto-v27",
-   "match": {
-    "featureId": "sf_201006_0000213",
-    "osmWayId": null,
-    "partId": "sf_201006_0000213_p1"
-   },
-   "normal": [
-    -0.423,
-    0.906
-   ],
-   "sourceIds": [
-    "mapillary:1497410084717560",
-    "mapillary:24896224956651145",
-    "mapillary:4147931488761760",
-    "mapillary:668838748842254"
-   ],
-   "heightRefM": 19.75,
-   "materialEvidence": {
-    "family": "render",
-    "finish": "gray",
-    "colorRgb": [
-     90,
-     99,
-     106
-    ],
-    "sourceIds": [
-     "mapillary:4147931488761760"
-    ]
-   },
-   "frameU": [
-    143.417,
-    150.027
-   ],
-   "openings": [
-    {
-     "rect": [
-      0.2091,
-      0.0,
-      0.9955,
-      0.0989
-     ],
-     "style": {
-      "kind": "window",
-      "mullionFractions": [
-       0.5
-      ],
-      "transomFractions": []
-     },
-     "evidence": "image-detected"
-    },
-    {
-     "rect": [
-      0.2091,
-      0.2136,
-      0.9955,
-      0.5091
-     ],
-     "style": {
-      "kind": "window",
-      "mullionFractions": [
-       0.5
-      ],
-      "transomFractions": []
-     },
-     "evidence": "image-detected, regular layout"
-    }
-   ],
-   "panels": [],
-   "bands": [],
-   "groups": [
-    {
-     "region": [
-      0.2817,
-      0.5786,
-      0.9955,
-      0.9424
-     ],
-     "columnPitchM": 1.5,
-     "rowPitchM": 3.6,
-     "style": {
-      "kind": "window",
-      "openingRatio": 0.92,
-      "openingHeightRatio": 0.8,
-      "mullionFractions": [],
-      "transomFractions": []
-     }
-    }
-   ],
-   "reading": {
-    "visibleShare": 0.77,
-    "groundStoreyM": 0.0,
-    "storeys": 2,
-    "windows": 2,
-    "groundOpenings": 0,
-    "signs": 0,
-    "awnings": 0,
-    "wallRgb": [
-     90,
-     99,
-     106
-    ],
-    "family": [
-     "render",
-     "gray"
-    ],
-    "curtainWall": true,
-    "glazedAreas": 1,
-    "gridFallback": false,
-    "ribbon": false,
-    "floorPitchM": 4.22,
-    "shopfront": false,
-    "consensus": {
-     "photos": 4,
-     "kept": "4147931488761760",
-     "keptRank": 0,
-     "agreeing": 4,
-     "unagreed": false,
-     "incumbent": null,
-     "incumbentHidden": null,
-     "unsupported": false,
-     "replacesPublished": null,
-     "others": [
-      {
-       "image": "668838748842254",
-       "colorRgb": [
-        129,
-        137,
-        147
-       ],
-       "storeys": 1,
-       "dark": false
-      },
-      {
-       "image": "24896224956651145",
-       "colorRgb": [
-        108,
-        118,
-        126
-       ],
-       "storeys": 1,
-       "dark": false
-      },
-      {
-       "image": "1497410084717560",
-       "colorRgb": [
-        155,
-        154,
-        151
-       ],
-       "storeys": 0,
-       "dark": false
-      }
-     ]
-    },
-    "layout": {
-     "storeys": 1,
-     "bayPitchM": null,
-     "rowsWithPitch": 0,
-     "windowsSnapped": 0,
-     "sliversDropped": 0
-    }
-   },
-   "zBaseM": 28.94,
-   "camera": {
-    "image": "4147931488761760",
-    "distanceM": 36.6,
-    "incidence": 0.99,
-    "hiddenShare": 0.23
-   },
-   "planeV": -12.11
   },
   {
    "id": "sf_201006_0003726-auto-355",
@@ -29016,8 +28990,8 @@
   "facings": 138,
   "read": 126,
   "blank": 4,
-  "materialOnly": 15,
-  "windows": 572,
+  "materialOnly": 16,
+  "windows": 568,
   "signs": 52,
   "photosRead": 427,
   "photosHidden": 149,
@@ -29033,7 +29007,7 @@
   "newFacingsWithheld": 15,
   "carriedOver": 28,
   "layouts": {
-   "profiles": 82,
+   "profiles": 80,
    "windowsSnapped": 254,
    "sliversDropped": 7,
    "withPitch": 7
