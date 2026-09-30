@@ -333,20 +333,10 @@ def door_handles():
 
 
 def spoiler():
-    """The retracted rear spoiler: a blade whose top runs on with the deck and whose sharp trailing edge overhangs the
-    band between the tail lamps, with the third brake light under its edge."""
+    """The third brake light: a thin bar on the band's top wall, tucked under the spoiler's trailing edge (the lip
+    itself is part of the body)."""
     import roadster as R
-    from mesher import ray_hit
-    zs = np.linspace(-.475, .475, 41)
-    pts = []
-    for z in zs:
-        x_edge = float(R._tail(.81)) + float(R._TAIL_PLAN(abs(z)))
-        top = ray_hit(R.skin, [[x_edge + .045, 1.2, z]], (0, -1, 0), far=1.0)[0]
-        pts.append((x_edge + .02, top[1] - .005, z))
-    C = np.array(pts)
-    prof = [(-.035, .002), (-.01, .0055), (.015, .0045), (.034, .0008), (.036, -.0008), (.015, -.0035), (-.01, -.0045), (-.035, -.003)]
-    blade = sweep(C, prof, lambda i, p: np.array([0, 1., 0]), caps=True)
-    parts = [('spoiler', 'paint', blade)]
-    light = C[np.abs(C[:, 2]) < .24] + np.array([-.022, -.0068, 0])     # tucked under the blade's trailing edge
-    parts.append(('spoiler', 'tail_led', sweep(light, rounded_rect(.004, .003, .001, 2), lambda i, p: np.array([0, 1., 0]))))
-    return parts
+    zs = np.linspace(-.24, .24, 25)
+    y = .7765
+    C = np.array([(float(R._tail(y)) + float(R._TAIL_PLAN(abs(z))) + .012, y, z) for z in zs])
+    return [('spoiler', 'tail_led', sweep(C, rounded_rect(.004, .003, .001, 2), lambda i, p: np.array([0, 1., 0])))]

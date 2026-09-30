@@ -5,7 +5,7 @@ spoked face is an implicit solid meshed finely (five twin spokes over a concave 
 nuts), the disc is a lathed ring with a hat, the caliper a rounded block over the disc edge. No markings anywhere.
 """
 import numpy as np
-from mesher import mesh_solid, Mesh, merge
+from mesher import mesh_solid, mesh_solid_sharp, autosmooth, Mesh, merge
 
 RIM_R = .254          # 20 inch bead seat
 
@@ -186,8 +186,9 @@ def assembly(axle):
     hub_z = lip_z - (.034 if axle == 'front' else .052)
     parts = [('tyre', tyre(R, width), True), ('rim', rim_barrel(rim_w), True)]
     f = face_solid(hw, lip_z, hub_z)
-    V, T = mesh_solid(f, (-.265, -.265, hub_z - .05), (.265, .265, lip_z + .01), .0035, tolerance=.0003)
-    parts.append(('rim', Mesh(V, T).with_normals(f), True))
+    # dual contouring keeps the spokes' edges straight (surface nets left them sawtoothed at this grid)
+    V, T = mesh_solid_sharp(f, (-.265, -.265, hub_z - .05), (.265, .265, lip_z + .01), .003, tolerance=.0002)
+    parts.append(('rim', autosmooth(Mesh(V, T), f), True))
     ring, hat = disc(thick=disc_t)
     holes = drill_holes(thick=disc_t)
     zd = hub_z - .075

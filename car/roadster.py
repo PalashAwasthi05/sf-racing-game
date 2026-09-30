@@ -154,6 +154,16 @@ _nose = pchip([[.10, 2.15], [.14, 2.19], [.18, 2.232], [.25, 2.245], [.35, 2.240
 # (the spoiler lip over the band is its own blade, see parts.spoiler: a sub-grid bump here meshes as a torn edge)
 _tail = pchip([[.14, -1.99], [.17, -2.01], [.21, -2.06], [.25, -2.10], [.29, -2.128], [.33, -2.143], [.38, -2.147], [.45, -2.144], [.52, -2.132], [.60, -2.117], [.68, -2.103], [.73, -2.088], [.78, -2.078], [.81, -2.062], [.835, -2.035], [.86, -1.995], [.92, -1.90]])
 
+
+
+def spoiler_lip(y, z):
+    """The retracted spoiler's trailing edge: it overhangs the band between the tail lamps by about 13 mm, with a
+    short flat underside and a longer ramp up into the deck."""
+    under = smoothstep((y - .774) / .008)
+    over = smoothstep((.818 - y) / .026)
+    return .013 * under * over * smoothstep((.50 - np.abs(z)) / .05)
+
+
 ARCH_FRONT = (AXLE, .311, .389)
 ARCH_REAR = (-AXLE, .321, .404)
 
@@ -173,7 +183,9 @@ def _section_fields(x, y, z):
     t = np.minimum(z / zp, 1)
     rise = smoothstep((t - t0) / (1 - t0))
     ht = cz - .012 * t * t + (pk - (cz - .012)) * rise + deck_dome(x, z)
-    ht = np.where(z > zp, pk + 4 * (z - zp), ht)
+    # outboard of the crest the top continues level: a plane that rose there would pass just inside the shoulder and
+    # its short distance would take over the field's depth (fillets and the side dent then cut grooves along the crest)
+    ht = np.where(z > zp, pk, ht)
     top = y - ht
     a = np.maximum(W - zp, .02)
     # inboard of the crest the shoulder must not cap the top below the deck (behind the seats the deck stands higher
@@ -182,7 +194,9 @@ def _section_fields(x, y, z):
     u = np.maximum(z - zp, 0) / a
     v = np.maximum(y - hw, 0) / b
     corner = (u ** n + v ** n) ** (1 / n) - 1
-    ws = np.where(y < hw, W - tuck * (hw - y) ** 2, W + 4 * (y - hw))
+    # above the widest line the side continues as a vertical wall outside the shoulder (a plane leaning out there lay
+    # just under the shoulder and cut a groove along the widest line wherever a fillet or the side dent met it)
+    ws = W - tuck * np.maximum(hw - y, 0) ** 2
     side = z - ws
     return corner, top, side, np.maximum(a, b)
 
@@ -218,7 +232,7 @@ def shell(x, y, z):
     corner, top, side = _section_normalised(x, y, z)
     bottom = _bottom(x) - y
     front = _norm(lambda a, b, c: a - (_nose(b) - _NOSE_PLAN(np.abs(c))), x, y, z)
-    rear = _norm(lambda a, b, c: (_tail(b) + _TAIL_PLAN(np.abs(c))) - a, x, y, z)
+    rear = _norm(lambda a, b, c: (_tail(b) + _TAIL_PLAN(np.abs(c)) - spoiler_lip(b, c)) - a, x, y, z)
     # the shoulder, the inner top and the lower side meet tangentially by construction: a plain maximum keeps them
     # smooth (a smooth maximum of two coincident surfaces would cut a groove along the seam); real edges get fillets
     # the nose and tail faces are filleted only into the top (the bonnet's leading edge, the lip); against the sides a
@@ -489,8 +503,8 @@ def gap_cuts(line):
     return near, band
 
 
-FINISH_REGIONS = [('lamp_black', lambda x, y, z: lamp_outline(x, y, z) + .001),
-                  ('lamp_black', lambda x, y, z: tail_outline(x, y, z) + .001),
+FINISH_REGIONS = [('lamp_black', lambda x, y, z: lamp_outline(x, y, z) - .003),
+                  ('lamp_black', lambda x, y, z: tail_outline(x, y, z) - .003),
                   ('black_matte', _openings), ('black_matte', _wells), ('cabin', _cabin),
                   ('black_satin', _lower), ('black_gloss', _band), ('black_satin', _cover),
                   ('reflector', _reflectors), ('black_satin', _intake_frame), ('drl', _strip), ('black_matte', _grille)]

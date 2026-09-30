@@ -12,7 +12,7 @@ FINISHES = ['paint', 'hoop', 'black_gloss', 'black_satin', 'black_matte', 'gap',
             'cabin_trim', 'steel', 'mirror']
 
 
-def build(out, h=.01, mirror_to=None):
+def build(out, h=.005, mirror_to=None):
     t0 = time.time()
     g = GLB()
     for f in FINISHES:
@@ -48,9 +48,10 @@ def build(out, h=.01, mirror_to=None):
                 lo[2], hi[2] = -hi[2], -lo[2]
             V, T = mesh_solid(R.skin, lo, hi, .008)
             skin = Mesh(V, T).with_normals(R.skin)
-            lens, _ = split(skin, lambda x, y, z, o=outline: o(x, y, z) - .005, R.skin)
-            # the lens stands just proud of the paint it overlaps at its edge (coincident surfaces z-fight)
-            lens.V = lens.V + .0015 * lens.N
+            # the lens ends just inside the housing's dark rim, so it never overlaps paint (paint pierced a lens laid
+            # over it wherever the coarser body mesh chorded above the true surface: a ragged dark edge)
+            lens, _ = split(skin, lambda x, y, z, o=outline: o(x, y, z) + .001, R.skin)
+            lens.V = lens.V + .001 * lens.N
             # the lens's sealed edge: an opaque dark border round the clear part
             clear, border = split(lens, lambda x, y, z, o=outline: o(x, y, z) + .007, R.skin)
             side = '_right' if sgn > 0 else '_left'

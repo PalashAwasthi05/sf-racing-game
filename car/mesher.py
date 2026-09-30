@@ -362,13 +362,28 @@ def ray_hit(f, P, d, far=1.0, iters=60):
     P = np.atleast_2d(np.asarray(P, float))
     d = np.asarray(d, float)
     d = d / np.linalg.norm(d)
+    # march in steps no longer than half the field value and 5 mm (the fields are not exact distances, so a full
+    # step can jump through a thin part), then bisect the last step onto the surface
     t = np.zeros(len(P))
-    for _ in range(iters):
+    lo = np.zeros(len(P))
+    hit = np.zeros(len(P), bool)
+    for _ in range(max(iters, int(far / .005) + 50)):
         Q = P + t[:, None] * d
         v = f(Q[:, 0], Q[:, 1], Q[:, 2])
-        t = np.where(v > 1e-5, t + np.maximum(v * .8, 1e-4), t)
-        t = np.minimum(t, far)
-    return P + t[:, None] * d
+        hit |= v <= 0
+        go = ~hit & (t < far)
+        if not go.any():
+            break
+        lo = np.where(go, t, lo)
+        t = np.where(go, np.minimum(t + np.clip(v * .5, 1e-4, .005), far), t)
+    hi = t.copy()
+    for _ in range(30):
+        m = (lo + hi) / 2
+        Q = P + m[:, None] * d
+        inside = f(Q[:, 0], Q[:, 1], Q[:, 2]) <= 0
+        hi = np.where(inside & hit, m, hi)
+        lo = np.where(inside & hit, lo, np.where(hit, m, lo))
+    return P + np.where(hit, hi, t)[:, None] * d
 
 
 def dual_contour(F, axes, f, reg=.01):
@@ -521,12 +536,18 @@ def autosmooth(mesh, f=None, angle=35.):
         out_n[order[idx]] = acc
         creased[order[idx]] = ~close.all(axis=(1, 2))[:, None].repeat(k, 1)
     if f is not None:
-        smooth = ~creased
-        vi = corners[smooth]
-        g = normals(f, V[vi])
-        ok = np.linalg.norm(g, axis=1) > .5
-        sel = np.nonzero(smooth)[0][ok]
-        out_n[sel] = g[ok]
+        # each corner takes the field's normal unless that normal belongs to another face of a crease: judged against
+        # the corner's own face, so a tight fillet (faces far apart in angle, surface still smooth) shades smoothly
+        # while the two sides of a real edge keep their own normals
+        used = np.unique(corners)
+        gv = np.zeros((len(V), 3))
+        gv[used] = gradient(f, V[used])
+        g = gv[corners]
+        gl = np.linalg.norm(g, axis=1)
+        g = g / np.maximum(gl, 1e-12)[:, None]
+        agree = (g * fu[face_of]).sum(1)
+        ok = (gl > 1e-6) & ((agree > np.cos(np.deg2rad(40))) | (sliver[face_of] & (agree > 0)))
+        out_n[ok] = g[ok]
     # any corner still without a normal takes its own face's
     weak = np.linalg.norm(out_n, axis=1) < .5
     out_n[weak] = fu[face_of[weak]]
