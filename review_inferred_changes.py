@@ -1,8 +1,8 @@
 """What changed on the walls no photograph covers, candidate against live: for every building, each facing whose walls
 are drawn from priors, a donor or the building's other readings in both builds, its material (the largest by wall area)
 and archetype before and after, and why it changed: the facing was rebuilt (geometry), the building's own readings
-changed (ids or materials), its height changed, its published donor no longer qualifies (the reading is gone or out of
-scale), or donors were chosen afresh on purpose ("keep": false in pipeline/donor-incumbents.json). A change with none of
+changed (ids or materials), its height changed, its published donor is no longer in the pool, or donors were chosen
+afresh on purpose ("keep": false in pipeline/donor-incumbents.json). A change with none of
 these causes is a rule change nobody asked these walls for (the user's "regressed again": a wall no photograph checks
 flips with every fallback change): the exit status is 2, and publish_full_candidate_v24.py refuses it without
 --accept-inferred-changes. Photographed walls are left to the photo judge.
@@ -34,14 +34,14 @@ def owned(profiles, bid):
     return sorted(p['id'] for p in profiles if any(str(v) in keys for v in (p.get('match') or {}).values()))
 
 
-def qualifies(donor, profiles, height):
-    """The published donor is still an automatic reading with a grid, of the same facing, in scale for the building."""
+def qualifies(donor, profiles):
+    """The published donor is still an automatic reading with a grid, of the same facing (as facades.donor_for asks)."""
     for p in profiles:
         r = p.get('reading') or {}
         if p.get('id') != donor.get('id') or not str(p.get('status', '')).startswith('image-measured-auto') or not (r.get('floorPitchM') and r.get('bayPitchM') and p.get('heightRefM')): continue
         if donor.get('normal') is not None and p.get('normal') is not None and float(np.dot(p['normal'][:2], donor['normal'][:2])) < .98: continue
-        return 'ok' if abs(math.log(max(float(p['heightRefM']), 1.) / max(float(height), 1.))) <= math.log(1.6) else 'out of scale'
-    return 'gone'
+        return True
+    return False
 
 
 def main():
@@ -80,9 +80,10 @@ def main():
             if not keep: cause, explained = 'donors chosen afresh ("keep": false)', True
             elif dl is None: cause, explained = 'now drawn from a donor (had none)', False
             else:
-                q = qualifies(dl[0], cp, float((cb.get(bid) or {}).get('height') or 0.) or 1.)
-                cause, explained = ({'gone': ('published donor no longer in the pool', True), 'out of scale': ('published donor out of scale for the building', True)}
-                                    .get(q, ('donor re-chosen without cause', False)))
+                hl, hc = float((lb.get(bid) or {}).get('height') or 0.), float((cb.get(bid) or {}).get('height') or 0.)
+                if not qualifies(dl[0], cp): cause, explained = 'published donor no longer in the pool', True
+                elif hl and abs(math.log(max(hc, 1.) / max(hl, 1.))) > math.log(1.3): cause, explained = 'building height changed (donor re-chosen)', True
+                else: cause, explained = 'donor re-chosen without cause', False
         else:
             # with its published material and grid carried (pipeline/facades.donor_for), a kept donor cannot change the
             # walls: a change here means the carry was not applied

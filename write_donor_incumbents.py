@@ -38,7 +38,8 @@ def evidence(cand):
 
 
 def donors_of(walls, buildings, profiles):
-    """{building id: (donor profile, material)} for buildings drawn from an area donor, and the ids skipped with a reason."""
+    """{building id: (donor profile, material, building height)} for buildings drawn from an area donor, and the ids
+    skipped with a reason."""
     by = collections.defaultdict(list)
     for w in walls: by[w['buildingId']].append(w)
     out, skipped = {}, {}
@@ -60,7 +61,7 @@ def donors_of(walls, buildings, profiles):
         if donor is None: skipped[bid] = 'no donor (prior only)'; continue
         m = resolve_material(donor)
         if m not in mats: skipped[bid] = f'recomputed donor {donor["id"]} gives {m}, walls are {mats.most_common(1)[0][0]}'; continue
-        out[bid] = (donor, m)
+        out[bid] = (donor, m, float((buildings.get(bid) or {}).get('height') or 0.) or None)
     return out, skipped
 
 
@@ -82,10 +83,10 @@ def main():
     if (cand / 'release.json').exists():
         r = json.load(open(cand / 'release.json')); rel = {'contentHash': r.get('sha256', '')[:12]}
     doc = {
-        'rule': 'Donors of the buildings no photograph covers, as published, with the material and grid each lent. pipeline/facades.donor_for keeps a building\'s donor and that material and grid while the donor is still an automatic reading with a measured grid, of the same facing, and within a factor of 1.6 of the building\'s height; otherwise area_donor chooses afresh. Set "keep" to false only for a rule change meant to choose donors afresh, and read review_inferred_changes.py\'s list for it. Written by write_donor_incumbents.py after each publish.',
+        'rule': 'Donors of the buildings no photograph covers, as published, with the material and grid each lent. pipeline/facades.donor_for keeps a building\'s donor and that material and grid while the donor is still an automatic reading with a measured grid, of the same facing, and the building\'s own height stays within 30 % of buildingHeightM; otherwise area_donor chooses afresh. Set "keep" to false only for a rule change meant to choose donors afresh, and read review_inferred_changes.py\'s list for it. Written by write_donor_incumbents.py after each publish.',
         'keep': True,
         'release': {'candidate': str(cand.relative_to(ROOT.parent)) if cand.is_relative_to(ROOT.parent) else str(cand), **rel, 'written': datetime.date.today().isoformat()},
-        'donors': {bid: {'donorId': d['id'], 'normal': d.get('normal'), 'heightRefM': d.get('heightRefM'), 'material': m, 'grid': grid_of(d)} for bid, (d, m) in donors.items()},
+        'donors': {bid: {'donorId': d['id'], 'normal': d.get('normal'), 'heightRefM': d.get('heightRefM'), 'material': m, 'grid': grid_of(d), 'buildingHeightM': bh} for bid, (d, m, bh) in donors.items()},
         'skipped': skipped,
     }
     a.out.write_text(json.dumps(doc, indent=1, ensure_ascii=False) + '\n')

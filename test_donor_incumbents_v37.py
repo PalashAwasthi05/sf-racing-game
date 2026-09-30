@@ -43,9 +43,10 @@ def test_the_published_material_and_grid_are_lent_not_the_donor_s_new_reading(in
     assert next(p for p in reread if p['id'] == 'r2')['material'] == 'panel_dark#202020'   # the pool itself is untouched
 
 
-def test_a_donor_that_is_gone_or_out_of_scale_is_chosen_afresh(incumbents):
-    incumbents['x'] = {'donorId': 'r6', 'normal': [1., 0.], 'material': 'render_gray#707070', 'grid': {}}
-    assert facades.donor_for(POOL, 'x', 'x', 12.)['id'] != 'r6'                           # 30 m reading for a 12 m building
+def test_a_donor_that_is_gone_or_whose_building_changed_height_is_chosen_afresh(incumbents):
+    incumbents['x'] = {'donorId': 'r6', 'normal': [1., 0.], 'buildingHeightM': 12.}
+    assert facades.donor_for(POOL, 'x', 'x', 12.)['id'] == 'r6'                           # published: kept, whatever its height
+    assert facades.donor_for(POOL, 'x', 'x', 18.)['id'] == facades.area_donor(POOL, 'x', 18.)['id']   # the building is 50 % taller now
     incumbents['x'] = {'donorId': 'gone', 'normal': [1., 0.]}
     assert facades.donor_for(POOL, 'x', 'x', 12.)['id'] == facades.area_donor(POOL, 'x', 12.)['id']
 
@@ -70,6 +71,6 @@ def test_incumbents_are_written_for_donor_drawn_buildings_only():
              wall('b', 'render_gray#707070', grammar=True), wall('b', 'render_gray#707070'),
              wall('c', 'stucco')]
     out, skipped = W.donors_of(walls, {'a': {'height': 12.}, 'b': {'height': 12.}, 'c': {'height': 12.}}, POOL)
-    assert set(out) == {'a'} and out['a'][0]['id'] == 'r2' and out['a'][1] == 'brick_modular#aa5544'
+    assert set(out) == {'a'} and out['a'][0]['id'] == 'r2' and out['a'][1] == 'brick_modular#aa5544' and out['a'][2] == 12.
     assert 'c' in skipped                                                                     # its walls are not any donor's material
     assert W.grid_of(out['a'][0])['floorPitchM'] == 3.2

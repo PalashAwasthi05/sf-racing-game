@@ -243,7 +243,8 @@ def area_donor(profiles,fid,height):
 
 # A building no photograph covers keeps the donor it was published with, and the material and grid it lent then
 # (pipeline/donor-incumbents.json, written from the live release by write_donor_incumbents.py after every publish),
-# while that reading is still in the pool and within a factor of 1.6 of the building's height. Otherwise any change
+# while that reading is still in the pool and the building's own height stays within 30 % of what it was then (a part
+# split or a new roof level can make it another building). Otherwise any change
 # elsewhere in the pool re-rolls area_donor's pick (a re-read, a reading added or dropped), or a re-read of the donor's
 # own building changes what it lends, and the building's unseen walls change material and windows with no evidence of
 # their own: from v0.35 to v0.36, 2 such buildings were re-rolled and 14 took their donor's new reading. "keep": false in
@@ -269,7 +270,7 @@ def donor_for(profiles,building_id,key,height):
    if p.get('id')!=inc.get('donorId') or not str(p.get('status','')).startswith('image-measured-auto') or not (r.get('floorPitchM') and r.get('bayPitchM') and p.get('heightRefM')):continue
    # reading ids repeat across facings: the published facing picks the one
    if inc.get('normal') is not None and p.get('normal') is not None and float(np.dot(p['normal'][:2],inc['normal'][:2]))<.98:continue
-   if abs(math.log(max(float(p['heightRefM']),1.)/max(float(height),1.)))>math.log(1.6):continue
+   if inc.get('buildingHeightM') and abs(math.log(max(float(height),1.)/max(float(inc['buildingHeightM']),1.)))>math.log(1.3):break
    if not (inc.get('material') and inc.get('grid')):return p
    q=dict(p);q.pop('materialEvidence',None);q['material']=inc['material'];q['reading']={**r,**inc['grid']};return q
  return area_donor(profiles,key,height)
