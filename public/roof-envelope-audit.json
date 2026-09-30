@@ -1,12 +1,13 @@
 [
   {
     "buildingId": "osm_129176908",
-    "measuredCells": 870,
-    "insideCells": 1047,
-    "unknownInsideCells": 177,
+    "measuredCells": 986,
+    "insideCells": 1038,
+    "unknownInsideCells": 52,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 23.466,
+    "roundedCorners": 0,
+    "baseRoofZ": 23.464250000000003,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -32,12 +33,13 @@
   },
   {
     "buildingId": "osm_129176917",
-    "measuredCells": 27,
-    "insideCells": 87,
-    "unknownInsideCells": 60,
+    "measuredCells": 49,
+    "insideCells": 94,
+    "unknownInsideCells": 45,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 14.542499999999997,
+    "roundedCorners": 0,
+    "baseRoofZ": 14.736999999999998,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -50,12 +52,13 @@
   },
   {
     "buildingId": "osm_129176919",
-    "measuredCells": 24,
-    "insideCells": 50,
-    "unknownInsideCells": 26,
+    "measuredCells": 38,
+    "insideCells": 54,
+    "unknownInsideCells": 16,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 12.839449999999996,
+    "roundedCorners": 0,
+    "baseRoofZ": 12.829999999999998,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -68,60 +71,87 @@
   },
   {
     "buildingId": "osm_149167937",
-    "measuredCells": 558,
-    "insideCells": 635,
-    "unknownInsideCells": 77,
-    "continuousPatches": 0,
-    "tierCount": 1,
-    "baseRoofZ": 22.773249999999994,
-    "slopedCellsDroppedToBase": 0,
-    "wallHeightSource": "same generated roof envelope",
-    "planeFit": {
-      "status": "no-validated-patches",
-      "observedCoverage": 0.8874708216897061,
-      "patches": [],
-      "acceptedPatchAreaM2": 0,
-      "unobservedCellsFilled": 0
-    }
-  },
-  {
-    "buildingId": "osm_149167937_p1",
-    "measuredCells": 461,
-    "insideCells": 562,
-    "unknownInsideCells": 101,
+    "measuredCells": 711,
+    "insideCells": 728,
+    "unknownInsideCells": 17,
     "continuousPatches": 0,
     "tierCount": 2,
-    "baseRoofZ": 24.534,
+    "roundedCorners": 7,
+    "baseRoofZ": 22.290000000000006,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
       "status": "spatially-validated-patches",
-      "observedCoverage": 0.885977357615161,
+      "observedCoverage": 0.8869050894083679,
       "patches": [
         {
-          "areaM2": 276.72975942899456,
-          "heldOutSamples": 21,
-          "heldOutP95M": 0.09394166398322312,
+          "areaM2": 281.12240414380096,
+          "heldOutSamples": 18,
+          "heldOutP95M": 0.08512468488563481,
           "sloped": false,
-          "outlineVertices": 48,
-          "cellsUnderOutline": 109,
-          "explainedUnderOutline": 0.9724770642201835,
-          "interiorCells": 6,
-          "explainedInterior": 0.9724770642201835
+          "outlineVertices": 38,
+          "cellsUnderOutline": 121,
+          "explainedUnderOutline": 0.9752066115702479,
+          "interiorCells": 10,
+          "explainedInterior": 1.0
+        },
+        {
+          "areaM2": 134.53690660176693,
+          "heldOutSamples": 10,
+          "heldOutP95M": 0.05799360666277629,
+          "sloped": false,
+          "outlineVertices": 17,
+          "cellsUnderOutline": 54,
+          "explainedUnderOutline": 1.0,
+          "interiorCells": 4,
+          "explainedInterior": 1.0
         }
       ],
-      "acceptedPatchAreaM2": 276.72975942899456,
-      "unobservedCellsFilled": 13,
-      "edgeCellsJoined": 16
+      "acceptedPatchAreaM2": 415.6593107455679,
+      "unobservedCellsFilled": 8,
+      "edgeCellsJoined": 15
+    }
+  },
+  {
+    "buildingId": "osm_149167937_p1",
+    "measuredCells": 464,
+    "insideCells": 481,
+    "unknownInsideCells": 17,
+    "continuousPatches": 0,
+    "tierCount": 1,
+    "roundedCorners": 0,
+    "baseRoofZ": 24.486449999999994,
+    "slopedCellsDroppedToBase": 0,
+    "wallHeightSource": "same generated roof envelope",
+    "planeFit": {
+      "status": "spatially-validated-patches",
+      "observedCoverage": 0.9032174900849437,
+      "patches": [
+        {
+          "areaM2": 457.8980276027156,
+          "heldOutSamples": 35,
+          "heldOutP95M": 0.22885097411389718,
+          "sloped": false,
+          "outlineVertices": 43,
+          "cellsUnderOutline": 197,
+          "explainedUnderOutline": 0.9949238578680203,
+          "interiorCells": 77,
+          "explainedInterior": 1.0
+        }
+      ],
+      "acceptedPatchAreaM2": 457.8980276027156,
+      "unobservedCellsFilled": 5,
+      "edgeCellsJoined": 9
     }
   },
   {
     "buildingId": "osm_149167949",
-    "measuredCells": 341,
-    "insideCells": 428,
-    "unknownInsideCells": 87,
+    "measuredCells": 419,
+    "insideCells": 432,
+    "unknownInsideCells": 13,
     "continuousPatches": 0,
     "tierCount": 0,
+    "roundedCorners": 0,
     "baseRoofZ": 31.919999999999987,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
@@ -147,7 +177,7 @@
           "sloped": false,
           "outlineVertices": 12,
           "cellsUnderOutline": 75,
-          "explainedUnderOutline": 0.9466666666666667,
+          "explainedUnderOutline": 0.96,
           "interiorCells": 17,
           "explainedInterior": 1.0
         }
@@ -159,11 +189,12 @@
   },
   {
     "buildingId": "osm_149253145",
-    "measuredCells": 559,
-    "insideCells": 999,
-    "unknownInsideCells": 440,
+    "measuredCells": 655,
+    "insideCells": 1009,
+    "unknownInsideCells": 354,
     "continuousPatches": 0,
     "tierCount": 3,
+    "roundedCorners": 3,
     "baseRoofZ": 4.057840977864343,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
@@ -178,7 +209,7 @@
           "sloped": false,
           "outlineVertices": 12,
           "cellsUnderOutline": 81,
-          "explainedUnderOutline": 0.9506172839506173,
+          "explainedUnderOutline": 0.9753086419753086,
           "interiorCells": 13,
           "explainedInterior": 1.0
         }
@@ -190,12 +221,13 @@
   },
   {
     "buildingId": "osm_346093777",
-    "measuredCells": 1163,
-    "insideCells": 1467,
-    "unknownInsideCells": 304,
+    "measuredCells": 1379,
+    "insideCells": 1458,
+    "unknownInsideCells": 79,
     "continuousPatches": 0,
-    "tierCount": 0,
-    "baseRoofZ": 26.077999999999985,
+    "tierCount": 1,
+    "roundedCorners": 4,
+    "baseRoofZ": 26.079999999999984,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -209,7 +241,7 @@
           "sloped": false,
           "outlineVertices": 39,
           "cellsUnderOutline": 424,
-          "explainedUnderOutline": 0.9764150943396226,
+          "explainedUnderOutline": 0.9952830188679245,
           "interiorCells": 190,
           "explainedInterior": 1.0
         },
@@ -220,7 +252,7 @@
           "sloped": false,
           "outlineVertices": 43,
           "cellsUnderOutline": 116,
-          "explainedUnderOutline": 0.9655172413793104,
+          "explainedUnderOutline": 1.0,
           "interiorCells": 12,
           "explainedInterior": 1.0
         }
@@ -232,12 +264,13 @@
   },
   {
     "buildingId": "osm_46264108",
-    "measuredCells": 1490,
-    "insideCells": 1722,
-    "unknownInsideCells": 232,
+    "measuredCells": 1629,
+    "insideCells": 1677,
+    "unknownInsideCells": 48,
     "continuousPatches": 0,
-    "tierCount": 0,
-    "baseRoofZ": 21.900000000000006,
+    "tierCount": 1,
+    "roundedCorners": 9,
+    "baseRoofZ": 21.930000000000007,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -251,7 +284,7 @@
           "sloped": true,
           "outlineVertices": 43,
           "cellsUnderOutline": 204,
-          "explainedUnderOutline": 0.9362745098039216,
+          "explainedUnderOutline": 0.9705882352941176,
           "interiorCells": 29,
           "explainedInterior": 1.0
         },
@@ -262,7 +295,7 @@
           "sloped": false,
           "outlineVertices": 11,
           "cellsUnderOutline": 127,
-          "explainedUnderOutline": 0.9133858267716536,
+          "explainedUnderOutline": 0.9763779527559056,
           "interiorCells": 38,
           "explainedInterior": 1.0
         }
@@ -274,22 +307,23 @@
   },
   {
     "buildingId": "osm_573287814",
-    "measuredCells": 259,
-    "insideCells": 397,
-    "unknownInsideCells": 138,
+    "measuredCells": 460,
+    "insideCells": 554,
+    "unknownInsideCells": 94,
     "continuousPatches": 0,
-    "tierCount": 1,
-    "baseRoofZ": 26.526400000000002,
+    "tierCount": 3,
+    "roundedCorners": 1,
+    "baseRoofZ": 6.687099999999998,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
       "status": "spatially-validated-patches",
-      "observedCoverage": 0.6659715445513114,
+      "observedCoverage": 0.6678791965889612,
       "patches": [
         {
           "areaM2": 97.82090499685413,
           "heldOutSamples": 4,
-          "heldOutP95M": 0.04130532286076267,
+          "heldOutP95M": 0.02336861357913591,
           "sloped": true,
           "outlineVertices": 24,
           "cellsUnderOutline": 40,
@@ -304,55 +338,14 @@
     }
   },
   {
-    "buildingId": "osm_573287814_p1",
-    "measuredCells": 94,
-    "insideCells": 148,
-    "unknownInsideCells": 54,
-    "continuousPatches": 0,
-    "tierCount": 0,
-    "baseRoofZ": 6.236000000000007,
-    "slopedCellsDroppedToBase": 0,
-    "wallHeightSource": "same generated roof envelope",
-    "planeFit": {
-      "status": "spatially-validated-patches",
-      "observedCoverage": 0.6345905027457851,
-      "patches": [
-        {
-          "areaM2": 68.5,
-          "heldOutSamples": 5,
-          "heldOutP95M": 0.08380697283897458,
-          "sloped": true,
-          "outlineVertices": 14,
-          "cellsUnderOutline": 28,
-          "explainedUnderOutline": 1.0,
-          "interiorCells": 2,
-          "explainedInterior": 1.0
-        },
-        {
-          "areaM2": 76.65298593118436,
-          "heldOutSamples": 4,
-          "heldOutP95M": 0.024668200417015652,
-          "sloped": true,
-          "outlineVertices": 7,
-          "cellsUnderOutline": 21,
-          "explainedUnderOutline": 1.0,
-          "interiorCells": 3,
-          "explainedInterior": 1.0
-        }
-      ],
-      "acceptedPatchAreaM2": 145.15298593118436,
-      "unobservedCellsFilled": 22,
-      "edgeCellsJoined": 26
-    }
-  },
-  {
     "buildingId": "osm_945538326",
-    "measuredCells": 1011,
-    "insideCells": 1155,
-    "unknownInsideCells": 144,
+    "measuredCells": 1115,
+    "insideCells": 1147,
+    "unknownInsideCells": 32,
     "continuousPatches": 0,
     "tierCount": 1,
-    "baseRoofZ": 5.549999999999983,
+    "roundedCorners": 3,
+    "baseRoofZ": 5.409999999999997,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -366,9 +359,9 @@
           "sloped": false,
           "outlineVertices": 60,
           "cellsUnderOutline": 300,
-          "explainedUnderOutline": 0.8766666666666667,
+          "explainedUnderOutline": 0.9866666666666667,
           "interiorCells": 44,
-          "explainedInterior": 0.9318181818181818
+          "explainedInterior": 1.0
         },
         {
           "areaM2": 424.5539738153175,
@@ -377,7 +370,7 @@
           "sloped": false,
           "outlineVertices": 57,
           "cellsUnderOutline": 187,
-          "explainedUnderOutline": 0.8716577540106952,
+          "explainedUnderOutline": 0.9679144385026738,
           "interiorCells": 21,
           "explainedInterior": 1.0
         }
@@ -389,12 +382,13 @@
   },
   {
     "buildingId": "sf_201006_0000115",
-    "measuredCells": 1626,
-    "insideCells": 2064,
-    "unknownInsideCells": 438,
+    "measuredCells": 1993,
+    "insideCells": 2087,
+    "unknownInsideCells": 94,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 23.57874999999999,
+    "roundedCorners": 0,
+    "baseRoofZ": 23.579599999999985,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -408,7 +402,7 @@
           "sloped": true,
           "outlineVertices": 96,
           "cellsUnderOutline": 716,
-          "explainedUnderOutline": 0.9608938547486033,
+          "explainedUnderOutline": 0.9720670391061452,
           "interiorCells": 137,
           "explainedInterior": 0.9927007299270073
         },
@@ -419,7 +413,7 @@
           "sloped": true,
           "outlineVertices": 32,
           "cellsUnderOutline": 396,
-          "explainedUnderOutline": 0.9292929292929293,
+          "explainedUnderOutline": 0.9494949494949495,
           "interiorCells": 124,
           "explainedInterior": 1.0
         }
@@ -431,12 +425,13 @@
   },
   {
     "buildingId": "sf_201006_0000645",
-    "measuredCells": 1096,
-    "insideCells": 1317,
-    "unknownInsideCells": 221,
+    "measuredCells": 1288,
+    "insideCells": 1327,
+    "unknownInsideCells": 39,
     "continuousPatches": 0,
-    "tierCount": 0,
-    "baseRoofZ": 32.02725,
+    "tierCount": 1,
+    "roundedCorners": 5,
+    "baseRoofZ": 32.0241,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -450,7 +445,7 @@
           "sloped": false,
           "outlineVertices": 32,
           "cellsUnderOutline": 122,
-          "explainedUnderOutline": 0.9508196721311475,
+          "explainedUnderOutline": 0.9754098360655737,
           "interiorCells": 11,
           "explainedInterior": 1.0
         },
@@ -461,9 +456,9 @@
           "sloped": false,
           "outlineVertices": 18,
           "cellsUnderOutline": 47,
-          "explainedUnderOutline": 0.9787234042553191,
+          "explainedUnderOutline": 1.0,
           "interiorCells": 2,
-          "explainedInterior": 0.9787234042553191
+          "explainedInterior": 1.0
         },
         {
           "areaM2": 180.0953468179075,
@@ -472,7 +467,7 @@
           "sloped": false,
           "outlineVertices": 13,
           "cellsUnderOutline": 70,
-          "explainedUnderOutline": 0.8285714285714286,
+          "explainedUnderOutline": 0.8428571428571429,
           "interiorCells": 11,
           "explainedInterior": 1.0
         }
@@ -484,12 +479,13 @@
   },
   {
     "buildingId": "sf_201006_0001081",
-    "measuredCells": 822,
-    "insideCells": 878,
-    "unknownInsideCells": 56,
+    "measuredCells": 882,
+    "insideCells": 896,
+    "unknownInsideCells": 14,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 17.504599999999996,
+    "roundedCorners": 0,
+    "baseRoofZ": 17.5,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -503,9 +499,9 @@
           "sloped": false,
           "outlineVertices": 40,
           "cellsUnderOutline": 490,
-          "explainedUnderOutline": 0.9,
+          "explainedUnderOutline": 0.9959183673469387,
           "interiorCells": 249,
-          "explainedInterior": 0.9317269076305221
+          "explainedInterior": 1.0
         }
       ],
       "acceptedPatchAreaM2": 1136.753489366319,
@@ -515,11 +511,12 @@
   },
   {
     "buildingId": "sf_201006_0001102",
-    "measuredCells": 887,
-    "insideCells": 890,
-    "unknownInsideCells": 3,
+    "measuredCells": 898,
+    "insideCells": 900,
+    "unknownInsideCells": 2,
     "continuousPatches": 0,
     "tierCount": 0,
+    "roundedCorners": 0,
     "baseRoofZ": 12.039999999999992,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
@@ -534,9 +531,9 @@
           "sloped": false,
           "outlineVertices": 21,
           "cellsUnderOutline": 784,
-          "explainedUnderOutline": 0.9489795918367347,
+          "explainedUnderOutline": 0.9961734693877551,
           "interiorCells": 546,
-          "explainedInterior": 0.9432234432234432
+          "explainedInterior": 1.0
         }
       ],
       "acceptedPatchAreaM2": 1816.5224091659431,
@@ -546,12 +543,13 @@
   },
   {
     "buildingId": "sf_201006_0001103",
-    "measuredCells": 794,
-    "insideCells": 1000,
-    "unknownInsideCells": 206,
-    "continuousPatches": 2,
+    "measuredCells": 944,
+    "insideCells": 982,
+    "unknownInsideCells": 38,
+    "continuousPatches": 3,
     "tierCount": 0,
-    "baseRoofZ": 22.082999999999995,
+    "roundedCorners": 0,
+    "baseRoofZ": 22.018900000000006,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -565,7 +563,7 @@
           "sloped": true,
           "outlineVertices": 48,
           "cellsUnderOutline": 191,
-          "explainedUnderOutline": 0.9581151832460733,
+          "explainedUnderOutline": 0.9895287958115183,
           "interiorCells": 64,
           "explainedInterior": 1.0
         }
@@ -577,86 +575,88 @@
   },
   {
     "buildingId": "sf_201006_0001245",
-    "measuredCells": 671,
-    "insideCells": 768,
-    "unknownInsideCells": 97,
+    "measuredCells": 758,
+    "insideCells": 793,
+    "unknownInsideCells": 35,
     "continuousPatches": 0,
-    "tierCount": 0,
-    "baseRoofZ": 17.977499999999996,
+    "tierCount": 1,
+    "roundedCorners": 0,
+    "baseRoofZ": 18.120000000000005,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
       "status": "spatially-validated-patches",
-      "observedCoverage": 0.8686587208456087,
+      "observedCoverage": 0.8482973980794098,
       "patches": [
         {
-          "areaM2": 812.3928959726801,
-          "heldOutSamples": 77,
-          "heldOutP95M": 0.15388174278267858,
+          "areaM2": 839.7351121768631,
+          "heldOutSamples": 70,
+          "heldOutP95M": 0.12766701224080537,
           "sloped": false,
-          "outlineVertices": 35,
-          "cellsUnderOutline": 343,
-          "explainedUnderOutline": 0.956268221574344,
-          "interiorCells": 202,
-          "explainedInterior": 0.9851485148514851
+          "outlineVertices": 62,
+          "cellsUnderOutline": 354,
+          "explainedUnderOutline": 0.96045197740113,
+          "interiorCells": 192,
+          "explainedInterior": 1.0
         }
       ],
-      "acceptedPatchAreaM2": 812.3928959726801,
-      "unobservedCellsFilled": 22,
-      "edgeCellsJoined": 29
+      "acceptedPatchAreaM2": 839.7351121768631,
+      "unobservedCellsFilled": 19,
+      "edgeCellsJoined": 23
     }
   },
   {
     "buildingId": "sf_201006_0001245_p1",
-    "measuredCells": 87,
-    "insideCells": 87,
+    "measuredCells": 94,
+    "insideCells": 94,
     "unknownInsideCells": 0,
-    "continuousPatches": 0,
+    "continuousPatches": 1,
     "tierCount": 0,
-    "baseRoofZ": 9.482,
+    "roundedCorners": 0,
+    "baseRoofZ": 9.218999999999998,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
       "status": "spatially-validated-patches",
-      "observedCoverage": 0.8881192444866978,
+      "observedCoverage": 0.8820539565073442,
       "patches": [
         {
-          "areaM2": 102.74660142357381,
+          "areaM2": 101.68131882201064,
           "heldOutSamples": 9,
-          "heldOutP95M": 0.06887905401573348,
+          "heldOutP95M": 0.09262533368143051,
           "sloped": true,
-          "outlineVertices": 9,
-          "cellsUnderOutline": 43,
+          "outlineVertices": 6,
+          "cellsUnderOutline": 41,
           "explainedUnderOutline": 1.0,
-          "interiorCells": 10,
+          "interiorCells": 11,
           "explainedInterior": 1.0
         },
         {
-          "areaM2": 98.63276076885174,
+          "areaM2": 107.13097988432234,
           "heldOutSamples": 5,
-          "heldOutP95M": 0.05420330227543139,
+          "heldOutP95M": 0.0711627175236714,
           "sloped": true,
-          "outlineVertices": 9,
-          "cellsUnderOutline": 39,
-          "explainedUnderOutline": 0.9487179487179487,
-          "interiorCells": 12,
-          "explainedInterior": 0.8333333333333334,
-          "rejected": "interior-cells-not-explained"
+          "outlineVertices": 6,
+          "cellsUnderOutline": 42,
+          "explainedUnderOutline": 1.0,
+          "interiorCells": 14,
+          "explainedInterior": 1.0
         }
       ],
-      "acceptedPatchAreaM2": 102.74660142357381,
-      "unobservedCellsFilled": 3,
-      "edgeCellsJoined": 3
+      "acceptedPatchAreaM2": 208.81229870633297,
+      "unobservedCellsFilled": 8,
+      "edgeCellsJoined": 8
     }
   },
   {
     "buildingId": "sf_201006_0001270",
-    "measuredCells": 706,
-    "insideCells": 839,
-    "unknownInsideCells": 133,
+    "measuredCells": 806,
+    "insideCells": 849,
+    "unknownInsideCells": 43,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 11.388749999999996,
+    "roundedCorners": 0,
+    "baseRoofZ": 11.379999999999995,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -670,9 +670,9 @@
           "sloped": false,
           "outlineVertices": 13,
           "cellsUnderOutline": 38,
-          "explainedUnderOutline": 0.9473684210526315,
+          "explainedUnderOutline": 1.0,
           "interiorCells": 4,
-          "explainedInterior": 0.9473684210526315
+          "explainedInterior": 1.0
         },
         {
           "areaM2": 116.09430617942033,
@@ -681,9 +681,9 @@
           "sloped": false,
           "outlineVertices": 9,
           "cellsUnderOutline": 43,
-          "explainedUnderOutline": 0.9302325581395349,
+          "explainedUnderOutline": 1.0,
           "interiorCells": 2,
-          "explainedInterior": 0.9302325581395349
+          "explainedInterior": 1.0
         }
       ],
       "acceptedPatchAreaM2": 214.39874107199284,
@@ -693,12 +693,13 @@
   },
   {
     "buildingId": "sf_201006_0001461",
-    "measuredCells": 730,
-    "insideCells": 812,
-    "unknownInsideCells": 82,
+    "measuredCells": 781,
+    "insideCells": 824,
+    "unknownInsideCells": 43,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 9.23605,
+    "roundedCorners": 0,
+    "baseRoofZ": 9.230999999999995,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -712,9 +713,9 @@
           "sloped": false,
           "outlineVertices": 27,
           "cellsUnderOutline": 730,
-          "explainedUnderOutline": 0.9739726027397261,
+          "explainedUnderOutline": 0.9986301369863013,
           "interiorCells": 556,
-          "explainedInterior": 0.9892086330935251
+          "explainedInterior": 1.0
         }
       ],
       "acceptedPatchAreaM2": 1780.3613733616808,
@@ -724,118 +725,110 @@
   },
   {
     "buildingId": "sf_201006_0001497",
-    "measuredCells": 471,
-    "insideCells": 512,
-    "unknownInsideCells": 41,
+    "measuredCells": 495,
+    "insideCells": 499,
+    "unknownInsideCells": 4,
     "continuousPatches": 2,
-    "tierCount": 0,
-    "baseRoofZ": 19.296999999999997,
+    "tierCount": 1,
+    "roundedCorners": 1,
+    "baseRoofZ": 14.6755,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
       "status": "spatially-validated-patches",
-      "observedCoverage": 0.903899858722765,
+      "observedCoverage": 0.892086377086143,
       "patches": [
         {
-          "areaM2": 160.15026738962834,
-          "heldOutSamples": 8,
-          "heldOutP95M": 0.2955489018485572,
+          "areaM2": 126.34459657916109,
+          "heldOutSamples": 10,
+          "heldOutP95M": 0.1670404096346473,
           "sloped": true,
-          "outlineVertices": 16,
-          "cellsUnderOutline": 63,
-          "explainedUnderOutline": 0.9206349206349206,
-          "interiorCells": 6,
-          "explainedInterior": 0.9206349206349206
+          "outlineVertices": 10,
+          "cellsUnderOutline": 53,
+          "explainedUnderOutline": 0.9811320754716981,
+          "interiorCells": 3,
+          "explainedInterior": 0.9811320754716981
         },
         {
-          "areaM2": 187.79093286647256,
+          "areaM2": 122.40922937708113,
           "heldOutSamples": 10,
-          "heldOutP95M": 0.20021860872319477,
+          "heldOutP95M": 0.28544703055393794,
           "sloped": true,
-          "outlineVertices": 17,
-          "cellsUnderOutline": 76,
-          "explainedUnderOutline": 0.9605263157894737,
-          "interiorCells": 20,
-          "explainedInterior": 1.0
+          "outlineVertices": 11,
+          "cellsUnderOutline": 42,
+          "explainedUnderOutline": 0.9761904761904762,
+          "interiorCells": 3,
+          "explainedInterior": 0.9761904761904762
         }
       ],
-      "acceptedPatchAreaM2": 347.9412002561009,
+      "acceptedPatchAreaM2": 248.75382595624222,
       "unobservedCellsFilled": 14,
-      "edgeCellsJoined": 32
+      "edgeCellsJoined": 18
     }
   },
   {
     "buildingId": "sf_201006_0001497_p1",
-    "measuredCells": 264,
-    "insideCells": 271,
-    "unknownInsideCells": 7,
-    "continuousPatches": 0,
+    "measuredCells": 277,
+    "insideCells": 279,
+    "unknownInsideCells": 2,
+    "continuousPatches": 3,
     "tierCount": 0,
-    "baseRoofZ": 13.176150000000003,
+    "roundedCorners": 0,
+    "baseRoofZ": 13.225999999999996,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
       "status": "spatially-validated-patches",
-      "observedCoverage": 0.9368075854247926,
+      "observedCoverage": 0.9512365060640733,
       "patches": [
         {
-          "areaM2": 115.9247692352794,
-          "heldOutSamples": 8,
-          "heldOutP95M": 0.07089504811222758,
+          "areaM2": 118.88184499865791,
+          "heldOutSamples": 10,
+          "heldOutP95M": 0.056864861420988386,
           "sloped": true,
           "outlineVertices": 9,
-          "cellsUnderOutline": 54,
-          "explainedUnderOutline": 0.9814814814814815,
-          "interiorCells": 11,
+          "cellsUnderOutline": 52,
+          "explainedUnderOutline": 1.0,
+          "interiorCells": 13,
           "explainedInterior": 1.0
         },
         {
-          "areaM2": 98.6185497214574,
+          "areaM2": 60.14315223535587,
           "heldOutSamples": 7,
-          "heldOutP95M": 0.08491104250988143,
+          "heldOutP95M": 0.11129385239386805,
           "sloped": true,
-          "outlineVertices": 12,
-          "cellsUnderOutline": 41,
-          "explainedUnderOutline": 0.926829268292683,
-          "interiorCells": 9,
-          "explainedInterior": 0.926829268292683
-        },
-        {
-          "areaM2": 65.64323939120736,
-          "heldOutSamples": 4,
-          "heldOutP95M": 0.12146040772488503,
-          "sloped": true,
-          "outlineVertices": 18,
+          "outlineVertices": 5,
           "cellsUnderOutline": 28,
-          "explainedUnderOutline": 0.9285714285714286,
+          "explainedUnderOutline": 1.0,
           "interiorCells": 0,
-          "explainedInterior": 0.9285714285714286
+          "explainedInterior": 1.0
         },
         {
-          "areaM2": 64.87313312424538,
-          "heldOutSamples": 5,
-          "heldOutP95M": 0.17987496215103674,
+          "areaM2": 73.48062396236597,
+          "heldOutSamples": 4,
+          "heldOutP95M": 0.13653009863849694,
           "sloped": true,
-          "outlineVertices": 8,
-          "cellsUnderOutline": 26,
+          "outlineVertices": 11,
+          "cellsUnderOutline": 29,
           "explainedUnderOutline": 1.0,
           "interiorCells": 3,
           "explainedInterior": 1.0
         }
       ],
-      "acceptedPatchAreaM2": 345.05969147218957,
-      "unobservedCellsFilled": 11,
-      "edgeCellsJoined": 24
+      "acceptedPatchAreaM2": 252.50562119637976,
+      "unobservedCellsFilled": 2,
+      "edgeCellsJoined": 15
     }
   },
   {
     "buildingId": "sf_201006_0001817",
-    "measuredCells": 588,
-    "insideCells": 648,
-    "unknownInsideCells": 60,
-    "continuousPatches": 0,
+    "measuredCells": 639,
+    "insideCells": 675,
+    "unknownInsideCells": 36,
+    "continuousPatches": 1,
     "tierCount": 1,
-    "baseRoofZ": 15.220099999999999,
+    "roundedCorners": 1,
+    "baseRoofZ": 15.216999999999999,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -861,12 +854,13 @@
   },
   {
     "buildingId": "sf_201006_0002005",
-    "measuredCells": 566,
-    "insideCells": 592,
-    "unknownInsideCells": 26,
+    "measuredCells": 595,
+    "insideCells": 600,
+    "unknownInsideCells": 5,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 12.749499999999998,
+    "roundedCorners": 0,
+    "baseRoofZ": 12.75,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -880,10 +874,9 @@
           "sloped": false,
           "outlineVertices": 34,
           "cellsUnderOutline": 219,
-          "explainedUnderOutline": 0.8538812785388128,
+          "explainedUnderOutline": 0.958904109589041,
           "interiorCells": 49,
-          "explainedInterior": 0.8775510204081632,
-          "rejected": "interior-cells-not-explained"
+          "explainedInterior": 0.9183673469387755
         },
         {
           "areaM2": 448.9342345179193,
@@ -892,23 +885,24 @@
           "sloped": false,
           "outlineVertices": 27,
           "cellsUnderOutline": 193,
-          "explainedUnderOutline": 0.8860103626943006,
+          "explainedUnderOutline": 1.0,
           "interiorCells": 80,
-          "explainedInterior": 0.975
+          "explainedInterior": 1.0
         }
       ],
-      "acceptedPatchAreaM2": 448.9342345179193,
+      "acceptedPatchAreaM2": 982.5676464909327,
       "unobservedCellsFilled": 18,
       "edgeCellsJoined": 68
     }
   },
   {
     "buildingId": "sf_201006_0002014",
-    "measuredCells": 522,
-    "insideCells": 541,
-    "unknownInsideCells": 19,
+    "measuredCells": 534,
+    "insideCells": 539,
+    "unknownInsideCells": 5,
     "continuousPatches": 0,
     "tierCount": 0,
+    "roundedCorners": 0,
     "baseRoofZ": 14.0,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
@@ -923,9 +917,9 @@
           "sloped": false,
           "outlineVertices": 29,
           "cellsUnderOutline": 413,
-          "explainedUnderOutline": 0.9346246973365617,
+          "explainedUnderOutline": 1.0,
           "interiorCells": 238,
-          "explainedInterior": 0.9537815126050421
+          "explainedInterior": 1.0
         }
       ],
       "acceptedPatchAreaM2": 989.4130148756263,
@@ -935,12 +929,13 @@
   },
   {
     "buildingId": "sf_201006_0002044",
-    "measuredCells": 599,
-    "insideCells": 623,
-    "unknownInsideCells": 24,
+    "measuredCells": 598,
+    "insideCells": 600,
+    "unknownInsideCells": 2,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 14.27000000000001,
+    "roundedCorners": 0,
+    "baseRoofZ": 14.272200000000009,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -954,9 +949,9 @@
           "sloped": false,
           "outlineVertices": 10,
           "cellsUnderOutline": 588,
-          "explainedUnderOutline": 0.9064625850340136,
+          "explainedUnderOutline": 0.9880952380952381,
           "interiorCells": 412,
-          "explainedInterior": 0.9393203883495146
+          "explainedInterior": 0.9975728155339806
         }
       ],
       "acceptedPatchAreaM2": 1392.646032572215,
@@ -966,12 +961,13 @@
   },
   {
     "buildingId": "sf_201006_0002210",
-    "measuredCells": 517,
-    "insideCells": 591,
-    "unknownInsideCells": 74,
+    "measuredCells": 576,
+    "insideCells": 599,
+    "unknownInsideCells": 23,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 22.144999999999996,
+    "roundedCorners": 0,
+    "baseRoofZ": 22.135499999999993,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -985,7 +981,7 @@
           "sloped": false,
           "outlineVertices": 26,
           "cellsUnderOutline": 139,
-          "explainedUnderOutline": 0.9856115107913669,
+          "explainedUnderOutline": 0.9928057553956835,
           "interiorCells": 40,
           "explainedInterior": 1.0
         },
@@ -996,7 +992,7 @@
           "sloped": false,
           "outlineVertices": 23,
           "cellsUnderOutline": 62,
-          "explainedUnderOutline": 0.967741935483871,
+          "explainedUnderOutline": 0.9838709677419355,
           "interiorCells": 14,
           "explainedInterior": 1.0
         },
@@ -1007,9 +1003,9 @@
           "sloped": false,
           "outlineVertices": 19,
           "cellsUnderOutline": 71,
-          "explainedUnderOutline": 0.9859154929577465,
+          "explainedUnderOutline": 1.0,
           "interiorCells": 4,
-          "explainedInterior": 0.9859154929577465
+          "explainedInterior": 1.0
         }
       ],
       "acceptedPatchAreaM2": 655.4492221633557,
@@ -1019,12 +1015,13 @@
   },
   {
     "buildingId": "sf_201006_0002333",
-    "measuredCells": 565,
-    "insideCells": 596,
-    "unknownInsideCells": 31,
+    "measuredCells": 580,
+    "insideCells": 588,
+    "unknownInsideCells": 8,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 12.193999999999994,
+    "roundedCorners": 0,
+    "baseRoofZ": 12.204549999999992,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1038,7 +1035,7 @@
           "sloped": false,
           "outlineVertices": 28,
           "cellsUnderOutline": 217,
-          "explainedUnderOutline": 0.8663594470046083,
+          "explainedUnderOutline": 0.8709677419354839,
           "interiorCells": 63,
           "explainedInterior": 1.0
         }
@@ -1050,12 +1047,13 @@
   },
   {
     "buildingId": "sf_201006_0002572",
-    "measuredCells": 421,
-    "insideCells": 448,
-    "unknownInsideCells": 27,
+    "measuredCells": 447,
+    "insideCells": 450,
+    "unknownInsideCells": 3,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 14.757999999999992,
+    "roundedCorners": 0,
+    "baseRoofZ": 14.759999999999991,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1069,7 +1067,7 @@
           "sloped": false,
           "outlineVertices": 25,
           "cellsUnderOutline": 197,
-          "explainedUnderOutline": 0.883248730964467,
+          "explainedUnderOutline": 0.949238578680203,
           "interiorCells": 45,
           "explainedInterior": 1.0
         },
@@ -1080,25 +1078,25 @@
           "sloped": true,
           "outlineVertices": 10,
           "cellsUnderOutline": 77,
-          "explainedUnderOutline": 0.8441558441558441,
+          "explainedUnderOutline": 0.987012987012987,
           "interiorCells": 3,
-          "explainedInterior": 0.8441558441558441,
-          "rejected": "interior-cells-not-explained"
+          "explainedInterior": 0.987012987012987
         }
       ],
-      "acceptedPatchAreaM2": 427.30467328693015,
+      "acceptedPatchAreaM2": 615.661092140811,
       "unobservedCellsFilled": 0,
       "edgeCellsJoined": 45
     }
   },
   {
     "buildingId": "sf_201006_0002604",
-    "measuredCells": 436,
-    "insideCells": 500,
-    "unknownInsideCells": 64,
+    "measuredCells": 476,
+    "insideCells": 494,
+    "unknownInsideCells": 18,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 26.57524999999999,
+    "roundedCorners": 0,
+    "baseRoofZ": 26.549750000000007,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1112,7 +1110,7 @@
           "sloped": true,
           "outlineVertices": 24,
           "cellsUnderOutline": 136,
-          "explainedUnderOutline": 0.9264705882352942,
+          "explainedUnderOutline": 0.9485294117647058,
           "interiorCells": 23,
           "explainedInterior": 1.0
         }
@@ -1124,12 +1122,13 @@
   },
   {
     "buildingId": "sf_201006_0002680",
-    "measuredCells": 377,
-    "insideCells": 459,
-    "unknownInsideCells": 82,
+    "measuredCells": 438,
+    "insideCells": 475,
+    "unknownInsideCells": 37,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 17.847999999999995,
+    "roundedCorners": 0,
+    "baseRoofZ": 17.840000000000003,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1143,10 +1142,9 @@
           "sloped": false,
           "outlineVertices": 73,
           "cellsUnderOutline": 298,
-          "explainedUnderOutline": 0.8825503355704698,
+          "explainedUnderOutline": 1.0,
           "interiorCells": 139,
-          "explainedInterior": 0.8920863309352518,
-          "rejected": "interior-cells-not-explained"
+          "explainedInterior": 1.0
         },
         {
           "areaM2": 88.49395451688869,
@@ -1155,24 +1153,25 @@
           "sloped": true,
           "outlineVertices": 12,
           "cellsUnderOutline": 35,
-          "explainedUnderOutline": 0.9714285714285714,
+          "explainedUnderOutline": 1.0,
           "interiorCells": 5,
-          "explainedInterior": 0.9714285714285714
+          "explainedInterior": 1.0
         }
       ],
-      "acceptedPatchAreaM2": 88.49395451688869,
+      "acceptedPatchAreaM2": 838.2086282143691,
       "unobservedCellsFilled": 33,
       "edgeCellsJoined": 52
     }
   },
   {
     "buildingId": "sf_201006_0002834",
-    "measuredCells": 430,
-    "insideCells": 448,
-    "unknownInsideCells": 18,
-    "continuousPatches": 0,
+    "measuredCells": 436,
+    "insideCells": 446,
+    "unknownInsideCells": 10,
+    "continuousPatches": 3,
     "tierCount": 0,
-    "baseRoofZ": 7.5660000000000025,
+    "roundedCorners": 0,
+    "baseRoofZ": 7.6659999999999915,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1186,10 +1185,9 @@
           "sloped": true,
           "outlineVertices": 31,
           "cellsUnderOutline": 120,
-          "explainedUnderOutline": 0.9166666666666666,
+          "explainedUnderOutline": 0.95,
           "interiorCells": 14,
-          "explainedInterior": 0.8571428571428571,
-          "rejected": "interior-cells-not-explained"
+          "explainedInterior": 0.9285714285714286
         },
         {
           "areaM2": 375.97460936484686,
@@ -1198,10 +1196,9 @@
           "sloped": true,
           "outlineVertices": 23,
           "cellsUnderOutline": 165,
-          "explainedUnderOutline": 0.6727272727272727,
+          "explainedUnderOutline": 0.793939393939394,
           "interiorCells": 76,
-          "explainedInterior": 0.8552631578947368,
-          "rejected": "interior-cells-not-explained"
+          "explainedInterior": 0.9342105263157895
         },
         {
           "areaM2": 137.5003957970628,
@@ -1215,19 +1212,20 @@
           "explainedInterior": 1.0
         }
       ],
-      "acceptedPatchAreaM2": 137.5003957970628,
+      "acceptedPatchAreaM2": 754.1220927784666,
       "unobservedCellsFilled": 9,
       "edgeCellsJoined": 61
     }
   },
   {
     "buildingId": "sf_201006_0002920",
-    "measuredCells": 383,
-    "insideCells": 450,
-    "unknownInsideCells": 67,
+    "measuredCells": 420,
+    "insideCells": 442,
+    "unknownInsideCells": 22,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 23.224999999999994,
+    "roundedCorners": 0,
+    "baseRoofZ": 23.203399999999995,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1241,7 +1239,7 @@
           "sloped": true,
           "outlineVertices": 11,
           "cellsUnderOutline": 169,
-          "explainedUnderOutline": 0.9704142011834319,
+          "explainedUnderOutline": 1.0,
           "interiorCells": 81,
           "explainedInterior": 1.0
         },
@@ -1252,9 +1250,9 @@
           "sloped": false,
           "outlineVertices": 9,
           "cellsUnderOutline": 62,
-          "explainedUnderOutline": 0.8387096774193549,
+          "explainedUnderOutline": 0.9032258064516129,
           "interiorCells": 13,
-          "explainedInterior": 0.9230769230769231
+          "explainedInterior": 1.0
         }
       ],
       "acceptedPatchAreaM2": 525.1932748425766,
@@ -1264,74 +1262,64 @@
   },
   {
     "buildingId": "sf_201006_0003021",
-    "measuredCells": 210,
-    "insideCells": 216,
-    "unknownInsideCells": 6,
+    "measuredCells": 240,
+    "insideCells": 240,
+    "unknownInsideCells": 0,
     "continuousPatches": 1,
     "tierCount": 0,
-    "baseRoofZ": 10.723100000000006,
+    "roundedCorners": 0,
+    "baseRoofZ": 10.750000000000005,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
       "status": "spatially-validated-patches",
-      "observedCoverage": 0.8889231765428212,
+      "observedCoverage": 0.9348310171981308,
       "patches": [
         {
-          "areaM2": 499.06291404286816,
-          "heldOutSamples": 52,
-          "heldOutP95M": 0.09103016639525499,
+          "areaM2": 543.8686007612232,
+          "heldOutSamples": 57,
+          "heldOutP95M": 0.07469350684377356,
           "sloped": true,
-          "outlineVertices": 58,
-          "cellsUnderOutline": 207,
-          "explainedUnderOutline": 0.9951690821256038,
-          "interiorCells": 97,
+          "outlineVertices": 9,
+          "cellsUnderOutline": 229,
+          "explainedUnderOutline": 1.0,
+          "interiorCells": 135,
           "explainedInterior": 1.0
         }
       ],
-      "acceptedPatchAreaM2": 499.06291404286816,
-      "unobservedCellsFilled": 11,
-      "edgeCellsJoined": 11
+      "acceptedPatchAreaM2": 543.8686007612232,
+      "unobservedCellsFilled": 7,
+      "edgeCellsJoined": 7
     }
   },
   {
     "buildingId": "sf_201006_0003021_p1",
-    "measuredCells": 160,
-    "insideCells": 172,
-    "unknownInsideCells": 12,
-    "continuousPatches": 1,
+    "measuredCells": 149,
+    "insideCells": 150,
+    "unknownInsideCells": 1,
+    "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 15.825999999999993,
+    "roundedCorners": 0,
+    "baseRoofZ": 16.056200000000004,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
-      "status": "spatially-validated-patches",
-      "observedCoverage": 0.8693495308455937,
-      "patches": [
-        {
-          "areaM2": 346.82520953692017,
-          "heldOutSamples": 25,
-          "heldOutP95M": 0.07778793079718653,
-          "sloped": true,
-          "outlineVertices": 55,
-          "cellsUnderOutline": 139,
-          "explainedUnderOutline": 0.9064748201438849,
-          "interiorCells": 51,
-          "explainedInterior": 1.0
-        }
-      ],
-      "acceptedPatchAreaM2": 346.82520953692017,
-      "unobservedCellsFilled": 13,
-      "edgeCellsJoined": 15
+      "status": "no-validated-patches",
+      "observedCoverage": 0.8828772470672493,
+      "patches": [],
+      "acceptedPatchAreaM2": 0,
+      "unobservedCellsFilled": 0
     }
   },
   {
     "buildingId": "sf_201006_0003024",
-    "measuredCells": 383,
-    "insideCells": 433,
-    "unknownInsideCells": 50,
+    "measuredCells": 411,
+    "insideCells": 442,
+    "unknownInsideCells": 31,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 9.215199999999996,
+    "roundedCorners": 0,
+    "baseRoofZ": 9.228000000000009,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1345,9 +1333,9 @@
           "sloped": true,
           "outlineVertices": 11,
           "cellsUnderOutline": 65,
-          "explainedUnderOutline": 0.8307692307692308,
+          "explainedUnderOutline": 0.8615384615384616,
           "interiorCells": 7,
-          "explainedInterior": 0.8307692307692308,
+          "explainedInterior": 0.8615384615384616,
           "rejected": "interior-cells-not-explained"
         }
       ],
@@ -1358,12 +1346,13 @@
   },
   {
     "buildingId": "sf_201006_0003254",
-    "measuredCells": 337,
-    "insideCells": 415,
-    "unknownInsideCells": 78,
+    "measuredCells": 393,
+    "insideCells": 420,
+    "unknownInsideCells": 27,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 16.870000000000005,
+    "roundedCorners": 0,
+    "baseRoofZ": 16.874000000000002,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1377,7 +1366,7 @@
           "sloped": false,
           "outlineVertices": 34,
           "cellsUnderOutline": 262,
-          "explainedUnderOutline": 0.9083969465648855,
+          "explainedUnderOutline": 0.9809160305343512,
           "interiorCells": 92,
           "explainedInterior": 1.0
         }
@@ -1389,12 +1378,13 @@
   },
   {
     "buildingId": "sf_201006_0003596",
-    "measuredCells": 359,
-    "insideCells": 373,
-    "unknownInsideCells": 14,
+    "measuredCells": 363,
+    "insideCells": 368,
+    "unknownInsideCells": 5,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 9.150000000000006,
+    "roundedCorners": 0,
+    "baseRoofZ": 9.189999999999998,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1408,7 +1398,7 @@
           "sloped": false,
           "outlineVertices": 14,
           "cellsUnderOutline": 173,
-          "explainedUnderOutline": 0.9710982658959537,
+          "explainedUnderOutline": 1.0,
           "interiorCells": 46,
           "explainedInterior": 1.0
         }
@@ -1420,12 +1410,13 @@
   },
   {
     "buildingId": "sf_201006_0003726",
-    "measuredCells": 328,
-    "insideCells": 351,
-    "unknownInsideCells": 23,
+    "measuredCells": 339,
+    "insideCells": 350,
+    "unknownInsideCells": 11,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 4.722999999999999,
+    "roundedCorners": 0,
+    "baseRoofZ": 4.6655999999999915,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1438,12 +1429,13 @@
   },
   {
     "buildingId": "sf_201006_0003782",
-    "measuredCells": 382,
-    "insideCells": 450,
-    "unknownInsideCells": 68,
+    "measuredCells": 427,
+    "insideCells": 442,
+    "unknownInsideCells": 15,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 16.09345,
+    "roundedCorners": 0,
+    "baseRoofZ": 16.099999999999994,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1457,7 +1449,7 @@
           "sloped": true,
           "outlineVertices": 10,
           "cellsUnderOutline": 74,
-          "explainedUnderOutline": 0.8783783783783784,
+          "explainedUnderOutline": 1.0,
           "interiorCells": 18,
           "explainedInterior": 1.0
         }
@@ -1469,12 +1461,13 @@
   },
   {
     "buildingId": "sf_201006_0004051",
-    "measuredCells": 311,
-    "insideCells": 390,
-    "unknownInsideCells": 79,
+    "measuredCells": 361,
+    "insideCells": 381,
+    "unknownInsideCells": 20,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 13.9375,
+    "roundedCorners": 0,
+    "baseRoofZ": 13.930000000000007,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1488,9 +1481,9 @@
           "sloped": false,
           "outlineVertices": 35,
           "cellsUnderOutline": 283,
-          "explainedUnderOutline": 0.9045936395759717,
+          "explainedUnderOutline": 0.9646643109540636,
           "interiorCells": 150,
-          "explainedInterior": 0.9466666666666667
+          "explainedInterior": 0.9933333333333333
         }
       ],
       "acceptedPatchAreaM2": 728.0628465774964,
@@ -1500,27 +1493,51 @@
   },
   {
     "buildingId": "sf_201006_0004743",
-    "measuredCells": 217,
-    "insideCells": 306,
-    "unknownInsideCells": 89,
+    "measuredCells": 204,
+    "insideCells": 237,
+    "unknownInsideCells": 33,
     "continuousPatches": 0,
-    "tierCount": 2,
-    "baseRoofZ": 25.725999999999992,
+    "tierCount": 1,
+    "roundedCorners": 0,
+    "baseRoofZ": 33.16149999999999,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
-      "status": "no-stable-planes",
-      "acceptedPatchAreaM2": 0
+      "status": "no-validated-patches",
+      "observedCoverage": 0.7681661396436911,
+      "patches": [],
+      "acceptedPatchAreaM2": 0,
+      "unobservedCellsFilled": 0
+    }
+  },
+  {
+    "buildingId": "sf_201006_0004743_p1",
+    "measuredCells": 69,
+    "insideCells": 87,
+    "unknownInsideCells": 18,
+    "continuousPatches": 0,
+    "tierCount": 0,
+    "roundedCorners": 0,
+    "baseRoofZ": 24.75999999999999,
+    "slopedCellsDroppedToBase": 0,
+    "wallHeightSource": "same generated roof envelope",
+    "planeFit": {
+      "status": "no-validated-patches",
+      "observedCoverage": 0.7417045847802818,
+      "patches": [],
+      "acceptedPatchAreaM2": 0,
+      "unobservedCellsFilled": 0
     }
   },
   {
     "buildingId": "sf_201006_0005190",
-    "measuredCells": 172,
-    "insideCells": 182,
-    "unknownInsideCells": 10,
+    "measuredCells": 182,
+    "insideCells": 184,
+    "unknownInsideCells": 2,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 6.799999999999983,
+    "roundedCorners": 0,
+    "baseRoofZ": 6.8115000000000006,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1533,12 +1550,13 @@
   },
   {
     "buildingId": "sf_201006_0005523",
-    "measuredCells": 216,
-    "insideCells": 231,
-    "unknownInsideCells": 15,
+    "measuredCells": 223,
+    "insideCells": 225,
+    "unknownInsideCells": 2,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 8.22999999999999,
+    "roundedCorners": 0,
+    "baseRoofZ": 8.210000000000008,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1552,7 +1570,7 @@
           "sloped": false,
           "outlineVertices": 20,
           "cellsUnderOutline": 137,
-          "explainedUnderOutline": 0.8540145985401459,
+          "explainedUnderOutline": 0.9927007299270073,
           "interiorCells": 33,
           "explainedInterior": 1.0
         }
@@ -1564,12 +1582,13 @@
   },
   {
     "buildingId": "sf_201006_0006227",
-    "measuredCells": 212,
-    "insideCells": 217,
-    "unknownInsideCells": 5,
+    "measuredCells": 215,
+    "insideCells": 225,
+    "unknownInsideCells": 10,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 14.65595,
+    "roundedCorners": 0,
+    "baseRoofZ": 14.659999999999997,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1583,25 +1602,25 @@
           "sloped": false,
           "outlineVertices": 10,
           "cellsUnderOutline": 181,
-          "explainedUnderOutline": 0.8342541436464088,
+          "explainedUnderOutline": 0.988950276243094,
           "interiorCells": 81,
-          "explainedInterior": 0.7407407407407407,
-          "rejected": "interior-cells-not-explained"
+          "explainedInterior": 1.0
         }
       ],
-      "acceptedPatchAreaM2": 0,
+      "acceptedPatchAreaM2": 430.2617255407089,
       "unobservedCellsFilled": 6,
       "edgeCellsJoined": 14
     }
   },
   {
     "buildingId": "sf_201006_0006801",
-    "measuredCells": 139,
-    "insideCells": 210,
-    "unknownInsideCells": 71,
+    "measuredCells": 202,
+    "insideCells": 220,
+    "unknownInsideCells": 18,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 9.6277,
+    "roundedCorners": 0,
+    "baseRoofZ": 9.526000000000002,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1614,12 +1633,13 @@
   },
   {
     "buildingId": "sf_201006_0006942",
-    "measuredCells": 207,
-    "insideCells": 219,
-    "unknownInsideCells": 12,
+    "measuredCells": 221,
+    "insideCells": 224,
+    "unknownInsideCells": 3,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 12.775000000000006,
+    "roundedCorners": 0,
+    "baseRoofZ": 12.780000000000001,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1633,9 +1653,9 @@
           "sloped": false,
           "outlineVertices": 21,
           "cellsUnderOutline": 186,
-          "explainedUnderOutline": 0.9247311827956989,
+          "explainedUnderOutline": 1.0,
           "interiorCells": 100,
-          "explainedInterior": 0.99
+          "explainedInterior": 1.0
         }
       ],
       "acceptedPatchAreaM2": 442.2382457646722,
@@ -1645,43 +1665,45 @@
   },
   {
     "buildingId": "sf_201006_0007874",
-    "measuredCells": 271,
-    "insideCells": 275,
-    "unknownInsideCells": 4,
+    "measuredCells": 278,
+    "insideCells": 280,
+    "unknownInsideCells": 2,
     "continuousPatches": 1,
     "tierCount": 0,
-    "baseRoofZ": 7.278499999999996,
+    "roundedCorners": 0,
+    "baseRoofZ": 7.312199999999998,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
       "status": "spatially-validated-patches",
-      "observedCoverage": 0.9393868048009041,
+      "observedCoverage": 0.9383502761192888,
       "patches": [
         {
-          "areaM2": 319.71038390073375,
-          "heldOutSamples": 17,
-          "heldOutP95M": 0.09544318564930501,
+          "areaM2": 340.23742751837847,
+          "heldOutSamples": 18,
+          "heldOutP95M": 0.09317169026742823,
           "sloped": true,
-          "outlineVertices": 24,
-          "cellsUnderOutline": 140,
-          "explainedUnderOutline": 0.9571428571428572,
-          "interiorCells": 39,
+          "outlineVertices": 22,
+          "cellsUnderOutline": 146,
+          "explainedUnderOutline": 0.9726027397260274,
+          "interiorCells": 45,
           "explainedInterior": 1.0
         }
       ],
-      "acceptedPatchAreaM2": 319.71038390073375,
-      "unobservedCellsFilled": 7,
-      "edgeCellsJoined": 13
+      "acceptedPatchAreaM2": 340.23742751837847,
+      "unobservedCellsFilled": 9,
+      "edgeCellsJoined": 15
     }
   },
   {
     "buildingId": "sf_201006_0010890",
-    "measuredCells": 121,
-    "insideCells": 161,
-    "unknownInsideCells": 40,
+    "measuredCells": 145,
+    "insideCells": 160,
+    "unknownInsideCells": 15,
     "continuousPatches": 0,
     "tierCount": 1,
-    "baseRoofZ": 10.150000000000006,
+    "roundedCorners": 0,
+    "baseRoofZ": 5.695072371017857,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1694,11 +1716,12 @@
   },
   {
     "buildingId": "sf_201006_0015276",
-    "measuredCells": 101,
-    "insideCells": 111,
-    "unknownInsideCells": 10,
+    "measuredCells": 106,
+    "insideCells": 108,
+    "unknownInsideCells": 2,
     "continuousPatches": 0,
     "tierCount": 0,
+    "roundedCorners": 0,
     "baseRoofZ": 6.0417767972141,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
@@ -1726,12 +1749,13 @@
   },
   {
     "buildingId": "sf_201006_0028162",
-    "measuredCells": 78,
-    "insideCells": 85,
-    "unknownInsideCells": 7,
+    "measuredCells": 82,
+    "insideCells": 84,
+    "unknownInsideCells": 2,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 7.8119,
+    "roundedCorners": 0,
+    "baseRoofZ": 7.824299999999989,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1757,12 +1781,13 @@
   },
   {
     "buildingId": "sf_201006_0029858",
-    "measuredCells": 67,
-    "insideCells": 90,
-    "unknownInsideCells": 23,
+    "measuredCells": 73,
+    "insideCells": 88,
+    "unknownInsideCells": 15,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 12.045899999999985,
+    "roundedCorners": 0,
+    "baseRoofZ": 11.995999999999992,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1775,12 +1800,13 @@
   },
   {
     "buildingId": "sf_201006_0136107",
-    "measuredCells": 19,
+    "measuredCells": 26,
     "insideCells": 45,
-    "unknownInsideCells": 26,
+    "unknownInsideCells": 19,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 8.33829999999999,
+    "roundedCorners": 0,
+    "baseRoofZ": 9.228749999999991,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1790,79 +1816,69 @@
   },
   {
     "buildingId": "sf_201006_0000213",
-    "measuredCells": 1137,
-    "insideCells": 1384,
-    "unknownInsideCells": 247,
+    "measuredCells": 1300,
+    "insideCells": 1399,
+    "unknownInsideCells": 99,
     "continuousPatches": 0,
-    "tierCount": 3,
-    "baseRoofZ": 22.984399999999997,
+    "tierCount": 1,
+    "roundedCorners": 3,
+    "baseRoofZ": 22.960000000000008,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
       "status": "spatially-validated-patches",
-      "observedCoverage": 0.8381001048725887,
+      "observedCoverage": 0.8392838651731714,
       "patches": [
         {
-          "areaM2": 70.01569501692822,
-          "heldOutSamples": 6,
-          "heldOutP95M": 0.05174116038764964,
-          "sloped": false,
-          "outlineVertices": 15,
-          "cellsUnderOutline": 29,
+          "areaM2": 177.37631777411917,
+          "heldOutSamples": 7,
+          "heldOutP95M": 0.04226387012196077,
+          "sloped": true,
+          "outlineVertices": 40,
+          "cellsUnderOutline": 86,
           "explainedUnderOutline": 1.0,
-          "interiorCells": 0,
+          "interiorCells": 1,
           "explainedInterior": 1.0
         }
       ],
-      "acceptedPatchAreaM2": 70.01569501692822,
-      "unobservedCellsFilled": 3,
-      "edgeCellsJoined": 3
+      "acceptedPatchAreaM2": 177.37631777411917,
+      "unobservedCellsFilled": 6,
+      "edgeCellsJoined": 14
     }
   },
   {
     "buildingId": "sf_201006_0000213_p1",
-    "measuredCells": 891,
-    "insideCells": 1130,
-    "unknownInsideCells": 239,
+    "measuredCells": 1097,
+    "insideCells": 1139,
+    "unknownInsideCells": 42,
     "continuousPatches": 0,
-    "tierCount": 1,
-    "baseRoofZ": 21.719499999999996,
-    "slopedCellsDroppedToBase": 0,
-    "wallHeightSource": "same generated roof envelope",
-    "planeFit": {
-      "status": "spatially-validated-patches",
-      "observedCoverage": 0.8115414260868055,
-      "patches": [
-        {
-          "areaM2": 423.4019015205912,
-          "heldOutSamples": 31,
-          "heldOutP95M": 0.14545441539372916,
-          "sloped": true,
-          "outlineVertices": 26,
-          "cellsUnderOutline": 186,
-          "explainedUnderOutline": 0.946236559139785,
-          "interiorCells": 59,
-          "explainedInterior": 1.0
-        }
-      ],
-      "acceptedPatchAreaM2": 423.4019015205912,
-      "unobservedCellsFilled": 2,
-      "edgeCellsJoined": 3
-    }
-  },
-  {
-    "buildingId": "sf_201006_0000227",
-    "measuredCells": 699,
-    "insideCells": 863,
-    "unknownInsideCells": 164,
-    "continuousPatches": 0,
-    "tierCount": 1,
-    "baseRoofZ": 11.926399999999996,
+    "tierCount": 2,
+    "roundedCorners": 1,
+    "baseRoofZ": 25.82079999999999,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
       "status": "no-validated-patches",
-      "observedCoverage": 0.8912004755319511,
+      "observedCoverage": 0.8860978471635179,
+      "patches": [],
+      "acceptedPatchAreaM2": 0,
+      "unobservedCellsFilled": 0
+    }
+  },
+  {
+    "buildingId": "sf_201006_0000227",
+    "measuredCells": 825,
+    "insideCells": 870,
+    "unknownInsideCells": 45,
+    "continuousPatches": 0,
+    "tierCount": 3,
+    "roundedCorners": 0,
+    "baseRoofZ": 11.889999999999986,
+    "slopedCellsDroppedToBase": 0,
+    "wallHeightSource": "same generated roof envelope",
+    "planeFit": {
+      "status": "no-validated-patches",
+      "observedCoverage": 0.8912004755319517,
       "patches": [],
       "acceptedPatchAreaM2": 0,
       "unobservedCellsFilled": 0
@@ -1870,85 +1886,77 @@
   },
   {
     "buildingId": "sf_201006_0000227_p1",
-    "measuredCells": 453,
-    "insideCells": 596,
-    "unknownInsideCells": 143,
+    "measuredCells": 554,
+    "insideCells": 592,
+    "unknownInsideCells": 38,
     "continuousPatches": 0,
-    "tierCount": 1,
-    "baseRoofZ": 28.25,
+    "tierCount": 3,
+    "roundedCorners": 1,
+    "baseRoofZ": 22.539999999999992,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
       "status": "spatially-validated-patches",
-      "observedCoverage": 0.832777851649098,
+      "observedCoverage": 0.8320261980084805,
       "patches": [
         {
-          "areaM2": 198.2245447488314,
+          "areaM2": 198.2245447488318,
           "heldOutSamples": 18,
           "heldOutP95M": 0.1952258675667648,
           "sloped": false,
-          "outlineVertices": 22,
+          "outlineVertices": 10,
           "cellsUnderOutline": 95,
-          "explainedUnderOutline": 0.9473684210526315,
+          "explainedUnderOutline": 1.0,
           "interiorCells": 11,
           "explainedInterior": 1.0
         }
       ],
-      "acceptedPatchAreaM2": 198.2245447488314,
+      "acceptedPatchAreaM2": 198.2245447488318,
       "unobservedCellsFilled": 2,
       "edgeCellsJoined": 4
     }
   },
   {
     "buildingId": "sf_201006_0000306",
-    "measuredCells": 1483,
-    "insideCells": 1569,
-    "unknownInsideCells": 86,
+    "measuredCells": 1507,
+    "insideCells": 1539,
+    "unknownInsideCells": 32,
     "continuousPatches": 0,
     "tierCount": 0,
+    "roundedCorners": 0,
     "baseRoofZ": 14.990000000000009,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
       "status": "spatially-validated-patches",
-      "observedCoverage": 0.9137362907989921,
+      "observedCoverage": 0.9159139219607842,
       "patches": [
         {
-          "areaM2": 1505.3812108082736,
-          "heldOutSamples": 90,
-          "heldOutP95M": 0.10184117414008921,
+          "areaM2": 2558.9686765502347,
+          "heldOutSamples": 224,
+          "heldOutP95M": 0.08769498117977442,
           "sloped": false,
-          "outlineVertices": 149,
-          "cellsUnderOutline": 651,
-          "explainedUnderOutline": 0.9585253456221198,
-          "interiorCells": 271,
-          "explainedInterior": 0.974169741697417
-        },
-        {
-          "areaM2": 447.3210452551976,
-          "heldOutSamples": 28,
-          "heldOutP95M": 0.08376906083791526,
-          "sloped": false,
-          "outlineVertices": 102,
-          "cellsUnderOutline": 186,
-          "explainedUnderOutline": 0.978494623655914,
-          "interiorCells": 24,
+          "outlineVertices": 231,
+          "cellsUnderOutline": 1091,
+          "explainedUnderOutline": 0.997250229147571,
+          "interiorCells": 574,
           "explainedInterior": 1.0
         }
       ],
-      "acceptedPatchAreaM2": 1952.7022560634712,
-      "unobservedCellsFilled": 43,
-      "edgeCellsJoined": 132
+      "acceptedPatchAreaM2": 2558.9686765502347,
+      "unobservedCellsFilled": 44,
+      "edgeCellsJoined": 60
     }
   },
   {
     "buildingId": "sf_201006_0000306_p1",
-    "measuredCells": 358,
-    "insideCells": 514,
-    "unknownInsideCells": 156,
+    "measuredCells": 474,
+    "insideCells": 532,
+    "unknownInsideCells": 58,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 25.208000000000006,
+    "roundedCorners": 0,
+    "baseRoofZ": 25.139999999999986,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1958,12 +1966,13 @@
   },
   {
     "buildingId": "sf_201006_0001907",
-    "measuredCells": 566,
-    "insideCells": 618,
-    "unknownInsideCells": 52,
+    "measuredCells": 578,
+    "insideCells": 604,
+    "unknownInsideCells": 26,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 12.006999999999998,
+    "roundedCorners": 0,
+    "baseRoofZ": 12.061699999999991,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -1977,9 +1986,9 @@
           "sloped": true,
           "outlineVertices": 21,
           "cellsUnderOutline": 253,
-          "explainedUnderOutline": 0.9169960474308301,
+          "explainedUnderOutline": 1.0,
           "interiorCells": 142,
-          "explainedInterior": 0.9154929577464789
+          "explainedInterior": 1.0
         },
         {
           "areaM2": 44.89994708710458,
@@ -2000,12 +2009,13 @@
   },
   {
     "buildingId": "sf_201006_0005658",
-    "measuredCells": 213,
-    "insideCells": 251,
-    "unknownInsideCells": 38,
+    "measuredCells": 229,
+    "insideCells": 241,
+    "unknownInsideCells": 12,
     "continuousPatches": 0,
-    "tierCount": 2,
-    "baseRoofZ": 8.343799999999998,
+    "tierCount": 1,
+    "roundedCorners": 0,
+    "baseRoofZ": 6.420599999999997,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -2019,7 +2029,7 @@
           "sloped": true,
           "outlineVertices": 12,
           "cellsUnderOutline": 49,
-          "explainedUnderOutline": 0.8979591836734694,
+          "explainedUnderOutline": 0.9183673469387755,
           "interiorCells": 13,
           "explainedInterior": 1.0
         },
@@ -2043,10 +2053,11 @@
   {
     "buildingId": "sf_201006_0006267",
     "measuredCells": 212,
-    "insideCells": 226,
-    "unknownInsideCells": 14,
-    "continuousPatches": 0,
+    "insideCells": 220,
+    "unknownInsideCells": 8,
+    "continuousPatches": 1,
     "tierCount": 0,
+    "roundedCorners": 0,
     "baseRoofZ": 6.248098595929594,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
@@ -2061,10 +2072,9 @@
           "sloped": true,
           "outlineVertices": 9,
           "cellsUnderOutline": 56,
-          "explainedUnderOutline": 0.875,
+          "explainedUnderOutline": 0.9107142857142857,
           "interiorCells": 1,
-          "explainedInterior": 0.875,
-          "rejected": "interior-cells-not-explained"
+          "explainedInterior": 0.9107142857142857
         },
         {
           "areaM2": 83.79245801902378,
@@ -2079,19 +2089,20 @@
           "rejected": "interior-cells-not-explained"
         }
       ],
-      "acceptedPatchAreaM2": 0,
+      "acceptedPatchAreaM2": 128.90355782950368,
       "unobservedCellsFilled": 5,
       "edgeCellsJoined": 12
     }
   },
   {
     "buildingId": "sf_201006_0019339",
-    "measuredCells": 45,
-    "insideCells": 57,
-    "unknownInsideCells": 12,
+    "measuredCells": 55,
+    "insideCells": 60,
+    "unknownInsideCells": 5,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 14.887999999999993,
+    "roundedCorners": 0,
+    "baseRoofZ": 14.931999999999999,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {
@@ -2104,12 +2115,13 @@
   },
   {
     "buildingId": "sf_201006_0056871",
-    "measuredCells": 14,
-    "insideCells": 64,
-    "unknownInsideCells": 50,
+    "measuredCells": 15,
+    "insideCells": 58,
+    "unknownInsideCells": 43,
     "continuousPatches": 0,
     "tierCount": 0,
-    "baseRoofZ": 17.005649999999992,
+    "roundedCorners": 0,
+    "baseRoofZ": 17.129999999999995,
     "slopedCellsDroppedToBase": 0,
     "wallHeightSource": "same generated roof envelope",
     "planeFit": {

@@ -1,12 +1,12 @@
 {
-  "scene": "work/clean-v76/king-street-pilot.glb",
+  "scene": "work/clean-v99/king-street-pilot.glb",
   "records": [
     {
       "buildingId": "osm_129176908",
       "samples": 870,
       "missingRoofSamples": 0,
       "medianAbsoluteErrorM": 0.09,
-      "p90AbsoluteErrorM": 1.61,
+      "p90AbsoluteErrorM": 1.62,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 5
     },
@@ -14,8 +14,8 @@
       "buildingId": "osm_129176917",
       "samples": 27,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.69,
-      "p90AbsoluteErrorM": 1.67,
+      "medianAbsoluteErrorM": 0.5,
+      "p90AbsoluteErrorM": 1.86,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -24,7 +24,7 @@
       "samples": 24,
       "missingRoofSamples": 0,
       "medianAbsoluteErrorM": 0.13,
-      "p90AbsoluteErrorM": 2.88,
+      "p90AbsoluteErrorM": 2.89,
       "roofMoreThan4mBelowMeasured": 1,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -32,10 +32,10 @@
       "buildingId": "osm_149167937",
       "samples": 1031,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.88,
-      "p90AbsoluteErrorM": 9.14,
-      "roofMoreThan4mBelowMeasured": 102,
-      "roofMoreThan4mAboveMeasured": 52
+      "medianAbsoluteErrorM": 0.43,
+      "p90AbsoluteErrorM": 3.49,
+      "roofMoreThan4mBelowMeasured": 19,
+      "roofMoreThan4mAboveMeasured": 72
     },
     {
       "buildingId": "osm_149167949",
@@ -50,46 +50,46 @@
       "buildingId": "osm_149253145",
       "samples": 559,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 1.03,
-      "p90AbsoluteErrorM": 5.62,
-      "roofMoreThan4mBelowMeasured": 188,
-      "roofMoreThan4mAboveMeasured": 4
+      "medianAbsoluteErrorM": 0.36,
+      "p90AbsoluteErrorM": 4.29,
+      "roofMoreThan4mBelowMeasured": 61,
+      "roofMoreThan4mAboveMeasured": 6
     },
     {
       "buildingId": "osm_346093777",
       "samples": 1163,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.26,
-      "p90AbsoluteErrorM": 3.24,
-      "roofMoreThan4mBelowMeasured": 26,
+      "medianAbsoluteErrorM": 0.2,
+      "p90AbsoluteErrorM": 1.81,
+      "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 34
     },
     {
       "buildingId": "osm_46264108",
       "samples": 1490,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.85,
-      "p90AbsoluteErrorM": 4.76,
-      "roofMoreThan4mBelowMeasured": 215,
-      "roofMoreThan4mAboveMeasured": 6
+      "medianAbsoluteErrorM": 0.34,
+      "p90AbsoluteErrorM": 3.21,
+      "roofMoreThan4mBelowMeasured": 33,
+      "roofMoreThan4mAboveMeasured": 13
     },
     {
       "buildingId": "osm_573287814",
       "samples": 349,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 1.99,
-      "p90AbsoluteErrorM": 14.09,
-      "roofMoreThan4mBelowMeasured": 110,
-      "roofMoreThan4mAboveMeasured": 11
+      "medianAbsoluteErrorM": 0.39,
+      "p90AbsoluteErrorM": 3.01,
+      "roofMoreThan4mBelowMeasured": 7,
+      "roofMoreThan4mAboveMeasured": 9
     },
     {
       "buildingId": "osm_945538326",
       "samples": 1011,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.66,
-      "p90AbsoluteErrorM": 1.39,
-      "roofMoreThan4mBelowMeasured": 67,
-      "roofMoreThan4mAboveMeasured": 0
+      "medianAbsoluteErrorM": 0.13,
+      "p90AbsoluteErrorM": 1.25,
+      "roofMoreThan4mBelowMeasured": 51,
+      "roofMoreThan4mAboveMeasured": 12
     },
     {
       "buildingId": "sf_201006_0000115",
@@ -104,17 +104,17 @@
       "buildingId": "sf_201006_0000645",
       "samples": 1096,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.47,
-      "p90AbsoluteErrorM": 3.76,
-      "roofMoreThan4mBelowMeasured": 3,
-      "roofMoreThan4mAboveMeasured": 85
+      "medianAbsoluteErrorM": 0.2,
+      "p90AbsoluteErrorM": 3.77,
+      "roofMoreThan4mBelowMeasured": 1,
+      "roofMoreThan4mAboveMeasured": 97
     },
     {
       "buildingId": "sf_201006_0001081",
       "samples": 822,
       "missingRoofSamples": 0,
       "medianAbsoluteErrorM": 0.18,
-      "p90AbsoluteErrorM": 1.07,
+      "p90AbsoluteErrorM": 1.08,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -131,26 +131,26 @@
       "buildingId": "sf_201006_0001103",
       "samples": 794,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 1.05,
-      "p90AbsoluteErrorM": 3.44,
-      "roofMoreThan4mBelowMeasured": 20,
+      "medianAbsoluteErrorM": 1.03,
+      "p90AbsoluteErrorM": 3.48,
+      "roofMoreThan4mBelowMeasured": 31,
       "roofMoreThan4mAboveMeasured": 36
     },
     {
       "buildingId": "sf_201006_0001245",
       "samples": 759,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 3.4,
-      "p90AbsoluteErrorM": 4.24,
-      "roofMoreThan4mBelowMeasured": 48,
-      "roofMoreThan4mAboveMeasured": 39
+      "medianAbsoluteErrorM": 0.15,
+      "p90AbsoluteErrorM": 2.13,
+      "roofMoreThan4mBelowMeasured": 9,
+      "roofMoreThan4mAboveMeasured": 38
     },
     {
       "buildingId": "sf_201006_0001270",
       "samples": 706,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.47,
-      "p90AbsoluteErrorM": 1.3,
+      "medianAbsoluteErrorM": 0.48,
+      "p90AbsoluteErrorM": 1.31,
       "roofMoreThan4mBelowMeasured": 9,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -159,7 +159,7 @@
       "samples": 730,
       "missingRoofSamples": 0,
       "medianAbsoluteErrorM": 0.11,
-      "p90AbsoluteErrorM": 0.23,
+      "p90AbsoluteErrorM": 0.24,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -167,19 +167,19 @@
       "buildingId": "sf_201006_0001497",
       "samples": 743,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.74,
-      "p90AbsoluteErrorM": 2.05,
-      "roofMoreThan4mBelowMeasured": 11,
-      "roofMoreThan4mAboveMeasured": 25
+      "medianAbsoluteErrorM": 0.49,
+      "p90AbsoluteErrorM": 1.51,
+      "roofMoreThan4mBelowMeasured": 5,
+      "roofMoreThan4mAboveMeasured": 2
     },
     {
       "buildingId": "sf_201006_0001817",
       "samples": 588,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.39,
-      "p90AbsoluteErrorM": 4.2,
-      "roofMoreThan4mBelowMeasured": 21,
-      "roofMoreThan4mAboveMeasured": 43
+      "medianAbsoluteErrorM": 0.31,
+      "p90AbsoluteErrorM": 4.05,
+      "roofMoreThan4mBelowMeasured": 20,
+      "roofMoreThan4mAboveMeasured": 44
     },
     {
       "buildingId": "sf_201006_0002005",
@@ -203,7 +203,7 @@
       "buildingId": "sf_201006_0002044",
       "samples": 599,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.07,
+      "medianAbsoluteErrorM": 0.06,
       "p90AbsoluteErrorM": 0.18,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
@@ -212,8 +212,8 @@
       "buildingId": "sf_201006_0002210",
       "samples": 517,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.07,
-      "p90AbsoluteErrorM": 1.08,
+      "medianAbsoluteErrorM": 0.06,
+      "p90AbsoluteErrorM": 1.09,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 19
     },
@@ -221,8 +221,8 @@
       "buildingId": "sf_201006_0002333",
       "samples": 565,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 1.04,
-      "p90AbsoluteErrorM": 2.75,
+      "medianAbsoluteErrorM": 1.03,
+      "p90AbsoluteErrorM": 2.74,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -239,8 +239,8 @@
       "buildingId": "sf_201006_0002604",
       "samples": 436,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.5,
-      "p90AbsoluteErrorM": 2.94,
+      "medianAbsoluteErrorM": 0.53,
+      "p90AbsoluteErrorM": 2.97,
       "roofMoreThan4mBelowMeasured": 8,
       "roofMoreThan4mAboveMeasured": 11
     },
@@ -248,8 +248,8 @@
       "buildingId": "sf_201006_0002680",
       "samples": 377,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.09,
-      "p90AbsoluteErrorM": 0.82,
+      "medianAbsoluteErrorM": 0.08,
+      "p90AbsoluteErrorM": 0.83,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -257,8 +257,8 @@
       "buildingId": "sf_201006_0002834",
       "samples": 430,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 1.21,
-      "p90AbsoluteErrorM": 2.02,
+      "medianAbsoluteErrorM": 0.21,
+      "p90AbsoluteErrorM": 1.11,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -266,18 +266,18 @@
       "buildingId": "sf_201006_0002920",
       "samples": 383,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.46,
+      "medianAbsoluteErrorM": 0.47,
       "p90AbsoluteErrorM": 4.57,
-      "roofMoreThan4mBelowMeasured": 24,
+      "roofMoreThan4mBelowMeasured": 25,
       "roofMoreThan4mAboveMeasured": 25
     },
     {
       "buildingId": "sf_201006_0003021",
       "samples": 396,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.11,
-      "p90AbsoluteErrorM": 0.28,
-      "roofMoreThan4mBelowMeasured": 6,
+      "medianAbsoluteErrorM": 0.14,
+      "p90AbsoluteErrorM": 0.92,
+      "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
     },
     {
@@ -285,7 +285,7 @@
       "samples": 383,
       "missingRoofSamples": 0,
       "medianAbsoluteErrorM": 0.25,
-      "p90AbsoluteErrorM": 0.67,
+      "p90AbsoluteErrorM": 0.66,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -302,17 +302,17 @@
       "buildingId": "sf_201006_0003596",
       "samples": 359,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.23,
-      "p90AbsoluteErrorM": 3.36,
-      "roofMoreThan4mBelowMeasured": 14,
+      "medianAbsoluteErrorM": 0.2,
+      "p90AbsoluteErrorM": 3.33,
+      "roofMoreThan4mBelowMeasured": 6,
       "roofMoreThan4mAboveMeasured": 0
     },
     {
       "buildingId": "sf_201006_0003726",
       "samples": 328,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.54,
-      "p90AbsoluteErrorM": 1.19,
+      "medianAbsoluteErrorM": 0.6,
+      "p90AbsoluteErrorM": 1.24,
       "roofMoreThan4mBelowMeasured": 4,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -320,8 +320,8 @@
       "buildingId": "sf_201006_0003782",
       "samples": 382,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.35,
-      "p90AbsoluteErrorM": 6.63,
+      "medianAbsoluteErrorM": 0.34,
+      "p90AbsoluteErrorM": 6.64,
       "roofMoreThan4mBelowMeasured": 12,
       "roofMoreThan4mAboveMeasured": 32
     },
@@ -338,17 +338,17 @@
       "buildingId": "sf_201006_0004743",
       "samples": 217,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.76,
-      "p90AbsoluteErrorM": 10.6,
-      "roofMoreThan4mBelowMeasured": 26,
-      "roofMoreThan4mAboveMeasured": 10
+      "medianAbsoluteErrorM": 0.85,
+      "p90AbsoluteErrorM": 3.25,
+      "roofMoreThan4mBelowMeasured": 0,
+      "roofMoreThan4mAboveMeasured": 13
     },
     {
       "buildingId": "sf_201006_0005190",
       "samples": 172,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.42,
-      "p90AbsoluteErrorM": 0.77,
+      "medianAbsoluteErrorM": 0.41,
+      "p90AbsoluteErrorM": 0.76,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -357,7 +357,7 @@
       "samples": 216,
       "missingRoofSamples": 0,
       "medianAbsoluteErrorM": 0.12,
-      "p90AbsoluteErrorM": 4.06,
+      "p90AbsoluteErrorM": 4.08,
       "roofMoreThan4mBelowMeasured": 23,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -374,16 +374,16 @@
       "buildingId": "sf_201006_0006801",
       "samples": 139,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 2.13,
-      "p90AbsoluteErrorM": 2.27,
-      "roofMoreThan4mBelowMeasured": 0,
+      "medianAbsoluteErrorM": 2.22,
+      "p90AbsoluteErrorM": 2.37,
+      "roofMoreThan4mBelowMeasured": 2,
       "roofMoreThan4mAboveMeasured": 0
     },
     {
       "buildingId": "sf_201006_0006942",
       "samples": 207,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.07,
+      "medianAbsoluteErrorM": 0.08,
       "p90AbsoluteErrorM": 0.43,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
@@ -392,8 +392,8 @@
       "buildingId": "sf_201006_0007874",
       "samples": 271,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.16,
-      "p90AbsoluteErrorM": 0.82,
+      "medianAbsoluteErrorM": 0.15,
+      "p90AbsoluteErrorM": 0.77,
       "roofMoreThan4mBelowMeasured": 1,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -401,10 +401,10 @@
       "buildingId": "sf_201006_0010890",
       "samples": 121,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.47,
-      "p90AbsoluteErrorM": 5.07,
-      "roofMoreThan4mBelowMeasured": 20,
-      "roofMoreThan4mAboveMeasured": 11
+      "medianAbsoluteErrorM": 0.37,
+      "p90AbsoluteErrorM": 1.01,
+      "roofMoreThan4mBelowMeasured": 7,
+      "roofMoreThan4mAboveMeasured": 0
     },
     {
       "buildingId": "sf_201006_0015276",
@@ -419,8 +419,8 @@
       "buildingId": "sf_201006_0028162",
       "samples": 78,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.4,
-      "p90AbsoluteErrorM": 0.86,
+      "medianAbsoluteErrorM": 0.38,
+      "p90AbsoluteErrorM": 0.85,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -428,8 +428,8 @@
       "buildingId": "sf_201006_0029858",
       "samples": 67,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.13,
-      "p90AbsoluteErrorM": 0.3,
+      "medianAbsoluteErrorM": 0.15,
+      "p90AbsoluteErrorM": 0.35,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -437,9 +437,9 @@
       "buildingId": "sf_201006_0136107",
       "samples": 19,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 9.92,
-      "p90AbsoluteErrorM": 10.38,
-      "roofMoreThan4mBelowMeasured": 14,
+      "medianAbsoluteErrorM": 9.03,
+      "p90AbsoluteErrorM": 9.49,
+      "roofMoreThan4mBelowMeasured": 12,
       "roofMoreThan4mAboveMeasured": 0
     },
     {
@@ -454,36 +454,36 @@
     {
       "buildingId": "sf_201006_0000213",
       "samples": 2048,
-      "missingRoofSamples": 2,
-      "medianAbsoluteErrorM": 1.22,
-      "p90AbsoluteErrorM": 13.11,
-      "roofMoreThan4mBelowMeasured": 292,
-      "roofMoreThan4mAboveMeasured": 245
+      "missingRoofSamples": 0,
+      "medianAbsoluteErrorM": 0.86,
+      "p90AbsoluteErrorM": 12.74,
+      "roofMoreThan4mBelowMeasured": 150,
+      "roofMoreThan4mAboveMeasured": 236
     },
     {
       "buildingId": "sf_201006_0000227",
       "samples": 1125,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.92,
-      "p90AbsoluteErrorM": 14.63,
-      "roofMoreThan4mBelowMeasured": 253,
-      "roofMoreThan4mAboveMeasured": 92
+      "medianAbsoluteErrorM": 0.19,
+      "p90AbsoluteErrorM": 3.28,
+      "roofMoreThan4mBelowMeasured": 68,
+      "roofMoreThan4mAboveMeasured": 40
     },
     {
       "buildingId": "sf_201006_0000306",
       "samples": 1805,
       "missingRoofSamples": 0,
       "medianAbsoluteErrorM": 0.1,
-      "p90AbsoluteErrorM": 3.26,
-      "roofMoreThan4mBelowMeasured": 5,
-      "roofMoreThan4mAboveMeasured": 129
+      "p90AbsoluteErrorM": 3.63,
+      "roofMoreThan4mBelowMeasured": 11,
+      "roofMoreThan4mAboveMeasured": 145
     },
     {
       "buildingId": "sf_201006_0001907",
       "samples": 566,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 1.38,
-      "p90AbsoluteErrorM": 2.09,
+      "medianAbsoluteErrorM": 1.33,
+      "p90AbsoluteErrorM": 2.04,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -491,17 +491,17 @@
       "buildingId": "sf_201006_0005658",
       "samples": 213,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 1.12,
-      "p90AbsoluteErrorM": 17.64,
-      "roofMoreThan4mBelowMeasured": 26,
-      "roofMoreThan4mAboveMeasured": 6
+      "medianAbsoluteErrorM": 0.47,
+      "p90AbsoluteErrorM": 3.19,
+      "roofMoreThan4mBelowMeasured": 9,
+      "roofMoreThan4mAboveMeasured": 7
     },
     {
       "buildingId": "sf_201006_0006267",
       "samples": 212,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 1.25,
-      "p90AbsoluteErrorM": 1.86,
+      "medianAbsoluteErrorM": 0.85,
+      "p90AbsoluteErrorM": 1.78,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -509,8 +509,8 @@
       "buildingId": "sf_201006_0019339",
       "samples": 45,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.27,
-      "p90AbsoluteErrorM": 2.22,
+      "medianAbsoluteErrorM": 0.23,
+      "p90AbsoluteErrorM": 2.23,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
     },
@@ -518,15 +518,15 @@
       "buildingId": "sf_201006_0056871",
       "samples": 14,
       "missingRoofSamples": 0,
-      "medianAbsoluteErrorM": 0.42,
-      "p90AbsoluteErrorM": 1.1,
+      "medianAbsoluteErrorM": 0.4,
+      "p90AbsoluteErrorM": 0.97,
       "roofMoreThan4mBelowMeasured": 0,
       "roofMoreThan4mAboveMeasured": 0
     }
   ],
   "samples": 34699,
-  "missingRoofSamples": 2,
-  "roofMoreThan4mBelowMeasured": 1861,
-  "roofMoreThan4mAboveMeasured": 1251,
+  "missingRoofSamples": 0,
+  "roofMoreThan4mBelowMeasured": 897,
+  "roofMoreThan4mAboveMeasured": 1227,
   "caveat": "Point clouds include occlusions and obsolete structures; this measures disagreement, not certified as-built error."
 }
