@@ -15,6 +15,7 @@ Usage: judge_facades_v27.py --walls <build dir> --build label=glb [...] --out <d
 """
 import argparse, json, math, pathlib, re, sys, struct, mmap, io
 import numpy as np
+from panorama_balance import road_gain
 from PIL import Image, ImageDraw, ImageFont
 from scipy import ndimage as ndi
 from scipy.spatial import cKDTree
@@ -308,8 +309,7 @@ def main():
         if c['image'] not in pano_cache:
             if len(pano_cache) >= 3: pano_cache.pop(next(iter(pano_cache)))
             pano = np.asarray(fc.load_pano(cam['path']), dtype=np.float32)
-            road = pano[int(pano.shape[0] * .74):int(pano.shape[0] * .9):4, ::4].reshape(-1, 3); road = road[(road.max(1) - road.min(1)) < 40]
-            gain = np.clip((road.mean(0).mean() / np.maximum(road.mean(0), 1.)) if len(road) > 500 else np.ones(3), .85, 1.15)
+            gain = road_gain(pano)   # the road below the horizon, not the capture vehicle (panorama_balance)
             pano_cache[c['image']] = np.clip(pano * gain, 0, 255).astype(np.uint8)
         img, H, L = rectify(w, cam, z0, pano_cache[c['image']])
         key = f"{i:03d}_{re.sub(r'[^A-Za-z0-9_]', '', bid)}"

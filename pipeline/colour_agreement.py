@@ -33,3 +33,17 @@ def same_material(a, b):
     if lo < GREY_C: return hi < TINT_C
     dh = abs(math.degrees(math.atan2(la[2], la[1]) - math.atan2(lb[2], lb[1]))) % 360.
     return min(dh, 360. - dh) <= MAX_DH and hi / lo <= MAX_C_RATIO
+
+
+SHADE_L, SHADE_C, SHADE_DH = 22., 16., 25.
+
+
+def shaded_wall(rgb, wall_rgb):
+    """True when a component read near-black (L* under 22, the readers' shade line) is the wall's own coloured
+    material in shade: the wall is clearly coloured (chroma 16 or more) and the component keeps its hue within 25
+    degrees. A brick pilaster's shaded side read L* 18 in the brick's hue and was drawn as a glossy black panel; a
+    black metal pier on a grey wall has no hue to keep and stays what it is."""
+    a, w = lab(rgb), lab(wall_rgb)
+    if a[0] >= SHADE_L or math.hypot(w[1], w[2]) < SHADE_C or math.hypot(a[1], a[2]) < 4: return False
+    dh = abs((math.degrees(math.atan2(a[2], a[1])) - math.degrees(math.atan2(w[2], w[1])) + 180) % 360 - 180)
+    return dh <= SHADE_DH

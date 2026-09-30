@@ -35,7 +35,16 @@ if _SUP.exists():
  for _s in json.load(open(_SUP)).get('supplements',[]):
   _t=_by_id.get(_s['supplementOf'])
   if _t is None:continue
-  if _s.get('piers') and not _t.get('piers'):_t['piers']=_s['piers']
+  if _s.get('piers') and not _t.get('piers'):
+   # a pier read near-black in the wall's own hue is the wall's material in shade (colour_agreement.shaded_wall)
+   from pipeline.colour_agreement import shaded_wall as _shaded
+   _wc=(_t.get('materialEvidence') or {}).get('colorRgb');_ps=[]
+   for _q in _s['piers']:
+    _hx=str(_q.get('material','')).partition('#')[2]
+    if _wc and len(_hx)==6 and _shaded([int(_hx[i:i+2],16) for i in (0,2,4)],_wc):
+     _q={k:v for k,v in _q.items() if k!='material'};_q['materialEvidence']=_t['materialEvidence'];_q['evidence']=_q.get('evidence','')+'; shaded side of the wall material'
+    _ps.append(_q)
+   _t['piers']=_ps
   if _s.get('bands') and not _t.get('bands'):_t['bands']=_s['bands']
   _zones=[q for q in _s.get('panels',[]) if 'zone' in q.get('evidence','')]
   if _zones and not any(q['rect'][0]<=.02 and q['rect'][2]>=.98 and q['rect'][3]-q['rect'][1]>.15 for q in _t.get('panels',[])):_t['panels']=_zones+_t.get('panels',[])
@@ -108,12 +117,24 @@ batches=collections.defaultdict(lambda:[[],[],[],[]])
 CLIP=None
 def set_clip(halfspaces):
  """While a gable end or a part's stretch of a shared frontage is compiled, everything emitted is cut to the given
- half-spaces: (normal, offset) keeps normal.p <= offset (a roof plane z <= a*x+b*y+c is ((-a,-b,1), c))."""
+ half-spaces: (normal, offset) keeps normal.p <= offset (a roof plane z <= a*x+b*y+c is ((-a,-b,1), c)); an item
+ ('solid', manifold) keeps what lies inside that solid (a wall cut to its measured parapet outline)."""
  global CLIP;CLIP=halfspaces
 def _clip(mesh):
  import manifold3d
- cut=[]
- for nrm,off in CLIP:
+ cut=[];solids=[c_[1] for c_ in CLIP if isinstance(c_[0],str) and c_[0]=='solid']
+ if solids:
+  # a solid clip (a wall cut to a measured outline, facades.parapet_solid): closed boxes and prisms are intersected with
+  # it; an open mesh keeps its faces whose centre lies inside the solid's bounds
+  try:
+   m=manifold3d.Manifold(manifold3d.Mesh64(np.asarray(mesh.vertices,float),np.asarray(mesh.faces,np.uint64)))
+   if m.is_empty():raise ValueError('not a closed solid')
+   for sd in solids:m=m^sd
+   raw=m.to_mesh64();tri=np.asarray(raw.tri_verts)
+   if not len(tri):return None
+   mesh=trimesh.Trimesh(np.asarray(raw.vert_properties)[:,:3],tri,process=False)
+  except Exception:pass
+ for nrm,off in [c_ for c_ in CLIP if not isinstance(c_[0],str)]:
   nrm=np.asarray(nrm,float);d=np.asarray(mesh.vertices)@nrm-off
   if (d<=1e-6).all():continue
   if (d>=-1e-6).all():return None
@@ -386,7 +407,11 @@ for c in ([] if _args.streets_only else candidates):
    if drape_skirt is not None:put(drape_skirt,'buildings__'+id,color)
   for patch in roof_patches:
    xy=np.concatenate([np.asarray(p.exterior.coords) for p in polys(patch['geometry'])]);bottom=min(base_roof,float(roof_evaluate(patch['model'],xy).min())-.2)
-   solid=roof_solid(patch['geometry'],patch['model'],bottom)
+   # a front cut to its measured parapet stands above this roof: the roof stops 0.3 m inside the wall's face (inside the
+   # wall's 0.38 m), else its surface meets the face along the old rake and draws a line across the brick
+   pg=patch['geometry']
+   for _pr in facades.parapets_of(id):pg=pg.difference(LineString([tuple(_pr['a']),tuple(_pr['b'])]).buffer(.3,cap_style=2))
+   solid=roof_solid(pg if not pg.is_empty else patch['geometry'],patch['model'],bottom)
    up=solid.face_normals[:,2]>.05;side=np.abs(solid.face_normals[:,2])<=.05
    put(solid.submesh([np.where(up)[0]],append=True,repair=False),'roofs__'+id,'roof')
    patch_sides.append(solid.submesh([np.where(side)[0]],append=True,repair=False))   # coloured once the walls are known

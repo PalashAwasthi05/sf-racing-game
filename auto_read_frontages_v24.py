@@ -91,7 +91,7 @@ def read(img,H,L,exclude=None):
     rows=uniform_filter1d(gy[band].mean(1),3);cols=uniform_filter1d(gx[band].mean(0),3)
     if Hp-g>=3*PPM and L>=MIN_WALL_M:
         fp,fcor=period(rows,2.8*PPM,5.5*PPM);bp,bcor=period(cols,1.2*PPM,min(9*PPM,len(cols)/2))
-        if fp and fcor>.15 and not (bp and bcor>.15):bp,bcor=int(3.0*PPM),.15   # storeys clear, bays unclear: a 3 m bay
+        if fp and fcor>.15 and not (bp and bcor>.15):bp,bcor=int(3.0*PPM),.15;res['baysUnclear']=True   # storeys clear, bays unclear: a 3 m bay
         if fp and bp and fcor>.15 and bcor>=.15:
             # opening height: share of the storey where jamb edges are strong; width: share of the bay where
             # sill/head edges are strong

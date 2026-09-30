@@ -7,7 +7,10 @@ p=argparse.ArgumentParser();p.add_argument('--candidate',type=Path,required=True
 p.add_argument('--public',type=Path,default=Path('work/king-street/public'))
 p.add_argument('--flagged-views-waived',default=None,help='publish without the flagged-view sheets; the reason is recorded in release.json')
 p.add_argument('--known-mismatch',action='append',default=[],help='a flagged view whose colour mismatch is a registered open defect this release does not touch; allowed only when the candidate is no worse than live there; recorded in release.json')
+p.add_argument('--waive-colour',action='append',default=[],metavar='VIEW/CAMERA',help='one flagged camera whose colour check the USER waived for this release (e.g. a photograph whose wall mask lands on another building); needs --waiver-reason; recorded in release.json. Every other check still runs.')
+p.add_argument('--waiver-reason',default=None,help='why the user waived the --waive-colour cameras, and when; recorded in release.json')
 a=p.parse_args()
+if a.waive_colour and not a.waiver_reason:raise SystemExit('refused: --waive-colour needs --waiver-reason')
 cand,public=a.candidate,a.public;final=cand/'final';final.mkdir(exist_ok=True)
 # Wall-scale surfaces must keep a real material (scan or synthesized maps), never a placeholder or a flat colour.
 import subprocess,sys as _sys
@@ -25,7 +28,9 @@ if not a.flagged_views_waived:
     if _missing:raise SystemExit(f'refused: flagged views without sheets: {sorted(_missing)}')
     _open={v['id'] for v in _reg['views'] if any(d['status']!='fixed' for d in v.get('defects',[]))}
     _bad=[(v['id'],c['camera'],c['deltaECandidate'],c.get('deltaELive')) for v in _ix.get('views',[]) for c in v.get('colour',[]) if c.get('colourMismatch')]
-    _blocking=[b for b in _bad if not (b[0] in a.known_mismatch and b[0] in _open and b[3] is not None and b[2]<=b[3]+1.)]
+    _blocking=[b for b in _bad if not (b[0] in a.known_mismatch and b[0] in _open and b[3] is not None and b[2]<=b[3]+1.) and f'{b[0]}/{b[1]}' not in a.waive_colour]
+    _unused=set(a.waive_colour)-{f'{b[0]}/{b[1]}' for b in _bad}
+    if _unused:raise SystemExit(f'refused: --waive-colour names cameras that do not mismatch in this build: {sorted(_unused)}')
     if _blocking:raise SystemExit(f'refused: the flagged building\'s wall colour differs from its photograph (view, camera, dE candidate, dE live): {_blocking}')
 shutil.copy2(cand/'materials/candidate.glb',final/'candidate.glb')
 raw=(final/'candidate.glb').read_bytes();sha=hashlib.sha256(raw).hexdigest();packed=gzip.compress(raw,compresslevel=6,mtime=0);chunks=[]
@@ -41,4 +46,4 @@ if (cand/'public/facade-evidence.json').exists():shutil.copy2(cand/'public/facad
 put(public/'world.json',world)
 put(public/'generation.json',{'pipelineVersion':'0.24','fullRegeneration':True,'layersCarriedOver':[],'outputSha256':sha,'candidate':str(final/'candidate.glb'),'independentRealismGate':'NOT PASSED'})
 put(public/'model.json',dict(compression='gzip',contentHash=sha[:12],chunks=chunks,compressedBytes=len(packed),uncompressedBytes=len(raw)))
-res={'sha256':sha,'localPreview':'http://127.0.0.1:3001/?revision='+sha[:12],'flaggedViews':str(_idx) if not a.flagged_views_waived else {'waived':a.flagged_views_waived},'knownColourMismatches':a.known_mismatch};(cand/'release.json').write_text(json.dumps(res));print(json.dumps(res))
+res={'sha256':sha,'localPreview':'http://127.0.0.1:3001/?revision='+sha[:12],'flaggedViews':str(_idx) if not a.flagged_views_waived else {'waived':a.flagged_views_waived},'knownColourMismatches':a.known_mismatch,'colourWaivers':[{'camera':w,'reason':a.waiver_reason} for w in a.waive_colour]};(cand/'release.json').write_text(json.dumps(res));print(json.dumps(res))

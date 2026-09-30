@@ -6,6 +6,7 @@ stretches. Writes work/pipeline/landmarks/outline-readings.json for the landmark
 goes to --sheet. Usage: read_landmark_outline_v29.py --candidate work/<dir> --landmark <id> [--sheet out.jpg]"""
 import argparse, colorsys, json, math, pathlib, sys
 import numpy as np
+from panorama_balance import road_gain
 from shapely.geometry import LineString, Point, Polygon, shape
 from shapely.ops import unary_union
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
@@ -53,8 +54,7 @@ def main():
         if k not in panos:
             if len(panos) > 3: panos.pop(next(iter(panos)))
             pano = np.asarray(fc.load_pano(c['path']), dtype=np.float32)
-            road = pano[int(pano.shape[0] * .74):int(pano.shape[0] * .9):4, ::4].reshape(-1, 3); road = road[(road.max(1) - road.min(1)) < 40]
-            gain = np.clip((road.mean(0).mean() / np.maximum(road.mean(0), 1.)) if len(road) > 500 else np.ones(3), .85, 1.15)
+            gain = road_gain(pano)   # the road below the horizon, not the capture vehicle (panorama_balance)
             panos[k] = np.clip(pano * gain, 0, 255).astype(np.uint8)
         wall = {'midpoint': (p + n * .05).tolist(), 'normal': n.tolist(), 'lengthM': STRIP_M, 'heightM': HI_M}
         img, H, L = rectify(wall, c, z0, panos[k]); img = np.clip(img, 0, 1)

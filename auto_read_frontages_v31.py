@@ -20,6 +20,7 @@ Run like v27 (same cache, no model call when the detections are cached):
   auto_read_frontages_v31.py --candidate work/<dir> --out work/pipeline/frontage-observations-auto.json"""
 import sys
 import numpy as np
+from pipeline.colour_agreement import shaded_wall
 import auto_read_frontages_v27 as R27
 from auto_read_frontages_v24 import family, PPM
 from judge_facades_v27 import to_lab
@@ -156,8 +157,9 @@ def enrich(p, found, wall):
             if .35 <= w <= 1.6:                                               # a pole or a frame is thinner
                 c = np.median([q[1] for q in run], 0); found_p.append((de(c, body[2]), (x0 + x1) / 2, w, c))
         for strength, x, w, c in sorted(found_p, key=lambda t: -t[0])[:6]:
+            shade = shaded_wall(lab_to_rgb(c), brgb)                        # a pilaster's shaded side keeps the wall's material
             p.setdefault('piers', []).append({'x': round(x / L, 4), 'widthM': round(w, 2), 'projectionM': .1, 'y': [round(zb0 / H, 4), round(zb1 / H, 4)],
-                                              'material': material_for(lab_to_rgb(c)), 'evidence': 'image-measured trim'})
+                                              'material': material_for(brgb if shade else lab_to_rgb(c)), 'evidence': 'image-measured trim' + ('; shaded side of the wall material' if shade else '')})
             add['piers'].append(round(x, 1))
     # bands: thin full-width rows contrasting with their zone
     zone_of = lambda z: next((q for q in zs if q[0] <= z < q[1]), body)

@@ -96,3 +96,20 @@ def test_a_reading_taken_a_few_degrees_off_the_wall_far_from_the_origin_still_dr
     records, _ = facades.compile(ctx, c, 0., 8., 8., {}, [])
     south = [r for r in records if r['normal'][1] < -.9]
     assert south and all(r.get('status') != 'inferred' for r in south), [(r.get('status'), r.get('grammarId')) for r in south]
+
+
+def test_a_periodic_pitch_of_slots_lends_no_grid():
+    slots = {'id': 'x', 'reading': {'gridFallback': True}, 'groups': [{'region': [0, 0, 1, 1], 'columnPitchM': 1.17, 'rowPitchM': 3.6, 'style': {'kind': 'window', 'openingRatio': .36, 'openingHeightRatio': .6}}]}
+    ribbon = {'id': 'y', 'reading': {'gridFallback': True}, 'groups': [{'region': [0, 0, 1, 1], 'columnPitchM': 1.17, 'rowPitchM': 3.58, 'style': {'kind': 'window', 'openingRatio': .79, 'openingHeightRatio': .6}}]}
+    assert facades.measured_grid(slots) is None and facades.measured_grid(ribbon)['bayPitchM'] == 1.17
+
+
+def test_a_glazed_area_fill_lends_no_grid():
+    glazed = {'id': 'z', 'reading': {'gridFallback': False, 'glazedAreas': 1}, 'groups': [{'region': [0, 0, 1, 1], 'columnPitchM': 1.5, 'rowPitchM': 3.6, 'style': {'kind': 'window', 'openingRatio': .92, 'openingHeightRatio': .8}}]}
+    assert facades.measured_grid(glazed) is None
+
+
+def test_close_arched_lights_and_pairs_are_not_ribbons():
+    arches = {'id': 'a', 'groups': [{'region': [0, 0, 1, 1], 'columns': 4, 'rows': 1, 'style': {'kind': 'window', 'openingRatio': .95, 'openingHeightRatio': .8, 'head': 'arch'}}]}
+    pair = {'id': 'b', 'groups': [{'region': [0, 0, 1, 1], 'columns': 2, 'rows': 1, 'style': {'kind': 'window', 'openingRatio': .95, 'openingHeightRatio': .8}}]}
+    assert len(facade_grammar.openings(arches, [], 12., 4., 4.)) == 4 and len(facade_grammar.openings(pair, [], 12., 4., 4.)) == 2

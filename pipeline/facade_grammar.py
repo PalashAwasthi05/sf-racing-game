@@ -15,7 +15,9 @@ def ribbon_bank(group,W,region,dx,nx):
  tile office block's continuous bands of glass came out as a grid of punched windows. A style may say so itself."""
  st=group.get('style') or {}
  if 'ribbon' in st:return bool(st['ribbon'])
- if st.get('kind','window')!='window' or W is None or nx<2:return False
+ # arched or segmental heads are separate openings however close (a pair of wide arches is not a band), and a band
+ # needs three lights at least
+ if st.get('kind','window')!='window' or head_shape(st) is not None or W is None or nx<3:return False
  return dx*(region[2]-region[0])*W*(1-st.get('openingRatio',.7))<=RIBBON_PIER_M
 
 def _ribbons(ops,W):

@@ -178,6 +178,14 @@ def profile(bid, building, wall, img, reading, cam_image, found):
             style = {'kind': 'window', 'openingRatio': reading['openingRatio'], 'openingHeightRatio': reading['openingHeightRatio'],
                      'mullionFractions': [.5] if reading['bayPitchM'] * reading['openingRatio'] > 1.8 else [], 'transomFractions': []}
             groups.append({'region': frac(0., L, gh, H * .97), 'columnPitchM': reading['bayPitchM'], 'rowPitchM': reading['floorPitchM'], 'style': style})
+    elif (reading.get('baysUnclear') and reading.get('floorPitchM') and (reading.get('openingRatio') or 0) >= .7 and not glazed and not gops
+          and sum(len(r[2]) for r in rows) < .4 * max(1., (H - gh) / reading['floorPitchM']) * max(1., L / 3.)):
+        # Ribbon glazing: sills and heads run the wall's length at a clear storey pitch, but nothing repeats along it (no
+        # jambs between lights, only thin mullions) and the detector, looking for windows, finds few. Each storey is one
+        # band of lights between mullions (1.5 m); the band's height is the measured share of the storey.
+        grid_fallback = True; rows = []
+        groups.append({'region': frac(0., L, gh, H * .97), 'columnPitchM': 1.5, 'rowPitchM': reading['floorPitchM'],
+                       'style': {'kind': 'window', 'ribbon': True, 'openingRatio': .94, 'openingHeightRatio': reading['openingHeightRatio'], 'mullionFractions': [], 'transomFractions': []}})
     for o in glazed:
         # a glazed area: lights between mullions (1.5 m) and transoms at a storey
         groups.append({'region': frac(max(0., o[0]), min(L, o[2]), max(0., o[1]), min(H, o[3])), 'columnPitchM': 1.5, 'rowPitchM': 3.6,
@@ -208,7 +216,7 @@ def profile(bid, building, wall, img, reading, cam_image, found):
     p['openings'] = openings; p['panels'] = panels; p['bands'] = bands; p['groups'] = groups
     p['reading'] = {'visibleShare': round(visible, 2), 'groundStoreyM': round(gh, 2), 'storeys': len(rows), 'windows': sum(len(r[2]) for r in rows),
                     'groundOpenings': len(gops), 'signs': len(panels), 'awnings': len(bands), 'wallRgb': reading.get('wallRgb'), 'family': reading.get('family')}
-    p['reading']['curtainWall'] = bool(groups) and not grid_fallback; p['reading']['glazedAreas'] = len(glazed); p['reading']['gridFallback'] = grid_fallback
+    p['reading']['curtainWall'] = bool(groups) and not grid_fallback; p['reading']['glazedAreas'] = len(glazed); p['reading']['gridFallback'] = grid_fallback; p['reading']['ribbon'] = any(g['style'].get('ribbon') for g in groups)
     # The measured character, in the terms other walls borrow (storey and bay pitch, opening proportions, ground).
     if len(rows) >= 2:
         fp = float(np.median(np.diff([r[0] for r in rows])))

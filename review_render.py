@@ -8,6 +8,7 @@ import mmap
 import pathlib
 import struct
 import numpy as np
+from panorama_balance import road_gain
 from PIL import Image, ImageDraw
 import judge_facades_v27 as J
 import frontage_crops_v15 as fc
@@ -105,8 +106,7 @@ def photo(image_id, eye, at, frame, balanced=False, rotation=None):
     if balanced:
         # the road just below the horizon (9-20 degrees down): lower in the frame, a roof-mounted rig's panoramas show
         # the capture vehicle (its roof rack and decal), which read as the road gave every such panorama a magenta cast
-        pf = pano.astype(np.float32); road = pf[int(pf.shape[0] * .55):int(pf.shape[0] * .61):4, ::4].reshape(-1, 3); road = road[(road.max(1) - road.min(1)) < 40]
-        gain = np.clip((road.mean(0).mean() / np.maximum(road.mean(0), 1.)) if len(road) > 500 else np.ones(3), .85, 1.15)
+        pf = pano.astype(np.float32); gain = road_gain(pf)   # the road below the horizon, not the capture vehicle (panorama_balance)
         pano = np.clip(pf * gain, 0, 255).astype(np.uint8)
     img, _ = fc.render_perspective(pano, cam['R'], f, HFOV, 2 * np.degrees(np.arctan((HEIGHT / 2) / fx)), width=WIDTH, max_height=HEIGHT)
     return Image.fromarray(img)
