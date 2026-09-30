@@ -1,7 +1,7 @@
 {
   "surfaceSource": "city curb outlines + ROW remainder; historical geometry, not as-built verified",
   "measuredSidewalkAreaM2": 7250.17,
-  "sidewalkAreaM2": 24099.92,
+  "sidewalkAreaM2": 24335.54,
   "placements": [
     {
       "kind": "tree",
@@ -148,11 +148,11 @@
       ],
       "radiusM": 0.08889999999999999,
       "position": [
-        -1.7984649034845361,
-        92.20241884693559
+        -2.2476717449026182,
+        92.64763166429475
       ],
-      "displacementM": 0.632,
-      "status": "inferred-bounded-shift",
+      "displacementM": 0.0,
+      "status": "mapped",
       "imageVerified": false
     },
     {
@@ -164,11 +164,11 @@
       ],
       "radiusM": 0.08889999999999999,
       "position": [
-        4.231457328611716,
-        98.28643578055285
+        3.992413159343414,
+        98.52335454104468
       ],
-      "displacementM": 0.337,
-      "status": "inferred-bounded-shift",
+      "displacementM": 0.0,
+      "status": "mapped",
       "imageVerified": false
     },
     {
@@ -180,11 +180,11 @@
       ],
       "radiusM": 0.1143,
       "position": [
-        -6.748961009807211,
-        87.17142911026218
+        -7.143200717866421,
+        87.56216352246702
       ],
-      "displacementM": 0.555,
-      "status": "inferred-bounded-shift",
+      "displacementM": 0.0,
+      "status": "mapped",
       "imageVerified": false
     },
     {
@@ -196,11 +196,11 @@
       ],
       "radiusM": 0.08889999999999999,
       "position": [
-        8.439856623680267,
-        102.5325888135612
+        7.8339631501585245,
+        103.13309511821717
       ],
-      "displacementM": 0.853,
-      "status": "inferred-bounded-shift",
+      "displacementM": 0.0,
+      "status": "mapped",
       "imageVerified": false
     },
     {
@@ -239,9 +239,13 @@
         -141.92652565427125
       ],
       "radiusM": 0.1397,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 2.337
+      "position": [
+        32.3353536358336,
+        -141.92652565427125
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
     },
     {
       "kind": "tree",
@@ -283,9 +287,13 @@
         2.4200525893829763
       ],
       "radiusM": 0.254,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.666
+      "position": [
+        34.68718354369048,
+        2.4200525893829763
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
     },
     {
       "kind": "tree",
@@ -396,11 +404,11 @@
       ],
       "radiusM": 0.08,
       "position": [
-        -22.174413698095208,
-        71.65631958989074
+        -22.58331831358373,
+        72.0615885197185
       ],
-      "displacementM": 0.576,
-      "status": "inferred-bounded-shift",
+      "displacementM": 0.0,
+      "status": "mapped",
       "imageVerified": false
     },
     {
@@ -433,30 +441,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "28180",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
-    },
-    {
-      "kind": "tree",
-      "sourceId": "104105",
-      "sourcePosition": [
-        -68.56048038450535,
-        105.87493970897049
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.839
-    },
-    {
-      "kind": "tree",
       "sourceId": "195688",
       "sourcePosition": [
         -29.99494795652572,
@@ -470,30 +454,6 @@
       "displacementM": 0.0,
       "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28178",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
-    },
-    {
-      "kind": "tree",
-      "sourceId": "104103",
-      "sourcePosition": [
-        -68.56048038450535,
-        105.87493970897049
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.839
     },
     {
       "kind": "tree",
@@ -513,18 +473,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "28174",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
-    },
-    {
-      "kind": "tree",
       "sourceId": "190846",
       "sourcePosition": [
         -47.63457229395863,
@@ -534,18 +482,6 @@
       "status": "rejected",
       "reason": "source-conflicts-with-street-space",
       "requiredShiftM": 1.69
-    },
-    {
-      "kind": "tree",
-      "sourceId": "104099",
-      "sourcePosition": [
-        -68.56048038450535,
-        105.87493970897049
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.839
     },
     {
       "kind": "tree",
@@ -587,9 +523,13 @@
         87.13817331008613
       ],
       "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.909
+      "position": [
+        -33.71701380691957,
+        87.13817331008613
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
     },
     {
       "kind": "tree",
@@ -606,18 +546,6 @@
       "displacementM": 0.0,
       "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "104096",
-      "sourcePosition": [
-        -68.56048038450535,
-        105.87493970897049
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.839
     },
     {
       "kind": "tree",
@@ -685,18 +613,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "28169",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
-    },
-    {
-      "kind": "tree",
       "sourceId": "257908",
       "sourcePosition": [
         -47.20851914328523,
@@ -750,30 +666,6 @@
       "status": "rejected",
       "reason": "source-conflicts-with-street-space",
       "requiredShiftM": 2.104
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28175",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
-    },
-    {
-      "kind": "tree",
-      "sourceId": "84754",
-      "sourcePosition": [
-        -33.71701380691957,
-        87.13817331008613
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.909
     },
     {
       "kind": "tree",
@@ -873,34 +765,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "28177",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
-    },
-    {
-      "kind": "tree",
-      "sourceId": "30790",
-      "sourcePosition": [
-        95.08828695071861,
-        65.46022147638723
-      ],
-      "radiusM": 0.15239999999999998,
-      "position": [
-        95.51598538875716,
-        65.30718852825969
-      ],
-      "displacementM": 0.454,
-      "status": "inferred-bounded-shift",
-      "imageVerified": false
-    },
-    {
-      "kind": "tree",
       "sourceId": "195681",
       "sourcePosition": [
         119.45363695046399,
@@ -939,9 +803,13 @@
         15.854631633963436
       ],
       "radiusM": 0.2286,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.792
+      "position": [
+        48.229541469714604,
+        15.854631633963436
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
     },
     {
       "kind": "tree",
@@ -989,42 +857,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "104107",
-      "sourcePosition": [
-        -68.56048038450535,
-        105.87493970897049
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.839
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28170",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
-    },
-    {
-      "kind": "tree",
-      "sourceId": "104100",
-      "sourcePosition": [
-        -68.56048038450535,
-        105.87493970897049
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.839
-    },
-    {
-      "kind": "tree",
       "sourceId": "195725",
       "sourcePosition": [
         -69.65390514093451,
@@ -1037,34 +869,6 @@
       ],
       "displacementM": 0.0,
       "status": "mapped",
-      "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "84752",
-      "sourcePosition": [
-        -33.71701380691957,
-        87.13817331008613
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.909
-    },
-    {
-      "kind": "tree",
-      "sourceId": "46243",
-      "sourcePosition": [
-        63.14670487341937,
-        36.049427945166826
-      ],
-      "radiusM": 0.15239999999999998,
-      "position": [
-        63.48328353255584,
-        36.3544850600275
-      ],
-      "displacementM": 0.454,
-      "status": "inferred-bounded-shift",
       "imageVerified": false
     },
     {
@@ -1094,18 +898,6 @@
       "displacementM": 0.0,
       "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "84751",
-      "sourcePosition": [
-        -33.71701380691957,
-        87.13817331008613
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.909
     },
     {
       "kind": "tree",
@@ -1150,18 +942,6 @@
       "status": "rejected",
       "reason": "source-conflicts-with-street-space",
       "requiredShiftM": 3.072
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28179",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
     },
     {
       "kind": "tree",
@@ -1213,67 +993,19 @@
     },
     {
       "kind": "tree",
-      "sourceId": "104104",
-      "sourcePosition": [
-        -68.56048038450535,
-        105.87493970897049
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.839
-    },
-    {
-      "kind": "tree",
-      "sourceId": "257909",
-      "sourcePosition": [
-        -47.20851914328523,
-        10.26785885123536
-      ],
-      "radiusM": 0.08,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 2.155
-    },
-    {
-      "kind": "tree",
       "sourceId": "84747",
       "sourcePosition": [
         39.50170027092099,
         7.277212729211897
       ],
       "radiusM": 0.2413,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.65
-    },
-    {
-      "kind": "tree",
-      "sourceId": "46241",
-      "sourcePosition": [
-        63.14670487341937,
-        36.049427945166826
-      ],
-      "radiusM": 0.15239999999999998,
       "position": [
-        62.84164775855869,
-        36.3860066043033
+        39.50170027092099,
+        7.277212729211897
       ],
-      "displacementM": 0.454,
-      "status": "inferred-bounded-shift",
+      "displacementM": 0.0,
+      "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "104106",
-      "sourcePosition": [
-        -68.56048038450535,
-        105.87493970897049
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.839
     },
     {
       "kind": "tree",
@@ -1348,11 +1080,11 @@
       ],
       "radiusM": 0.08,
       "position": [
-        -35.01434711665883,
-        58.70119855545211
+        -35.31011790945195,
+        58.99433956714347
       ],
-      "displacementM": 0.416,
-      "status": "inferred-bounded-shift",
+      "displacementM": 0.0,
+      "status": "mapped",
       "imageVerified": false
     },
     {
@@ -1407,24 +1139,12 @@
         10.466676032170653
       ],
       "radiusM": 0.2794,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.9
-    },
-    {
-      "kind": "tree",
-      "sourceId": "46242",
-      "sourcePosition": [
-        63.14670487341937,
-        36.049427945166826
-      ],
-      "radiusM": 0.15239999999999998,
       "position": [
-        62.810126214282896,
-        35.74437083030615
+        42.96412492368836,
+        10.466676032170653
       ],
-      "displacementM": 0.454,
-      "status": "inferred-bounded-shift",
+      "displacementM": 0.0,
+      "status": "mapped",
       "imageVerified": false
     },
     {
@@ -1451,9 +1171,13 @@
         18.66121827904135
       ],
       "radiusM": 0.254,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.656
+      "position": [
+        50.78580011683516,
+        18.66121827904135
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
     },
     {
       "kind": "tree",
@@ -1470,18 +1194,6 @@
       "displacementM": 0.0,
       "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "104101",
-      "sourcePosition": [
-        -68.56048038450535,
-        105.87493970897049
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.839
     },
     {
       "kind": "tree",
@@ -1524,11 +1236,11 @@
       ],
       "radiusM": 0.08,
       "position": [
-        -39.834807118813,
-        53.83749399143235
+        -40.28287484694738,
+        54.28157782368362
       ],
-      "displacementM": 0.631,
-      "status": "inferred-bounded-shift",
+      "displacementM": 0.0,
+      "status": "mapped",
       "imageVerified": false
     },
     {
@@ -1549,18 +1261,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "28173",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
-    },
-    {
-      "kind": "tree",
       "sourceId": "195695",
       "sourcePosition": [
         -72.43316561623942,
@@ -1573,22 +1273,6 @@
       ],
       "displacementM": 0.0,
       "status": "mapped",
-      "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "46245",
-      "sourcePosition": [
-        63.14670487341937,
-        36.049427945166826
-      ],
-      "radiusM": 0.15239999999999998,
-      "position": [
-        63.45176198828004,
-        35.712849286030355
-      ],
-      "displacementM": 0.454,
-      "status": "inferred-bounded-shift",
       "imageVerified": false
     },
     {
@@ -1609,27 +1293,19 @@
     },
     {
       "kind": "tree",
-      "sourceId": "104102",
-      "sourcePosition": [
-        -68.56048038450535,
-        105.87493970897049
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.839
-    },
-    {
-      "kind": "tree",
       "sourceId": "190838",
       "sourcePosition": [
         38.282938953023404,
         -136.60937567893416
       ],
       "radiusM": 0.17779999999999999,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 2.847
+      "position": [
+        38.282938953023404,
+        -136.60937567893416
+      ],
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
     },
     {
       "kind": "tree",
@@ -1646,18 +1322,6 @@
       "displacementM": 0.0,
       "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28176",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
     },
     {
       "kind": "tree",
@@ -1709,30 +1373,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "28167",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
-    },
-    {
-      "kind": "tree",
-      "sourceId": "104098",
-      "sourcePosition": [
-        -68.56048038450535,
-        105.87493970897049
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.839
-    },
-    {
-      "kind": "tree",
       "sourceId": "194856",
       "sourcePosition": [
         28.6157121846918,
@@ -1755,24 +1395,12 @@
         -0.9191897050477564
       ],
       "radiusM": 0.2667,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.681
-    },
-    {
-      "kind": "tree",
-      "sourceId": "46240",
-      "sourcePosition": [
-        63.14670487341937,
-        36.049427945166826
-      ],
-      "radiusM": 0.15239999999999998,
       "position": [
-        63.78834064741651,
-        36.01790640089103
+        31.377153995097615,
+        -0.9191897050477564
       ],
-      "displacementM": 0.642,
-      "status": "inferred-bounded-shift",
+      "displacementM": 0.0,
+      "status": "mapped",
       "imageVerified": false
     },
     {
@@ -1825,34 +1453,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "30791",
-      "sourcePosition": [
-        95.08828695071861,
-        65.46022147638723
-      ],
-      "radiusM": 0.15239999999999998,
-      "position": [
-        95.24131989884616,
-        65.88791991442578
-      ],
-      "displacementM": 0.454,
-      "status": "inferred-bounded-shift",
-      "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "257910",
-      "sourcePosition": [
-        -47.20851914328523,
-        10.26785885123536
-      ],
-      "radiusM": 0.08,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 2.155
-    },
-    {
-      "kind": "tree",
       "sourceId": "195692",
       "sourcePosition": [
         -55.74568667053245,
@@ -1881,22 +1481,6 @@
       ],
       "displacementM": 0.0,
       "status": "mapped",
-      "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "30792",
-      "sourcePosition": [
-        95.08828695071861,
-        65.46022147638723
-      ],
-      "radiusM": 0.15239999999999998,
-      "position": [
-        94.66058851268006,
-        65.61325442451478
-      ],
-      "displacementM": 0.454,
-      "status": "inferred-bounded-shift",
       "imageVerified": false
     },
     {
@@ -1949,18 +1533,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "84750",
-      "sourcePosition": [
-        -33.71701380691957,
-        87.13817331008613
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.909
-    },
-    {
-      "kind": "tree",
       "sourceId": "195680",
       "sourcePosition": [
         127.07540720573161,
@@ -1974,18 +1546,6 @@
       "displacementM": 0.0,
       "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28171",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
     },
     {
       "kind": "tree",
@@ -2053,30 +1613,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "28166",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28181",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
-    },
-    {
-      "kind": "tree",
       "sourceId": "190538",
       "sourcePosition": [
         -10.532364775659516,
@@ -2084,24 +1620,12 @@
       ],
       "radiusM": 0.08,
       "position": [
-        -10.162287014248044,
-        83.77620759844234
+        -10.532364775659516,
+        84.14299489464611
       ],
-      "displacementM": 0.521,
-      "status": "inferred-bounded-shift",
+      "displacementM": 0.0,
+      "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28172",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
     },
     {
       "kind": "tree",
@@ -2150,18 +1674,6 @@
       "displacementM": 0.0,
       "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28168",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
     },
     {
       "kind": "tree",
@@ -2220,24 +1732,12 @@
       ],
       "radiusM": 0.08,
       "position": [
-        -29.819152936486155,
-        63.94299905452957
+        -30.4185575672891,
+        64.53707421058789
       ],
-      "displacementM": 0.844,
-      "status": "inferred-bounded-shift",
+      "displacementM": 0.0,
+      "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28182",
-      "sourcePosition": [
-        5.1146136509487405,
-        -64.86464645527303
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 6.397
     },
     {
       "kind": "tree",
@@ -2429,18 +1929,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "50354",
-      "sourcePosition": [
-        -89.04891144589055,
-        29.018776305485517
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 8.249
-    },
-    {
-      "kind": "tree",
       "sourceId": "195709",
       "sourcePosition": [
         -152.76849750324618,
@@ -2597,30 +2085,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "50356",
-      "sourcePosition": [
-        -89.04891144589055,
-        29.018776305485517
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 8.249
-    },
-    {
-      "kind": "tree",
-      "sourceId": "50358",
-      "sourcePosition": [
-        -89.04891144589055,
-        29.018776305485517
-      ],
-      "radiusM": 0.08,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 8.151
-    },
-    {
-      "kind": "tree",
       "sourceId": "38808",
       "sourcePosition": [
         -93.46711261325981,
@@ -2697,18 +2161,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "50357",
-      "sourcePosition": [
-        -89.04891144589055,
-        29.018776305485517
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 8.249
-    },
-    {
-      "kind": "tree",
       "sourceId": "94225",
       "sourcePosition": [
         -146.90331707708538,
@@ -2738,18 +2190,6 @@
       "displacementM": 0.0,
       "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "38807",
-      "sourcePosition": [
-        -93.46711261325981,
-        24.565551633480936
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 3.922
     },
     {
       "kind": "tree",
@@ -2969,30 +2409,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "173692",
-      "sourcePosition": [
-        -124.48925412993412,
-        27.711055249441415
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 9.358
-    },
-    {
-      "kind": "tree",
-      "sourceId": "38809",
-      "sourcePosition": [
-        -93.46711261325981,
-        24.565551633480936
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 3.922
-    },
-    {
-      "kind": "tree",
       "sourceId": "192024",
       "sourcePosition": [
         -172.07950278522912,
@@ -3038,18 +2454,6 @@
       "displacementM": 0.0,
       "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "50353",
-      "sourcePosition": [
-        -89.04891144589055,
-        29.018776305485517
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 8.249
     },
     {
       "kind": "tree",
@@ -3194,18 +2598,6 @@
       "displacementM": 0.0,
       "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "116717",
-      "sourcePosition": [
-        -124.48925412993412,
-        27.711055249441415
-      ],
-      "radiusM": 0.08,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 9.256
     },
     {
       "kind": "tree",
@@ -3377,18 +2769,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "173690",
-      "sourcePosition": [
-        -124.48925412993412,
-        27.711055249441415
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 9.358
-    },
-    {
-      "kind": "tree",
       "sourceId": "100861",
       "sourcePosition": [
         -133.8715270239627,
@@ -3450,18 +2830,6 @@
       "displacementM": 0.0,
       "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "173689",
-      "sourcePosition": [
-        -124.48925412993412,
-        27.711055249441415
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 9.358
     },
     {
       "kind": "tree",
@@ -3653,18 +3021,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "116718",
-      "sourcePosition": [
-        -124.48925412993412,
-        27.711055249441415
-      ],
-      "radiusM": 0.08,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 9.256
-    },
-    {
-      "kind": "tree",
       "sourceId": "195741",
       "sourcePosition": [
         -140.58459074876737,
@@ -3816,11 +3172,11 @@
       ],
       "radiusM": 0.1397,
       "position": [
-        169.08766939430876,
-        177.3695738519982
+        168.79483166278806,
+        177.07986965263262
       ],
-      "displacementM": 0.412,
-      "status": "inferred-bounded-shift",
+      "displacementM": 0.0,
+      "status": "mapped",
       "imageVerified": false
     },
     {
@@ -3864,11 +3220,11 @@
       ],
       "radiusM": 0.1016,
       "position": [
-        174.8196179798928,
-        171.52145297913583
+        174.50604936201125,
+        171.211239725817
       ],
-      "displacementM": 0.441,
-      "status": "inferred-bounded-shift",
+      "displacementM": 0.0,
+      "status": "mapped",
       "imageVerified": false
     },
     {
@@ -3937,51 +3293,7 @@
     },
     {
       "kind": "tree",
-      "sourceId": "261464",
-      "sourcePosition": [
-        164.25554689532146,
-        138.7614767262712
-      ],
-      "radiusM": 0.15239999999999998,
-      "position": [
-        164.69618570043065,
-        138.8718510011054
-      ],
-      "displacementM": 0.454,
-      "status": "inferred-bounded-shift",
-      "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "261462",
-      "sourcePosition": [
-        164.25554689532146,
-        138.7614767262712
-      ],
-      "radiusM": 0.15239999999999998,
-      "position": [
-        164.36592117015573,
-        139.20211553138037
-      ],
-      "displacementM": 0.454,
-      "status": "inferred-bounded-shift",
-      "imageVerified": false
-    },
-    {
-      "kind": "tree",
       "sourceId": "115595",
-      "sourcePosition": [
-        113.9016922187293,
-        230.57083690771833
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.898
-    },
-    {
-      "kind": "tree",
-      "sourceId": "115601",
       "sourcePosition": [
         113.9016922187293,
         230.57083690771833
@@ -4005,30 +3317,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "28162",
-      "sourcePosition": [
-        187.11031388037372,
-        146.46314181527123
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.931
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28149",
-      "sourcePosition": [
-        187.11031388037372,
-        146.46314181527123
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.931
-    },
-    {
-      "kind": "tree",
       "sourceId": "105508",
       "sourcePosition": [
         146.30766234267503,
@@ -4041,75 +3329,19 @@
     },
     {
       "kind": "tree",
-      "sourceId": "115600",
-      "sourcePosition": [
-        113.9016922187293,
-        230.57083690771833
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.898
-    },
-    {
-      "kind": "tree",
       "sourceId": "61827",
       "sourcePosition": [
         59.472973847645335,
         156.22080915328115
       ],
       "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 1.61
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28156",
-      "sourcePosition": [
-        187.11031388037372,
-        146.46314181527123
+      "position": [
+        59.472973847645335,
+        156.22080915328115
       ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.931
-    },
-    {
-      "kind": "tree",
-      "sourceId": "68428",
-      "sourcePosition": [
-        113.9016922187293,
-        230.57083690771833
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.898
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28160",
-      "sourcePosition": [
-        187.11031388037372,
-        146.46314181527123
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.931
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28151",
-      "sourcePosition": [
-        187.11031388037372,
-        146.46314181527123
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.931
+      "displacementM": 0.0,
+      "status": "mapped",
+      "imageVerified": false
     },
     {
       "kind": "tree",
@@ -4145,18 +3377,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "115596",
-      "sourcePosition": [
-        113.9016922187293,
-        230.57083690771833
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.898
-    },
-    {
-      "kind": "tree",
       "sourceId": "44226",
       "sourcePosition": [
         79.00618717446923,
@@ -4170,94 +3390,6 @@
       "displacementM": 0.0,
       "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28152",
-      "sourcePosition": [
-        187.11031388037372,
-        146.46314181527123
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.931
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28163",
-      "sourcePosition": [
-        187.11031388037372,
-        146.46314181527123
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.931
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28157",
-      "sourcePosition": [
-        187.11031388037372,
-        146.46314181527123
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.931
-    },
-    {
-      "kind": "tree",
-      "sourceId": "44228",
-      "sourcePosition": [
-        79.00618717446923,
-        242.9233452132903
-      ],
-      "radiusM": 0.15239999999999998,
-      "position": [
-        79.27678487827671,
-        243.28820398022256
-      ],
-      "displacementM": 0.454,
-      "status": "inferred-bounded-shift",
-      "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "115604",
-      "sourcePosition": [
-        113.9016922187293,
-        230.57083690771833
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.898
-    },
-    {
-      "kind": "tree",
-      "sourceId": "115597",
-      "sourcePosition": [
-        113.9016922187293,
-        230.57083690771833
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.898
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28161",
-      "sourcePosition": [
-        187.11031388037372,
-        146.46314181527123
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.931
     },
     {
       "kind": "tree",
@@ -4284,48 +3416,12 @@
       ],
       "radiusM": 0.08,
       "position": [
-        159.9194017500029,
-        161.12925256059702
+        160.87962164462078,
+        162.07905970932916
       ],
-      "displacementM": 1.351,
-      "status": "inferred-bounded-shift",
+      "displacementM": 0.0,
+      "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28164",
-      "sourcePosition": [
-        187.11031388037372,
-        146.46314181527123
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.931
-    },
-    {
-      "kind": "tree",
-      "sourceId": "115603",
-      "sourcePosition": [
-        113.9016922187293,
-        230.57083690771833
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.898
-    },
-    {
-      "kind": "tree",
-      "sourceId": "115598",
-      "sourcePosition": [
-        113.9016922187293,
-        230.57083690771833
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.898
     },
     {
       "kind": "tree",
@@ -4351,85 +3447,13 @@
         176.0170791549608
       ],
       "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 2.91
-    },
-    {
-      "kind": "tree",
-      "sourceId": "115594",
-      "sourcePosition": [
-        79.00618717446923,
-        242.9233452132903
-      ],
-      "radiusM": 0.15239999999999998,
       "position": [
-        78.73558947066175,
-        243.28820398022256
+        56.79331872181501,
+        176.0170791549608
       ],
-      "displacementM": 0.454,
-      "status": "inferred-bounded-shift",
+      "displacementM": 0.0,
+      "status": "mapped",
       "imageVerified": false
-    },
-    {
-      "kind": "tree",
-      "sourceId": "115602",
-      "sourcePosition": [
-        113.9016922187293,
-        230.57083690771833
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.898
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28154",
-      "sourcePosition": [
-        187.11031388037372,
-        146.46314181527123
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.931
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28153",
-      "sourcePosition": [
-        187.11031388037372,
-        146.46314181527123
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.931
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28158",
-      "sourcePosition": [
-        187.11031388037372,
-        146.46314181527123
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.931
-    },
-    {
-      "kind": "tree",
-      "sourceId": "115599",
-      "sourcePosition": [
-        113.9016922187293,
-        230.57083690771833
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.898
     },
     {
       "kind": "tree",
@@ -4449,42 +3473,6 @@
     },
     {
       "kind": "tree",
-      "sourceId": "28150",
-      "sourcePosition": [
-        187.11031388037372,
-        146.46314181527123
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.931
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28159",
-      "sourcePosition": [
-        187.11031388037372,
-        146.46314181527123
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.931
-    },
-    {
-      "kind": "tree",
-      "sourceId": "28155",
-      "sourcePosition": [
-        187.11031388037372,
-        146.46314181527123
-      ],
-      "radiusM": 0.15239999999999998,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 5.931
-    },
-    {
-      "kind": "tree",
       "sourceId": "44516",
       "sourcePosition": [
         75.12516475457232,
@@ -4494,30 +3482,6 @@
       "status": "rejected",
       "reason": "source-conflicts-with-street-space",
       "requiredShiftM": 3.7
-    },
-    {
-      "kind": "tree",
-      "sourceId": "44519",
-      "sourcePosition": [
-        75.12516475457232,
-        208.37796225445345
-      ],
-      "radiusM": 0.127,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 3.7
-    },
-    {
-      "kind": "tree",
-      "sourceId": "44518",
-      "sourcePosition": [
-        75.12516475457232,
-        208.37796225445345
-      ],
-      "radiusM": 0.1143,
-      "status": "rejected",
-      "reason": "source-conflicts-with-street-space",
-      "requiredShiftM": 3.687
     },
     {
       "kind": "bin",
@@ -6782,10 +5746,10 @@
       ],
       "radiusM": 0.05,
       "position": [
-        -39.66026039359707,
-        54.05622371947789
+        -40.552401210966394,
+        54.78355272358095
       ],
-      "displacementM": 1.531,
+      "displacementM": 0.383,
       "status": "inferred-bounded-shift",
       "imageVerified": false
     },

@@ -1,5 +1,5 @@
 {
-  "scene": "work/clean-v99/king-street-pilot.glb",
+  "scene": "work/clean-v107/king-street-pilot.glb",
   "records": [
     {
       "buildingId": "osm_129176908",
@@ -35,7 +35,7 @@
       "medianAbsoluteErrorM": 0.43,
       "p90AbsoluteErrorM": 3.49,
       "roofMoreThan4mBelowMeasured": 19,
-      "roofMoreThan4mAboveMeasured": 72
+      "roofMoreThan4mAboveMeasured": 71
     },
     {
       "buildingId": "osm_149167949",
@@ -52,7 +52,7 @@
       "missingRoofSamples": 0,
       "medianAbsoluteErrorM": 0.36,
       "p90AbsoluteErrorM": 4.29,
-      "roofMoreThan4mBelowMeasured": 61,
+      "roofMoreThan4mBelowMeasured": 60,
       "roofMoreThan4mAboveMeasured": 6
     },
     {
@@ -465,8 +465,8 @@
       "samples": 1125,
       "missingRoofSamples": 0,
       "medianAbsoluteErrorM": 0.19,
-      "p90AbsoluteErrorM": 3.28,
-      "roofMoreThan4mBelowMeasured": 68,
+      "p90AbsoluteErrorM": 3.29,
+      "roofMoreThan4mBelowMeasured": 69,
       "roofMoreThan4mAboveMeasured": 40
     },
     {
@@ -493,8 +493,8 @@
       "missingRoofSamples": 0,
       "medianAbsoluteErrorM": 0.47,
       "p90AbsoluteErrorM": 3.19,
-      "roofMoreThan4mBelowMeasured": 9,
-      "roofMoreThan4mAboveMeasured": 7
+      "roofMoreThan4mBelowMeasured": 8,
+      "roofMoreThan4mAboveMeasured": 8
     },
     {
       "buildingId": "sf_201006_0006267",
@@ -526,7 +526,7 @@
   ],
   "samples": 34699,
   "missingRoofSamples": 0,
-  "roofMoreThan4mBelowMeasured": 897,
+  "roofMoreThan4mBelowMeasured": 896,
   "roofMoreThan4mAboveMeasured": 1227,
   "caveat": "Point clouds include occlusions and obsolete structures; this measures disagreement, not certified as-built error."
 }
