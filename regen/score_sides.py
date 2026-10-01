@@ -40,7 +40,9 @@ if __name__ == '__main__':
         for vi, v in enumerate(p['views']):
             corr = aligncorr.choose((al.get(i) or {}).get(str(vi)))
             ph = photo_in_wall_frame(p, v, corr, root / 'sides/img')
-            j = J.judge(ph.astype(float), rend, op, cov, p['heightM'])
+            cf = root / 'codes' / f'{i}_{vi}.npz'; cd = np.load(cf)['codes'] if cf.exists() else None
+            j = J.judge(ph.astype(float), rend, op, cov, p['heightM'], cd)
+            if j and not j.get('reliable'): j = None        # under 40 % of the wall can be judged in this photo: abstain
             rec['self' if vi == use else 'holdout'] = {'score': j['score'] if j else None, 'aligned': corr['kind'] if corr else None, **({k: j[k] for k in ('falseOpenings', 'missingDetail', 'openingCorr', 'reliable')} if j else {})}
         res[i] = rec
     json.dump(res, open(a.out, 'w'), indent=1)

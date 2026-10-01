@@ -40,7 +40,9 @@ def main(i, reading, out):
     tiles = [('preview of the model', rend)]; scores = {}
     for vi, v in enumerate(p['views']):
         ph = S.photo_in_wall_frame(p, v, aligncorr.choose((al or {}).get(str(vi))), root / 'sides/img')
-        j = J.judge(ph.astype(float), rend, op, cov, H)
+        cf = root / 'codes' / f'{i}_{vi}.npz'; cd = np.load(cf)['codes'] if cf.exists() else None
+        j = J.judge(ph.astype(float), rend, op, cov, H, cd)
+        if j and not j.get('reliable'): j = None        # under 40 % of the wall can be judged in this photo: abstain
         scores[f'view{vi}'] = {k: j[k] for k in ('score', 'falseOpenings', 'missingDetail', 'openingCorr')} if j else None
         tiles.append((f'photo view {vi}  score {j["score"] if j else "n/a"}', ph))
     sc = min(1., 800 / max(rend.shape[1], rend.shape[0])); tw, th = int(rend.shape[1] * sc), int(rend.shape[0] * sc)
