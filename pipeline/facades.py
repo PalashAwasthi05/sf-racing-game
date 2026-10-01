@@ -172,10 +172,20 @@ def _vote_by_likeness(matches):
  def rgb(m):
   base,_,hx=m.partition('#')
   return [int(hx[i:i+2],16) for i in (0,2,4)] if len(hx)==6 else list(material_recipes.RECIPES.get(base,{}).get('color',[180,180,180]))
- cols=[rgb(m) for m in mats];best=[0]
- for size in range(len(mats),1,-1):
-  g=next((g for g in combinations(range(len(mats)),size) if all(same_material(cols[a],cols[b]) for a,b in combinations(g,2))),None)
-  if g:best=list(g);break
+ cols=[rgb(m) for m in mats];best=[0];n=len(mats)
+ # each pair is compared once; the largest set of mutually like readings is searched exactly for a few readings and
+ # grown greedily from every reading for many (the exact search over all subsets never ended for a part with 40)
+ like=[[a==b or same_material(cols[a],cols[b]) for b in range(n)] for a in range(n)]
+ if n<=12:
+  for size in range(n,1,-1):
+   g=next((g for g in combinations(range(n),size) if all(like[a][b] for a,b in combinations(g,2))),None)
+   if g:best=list(g);break
+ else:
+  for seed in range(n):
+   g=[seed]
+   for k in sorted(range(n),key=lambda k:(-sum(like[k]),k)):
+    if k not in g and all(like[k][j] for j in g):g.append(k)
+   if len(g)>len(best) or (len(g)==len(best) and sorted(g)<sorted(best)):best=sorted(g)
  if len(best)<2/3*len(mats):return None
  fams=[mats[k].split('#')[0] for k in best];fam=max(fams,key=fams.count)   # a tie goes to the first reading's family (a set's order changed with the hash seed)
  med=np.median([cols[k] for k in best],0).astype(int)
