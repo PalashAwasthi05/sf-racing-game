@@ -7,7 +7,9 @@ street photographs. You can check any version yourself with the preview command:
 
 It writes an image (the model as the generator will draw it, then each photograph of the same wall in the same frame)
 and prints scores per photograph (higher is better; falseOpenings = model windows on solid wall, missingDetail =
-photographed openings the model lacks) and their mean.
+photographed openings the model lacks) and their mean. A photograph scores null when too little of the wall is
+visible to judge; it does not count. Windows, doors and dark glass are detected in each photograph, so removing
+openings the photographs show lowers the score.
 
 For each side:
 1. Preview the current reading (`reading`), then Read the image. Also Read `rect` (the photograph the reading is measured
@@ -18,4 +20,4 @@ For each side:
 3. Write a corrected reading to `out` (the whole JSON), preview `out`, Read its image and compare the mean score.
 4. Repeat steps 2-3 at most twice more. Stop early when the preview matches the photographs well.
 5. The file left at `out` must be your best-scoring version: if a later edit scored worse, write the best one back.
-Only run the preview command; no other commands. Do not transcribe sign text.
+Draw only this wall: the rect photograph may show neighbouring buildings past the wall's ends. Only run the preview command; no other commands. Do not transcribe sign text.

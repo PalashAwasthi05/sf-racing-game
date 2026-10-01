@@ -145,7 +145,11 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
  # u-range); its openings land where the photograph shows them however the outline is partitioned into pieces.
  if profile.get('frameU'):left,right=map(float,profile['frameU']);W=right-left
  mid=(a+b)/2
- if float(mid@n)<outward-profile.get('planeToleranceM',2.5):return None
+ # A reading measured on its own plane (planeV, along its own normal) draws the walls standing in that plane, whether or
+ # not a wall of the same facing stands further out: a recessed face read square-on was dropped for not being the
+ # facing's outermost wall (37 of 171 photographed ground-level readings never reached their wall).
+ ref=float(profile['planeV']) if profile.get('planeV') is not None else outward
+ if float(mid@n)<ref-profile.get('planeToleranceM',2.5):return None
  low,high=sorted([float(a@u-left),float(b@u-left)])
  if W<3 or high-low<.3:return None
  # A photographed frame says nothing about a piece of the same facing outside it: that piece takes the generic

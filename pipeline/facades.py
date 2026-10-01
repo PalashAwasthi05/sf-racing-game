@@ -8,6 +8,10 @@ from . import facade_grammar
 from .surface_evidence import resolve_material
 
 PART_HEIGHT_SHARE=.3
+import os as _os
+_TRACE=[] if _os.environ.get('FACADE_TRACE') else None   # debug: why each wall took (or did not take) a reading
+if _TRACE is not None:
+ import atexit as _ax;_ax.register(lambda:json.dump(_TRACE,open(_os.environ['FACADE_TRACE'],'w')))
 
 
 def belongs(p,c,height=None,mass=None):
@@ -745,6 +749,10 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
     unframed=[p for p in matching if not p.get('frameU')]
     best=max(framed,key=lambda x:x[0],default=(0.,None))
     profile=unframed[0] if unframed else (best[1] if best[1] is not None and best[0]>=.5*length else None)
+    if _TRACE is not None:
+     cand=[q for q in profiles if not q.get('materialOnly') and q.get('frameU') and np.dot(n,q['normal'])>.95 and str(q['match'].get('featureId'))==str(c.get('sourceId',c['id']))]
+     _TRACE.append({'building':c['id'],'length':round(length,2),'mid':mid.tolist(),'mainHeight':round(float(main_height),2),'mass':mass,'elevationOffset':c.get('elevationOffset',0),'roofBand':bool(c.get('roofBand')),
+      'chosen':profile['id'] if profile else None,'cands':[{'id':q['id'],'belongs':bool(belongs(q,c,main_height,mass)),'planeGap':round(plane_gap(q),2) if q.get('planeV') is not None else None,'overlap':round(frame_overlap(q,a,b),2),'ref':q.get('heightRefM')} for q in cand]})
     # A set-back tier wall takes a reading only when that reading was measured on this very plane from this wall's base
     # (the reader rectifies tier walls from their own foot, zBaseM); a ground-level reading never climbs onto a tier.
     tier_reading=bool(profile and c.get('roofBand') and profile.get('planeV') is not None and profile.get('zBaseM') is not None
@@ -773,6 +781,7 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
       # ends. The observed top may raise the wall above the LiDAR level, by at most 3 m; it never lowers it.
       wall_top=min(max(wall_top,float(profile['observedWallTopM'])),wall_top+3.)
      fitted=facade_grammar.compile_wall(ctx,c,a,b,zs,wall_top,{**profile,'heightRefM':round(frame,2),'gableEnd':gable_planes is not None},fits)
+     if _TRACE is not None:_TRACE[-1]['fitted']=bool(fitted)
      if fitted:
       fitted['record'].update(wallLevelM=round(float(main_height),2),wallTopM=round(wall_top,2),frameHeightM=round(frame,2))
       if c.get('roofBand'):fitted['record']['zBaseM']=round(zs-(z0-c.get('elevationOffset',0.)),2)
