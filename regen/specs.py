@@ -84,6 +84,7 @@ def to_profile(r, piece):
             'materialEvidence': {'family': main.get('family', 'render'), 'colorRgb': [int(hexok(main.get('hex'))[i:i + 2], 16) for i in (1, 3, 5)], 'sourceIds': src},
             'panels': [], 'groups': [], 'openings': [], 'bands': [], 'piers': [], 'parapets': [], 'unresolved': [],
             'reading': {'confidence': r.get('confidence'), 'notes': r.get('notes', ''), 'wallTopM': r.get('wallTopM'), 'storeys': r.get('storeys')}}
+    if piece.get('baseM'): prof['zBaseM'] = float(piece['baseM'])   # a set-back tier, rectified from the roof it stands on
     prof['materialEvidence'].pop('family') if prof['materialEvidence']['family'] not in ('brick', 'terracotta', 'render', 'timber', 'metal-panel') else None
     if 'family' not in prof['materialEvidence']: prof.pop('materialEvidence')
     for m in mats[1:]:

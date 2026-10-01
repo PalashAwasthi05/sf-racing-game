@@ -35,7 +35,7 @@ if __name__ == '__main__':
         use = r.get('use', 0) if isinstance(r.get('use'), int) and 0 <= r.get('use', 0) < len(p['views']) else 0
         n = np.asarray(p['normal'], float); t = np.array([-n[1], n[0]])
         wall = {'midpoint': (n * p['planeV'] + t * sum(p['frameU']) / 2).tolist(), 'normal': p['normal'], 'lengthM': p['lengthM'], 'heightM': p['heightM']}
-        rend, op, cov = J.render_wall(B, wall, p['groundZ'], p['heightM'], p['lengthM'])
+        rend, op, cov = J.render_wall(B, wall, p['groundZ'] + p.get('baseM', 0.), p['heightM'], p['lengthM'])   # a tier from its own foot
         rec = {}
         for vi, v in enumerate(p['views']):
             corr = aligncorr.choose((al.get(i) or {}).get(str(vi)))

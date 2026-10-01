@@ -9,6 +9,8 @@ import frontage_crops_v15 as fc
 USE_REGISTRATION = False
 root = pathlib.Path('regen/v1'); byid = {p['id']: p for p in json.load(open(root / 'sides/sides.json'))['pieces']}
 reg = {}
+# sides built of tier walls but rectified from the street (tier_sides.py measures them from their own base)
+RETIRED = set(json.load(open(root / 'retired-tier-sides.json'))) if (root / 'retired-tier-sides.json').exists() else set()
 ALIGN = json.load(open(root / 'alignment.json')) if (root / 'alignment.json').exists() else {}
 for f in glob.glob(str(root / 'registration*.json')): reg.update(json.load(open(f)))
 world, frame = fc.load_world(); cams = fc.load_cameras(frame); bz = {b['id']: b['center'][2] for b in world['buildings']}
@@ -16,6 +18,7 @@ profiles, stats = [], {'profiles': 0, 'registered': 0, 'skipped': 0}
 SRC = sys.argv[1] if len(sys.argv) > 1 else 'final'
 for f in sorted((root / SRC).glob('*.json')):
     r = json.load(open(f)); p = byid[f.stem]
+    if f.stem in RETIRED: stats['retired'] = stats.get('retired', 0) + 1; continue
     if r.get('thisBuilding') is False or not r.get('materials'): stats['skipped'] += 1; continue
     r = specs.clean(r, p); img = p['views'][r['use']]['image']
     r = colours.measure(r, p, root / 'sides/img')
