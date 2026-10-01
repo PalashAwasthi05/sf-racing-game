@@ -9,8 +9,9 @@ import {classOf} from './finish';
 //   tyre does not feel it); where no ground layer lies, the terrain grid is the surface. The raster is made tile by
 //   tile where the car first needs it, from the triangles sorted into tiles at load.
 // - What the car cannot enter goes to the building distance field as walls: steps (a stair is not a kerb), water that
-//   stands above the ground, and the steep faces of ground layers that rise more than 0.3 m (a planter, a retaining
-//   wall, a platform edge). A kerb or a steep street is driven over.
+//   stands above the ground, and the steep faces of ground layers whose top stands more than 0.3 m over the surface
+//   beside them (a planter, a retaining wall, a platform edge), judged every half metre. A kerb or a steep street is
+//   driven over.
 // - Street objects are whatever the object layers (street furniture, sign posts, tree trunks) hold between 5 cm and
 //   1.2 m above the terrain grid, marked on a 0.1 m grid, grouped into blobs and covered by circles.
 
@@ -159,18 +160,42 @@ export function buildCarGround(objects: THREE.Object3D[], layerOf: (o: THREE.Obj
   const grid = new Grid(extentM, cellM);
   // Tops of the ground layers (faces that look up, near the terrain grid: not a canopy, not a pit) for the surface;
   // their steep faces that rise more than RISE_M, steps and water above the ground for the walls.
-  const tops: number[] = [], wallPts: number[] = [], wallLines: number[] = [], water: number[] = [];
+  const tops: number[] = [], wallPts: number[] = [], wallLines: number[] = [], water: number[] = [], steep: number[] = [];
   for (const o of meshes) {
     const layer = layerOf(o);
     if (SURFACE.has(layer)) eachTriangle(o, (p, a, b, c) => {
       const up = normalY(p, a, b, c);
       if (up > .5) { const x = (p[a] + p[b] + p[c]) / 3, y = (p[a + 1] + p[b + 1] + p[c + 1]) / 3, z = (p[a + 2] + p[b + 2] + p[c + 2]) / 3, g = groundAt(x, z); if (y > g - 1.5 && y < g + 1.2) tops.push(p[a], p[a + 1], p[a + 2], p[b], p[b + 1], p[b + 2], p[c], p[c + 1], p[c + 2]); }
-      else if (up < .7 && Math.max(p[a + 1], p[b + 1], p[c + 1]) - Math.min(p[a + 1], p[b + 1], p[c + 1]) > RISE_M) wallLines.push(p[a], p[a + 2], p[b], p[b + 2], p[b], p[b + 2], p[c], p[c + 2], p[c], p[c + 2], p[a], p[a + 2]);
+      else if (up < .7 && Math.max(p[a + 1], p[b + 1], p[c + 1]) - Math.min(p[a + 1], p[b + 1], p[c + 1]) > RISE_M) steep.push(p[a], p[a + 1], p[a + 2], p[b], p[b + 1], p[b + 2], p[c], p[c + 1], p[c + 2]);
     });
     else if (STEPS.has(layer)) eachTriangle(o, (p, a, b, c) => { wallLines.push(p[a], p[a + 2], p[b], p[b + 2], p[b], p[b + 2], p[c], p[c + 2], p[c], p[c + 2], p[a], p[a + 2]); grid.triangle(p[a], 0, p[a + 2], p[b], 0, p[b + 2], p[c], 0, p[c + 2], (i, j) => { wallPts.push(grid.origin + (i + .5) * cellM, grid.origin + (j + .5) * cellM); }); });
     else if (WATER.has(layer)) eachTriangle(o, (p, a, b, c) => { if (normalY(p, a, b, c) > .5) water.push(p[a], p[a + 1], p[a + 2], p[b], p[b + 1], p[b + 2], p[c], p[c + 1], p[c + 2]); });
   }
   const surface = new Surface(extentM, cellM, new Float32Array(tops), groundAt);
+  // A steep face is a wall where its top stands more than RISE_M over the surface beside it, judged every half metre
+  // along it. Its own height says nothing: a pavement's edge face runs down past the road it meets (its skirt), and
+  // one face can run the length of a sloping block, so a 0.2 m kerb became a wall wherever its face was 0.3 m tall.
+  const STEP = .5;
+  for (let q = 0; q < steep.length; q += 9) {
+    let ex = 0, ez = 0;
+    for (let k = 0; k < 3; k++) { const u = q + k * 3, v = q + ((k + 1) % 3) * 3, dx = steep[v] - steep[u], dz = steep[v + 2] - steep[u + 2]; if (Math.hypot(dx, dz) > Math.hypot(ex, ez)) { ex = dx; ez = dz; } }
+    const len = Math.hypot(ex, ez); if (len < 1e-6) continue;
+    const tx = ex / len, tz = ez / len, nx = -tz, nz = tx, ox = steep[q], oz = steep[q + 2];
+    // the face's top along it: the highest point of its edges in each half-metre bin
+    const bins = Math.max(1, Math.ceil(len / STEP)), top = new Float32Array(bins).fill(-Infinity);
+    for (let k = 0; k < 3; k++) {
+      const u = q + k * 3, v = q + ((k + 1) % 3) * 3, n = Math.max(1, Math.ceil(Math.hypot(steep[v] - steep[u], steep[v + 2] - steep[u + 2]) / (STEP / 2)));
+      for (let m = 0; m <= n; m++) {
+        const f = m / n, x = steep[u] + (steep[v] - steep[u]) * f, y = steep[u + 1] + (steep[v + 1] - steep[u + 1]) * f, z = steep[u + 2] + (steep[v + 2] - steep[u + 2]) * f;
+        const b = Math.min(bins - 1, Math.max(0, Math.floor(((x - ox) * tx + (z - oz) * tz) / STEP))); if (y > top[b]) top[b] = y;
+      }
+    }
+    for (let b = 0; b < bins; b++) {
+      const s0 = b * STEP, s1 = Math.min(len, s0 + STEP), sm = (s0 + s1) / 2, x = ox + tx * sm, z = oz + tz * sm;
+      const low = Math.min(surface.at(x + nx * .4, z + nz * .4), surface.at(x - nx * .4, z - nz * .4));
+      if (top[b] - low > RISE_M) wallLines.push(ox + tx * s0, oz + tz * s0, ox + tx * s1, oz + tz * s1);
+    }
+  }
   // water whose top stands above the ground there is not driven into
   for (let q = 0; q < water.length; q += 9) grid.triangle(water[q], water[q + 1], water[q + 2], water[q + 3], water[q + 4], water[q + 5], water[q + 6], water[q + 7], water[q + 8], (i, j, y) => {
     const x = grid.origin + (i + .5) * cellM, z = grid.origin + (j + .5) * cellM; if (y > surface.at(x, z) + .05) wallPts.push(x, z);
