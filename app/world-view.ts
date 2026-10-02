@@ -165,7 +165,12 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
    }
   }finally{if(!completed)for(const material of reflectiveMaterials)material.envMap=current;ring.visible=ringVisible;highlight.visible=highlightVisible;hidden.forEach(o=>o.visible=true);if(car)car.group.visible=carWasVisible;renderer.shadowMap.autoUpdate=shadowAuto;renderer.setRenderTarget(previousTarget,previousFace,previousMip);}
  }
- const ring=new THREE.Mesh(new THREE.RingGeometry(199.65,200,160),new THREE.MeshBasicMaterial({color:'#e3c78b',transparent:true,opacity:.65,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.22;scene.add(ring);
+ // The study-radius ring at the world's own radius, draped on the terrain: a flat ring at one height floated over or
+ // sank under a hilly area's streets.
+ const studyR=data.studyRadiusM??200,segs=Math.max(160,Math.round(studyR*2)),rp:number[]=[],ri:number[]=[];
+ for(let k=0;k<=segs;k++){const a=k/segs*Math.PI*2,c=Math.cos(a),s=Math.sin(a);for(const r of [studyR-.35,studyR]){const x=c*r,z=s*r;rp.push(x,groundAt(x,z)+.22,z);}if(k<segs){const i=k*2;ri.push(i,i+1,i+2,i+1,i+3,i+2);}}
+ const ringGeometry=new THREE.BufferGeometry();ringGeometry.setAttribute('position',new THREE.Float32BufferAttribute(rp,3));ringGeometry.setIndex(ri);
+ const ring=new THREE.Mesh(ringGeometry,new THREE.MeshBasicMaterial({color:'#e3c78b',transparent:true,opacity:.65,side:THREE.DoubleSide}));scene.add(ring);
  const highlight=new THREE.Box3Helper(new THREE.Box3(),new THREE.Color('#f5c76b'));highlight.visible=false;scene.add(highlight);
  function getLayer(o:THREE.Object3D){return String(o.userData.layer||o.name.split('___')[0].split('__')[0])}
  function getId(o:THREE.Object3D){return String(o.userData.featureId||o.name.split('___')[0].split('__')[1]||'')}
@@ -229,8 +234,10 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // The car is built now and hidden, so its shaders compile with the rest of the scene rather than on the first drive.
  // What the car stands on and runs into: the drivable surface, street objects and cells it cannot enter (car-ground.ts),
  // then the building distance field at the surface raster's resolution with those cells marked in.
- const carGround=buildCarGround(objects,getLayer,groundAt);
- const fieldStart=performance.now();field=buildDistanceField(objects,getLayer,275,.25,carGround.blocked);carGround.stats.fieldMs=Math.round(performance.now()-fieldStart);const carSource=await roadster;car=carSource?createCar(scene,host,camera,groundAt,field,carSource,carGround):null;car?.group.traverse(o=>{if(!(o instanceof THREE.Mesh))return;atmosphere.setupMaterial(o.material);for(const m of Array.isArray(o.material)?o.material:[o.material]){if(m instanceof THREE.MeshStandardMaterial&&m.roughness<.5&&!reflectiveMaterials.includes(m)){m.userData.envIntensity=.7;reflectiveMaterials.push(m);}}});car?.stop();let carPlaced=false;
+ // the car's surface and walls cover the world's context radius (a larger area than the pilot's 265 m)
+ const reach=Math.max(275,(data.contextRadiusM??265)+10);
+ const carGround=buildCarGround(objects,getLayer,groundAt,reach);
+ const fieldStart=performance.now();field=buildDistanceField(objects,getLayer,reach,.25,carGround.blocked);carGround.stats.fieldMs=Math.round(performance.now()-fieldStart);const carSource=await roadster;car=carSource?createCar(scene,host,camera,groundAt,field,carSource,carGround):null;car?.group.traverse(o=>{if(!(o instanceof THREE.Mesh))return;atmosphere.setupMaterial(o.material);for(const m of Array.isArray(o.material)?o.material:[o.material]){if(m instanceof THREE.MeshStandardMaterial&&m.roughness<.5&&!reflectiveMaterials.includes(m)){m.userData.envIntensity=.7;reflectiveMaterials.push(m);}}});car?.stop();let carPlaced=false;
  // Lighter stand-ins for the car (car-lod.ts): merged, simplified parts in the depth-only passes, simplified parts in the
  // scene pass when the car is far from the camera. Built from whatever model loaded, so a rebuilt car needs nothing else.
  const carLod=car?attachCarLod(car.group,{enabled:()=>budget.carLod}):null;if(carLod)depthPasses.addSwap(carLod.depthSwap);
