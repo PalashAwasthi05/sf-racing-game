@@ -1,13 +1,13 @@
 """Final readings -> the profile file the generator takes (--regen-profiles). Readings measured on a camera whose
 skyline registration passed are first moved onto the registered pose (remap.py)."""
-import glob, json, pathlib, sys
+import glob, json, pathlib, sys, os
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent)); sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import specs, remap, colours, aligncorr
 import frontage_crops_v15 as fc
 # the skyline registrations moved readings by metres where the photographs already matched the walls (a side's windows
 # came out 2.5 m left and 1.8 m low): off until a registration is checked against the wall it is used for
 USE_REGISTRATION = False
-root = pathlib.Path('regen/v1'); byid = {p['id']: p for p in json.load(open(root / 'sides/sides.json'))['pieces']}
+root = pathlib.Path(os.environ.get('REGEN_ROOT', 'regen/v1')); byid = {p['id']: p for p in json.load(open(root / 'sides/sides.json'))['pieces']}
 reg = {}
 # sides built of tier walls but rectified from the street (tier_sides.py measures them from their own base)
 RETIRED = set(json.load(open(root / 'retired-tier-sides.json'))) if (root / 'retired-tier-sides.json').exists() else set()

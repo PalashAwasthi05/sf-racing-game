@@ -1,9 +1,9 @@
 """Write the job files of one stage: which readings, overlays and photographs each agent gets and where it writes."""
-import argparse, json, pathlib
+import argparse, json, pathlib, os
 ap = argparse.ArgumentParser(); ap.add_argument('--stage', required=True, choices=['correct', 'verify', 'fix'])
 ap.add_argument('--src', required=True); ap.add_argument('--dst', required=True); ap.add_argument('--per', type=int, default=8)
 ap.add_argument('--only', help='json list of ids to include'); a = ap.parse_args()
-root = pathlib.Path('regen/v1').resolve(); byid = {p['id']: p for p in json.load(open(root / 'sides/sides.json'))['pieces']}
+root = pathlib.Path(os.environ.get('REGEN_ROOT', 'regen/v1')).resolve(); byid = {p['id']: p for p in json.load(open(root / 'sides/sides.json'))['pieces']}
 only = set(json.load(open(a.only))) if a.only else None
 (root / a.dst).mkdir(exist_ok=True)
 items = []

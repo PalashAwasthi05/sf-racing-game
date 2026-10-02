@@ -3,7 +3,7 @@ judged (trees, cars, sky, signs). SegFormer for occluders and sky; Grounding DIN
 (tiled, as the judge does); whole-wall glazing (curtain walls) counted as opening when the detector is confident, left
 unjudged when it is unsure, so a scorer neither rewards deleting real glass nor drawing glass on a dark wall.
 Near-black wall pixels (glass or shade) are left unjudged too. Cached as regen/v1/codes/<side>_<view>.npz."""
-import argparse, json, pathlib, sys, time
+import argparse, json, pathlib, sys, time, os
 import numpy as np
 HERE = pathlib.Path(__file__).resolve().parent; sys.path.insert(0, str(HERE)); sys.path.insert(0, str(HERE.parent))
 import aligncorr, score_sides as S, judge_facades_v27 as J
@@ -30,7 +30,7 @@ def codes_for(u8, seg, det):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser(); ap.add_argument('--ids', nargs='*'); ap.add_argument('--limit', type=int, default=0); a = ap.parse_args()
-    root = HERE / 'v1'; out = root / 'codes'; out.mkdir(exist_ok=True)
+    root = pathlib.Path(os.environ['REGEN_ROOT']).resolve() if os.environ.get('REGEN_ROOT') else HERE / 'v1'; out = root / 'codes'; out.mkdir(exist_ok=True)
     byid = {p['id']: p for p in json.load(open(root / 'sides/sides.json'))['pieces']}; al = json.load(open(root / 'alignment.json'))
     ids = a.ids or sorted(f.stem for f in (root / 'final3').glob('*.json'))
     seg, det = Segmenter(), Detector(); t0 = time.time(); n = 0

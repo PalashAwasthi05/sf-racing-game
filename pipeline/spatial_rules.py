@@ -22,7 +22,7 @@ def reconcile(candidates):
  owned=Polygon();out=[]
  for c in ordered:
   overlap=c['g'].intersection(owned).area
-  if overlap>.01:
+  if overlap>.001:   # the same tolerance the check below holds (row houses share walls to the millimetre)
    before=c['g'].area;c['g']=c['g'].difference(owned).buffer(0)
    audit.append({'rule':'single-building-owner','buildingId':c['id'],'removedOverlapM2':round(overlap,3),'beforeAreaM2':round(before,3),'remainingAreaM2':round(c['g'].area,3)})
   if c['g'].area<4:continue
@@ -591,7 +591,7 @@ def surface_raster(points,xmin,ymax,step,nx,ny):
  return rr,keep
 
 
-def rooftop_panels(points,surface_mask,rr,xmin,ymax,step,context=None,minimum_returns=40,minimum_length_m=8.,maximum_width_m=2.,minimum_height_m=3.,minimum_face_m=2.,maximum_face_m=8.,minimum_density=2.,beside_occupancy=.35,above_density=.5,audit=None):
+def rooftop_panels(points,surface_mask,rr,xmin,ymax,step,context=None,minimum_returns=40,minimum_length_m=8.,maximum_width_m=2.,minimum_height_m=3.,minimum_face_m=2.,maximum_face_m=8.,minimum_density=2.,beside_occupancy=.35,above_density=.5,volume_beside=.25,audit=None):
  """Thin, tall, linear structures standing on a roof: sign panels, not roof volume and not nothing.
 
  Returns the surface rule dropped are grouped in plan. A group is a panel when it has the measured
@@ -641,6 +641,13 @@ def rooftop_panels(points,surface_mask,rr,xmin,ymax,step,context=None,minimum_re
    cells=set(zip(np.floor(along[band]).astype(int).tolist(),np.floor(across[band]).astype(int).tolist()))
    facts.update(besideOccupancy=len(cells)/(2*7.0*max(length,1e-9)))
    if facts['besideOccupancy']>beside_occupancy:note(rejected='roof-beside-top',**facts);continue
+   # A sign face stands in air: beside it, at its own height, there is nothing. A tree crown overhanging the roof edge
+   # (this LiDAR does not class vegetation) or any other volume fills that band on one side or both; the crowns of a
+   # street's trees over a row of houses read as 10-30 m long, 1-2 m wide 'panels' and were drawn as black slabs.
+   level=inside&(np.abs(across)>1.0)&(np.abs(across)<=6.0)&(context[:,2]>=bottom+1.0)&(context[:,2]<=top-.5)
+   sides=[set(zip(np.floor(along[level&(across*sg>0)]).astype(int).tolist(),np.floor(across[level&(across*sg>0)]).astype(int).tolist())) for sg in (1,-1)]
+   facts.update(volumeBeside=max(len(c) for c in sides)/(5.0*max(length,1e-9)))
+   if facts['volumeBeside']>volume_beside:note(rejected='volume-beside',**facts);continue
    # Returns continuing up the same line above the face: a wall that goes on, not a sign that ends.
    higher=inside&(np.abs(across)<=1.5)&(context[:,2]>top+1.5);facts.update(abovePerM=higher.sum()/length)
    if facts['abovePerM']>above_density:note(rejected='wall-continues-above',**facts);continue

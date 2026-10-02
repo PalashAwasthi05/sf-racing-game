@@ -1,0 +1,63 @@
+{
+ "version": "0.7",
+ "region": {
+  "addressWayId": "16751838",
+  "label": "Lafayette Park",
+  "studyRadiusM": 450,
+  "contextRadiusM": 515
+ },
+ "defaults": {
+  "laneWidthM": 3.15,
+  "sidewalkWidthM": 3.0,
+  "curbHeightM": 0.16,
+  "windowRecessM": 0.18,
+  "maxFacadeSampleAgeMonths": 24,
+  "roofRegularizationM": 2.5
+ },
+ "quality": {
+  "facadeCoverageTarget": 0.95,
+  "minimumIndependentViews": 2,
+  "openingPositionToleranceM": 0.15,
+  "curbPositionToleranceM": 0.15,
+  "signPositionToleranceM": 0.3,
+  "unobservedDetailStatus": "inferred",
+  "priority": "driver-view visible error"
+ },
+ "asOfDate": "2026-10-01",
+ "areaSources": [
+  {
+   "name": "USGS LiDAR",
+   "date": "April 2023",
+   "detail": "Ground elevations and fitted roof tiers. Absolute accuracy has not been independently tested.",
+   "url": "https://www.fisheries.noaa.gov/inport/item/73386/full-list"
+  },
+  {
+   "name": "DataSF building footprints",
+   "date": "2010-derived geometry",
+   "detail": "Building outlines reconciled against current OpenStreetMap identities and newer LiDAR heights.",
+   "url": "https://data.sfgov.org/d/ynuv-fyni"
+  },
+  {
+   "name": "OpenStreetMap",
+   "date": "Retrieved Oct 2026",
+   "detail": "Address identity, newer buildings, road topology, lane counts, crossings and transit tracks. Capture age varies.",
+   "url": "https://www.openstreetmap.org/copyright"
+  },
+  {
+   "name": "DataSF street trees",
+   "date": "Inventory; dates vary",
+   "detail": "Mapped tree positions and species. Canopies and branches are procedural.",
+   "url": "https://data.sfgov.org/d/tkzw-k3nq"
+  }
+ ],
+ "outputPrefix": "king-street",
+ "lidarRole": {
+  "_note": "LiDAR sets each building's envelope (height, ground, separation of buildings under one outline); photographs and readings take priority for detail. Fine roof detail from LiDAR is admitted only when large and unambiguous.",
+  "tierMinAreaM2": 150,
+  "tierMinShare": 0.15,
+  "tierMaxCount": 3,
+  "slopedPatchMinSlope": 0.09,
+  "slopedPatchMinAreaM2": 150,
+  "slopedPatchMinRiseM": 1.5
+ }
+}

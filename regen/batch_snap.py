@@ -1,9 +1,9 @@
 """Stage 3/5: snap every reading of a stage onto its photograph and draw the overlays the next stage looks at.
 Invalid or empty readings are listed, not guessed at."""
-import argparse, json, pathlib, sys
+import argparse, json, pathlib, sys, os
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import specs, snap
-ap = argparse.ArgumentParser(); ap.add_argument('--root', default='regen/v1'); ap.add_argument('--src', default='readings'); ap.add_argument('--dst', default='snapped'); a = ap.parse_args()
+ap = argparse.ArgumentParser(); ap.add_argument('--root', default=os.environ.get('REGEN_ROOT', 'regen/v1')); ap.add_argument('--src', default='readings'); ap.add_argument('--dst', default='snapped'); a = ap.parse_args()
 root = pathlib.Path(a.root); byid = {p['id']: p for p in json.load(open(root / 'sides/sides.json'))['pieces']}
 (root / a.dst).mkdir(exist_ok=True); (root / 'overlays' / a.dst).mkdir(parents=True, exist_ok=True)
 stats = {'snapped': 0, 'notThisBuilding': [], 'invalid': [], 'improved': 0, 'elements': 0}

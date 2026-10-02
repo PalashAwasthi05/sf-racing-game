@@ -20,14 +20,22 @@ from general_world.roof_planes import roof_solid,evaluate as roof_evaluate
 from trimesh.visual.texture import TextureVisuals
 
 import argparse
-_args=argparse.ArgumentParser(description='Detailed pilot generator; writes a candidate (raw GLB, chunks, world.json, evidence) into --output instead of the live preview.');_args.add_argument('--output',required=True);_args.add_argument('--regen-profiles',default=None);_args.add_argument('--streets-only',action='store_true',help='Emit street layers only for validated layer replacement; never publish this partial scene directly.');_args=_args.parse_args()
-ROOT=pathlib.Path(__file__).parent;DATA=ROOT/'data';OUTDIR=pathlib.Path(_args.output);PUBLIC=OUTDIR/'public';PUBLIC.mkdir(parents=True,exist_ok=True)
+_args=argparse.ArgumentParser(description='Detailed pilot generator; writes a candidate (raw GLB, chunks, world.json, evidence) into --output instead of the live preview.');_args.add_argument('--output',required=True);_args.add_argument('--regen-profiles',default=None);_args.add_argument('--area',default=None);_args.add_argument('--streets-only',action='store_true',help='Emit street layers only for validated layer replacement; never publish this partial scene directly.');_args=_args.parse_args()
+ROOT=pathlib.Path(__file__).parent;DATA=ROOT/'data'
+# --area DIR: another model area (areas/<name>: its own config.json and data/). Every hand-made input of the pilot is
+# keyed to the pilot's buildings, so an area is built as a regeneration: its facade readings (--regen-profiles), or none.
+import sys as _sys
+AREA=pathlib.Path(_sys.argv[_sys.argv.index('--area')+1]) if '--area' in _sys.argv else None
+if AREA is not None:DATA=AREA/'data'
+OUTDIR=pathlib.Path(_args.output);PUBLIC=OUTDIR/'public';PUBLIC.mkdir(parents=True,exist_ok=True)
 # --regen-profiles FILE: the facade readings of a regeneration are the only facade inputs; hand-annotated profiles,
 # observation packets, supplements, boundary fits, lettering, envelope descriptions and envelope colours are all left out
 import sys as _sys
 REGEN=None
 if '--regen-profiles' in _sys.argv:
  REGEN=json.load(open(_sys.argv[_sys.argv.index('--regen-profiles')+1]))
+elif AREA is not None:
+ REGEN={'profiles':[]}
 OUT=OUTDIR;OUT.mkdir(parents=True,exist_ok=True)
 PROFILES=json.load(open(ROOT/'pipeline/facade-profiles.json'))['profiles'];FITS=json.load(open(ROOT/'pipeline/facade-layouts.json'))['fits']
 if REGEN is not None:PROFILES=list(REGEN['profiles']);FITS=[]
@@ -73,7 +81,7 @@ if REGEN is not None:ENVELOPES=[]
 # Photographed colours of envelope-designed frontages (read_envelope_colours_v32.py), by envelope profile id.
 ENVELOPE_COLOURS=json.load(open(ROOT/'pipeline/envelope-colours-v32.json'))['envelopes'] if (ROOT/'pipeline/envelope-colours-v32.json').exists() else {}
 if REGEN is not None:ENVELOPE_COLOURS={}
-CONFIG=json.load(open(ROOT/'pipeline/config.json'));OBS=json.load(open(ROOT/'pipeline/observations.json'));facade_records=[];sign_records=[]
+CONFIG=json.load(open((AREA or ROOT/'pipeline')/'config.json'));OBS=json.load(open(ROOT/'pipeline/observations.json'));facade_records=[];sign_records=[]
 if REGEN is not None:
  OBS={**OBS,'facades':[]};facades._PARAPETS=[];facades._INCUMBENTS={}
 ll=Transformer.from_crs(4326,32610,always_xy=True);inv=Transformer.from_crs(32610,4326,always_xy=True)
@@ -109,9 +117,9 @@ for id,t,p in raw_ways:
  if g.intersects(boundary):ways.append({'id':id,'tags':t,'g':g,'metadata':way_metadata[id]})
 
 pts=np.load(DATA/'points.npz')['points'];px,py=web.transform(pts[:,0],pts[:,1]);pts[:,0]=px-cx;pts[:,1]=py-cy
-ground=pts[pts[:,3]==2];ground=ground[(ground[:,2]>-5)&(ground[:,2]<20)]
+ground=pts[pts[:,3]==2];_zlo,_zhi=np.quantile(ground[:,2],[.005,.995]) if AREA is not None else (5.,10.);ground=ground[(ground[:,2]>_zlo-10)&(ground[:,2]<_zhi+10)]   # the area's own ground band (a hill stands 100 m up; a fixed -5..20 m band held only the waterfront)
 base=float(np.median(ground[np.linalg.norm(ground[:,:2],axis=1)<40,2]));pts[:,2]-=base;ground[:,2]-=base
-tree=cKDTree(ground[:,:2]);N=179;STEP=3.;MIN=-267.
+tree=cKDTree(ground[:,:2]);STEP=3.;MIN=-math.ceil((CONFIG['region']['contextRadiusM']+2)/STEP)*STEP;N=int(round(-2*MIN/STEP))+1   # the terrain grid spans the context radius
 gx,gy=np.meshgrid(np.arange(N)*STEP+MIN,np.arange(N)*STEP+MIN)
 dist,idx=tree.query(np.c_[gx.ravel(),gy.ravel()],k=8)
 grid=np.median(ground[idx,2],axis=1).reshape(N,N);grid=gaussian_filter(grid,.8)
@@ -125,7 +133,7 @@ palette={'asphalt':'#41484b','sidewalk':'#b4b5ac','brick':'#97604b','brick2':'#b
 def rgba(c):
  c=palette.get(c,c).lstrip('#');return [int(c[i:i+2],16) for i in (0,2,4)]+[255]
 material_bank=Materials(ROOT/'material-assets',palette)
-batches=collections.defaultdict(lambda:[[],[],[],[]])
+batches=collections.defaultdict(lambda:[[],[],[],[]]);_batch_vertices=collections.Counter()
 CLIP=None
 def set_clip(halfspaces):
  """While a gable end or a part's stretch of a shared frontage is compiled, everything emitted is cut to the given
@@ -171,7 +179,9 @@ def put(mesh,key,color,uv=None):
   mesh=_clip(mesh)
   if mesh is None or len(mesh.vertices)==0:return
  material,scale=material_bank.get(color);batchkey=key+'___'+material.name
- vertices,faces,uvs,normals=batches[batchkey];off=sum(len(v) for v in vertices)
+ # a running vertex count per batch: summing the batch's pieces on every call was quadratic in its size (a tree adds
+ # 280 pieces to one batch: hours for a few thousand trees)
+ vertices,faces,uvs,normals=batches[batchkey];off=_batch_vertices[batchkey]
  # Split face corners to preserve hard normals and per-face, metric texture coordinates.
  inds=mesh.faces.ravel();v=np.asarray(mesh.vertices)[inds];norm=np.repeat(mesh.face_normals,3,axis=0)
  if uv is None:
@@ -180,7 +190,7 @@ def put(mesh,key,color,uv=None):
   mask=~horizontal;tangent=np.c_[-norm[mask,1],norm[mask,0]];tangent/=np.maximum(np.linalg.norm(tangent,axis=1,keepdims=True),1e-8)
   coord[mask,0]=np.sum(v[mask,:2]*tangent,axis=1)/scale[0];coord[mask,1]=v[mask,2]/scale[1]
  else:coord=np.asarray(uv)[inds]
- vertices.append(v);faces.append(np.arange(len(v)).reshape(-1,3)+off);uvs.append(coord);normals.append(norm)
+ vertices.append(v);faces.append(np.arange(len(v)).reshape(-1,3)+off);uvs.append(coord);normals.append(norm);_batch_vertices[batchkey]+=len(v)
 def cube(center,size,key,color,angle=0):
  sx,sy,sz=size
  if min(sx,sy,sz)<=0:return
@@ -221,7 +231,7 @@ vv=np.c_[gx.ravel(),gy.ravel(),grid.ravel()];ff=[]
 for y in range(N-1):
  for x in range(N-1):
   i=y*N+x
-  if math.hypot(gx[y,x],gy[y,x])<265:ff.extend([[i,i+1,i+N],[i+1,i+N+1,i+N]])
+  if math.hypot(gx[y,x],gy[y,x])<CONFIG['region']['contextRadiusM']:ff.extend([[i,i+1,i+N],[i+1,i+N+1,i+N]])
 put(trimesh.Trimesh(vv,ff,process=False),'terrain','sidewalk')
 waterways=[w['g'] for w in ways if w['tags'].get('natural')=='water' and w['g'].geom_type in ['Polygon','MultiPolygon']]
 for p in waterways:extrude(p.intersection(boundary),-base,.04,'water','water')
@@ -261,9 +271,19 @@ for c in candidates:
  if _lm and _lm.get('extendBeyondBoundary'):c['extendedBeyondBoundary']=c['clipped'];c['clipped']=False
  else:c['g']=c['g'].intersection(boundary)
 all_buildings=unary_union([c['g'] for c in candidates]);ground_kd=cKDTree(ground[:,:2])
+# The points sorted into 8 m cells once: an outline's points are gathered from the cells under its bounds (the same
+# points, in their original order), not from a pass over every point (20 million in a larger area, read per outline).
+_GC=8.;_gx0,_gy0=float(pts[:,0].min()),float(pts[:,1].min());_gnx=int((pts[:,0].max()-_gx0)//_GC)+1;_gny=int((pts[:,1].max()-_gy0)//_GC)+1
+_gkey=((pts[:,1]-_gy0)//_GC).astype(np.int64)*_gnx+((pts[:,0]-_gx0)//_GC).astype(np.int64)
+_gorder=np.argsort(_gkey,kind='stable');_gstart=np.searchsorted(_gkey[_gorder],np.arange(_gnx*_gny+1))
+def get_box(a,b,c,d):
+ """The non-noise points with a<=x<=c and b<=y<=d, in their original order."""
+ i0,i1=max(0,int((a-_gx0)//_GC)),min(_gnx-1,int((c-_gx0)//_GC));j0,j1=max(0,int((b-_gy0)//_GC)),min(_gny-1,int((d-_gy0)//_GC))
+ if i1<i0 or j1<j0:return pts[:0]
+ idx=np.sort(np.concatenate([_gorder[_gstart[j*_gnx+i0]:_gstart[j*_gnx+i1+1]] for j in range(j0,j1+1)]))
+ q=pts[idx];return q[(q[:,0]>=a)&(q[:,0]<=c)&(q[:,1]>=b)&(q[:,1]<=d)&(q[:,3]!=7)&(q[:,3]!=18)]
 def get_points(g):
- a,b,c,d=g.bounds;m=(pts[:,0]>=a)&(pts[:,0]<=c)&(pts[:,1]>=b)&(pts[:,1]<=d)&(pts[:,3]!=7)&(pts[:,3]!=18)
- a=pts[m];return a[contains_xy(g,a[:,0],a[:,1])]
+ q=get_box(*g.bounds);return q[contains_xy(g,q[:,0],q[:,1])]
 # The measured surface top on a 1 m grid (highest non-noise return per cell), for height-aware wall visibility.
 _st_x0,_st_y0=float(pts[:,0].min()),float(pts[:,1].min());_st_W=int(pts[:,0].max()-_st_x0)+2;_st_H=int(pts[:,1].max()-_st_y0)+2
 _st=np.full((_st_H,_st_W),-1e9,np.float32);_sm=(pts[:,3]!=7)&(pts[:,3]!=18)
@@ -291,8 +311,10 @@ building_index=STRtree([c['g'] for c in candidates]);building_sources=[c.get('so
 street_corridor=unary_union([w['g'].buffer(5.) for w in ways if w['g'].geom_type=='LineString' and w['tags'].get('highway') in ('primary','secondary','tertiary','unclassified','residential','living_street','pedestrian')]
                             +[w['g'].buffer(4.) for w in ways if w['g'].geom_type=='LineString' and w['tags'].get('highway')=='service' and w['tags'].get('service') not in ('parking_aisle','driveway')]
                             +[w['g'] for w in ways if w['g'].geom_type in ('Polygon','MultiPolygon') and w['tags'].get('highway')=='pedestrian'])
+import os as _os;_GEN_TRACE=bool(_os.environ.get('GEN_TRACE'))
 for c in ([] if _args.streets_only else candidates):
  id,g=c['id'],c['g'];og=c['old'];tags=c['osm']['tags'] if c['osm'] else {};name=tags.get('name') or (tags.get('addr:housenumber','').replace(';',' / ')+' '+tags.get('addr:street','')).strip() or 'Building '+og.get('sf16_bldgid',id)
+ if _GEN_TRACE:print('START',id,name,flush=True)   # GEN_TRACE=1: name each building as it starts (a slow one shows itself)
  stadium=c['full_area']>18000
  sample=get_points(g.buffer(-.65));z0=float(elev(g.centroid.x,g.centroid.y));roof=sample[sample[:,2]>z0+3]
  roof_step=2.0 if stadium else 1.5
@@ -304,7 +326,7 @@ for c in ([] if _args.streets_only else candidates):
  if len(roof)>50:
   rr,surface_returns=spatial_rules.surface_raster(roof,wxmin,wymax,roof_step,wnx,wny)
   # Thin tall linear structures above the roof surface (signs, screens) are panels, not roof volume.
-  around=pts[(pts[:,0]>=wxmin-10)&(pts[:,0]<=wxmax+10)&(pts[:,1]>=wymin-10)&(pts[:,1]<=wymax+10)&(pts[:,3]!=7)&(pts[:,3]!=18)][:,:3]
+  around=get_box(wxmin-10,wymin-10,wxmax+10,wymax+10)[:,:3]
   panel_audit=[];panels=spatial_rules.rooftop_panels(roof,surface_returns,rr,wxmin,wymax,roof_step,context=around,audit=panel_audit)
   if panel_audit:panel_audits.append({'buildingId':id,'clusters':panel_audit})
   if (~surface_returns).sum()>=40:structure_returns[id]=roof[~surface_returns];structure_context[id]=around;structure_raster[id]=(rr,wxmin,wymax,roof_step)
@@ -520,12 +542,25 @@ for w in rails:
 
 # Shared species templates replace low-detail canopy primitives.
 vegetation.compile(globals())
+# Trees the LiDAR measures in the mapped open ground (parks, gardens, lawns), which no street-tree inventory lists.
+from pipeline import canopy
+canopy_records=canopy.compile(globals())
 street_space.furniture(globals())
 
 # Barriers are generated only from mapped barrier or explicit handrail evidence.
 for w in ways:
  t=w['tags'];g=w['g']
  if t.get('leisure')=='pitch' and g.geom_type in ['Polygon','MultiPolygon'] and not any(s.intersects(g) for s in landmark_sites):surface(g.intersection(boundary),'landscape','grass',.2)
+# Open ground (parks, gardens, lawns, woods) is turf: the terrain under it was bare surface, so a park read as a grey slab.
+# Its paths, pitches, streets and buildings keep their own surfaces.
+_open=canopy.open_ground(ways,boundary)
+if _open is not None and not _open.is_empty:
+ _pitches=unary_union([w['g'] for w in ways if w['tags'].get('leisure')=='pitch' and w['g'].geom_type in ['Polygon','MultiPolygon']])
+ _turf=_open.difference(all_buildings.buffer(.05))
+ for _k in ('road','sidewalk','cycle','paths'):_turf=_turf.difference(street_plan[_k])
+ _turf=_turf.difference(_pitches)
+ for _site in landmark_sites:_turf=_turf.difference(_site)
+ surface(_turf,'landscape','grass',.12);counts['openGroundTurfM2']=round(_turf.area,1)
 
 # Street compiler uses source topology and ROW; every snap remains an uncertain record.
 make_sign=signs.install(globals());sign_records,sidewalk_geometry=streets.compile(globals())
@@ -582,7 +617,7 @@ counts['generationSeconds']=round(time.perf_counter()-START,2)
 counts['facadeLetteringPlacements']=len(lettering_records);counts['directBoundaryOpenings']=sum(len(f['openings']) for f in BOUNDARY_FITS)
 source_ledger={**OBS['sources'],**{a['id']:a for a in ENVELOPE_DATA['sources']},**{k:v for _extra in EXTRA_OBSERVATIONS for k,v in _extra.get('sources',{}).items()}}
 freshness_records=freshness.ledger(ENVELOPES,source_ledger,CONFIG['asOfDate'],CONFIG['defaults']['maxFacadeSampleAgeMonths'])
-world={'pipelineVersion':CONFIG['version'],'streetViews':street_views,'facadeCoverage':{'walls':len(facade_records),'visuallyFittedWalls':counts['imageFittedWalls'],'numericalFits':len(FITS),'datedImageFrontages':sum(r['hasDatedStreetEvidence'] for r in freshness_records),'freshCaptureNeededFrontages':sum(r['needsFreshCapture'] for r in freshness_records),'independentlyVerifiedWalls':0,'accuracyGate':'NOT PASSED'},'studyRadiusM':200,'contextRadiusM':265,'center':{'lat':lat,'lon':lon},'coordinateSystem':'Local UTM zone 10N meters; GLB X east, Y up, Z south','verticalOrigin':base,'buildings':features,'counts':dict(counts),'ground':np.round(grid,3).ravel().tolist(),'grid':{'min':MIN,'step':STEP,'n':N},'sources':CONFIG['areaSources']}
+world={'pipelineVersion':CONFIG['version'],'streetViews':street_views,'facadeCoverage':{'walls':len(facade_records),'visuallyFittedWalls':counts['imageFittedWalls'],'numericalFits':len(FITS),'datedImageFrontages':sum(r['hasDatedStreetEvidence'] for r in freshness_records),'freshCaptureNeededFrontages':sum(r['needsFreshCapture'] for r in freshness_records),'independentlyVerifiedWalls':0,'accuracyGate':'NOT PASSED'},'label':CONFIG['region'].get('label'),'studyRadiusM':CONFIG['region']['studyRadiusM'],'contextRadiusM':CONFIG['region']['contextRadiusM'],'center':{'lat':lat,'lon':lon},'coordinateSystem':'Local UTM zone 10N meters; GLB X east, Y up, Z south','verticalOrigin':base,'buildings':features,'counts':dict(counts),'ground':np.round(grid,3).ravel().tolist(),'grid':{'min':MIN,'step':STEP,'n':N},'sources':CONFIG['areaSources']}
 audit={'freshness':freshness_records,'spatialCorrections':spatial_audit,'foundations':foundation_records,'mobility':mobility_records,'removedDuplicateTriangles':duplicate_triangles,'rules':surface_evidence.AUDIT,'signAttachments':[r['attachmentCheck'] for r in lettering_records],'unverifiedFacadeSections':sum(r['status']=='inferred' for r in facade_records),'independentAccuracyGate':'NOT PASSED'}
 (OUT/(CONFIG['outputPrefix']+'-rule-audit.json')).write_text(json.dumps(audit,indent=2));(OUT/'rooftop-panel-audit.json').write_text(json.dumps(panel_audits,indent=1))
 (OUT/'roof-envelope-audit.json').write_text(json.dumps(roof_envelope_records,indent=2))

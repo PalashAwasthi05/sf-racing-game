@@ -32,6 +32,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 import pathlib
 import sys
 import time
@@ -54,6 +55,14 @@ IMAGE_DIR = WORK / 'imagery-street-v12/images'
 OSM_PATH = WORK / 'data/osm.xml'
 BUILDINGS_PATH = WORK / 'data/buildings.json'
 TREES_PATH = WORK / 'data/trees.json'
+DATA_DIR = WORK / 'data'
+# SFW_AREA=<area dir>: another model area: its world (the build's world.json and evidence, copied into the area), its
+# panoramas (<area>/imagery) and its map inputs (<area>/data). Unset, the pilot's paths above.
+if os.environ.get('SFW_AREA'):
+    _A = pathlib.Path(os.environ['SFW_AREA']).resolve(); DATA_DIR = _A / 'data'
+    WORLD_PATH, EVIDENCE_PATH = _A / 'world.json', _A / 'evidence.json'
+    SOURCE_INDEX_PATH, IMAGE_DIR = _A / 'imagery/source-index-registered.json', _A / 'imagery/images'
+    OSM_PATH, BUILDINGS_PATH, TREES_PATH = DATA_DIR / 'osm.xml', DATA_DIR / 'buildings.json', DATA_DIR / 'trees.json'
 OUT_DIR = WORK / 'facade-priority-v15/crops'
 PROBE_DIR = WORK / 'facade-priority-v15/orientation-probe'
 

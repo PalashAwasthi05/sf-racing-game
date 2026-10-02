@@ -110,13 +110,28 @@ def place(plan, point, radius, boundary, *, kind, source_id, max_shift=0., requi
     Objects requiring a sidewalk must fit inside that surface.
     """
     p = Point(point)
-    forbidden = plan['forbidden'].buffer(radius + .10)
-    allowed = boundary.buffer(-radius).difference(forbidden)
-    if require_walk:
-        allowed = allowed.intersection(plan['sidewalk'].buffer(-radius))
     occupied = plan['occupied']
-    if occupied:
-        allowed = allowed.difference(unary_union([q.buffer(r+radius+.15) for q,r in occupied]))
+    # Everything is worked out inside a disc round the mapped point, wide enough for any admissible shift: the nearest
+    # allowed point inside a disc round p is the nearest overall whenever the disc holds any allowed space, so the
+    # outcome is the whole-area one. Buffering the whole area's roads and buildings for every object took hours for a
+    # few thousand trees. A disc with no allowed space is widened (50 m, then the whole area) so a rejection's
+    # required shift is the whole-area one too.
+    def allowed_within(reach):
+        win = None if reach is None else p.buffer(reach)
+        def near(g, margin):
+            return g if win is None else g.intersection(win.buffer(margin + .05))
+        forbidden_near = near(plan['forbidden'], radius + .10)
+        allowed = boundary.buffer(-radius).difference(forbidden_near.buffer(radius + .10))
+        if win is not None: allowed = allowed.intersection(win)
+        if require_walk:
+            allowed = allowed.intersection(near(plan['sidewalk'], radius).buffer(-radius))
+        if occupied:
+            close = [(q, r) for q, r in occupied if win is None or q.distance(p) <= reach + r + radius + .15]
+            if close: allowed = allowed.difference(unary_union([q.buffer(r+radius+.15) for q,r in close]))
+        return allowed, forbidden_near
+    for reach in (max_shift + radius + 1., 50., None):
+        allowed, forbidden_near = allowed_within(reach)
+        if not allowed.is_empty: break
     record = dict(kind=kind, sourceId=str(source_id), sourcePosition=[p.x,p.y], radiusM=radius)
     if allowed.is_empty:
         record.update(status='rejected', reason='no-supported-clear-space')
@@ -128,7 +143,7 @@ def place(plan, point, radius, boundary, *, kind, source_id, max_shift=0., requi
         plan['records'].append(record); return None
     # Avoid nearest-point rounding putting the disc back across an edge.
     footprint=q.buffer(radius)
-    if footprint.intersection(plan['forbidden']).area > 1e-5:
+    if footprint.intersection(forbidden_near).area > 1e-5:   # the disc holds q and its footprint
         record.update(status='rejected', reason='footprint-intersection')
         plan['records'].append(record); return None
     occupied.append((q,radius))

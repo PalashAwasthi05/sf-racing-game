@@ -3,7 +3,7 @@
 Each view's rectified photograph is warped into wall metres through that view's LiDAR alignment (aligncorr.choose), the
 build is drawn square-on in the same frame (judge_facades_v27.render_wall), and the judge's structure comparison scores
 the pair. The view a reading was taken from scores the generator and the reading; the other view is a hold-out."""
-import argparse, json, pathlib, sys
+import argparse, json, pathlib, sys, os
 import numpy as np
 from PIL import Image
 from scipy.ndimage import map_coordinates
@@ -24,7 +24,7 @@ def photo_in_wall_frame(piece, v, corr, img_dir):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser(); ap.add_argument('--build', required=True); ap.add_argument('--readings', default='final'); ap.add_argument('--out', required=True); a = ap.parse_args()
-    root = pathlib.Path('regen/v1'); byid = {p['id']: p for p in json.load(open(root / 'sides/sides.json'))['pieces']}
+    root = pathlib.Path(os.environ.get('REGEN_ROOT', 'regen/v1')); byid = {p['id']: p for p in json.load(open(root / 'sides/sides.json'))['pieces']}
     al = json.load(open(root / 'alignment.json')) if (root / 'alignment.json').exists() else {}
     B = J.load_build(a.build); res = {}
     for f in sorted((root / a.readings).glob('*.json')):

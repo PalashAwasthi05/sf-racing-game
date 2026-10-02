@@ -1,12 +1,12 @@
 """Each side's photograph next to the build drawn square-on in the same frame (judge_facades_v27.render_wall), so a
 reading can be checked against what the generator made of it. One build in memory."""
-import argparse, json, pathlib, sys
+import argparse, json, pathlib, sys, os
 import numpy as np
 from PIL import Image, ImageDraw
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import judge_facades_v27 as J, auto_read_frontages_v24 as ar
 ap = argparse.ArgumentParser(); ap.add_argument('--build', required=True); ap.add_argument('--ids', nargs='+'); ap.add_argument('--out', required=True); a = ap.parse_args()
-root = pathlib.Path('regen/v1'); byid = {p['id']: p for p in json.load(open(root / 'sides/sides.json'))['pieces']}
+root = pathlib.Path(os.environ.get('REGEN_ROOT', 'regen/v1')); byid = {p['id']: p for p in json.load(open(root / 'sides/sides.json'))['pieces']}
 B = J.load_build(a.build); out = pathlib.Path(a.out); out.mkdir(parents=True, exist_ok=True)
 for i in a.ids:
     p = byid[i]; v = p['views'][0]

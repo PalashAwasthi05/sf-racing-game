@@ -5,7 +5,7 @@ skyline over the wall (topmost non-sky pixel per column, from SegFormer; columns
 compared with the skyline the LiDAR predicts from the same nominal camera (building returns only: points inside the
 footprints, as a 0.5 m height grid). A shift along the wall, a shift up, and a scale about the camera fit the two; the
 fit is kept only when it clearly beats no correction and the skyline has enough shape to fix the shift. Geometry only."""
-import argparse, json, pathlib, sys, time
+import argparse, json, pathlib, sys, time, os
 import numpy as np
 from pyproj import Transformer
 from shapely import contains_xy
@@ -17,7 +17,7 @@ from panorama_balance import road_gain
 PPM, EXT_U, EXT_Z, CELL = 12., 6., 12., .5
 
 def dsm(frame):
-    pts = np.load(fc.WORK / 'data/points.npz')['points']
+    pts = np.load(fc.DATA_DIR / 'points.npz')['points']
     web = Transformer.from_crs(3857, 32610, always_xy=True); x, y = web.transform(pts[:, 0], pts[:, 1]); x = x - frame.cx; y = y - frame.cy; z = pts[:, 2]; c = pts[:, 3]
     g = (c == 2) & (z > -5) & (z < 20); base = float(np.median(z[g & (np.hypot(x, y) < 40)])); z = z - base
     fp = unary_union(list(fc.load_footprints(frame).values())).buffer(.3)
@@ -68,7 +68,7 @@ def fit(u, zi, zp, uc, eye):
             'columns': int(n0), 'shape': round(float(np.nanstd(zp)), 2)}
 
 if __name__ == '__main__':
-    ap = argparse.ArgumentParser(); ap.add_argument('--root', default='regen/v1'); ap.add_argument('--min-area', type=float, default=30.); ap.add_argument('--ids', nargs='*'); ap.add_argument('--out', default='alignment.json'); a = ap.parse_args()
+    ap = argparse.ArgumentParser(); ap.add_argument('--root', default=os.environ.get('REGEN_ROOT', 'regen/v1')); ap.add_argument('--min-area', type=float, default=30.); ap.add_argument('--ids', nargs='*'); ap.add_argument('--out', default='alignment.json'); a = ap.parse_args()
     root = pathlib.Path(a.root); P = [p for p in json.load(open(root / 'sides/sides.json'))['pieces'] if p['views'] and p['lengthM'] * p['heightM'] >= a.min_area and (not a.ids or p['id'] in a.ids)]
     world, frame = fc.load_world(); cams = fc.load_cameras(frame); t0 = time.time()
     G, x0, y0 = dsm(frame); print('dsm', G.shape, round(time.time() - t0), 's', flush=True)

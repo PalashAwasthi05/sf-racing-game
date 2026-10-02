@@ -1,7 +1,7 @@
 """Preview what the generator will draw for one side from a reading, next to the side's aligned photographs, with the
 judge's scores. For a corrector's edit-and-check loop: seconds per call, no world build.
 Usage: preview_side.py <side id> <reading.json> <out.jpg>   (prints the scores as JSON)"""
-import json, pathlib, sys
+import json, pathlib, sys, os
 import numpy as np
 from PIL import Image, ImageDraw
 HERE = pathlib.Path(__file__).resolve().parent; sys.path.insert(0, str(HERE)); sys.path.insert(0, str(HERE.parent))
@@ -32,7 +32,7 @@ def draw(prof, L, H):
     return np.asarray(im), np.asarray(op) > 0
 
 def main(i, reading, out):
-    root = HERE / 'v1'; p = {x['id']: x for x in json.load(open(root / 'sides/sides.json'))['pieces']}[i]
+    root = pathlib.Path(os.environ['REGEN_ROOT']).resolve() if os.environ.get('REGEN_ROOT') else HERE / 'v1'; p = {x['id']: x for x in json.load(open(root / 'sides/sides.json'))['pieces']}[i]
     al = json.load(open(root / 'alignment.json')).get(i)
     r = specs.clean(json.load(open(reading)), p); r = colours.measure(r, p, root / 'sides/img'); r, _ = aligncorr.correct(r, p, al)
     prof = specs.to_profile(r, p); L, H = float(p['lengthM']), float(p['heightM'])

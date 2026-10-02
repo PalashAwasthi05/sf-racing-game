@@ -1,0 +1,38 @@
+{
+  "schema": "area-source-job/v1",
+  "center": {
+    "lat": 37.7914551,
+    "lon": -122.4278614
+  },
+  "studyRadiusM": 450,
+  "contextRadiusM": 515,
+  "snapshotDate": "2026-10-01",
+  "geographicCrs": "EPSG:4326",
+  "projectedCrs": "EPSG:32610",
+  "cloudCrs": "EPSG:3857",
+  "paths": {
+    "osm": "data/osm.xml",
+    "municipalFootprints": "data/buildings.json",
+    "cloud": "data/points.npz"
+  },
+  "mapping": {
+    "geometry": "shape",
+    "identifier": "sf16_bldgid",
+    "height": "hgt_median_m"
+  },
+  "classCodes": {
+    "ground": [
+      2
+    ],
+    "excluded": [
+      7,
+      18
+    ],
+    "vegetation": [
+      3,
+      4,
+      5
+    ]
+  },
+  "sourceAgesKnown": false
+}

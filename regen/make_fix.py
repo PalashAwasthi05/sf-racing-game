@@ -1,13 +1,13 @@
 """Worst-scoring sides -> fix jobs: each gets the model drawn beside its aligned photographs (wall frame), the reading's
 overlay and clean photograph (reading frame), and the judge's measures, for a corrector to act on."""
-import argparse, json, pathlib, sys
+import argparse, json, pathlib, sys, os
 import numpy as np
 from PIL import Image, ImageDraw
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent)); sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import judge_facades_v27 as J, aligncorr, score_sides as S
 ap = argparse.ArgumentParser(); ap.add_argument('--build', required=True); ap.add_argument('--scores', required=True); ap.add_argument('--share', type=float, default=.2)
 ap.add_argument('--per', type=int, default=4); a = ap.parse_args()
-root = pathlib.Path('regen/v1').resolve(); byid = {p['id']: p for p in json.load(open(root / 'sides/sides.json'))['pieces']}
+root = pathlib.Path(os.environ.get('REGEN_ROOT', 'regen/v1')).resolve(); byid = {p['id']: p for p in json.load(open(root / 'sides/sides.json'))['pieces']}
 sc = json.load(open(a.scores)); al = json.load(open(root / 'alignment.json'))
 def key(r): h = r.get('holdout', {}).get('score'); s = r.get('self', {}).get('score'); return h if h is not None else (s if s is not None else 9)
 ranked = sorted(sc, key=lambda i: key(sc[i])); worst = ranked[:int(round(len(ranked) * a.share))]

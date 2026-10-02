@@ -5,7 +5,7 @@ import collections, glob, json, os, shutil, subprocess, sys, pathlib
 sys.path.insert(0, os.path.dirname(__file__)); import specs
 
 base, loop, dst, report = sys.argv[1:5]; REJECT = set(sys.argv[5:])
-root = pathlib.Path(__file__).resolve().parent / 'v1'
+root = pathlib.Path(os.environ['REGEN_ROOT']).resolve() if os.environ.get('REGEN_ROOT') else pathlib.Path(__file__).resolve().parent / 'v1'
 byid = {p['id']: p for p in json.load(open(root / 'sides/sides.json'))['pieces']}
 tmp = '/tmp/claude-501/merge-pv.jpg'; os.makedirs('/tmp/claude-501', exist_ok=True)
 

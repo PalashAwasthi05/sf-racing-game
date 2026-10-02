@@ -79,8 +79,10 @@ def apply(scene_path, observations_path, output):
     for key,m in before.geometry.items():
         n=after.geometry[key];assert np.array_equal(m.vertices,n.vertices) and np.array_equal(m.faces,n.faces),key
         assert n.visual.uv is None or np.isfinite(n.visual.uv).all(),key
-    assert before.graph.to_flattened().keys()==after.graph.to_flattened().keys()
-    for key,entry in before.graph.to_flattened().items():assert np.array_equal(entry['transform'],after.graph.to_flattened()[key]['transform'])
+    # flatten each graph once: flattening the whole graph again for every node was quadratic (hours for 10,000 meshes)
+    fb,fa=before.graph.to_flattened(),after.graph.to_flattened()
+    assert fb.keys()==fa.keys()
+    for key,entry in fb.items():assert np.array_equal(entry['transform'],fa[key]['transform'])
     report={'revision':'0.13','counts':dict(counts),'newStructureAssets':len({p[1]['structureKey'] for p in cache.values() if not p[1]['structureKey'].startswith('scan_')}),'reusedScanStructures':len({p[1]['structureKey'] for p in cache.values() if p[1]['structureKey'].startswith('scan_')}),'colorVariants':len(cache),'meshesGeometryPreserved':len(before.geometry),'imageVerifiedAssignment':False,'inferenceStatus':'historical surface descriptors, not photo-derived classification','assetMethod':'measured existing scan reuse where compatible; deterministic metric PBR synthesis for missing structures','records':rows,'elapsedSeconds':round(time.monotonic()-start,2),'inputSha256':hashlib.sha256(Path(scene_path).read_bytes()).hexdigest(),'outputSha256':hashlib.sha256(path.read_bytes()).hexdigest(),'observationSha256':hashlib.sha256(Path(observations_path).read_bytes()).hexdigest(),'ruleSha256':hashlib.sha256(b''.join((Path(__file__).parent/'general_world'/f).read_bytes() for f in ['material_synthesis.py','material_periodicity.py','scanned_surface_variant.py','texture_selection.py'])).hexdigest()}
     (output/'report.json').write_text(json.dumps(report,indent=2));print(json.dumps({k:v for k,v in report.items() if k!='records'}))
 
