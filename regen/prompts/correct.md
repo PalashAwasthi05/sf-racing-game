@@ -14,6 +14,12 @@ sizes (split them), a row of ground-floor shopfronts mixed with upper windows, m
 the wrong height, the wrong material family or colour, missing arches, bays or cornices, parts of neighbouring
 buildings or trees read as this building.
 
+Houses and small apartment buildings need the same care as larger ones. Check in particular: bay windows that
+project from the wall (angled, curved or square; record each as a bay over the full height it projects, its windows in
+banks), wood siding or shingles (family timber, not render), the colour of the paint as the sunlit wall shows it (not
+the shaded side, not the window glass), a cornice or parapet line at the top, garage doors and the entry door with its
+stair at street level, and the storey heights as the photograph shows them.
+
 Read positions off the metre ticks (red: along, from 0 at the left; blue: height, 0 at the ground). Openings in a bank
 are evenly spaced cells: if real windows are not evenly spaced or differ in size, use more banks or single openings.
 

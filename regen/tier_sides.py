@@ -97,7 +97,7 @@ for bid, ws in by_b.items():
                     p = np.asarray(fc.load_pano(cam['path']), dtype=np.float32); pano_cache[c['image']] = np.clip(p * road_gain(p), 0, 255).astype(np.uint8)
                 pano = pano_cache[c['image']]
                 ppm = min(PPM_MAX, MAX_PX / max(piece['lengthM'], 1e-3), MAX_PX / max(piece['heightM'], 1e-3)); ar.PPM = ppm
-                img, H, Lp = rectify(piece, cam, z0, pano, base=s['zb'])
+                gz = fc.ground_at(cam['xy']); img, H, Lp = rectify(piece, {**cam, 'groundZ': gz}, z0, pano, base=s['zb'])
                 im = Image.fromarray((np.clip(img, 0, 1) * 255).astype(np.uint8)); W, Hh = im.size
                 pad = 26; can = Image.new('RGB', (W + 2 * pad, Hh + 2 * pad), (255, 255, 255)); can.paste(im, (pad, pad)); d = ImageDraw.Draw(can)
                 for mtr in range(int(Lp) + 1):
@@ -115,7 +115,7 @@ for bid, ws in by_b.items():
                 pname = f"{rec['id']}__v{vi}_persp.jpg"; Image.fromarray(pimg).save(out / 'img' / pname, quality=82)
                 rec['views'].append({'image': c['image'], 'captureDate': cam['captureDate'], 'distanceM': c['distanceM'], 'incidence': c['incidence'],
                                      'visibleFraction': c['seenShare'], 'treesNearSightLine': c['treesNearSightLine'], 'ppm': round(ppm, 2),
-                                     'rect': rname, 'persp': pname, 'rectPad': pad})
+                                     'rect': rname, 'persp': pname, 'rectPad': pad, 'cameraGroundZ': None if gz is None else round(gz, 2)})
             records.append(rec)
 summ = {'buildings': len(by_b), 'pieces': len(records), 'seen': sum(bool(r['views']) for r in records),
         'seenStreetFacing': sum(bool(r['views']) and r['streetFacing'] for r in records), 'seconds': round(time.time() - t0)}

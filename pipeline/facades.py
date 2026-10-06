@@ -39,8 +39,11 @@ def frame_cover(g,p):
  """Metres of a photographed reading's frame (frameU along its wall, within 1.5 m of its plane planeV when it has one)
  that lie along outline g's walls facing the reading's way."""
  from shapely.geometry.polygon import orient
+ # A split part's outline can be a collection that holds line slivers (where the cut touched an edge): only its
+ # polygons have walls.
+ def polys(g):return [g] if g.geom_type=='Polygon' else [q for a in getattr(g,'geoms',[]) for q in polys(a)]
  pn=np.asarray(p['normal'],float)[:2];pn=pn/np.linalg.norm(pn);pu=np.array([-pn[1],pn[0]]);f0,f1=sorted(map(float,p['frameU']));spans=[]
- for poly in ([g] if g.geom_type=='Polygon' else list(getattr(g,'geoms',[]))):
+ for poly in polys(g):
   xy=np.asarray(orient(poly,1).exterior.coords)
   for a,b in zip(xy,xy[1:]):
    v=b-a;L=float(np.linalg.norm(v))

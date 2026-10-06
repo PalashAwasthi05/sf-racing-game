@@ -19,7 +19,9 @@ PPM, EXT_U, EXT_Z, CELL = 12., 6., 12., .5
 def dsm(frame):
     pts = np.load(fc.DATA_DIR / 'points.npz')['points']
     web = Transformer.from_crs(3857, 32610, always_xy=True); x, y = web.transform(pts[:, 0], pts[:, 1]); x = x - frame.cx; y = y - frame.cy; z = pts[:, 2]; c = pts[:, 3]
-    g = (c == 2) & (z > -5) & (z < 20); base = float(np.median(z[g & (np.hypot(x, y) < 40)])); z = z - base
+    # the datum is the area's own ground near its centre (a fixed -5..20 m band held only the waterfront: on a hill no
+    # ground point passed it, the datum was NaN and every fit failed)
+    g = c == 2; base = float(np.median(z[g & (np.hypot(x, y) < 40)])); z = z - base
     fp = unary_union(list(fc.load_footprints(frame).values())).buffer(.3)
     keep = (c == 1); keep[keep] = contains_xy(fp, x[keep], y[keep])
     x, y, z = x[keep], y[keep], z[keep]
@@ -68,12 +70,17 @@ def fit(u, zi, zp, uc, eye):
             'columns': int(n0), 'shape': round(float(np.nanstd(zp)), 2)}
 
 if __name__ == '__main__':
-    ap = argparse.ArgumentParser(); ap.add_argument('--root', default=os.environ.get('REGEN_ROOT', 'regen/v1')); ap.add_argument('--min-area', type=float, default=30.); ap.add_argument('--ids', nargs='*'); ap.add_argument('--out', default='alignment.json'); a = ap.parse_args()
+    ap = argparse.ArgumentParser(); ap.add_argument('--root', default=os.environ.get('REGEN_ROOT', 'regen/v1')); ap.add_argument('--min-area', type=float, default=30.); ap.add_argument('--ids', nargs='*'); ap.add_argument('--out', default='alignment.json'); ap.add_argument('--limit', type=int, default=0); a = ap.parse_args()
     root = pathlib.Path(a.root); P = [p for p in json.load(open(root / 'sides/sides.json'))['pieces'] if p['views'] and p['lengthM'] * p['heightM'] >= a.min_area and (not a.ids or p['id'] in a.ids)]
     world, frame = fc.load_world(); cams = fc.load_cameras(frame); t0 = time.time()
     G, x0, y0 = dsm(frame); print('dsm', G.shape, round(time.time() - t0), 's', flush=True)
     from facade_segment_v27 import Segmenter
-    seg = Segmenter(); out = {}; pano = {}
+    # resumable: pieces already in the output are kept and skipped; --limit stops after that many pieces (the segmenter's
+    # GPU memory grows over a long run, so a large area runs in chunks)
+    out = json.load(open(root / a.out)) if (root / a.out).exists() and not a.ids else {}
+    P = [p for p in P if p['id'] not in out]; print('to align', len(P), 'already', len(out), flush=True)
+    if a.limit: P = P[:a.limit]
+    seg = Segmenter(); pano = {}
     for k, p in enumerate(P):
         n = np.asarray(p['normal'], float); t = np.array([-n[1], n[0]]); u0, u1 = p['frameU']; L = u1 - u0; H = p['heightM']; z0 = p['groundZ']
         mid = n * p['planeV'] + t * (u0 + u1) / 2
@@ -93,11 +100,12 @@ if __name__ == '__main__':
             z_img = np.where(valid, Hh - (top + .5) / PPM, np.nan)
             Wp = (mid[None, :] + t[None, :] * (u_img[:, None] - L / 2))
             C = np.asarray(cam['xy'], float); dist = np.linalg.norm(Wp - C, axis=1)
-            eye_abs = z0 + fc.EYE_HEIGHT_M
+            cg = v.get('cameraGroundZ'); eye = (cg - z0 if cg is not None else 0.) + fc.EYE_HEIGHT_M   # over the wall's ground
+            eye_abs = z0 + eye
             zp = predicted(G, x0, y0, C, eye_abs, Wp, dist) - z0
             uc = float((C - mid) @ t + L / 2)
-            f = fit(u_img, z_img, zp, uc, fc.EYE_HEIGHT_M)
-            if f: f.update(uc=round(uc, 2), eye=fc.EYE_HEIGHT_M, validShare=round(float(valid.mean()), 2))
+            f = fit(u_img, z_img, zp, uc, eye)
+            if f: f.update(uc=round(uc, 2), eye=round(eye, 3), validShare=round(float(valid.mean()), 2))
             out.setdefault(p['id'], {})[str(vi)] = f
             if a.ids: np.savez(root / f"align_{p['id']}_{vi}.npz", u=u_img, zi=z_img, zp=zp, img=img)
         if k % 20 == 0: print(k, len(P), round(time.time() - t0), 's', flush=True); json.dump(out, open(root / a.out, 'w'))

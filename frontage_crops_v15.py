@@ -109,6 +109,22 @@ class LocalFrame:
         return np.asarray(a) - self.cx, np.asarray(b) - self.cy
 
 
+_GROUND = None
+def ground_at(xy):
+    """The world's terrain height (its ground grid, the frame the buildings stand in) at a local xy, or None when the
+    world carries no grid. A camera across a sloping street stands metres above or below the building's own ground."""
+    global _GROUND
+    if _GROUND is None:
+        w = json.load(open(WORLD_PATH)); g = w.get('grid')
+        _GROUND = (float(g['min']), float(g['step']), int(g['n']), np.asarray(w['ground'], float).reshape(int(g['n']), int(g['n']))) if g and w.get('ground') else False
+    if not _GROUND: return None
+    mn, st, n, G = _GROUND
+    px = min(max((float(xy[0]) - mn) / st, 0.), n - 1.00001); py = min(max((float(xy[1]) - mn) / st, 0.), n - 1.00001)
+    ix, iy = int(px), int(py); fx, fy = px - ix, py - iy
+    a, b, c, d = G[iy, ix], G[iy, ix + 1], G[iy + 1, ix], G[iy + 1, ix + 1]
+    return float(a + (b - a) * fx + (c - a) * fy if fx + fy <= 1 else d + (c - d) * (1 - fx) + (b - d) * (1 - fy))
+
+
 def load_world():
     world = json.load(open(WORLD_PATH))
     frame = LocalFrame(world['center']['lon'], world['center']['lat'])

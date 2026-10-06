@@ -2,7 +2,7 @@
 import argparse, json, pathlib, os
 ap = argparse.ArgumentParser(); ap.add_argument('--stage', required=True, choices=['correct', 'verify', 'fix'])
 ap.add_argument('--src', required=True); ap.add_argument('--dst', required=True); ap.add_argument('--per', type=int, default=8)
-ap.add_argument('--only', help='json list of ids to include'); a = ap.parse_args()
+ap.add_argument('--only', help='json list of ids to include'); ap.add_argument('--name', default=None, help='job file prefix (default: the stage)'); a = ap.parse_args()
 root = pathlib.Path(os.environ.get('REGEN_ROOT', 'regen/v1')).resolve(); byid = {p['id']: p for p in json.load(open(root / 'sides/sides.json'))['pieces']}
 only = set(json.load(open(a.only))) if a.only else None
 (root / a.dst).mkdir(exist_ok=True)
@@ -18,5 +18,5 @@ for f in sorted((root / a.src).glob('*.json')):
 items.sort(key=lambda i: i['id'])
 n = 0
 for k in range(0, len(items), a.per):
-    json.dump(items[k:k + a.per], open(root / 'jobs' / f'{a.stage}-{k // a.per:02d}.json', 'w'), indent=1); n += 1
+    json.dump(items[k:k + a.per], open(root / 'jobs' / f'{a.name or a.stage}-{k // a.per:03d}.json', 'w'), indent=1); n += 1
 print(len(items), 'items in', n, 'jobs')

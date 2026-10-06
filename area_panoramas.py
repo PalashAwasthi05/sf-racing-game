@@ -21,6 +21,7 @@ SINCE_MS = 1672531200000   # 2023-01-01
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument('area', type=Path); ap.add_argument('step', choices=['discover', 'fetch'])
     ap.add_argument('--radius-margin', type=float, default=20.); ap.add_argument('--workers', type=int, default=4); ap.add_argument('--limit', type=int, default=0)
+    ap.add_argument('--ids', type=Path, help='a JSON list of panorama ids to fetch whatever their capture date (older coverage for streets no recent drive passed)')
     a = ap.parse_args(); img = a.area / 'imagery'; (img / 'images').mkdir(parents=True, exist_ok=True); (img / 'entities').mkdir(exist_ok=True)
     job = json.loads((a.area / 'area-source-job.json').read_text()); lat0, lon0 = job['center']['lat'], job['center']['lon']
     radius = job['contextRadiusM'] + a.radius_margin
@@ -35,6 +36,7 @@ def main():
     have = {k.split(':', 1)[1] for k in reg}
     cov = json.loads((img / 'coverage.json').read_text())['images']
     cands = [str(c['id']) for c in cov if c.get('is_pano') and c.get('captured_at', 0) >= SINCE_MS and str(c['id']) not in have and dist(*c['tile_location']) <= radius + 30]
+    if a.ids: cands = [i for i in json.loads(a.ids.read_text()) if i not in have]
     print(json.dumps({'coverageImages': len(cov), 'panoramaCandidates': len(cands), 'alreadyCached': len(have)}), flush=True)
     if a.step == 'discover': return
     if a.limit: cands = cands[:a.limit]
@@ -53,7 +55,7 @@ def main():
                'camera': {'model': 'spherical', 'parameters': [], 'rotationAngleAxis': rot, 'locationWgs84': [lon, lat], 'altitudeM': e.get('computed_altitude'),
                           'worldRegistrationValidated': False, 'providerPoseConsistent': True, 'orientation': 1, 'clusterId': (e.get('sfm_cluster') or {}).get('id'),
                           'registrationGrade': 'unregistered', 'registrationEvidence': {'reason': 'provider computed pose, fetched by area_panoramas.py; not registered against the world'}},
-               'admission': 'pose-registration-required', 'batch': 'area_panoramas'}
+               'admission': 'pose-registration-required', 'batch': 'area_panoramas' if e['captured_at'] >= SINCE_MS else 'area_panoramas-older'}
         return iid, rec, len(body)
     with ThreadPoolExecutor(max_workers=a.workers) as ex:
         futs = [ex.submit(one, iid) for iid in cands]
