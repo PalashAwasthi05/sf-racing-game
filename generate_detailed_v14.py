@@ -15,7 +15,7 @@ from scipy.ndimage import median_filter, gaussian_filter, distance_transform_edt
 from rasterio.features import shapes
 from rasterio.transform import from_origin
 from pipeline.materials import Materials
-from pipeline import facades,streets,vegetation,signs,envelopes,lettering,surface_evidence,spatial_rules,mobility,freshness,street_space,ground_paint,roof_envelope,landmarks
+from pipeline import facades,streets,vegetation,signs,envelopes,lettering,surface_evidence,spatial_rules,mobility,freshness,street_space,ground_paint,roof_envelope,landmarks,roof_forms
 from general_world.roof_planes import roof_solid,evaluate as roof_evaluate
 from trimesh.visual.texture import TextureVisuals
 
@@ -382,6 +382,10 @@ for c in ([] if _args.streets_only else candidates):
  if rr is not None:
   LR=CONFIG.get('lidarRole',{})
   roof_patches,plane_audit=roof_envelope.continuous_patches(roof_g,roof,roof_step,LR.get('slopedPatchMinSlope',.015),LR.get('slopedPatchMinAreaM2',25.),LR.get('slopedPatchMinRiseM',.6))
+  if not roof_patches and not stadium:
+   # A house's gable, hip or twin gable is two to four planes, each too small for that fit to validate: the simple forms
+   # are fitted on the part's rectangle (pipeline/roof_forms.py) and kept only when they clearly beat a flat roof.
+   roof_patches,form_audit=roof_forms.fit(roof_g,roof);plane_audit={**plane_audit,'roofForm':form_audit}
   slope_area=unary_union([p['geometry'] for p in roof_patches]);tier_domain=roof_g.difference(slope_area)
   # A continuous measured slope no plane fit accepted (a seating bowl, a ramp) is one draped surface, not tiers.
   drape_keep,drape_area=roof_envelope.drape_regions(rr,roof_known,frame.geom(roof_g.difference(slope_area)),xmin,ymax,roof_step);drape_area=frame.world(drape_area)
