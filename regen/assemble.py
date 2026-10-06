@@ -16,6 +16,13 @@ for f in glob.glob(str(root / 'registration*.json')): reg.update(json.load(open(
 world, frame = fc.load_world(); cams = fc.load_cameras(frame); bz = {b['id']: b['center'][2] for b in world['buildings']}
 profiles, stats = [], {'profiles': 0, 'registered': 0, 'skipped': 0}
 SRC = sys.argv[1] if len(sys.argv) > 1 else 'final'
+# The skyline corrections are first checked against the readings' own ground lines (street-level doors): an alignment
+# that moves the ground away from the photographed doors more often than toward them is not applied. Both areas failed
+# (10-05: nearer in 1-22% of readings, the ground put 1-1.6 m up); cornices and bays standing out over the street
+# likely raise the photographed skyline above the one the LiDAR footprints predict.
+n_test, agree = aligncorr.ground_agreement([(f.stem, json.load(open(f))) for f in sorted((root / SRC).glob('*.json'))], ALIGN)
+stats['alignmentGroundCheck'] = {'readings': n_test, 'nearerDoors': agree}
+if ALIGN and n_test >= 20 and agree < .5: print(f'alignment not applied: its corrections move the ground toward the doors in {agree:.0%} of {n_test} readings'); ALIGN = {}
 for f in sorted((root / SRC).glob('*.json')):
     r = json.load(open(f)); p = byid[f.stem]
     if f.stem in RETIRED: stats['retired'] = stats.get('retired', 0) + 1; continue

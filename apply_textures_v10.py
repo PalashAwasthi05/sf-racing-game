@@ -113,6 +113,8 @@ for mesh in scene.geometry.values():
  counts[d['action']]+=1
 candidate=args.output;candidate.mkdir(parents=True,exist_ok=True)
 scene.export(candidate/'candidate.glb')
+# The working scene is done with: freed before the two reloads below (with it held, a large area peaked past 20 GB).
+del scene,mesh;import gc;gc.collect()
 # Verify exact geometry preservation through actual export/reload, not only in memory.
 before=trimesh.load(args.scene,force='scene',process=False);after=trimesh.load(candidate/'candidate.glb',force='scene',process=False)
 assert set(before.geometry)==set(after.geometry)
@@ -124,10 +126,15 @@ report={'revision':'0.10','geometryMeshesPreserved':len(before.geometry),'update
 (candidate/'report.json').write_text(json.dumps(report,indent=2));(out/'texture-assignment-report.json').write_text(json.dumps(report,indent=2))
 (work/'texture-inventory-v10.json').write_text(json.dumps({'schema':'reusable-material-descriptor-v10','assets':catalog},indent=2))
 from PIL import ImageDraw
-sheet=Image.new('RGB',(768,len(swatches)*220),'#dddddd');draw=ImageDraw.Draw(sheet)
-for i,(name,old,new) in enumerate(swatches):
- draw.text((10,i*220+4),name+' / previous | automatically selected',fill='black')
- if old is not None:sheet.paste(old.resize((360,190)),(10,i*220+25))
- sheet.paste(new.resize((360,190)),(394,i*220+25))
-sheet.save(out/'automatic-material-comparison.jpg')
+# A JPEG holds at most 65,500 px a side: a long sheet (a large area recolours hundreds of materials) goes in pages.
+PAGE=290
+for f in out.glob('automatic-material-comparison-*.jpg'):f.unlink()
+for p in range(0,max(len(swatches),1),PAGE):
+ page=swatches[p:p+PAGE]
+ sheet=Image.new('RGB',(768,max(len(page),1)*220),'#dddddd');draw=ImageDraw.Draw(sheet)
+ for i,(name,old,new) in enumerate(page):
+  draw.text((10,i*220+4),name+' / previous | automatically selected',fill='black')
+  if old is not None:sheet.paste(old.resize((360,190)),(10,i*220+25))
+  sheet.paste(new.resize((360,190)),(394,i*220+25))
+ sheet.save(out/('automatic-material-comparison.jpg' if p==0 else f'automatic-material-comparison-{p//PAGE+1}.jpg'))
 print(json.dumps({k:report[k] for k in ('updatedMeshes','counts','uniqueAssignedAssets','materialVariants','geometryMeshesPreserved')}))

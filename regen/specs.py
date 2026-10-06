@@ -58,6 +58,8 @@ def _style(o, dx=None, dz=None, bays=()):
     m, t = int(o.get('mullions') or 0), int(o.get('transoms') or 0)
     st['mullionFractions'] = [round((k + 1) / (m + 1), 4) for k in range(m)]
     st['transomFractions'] = [round((k + 1) / (t + 1), 4) for k in range(t)]
+    # a vehicle door is a panelled door in the colour read for it (its frame), not a zinc roller shutter (drawn black)
+    if o.get('kind') == 'garage': st.update(material=st['frameMaterial'], slatMaterial=st['frameMaterial'], slatPitchM=.5)
     if o.get('kind') == 'curtain': st.update(ribbon=True, mullionFractions=st['mullionFractions'] or [.5])
     elif o.get('ribbon') is not None: st['ribbon'] = bool(o['ribbon'])
     if dx: st['openingRatio'] = round(float(np.clip((o.get('openingWidthM') or dx * .7) / dx, .1, .98)), 4)

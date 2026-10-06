@@ -256,7 +256,7 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
    continue
   if kind=='rollup':
    block(cx,cy,w,h,.08,s.get('material','zinc'),-.25)
-   for zz in np.arange(y1,y2,.13):block(cx,zz,w,.017,.035,s.get('slatMaterial','charcoal'),-.19)
+   for zz in np.arange(y1,y2,s.get('slatPitchM',.13)):block(cx,zz,w,.017,.035,s.get('slatMaterial','charcoal'),-.19)
    continue
   # Polygon and arch openings retain the clipped observed contour for every
   # layer.  A negative buffer gives glazing the same shape and the difference
@@ -339,9 +339,11 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
   for f in s.get('transomFractions',[.76]):block(cx,y1+h*f,w,.042,.065,frame,-recess+.035)
   block(cx,y1-.035,w+.06,.07,.31,frame,.035)
   if kind=='projected_bay':
-   # External cheeks and inter-floor panel cladding are anchored to the opening bank.
-   for x in [x1-.06,x2+.06]:block(x,cy,.12,h+.65,proj+.2,s.get('material','zinc'),proj/2)
-   block(cx,y2+.24,w+.24,.48,proj+.2,s.get('material','zinc'),proj/2)
+   # External cheeks and inter-floor panel cladding are anchored to the opening bank. A bay that names no cladding
+   # is clad like the wall it stands out from (a photographed bay names none; zinc drew a house's bays black).
+   clad=s.get('material') or wall_mat(cx,cy)
+   for x in [x1-.06,x2+.06]:block(x,cy,.12,h+.65,proj+.2,clad,proj/2)
+   block(cx,y2+.24,w+.24,.48,proj+.2,clad,proj/2)
   if s.get('shade'):
    block(cx,y2+.04,w+.25,.06,.55,'charcoal',.25)
    for depth in [.1,.23,.36,.49]:block(cx,y2+.07,w+.32,.026,.025,'charcoal',depth)
