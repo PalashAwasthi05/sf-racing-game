@@ -50,7 +50,7 @@ def bank_cells(b):
     return out
 
 
-def _style(o, dx=None, dz=None, bays=()):
+def _style(o, dx=None, dz=None):
     kind = KIND.get(o.get('kind', 'window'), 'window')
     st = {'kind': kind, 'frameMaterial': hexok(o.get('frame'), '#3a3d40')}
     if o.get('head') in ('arch', 'segmental'): st['head'] = o['head']
@@ -64,9 +64,6 @@ def _style(o, dx=None, dz=None, bays=()):
     elif o.get('ribbon') is not None: st['ribbon'] = bool(o['ribbon'])
     if dx: st['openingRatio'] = round(float(np.clip((o.get('openingWidthM') or dx * .7) / dx, .1, .98)), 4)
     if dz: st['openingHeightRatio'] = round(float(np.clip((o.get('openingHeightM') or dz * .7) / dz, .1, .98)), 4)
-    for bay in bays:
-        if o['x0'] < bay['x1'] and o['x1'] > bay['x0'] and o['z0'] < bay['z1'] and o['z1'] > bay['z0']:
-            st.update(kind='projected_bay', projectionM=float(np.clip(bay.get('projectionM', .5), .1, 1.5)))
     return st
 
 
@@ -92,19 +89,22 @@ def to_profile(r, piece):
     for m in mats[1:]:
         prof['panels'].append({'rect': [fx(m['x0']), fz(m['z0']), fx(m['x1']), fz(m['z1'])], 'material': material(m)})
     bays = r.get('bays') or []
+    # a bay is drawn as one volume standing out from the wall, its windows set in its faces (pipeline/bays.py)
+    prof['bays'] = [{'rect': [fx(b['x0']), fz(b['z0']), fx(b['x1']), fz(b['z1'])], 'projectionM': float(np.clip(b.get('projectionM', .6), .2, 1.5))}
+                    for b in bays if b['x1'] > b['x0'] and b['z1'] > b['z0']]
     for b in r.get('banks') or []:
         nx, ny = max(1, int(b.get('columns', 1))), max(1, int(b.get('rows', 1)))
         dx, dz = (b['x1'] - b['x0']) / nx, (b['z1'] - b['z0']) / ny
         if dx <= 0 or dz <= 0: continue
         g = {'region': [fx(b['x0']), fz(b['z0']), fx(b['x1']), fz(b['z1'])], 'columns': nx, 'rows': ny,
-             'omit': [list(o) for o in b.get('omit', [])], 'style': _style(b, dx, dz, bays)}
+             'omit': [list(o) for o in b.get('omit', [])], 'style': _style(b, dx, dz)}
         # measured (uneven) cell centres, as fractions of the bank
         if b.get('xCentersM') and len(b['xCentersM']) == nx: g['xCenters'] = [round((x - b['x0']) / (b['x1'] - b['x0']), 5) for x in b['xCentersM']]
         if b.get('zCentersM') and len(b['zCentersM']) == ny: g['yCenters'] = [round((z - b['z0']) / (b['z1'] - b['z0']), 5) for z in b['zCentersM']]
         prof['groups'].append(g)
     for o in r.get('openings') or []:
         if o['x1'] <= o['x0'] or o['z1'] <= o['z0']: continue
-        prof['openings'].append({'rect': [fx(o['x0']), fz(o['z0']), fx(o['x1']), fz(o['z1'])], 'style': _style(o, bays=bays), 'sourceIds': src})
+        prof['openings'].append({'rect': [fx(o['x0']), fz(o['z0']), fx(o['x1']), fz(o['z1'])], 'style': _style(o), 'sourceIds': src})
     for c in r.get('canopies') or []:
         # a canopy belongs to the opening or bank whose head it shelters
         for target in [(g['region'], g['style']) for g in prof['groups']] + [(o['rect'], o['style']) for o in prof['openings']]:

@@ -5,6 +5,7 @@ import math
 import numpy as np
 from shapely.geometry import Point,Polygon,box
 from .surface_evidence import admissible,resolve_material
+from . import bays
 
 
 RIBBON_PIER_M=.3   # lights of a bank standing at most this far apart are one band of glazing per storey
@@ -198,6 +199,27 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
  def wall_mat(x,z):
   found=[p for p in panels if p.get('rect') and p['rect'][0]*W<=x<=p['rect'][2]*W and p['rect'][1]*Hs<=z<=p['rect'][3]*Hs]
   return _component_material(found[-1],mat) if found else mat
+ # Bays (pipeline/bays.py): a photographed bay is one volume standing out from the wall. The openings inside it leave
+ # the wall (which stays whole behind it) and are set in the bay's faces; the piece holding the bay's middle draws it,
+ # with its openings taken from the whole frame, not this piece's share of it.
+ bay_list=[]
+ for bb in profile.get('bays',[]):
+  bx0,bz0,bx1,bz1=bb['rect'];bx0*=W;bx1*=W;bz0*=Hs;bz1=min(bz1*Hs,H)
+  if bx1-bx0>=.8 and bz1-bz0>=1.:bay_list.append({'x0':bx0,'x1':bx1,'z0':bz0,'z1':bz1,'p':float(np.clip(bb.get('projectionM',.6),.25,1.2))})
+ bay_windows=0
+ if bay_list:
+  in_bay=lambda r,b:b['x0']-.1<=(r[0]+r[2])/2<=b['x1']+.1 and b['z0']-.1<=(r[1]+r[3])/2<=b['z1']+.1
+  ops=[op for op in ops if not any(in_bay(op['_originalOutline'].bounds,b) for b in bay_list)]
+  whole=[]
+  for op in openings(profile,fits,W,Hs,H):
+   try:o=opening_outline(op,W,Hs)
+   except (TypeError,ValueError):continue
+   if not o.is_empty and o.is_valid:whole.append({**op,'rect':list(o.bounds)})
+  for b in bay_list:
+   if not low<=(b['x0']+b['x1'])/2<high:continue
+   mine=[op for op in whole if in_bay(op['rect'],b)]
+   trim=next((op['style'].get('frameMaterial') for op in mine if op.get('style',{}).get('frameMaterial')),'#ece9e2')
+   bay_windows+=bays.draw(point,ctx['put'],layer,detail,b,mine,wall_mat((b['x0']+b['x1'])/2,(b['z0']+b['z1'])/2),trim)
  # Partition each horizontal slice around its openings and material boundaries.
  zs=sorted(set([0,H]+[v for op in ops for v in [op['rect'][1],op['rect'][3]]]+[min(H,p['rect'][k]*Hs) for p in panels for k in [1,3]]))
  for bottom,top in zip(zs,zs[1:]):
@@ -416,4 +438,4 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
     mesh.vertices=np.array([point(x,y,dep+d) for x,y,d in zip(xx,yy,v[:,2])]);mesh.fix_normals();ctx['put'](mesh,detail,sg.get('textMaterial','white'))
  block((low+high)/2,.16,high-low,.32,.1,'stone',.045)
  if not profile.get('gableEnd'):block((low+high)/2,H+.025,high-low,.10,.4,profile.get('copingMaterial','charcoal'),.015)
- return dict(record={'buildingId':c['id'],'midpoint':mid.tolist(),'normal':n.tolist(),'lengthM':round(high-low,2),'heightM':round(H,2),'edge':'grammar','floors':None,'columns':None,'archetype':profile['id'],'material':mat,'sourceIds':profile['sourceIds'],'status':('image-layout-fit' if any(o.get('fitId') for o in ops) else 'visual-grammar'),'grammarId':profile['id'],'openingCount':len(ops),'openingEvidence':{'explicitBoundaries':sum(o.get('evidence')=='observed-boundary' for o in ops),'negativeRegions':len(profile.get('surfaceEvidence',[]))},'fitIds':list(set(o['fitId'] for o in ops if o.get('fitId'))),'unresolved':profile.get('unresolved',[]),'streetFacing':True},components=len(ops))
+ return dict(record={'buildingId':c['id'],'midpoint':mid.tolist(),'normal':n.tolist(),'lengthM':round(high-low,2),'heightM':round(H,2),'edge':'grammar','floors':None,'columns':None,'archetype':profile['id'],'material':mat,'sourceIds':profile['sourceIds'],'status':('image-layout-fit' if any(o.get('fitId') for o in ops) else 'visual-grammar'),'grammarId':profile['id'],'openingCount':len(ops),'openingEvidence':{'explicitBoundaries':sum(o.get('evidence')=='observed-boundary' for o in ops),'negativeRegions':len(profile.get('surfaceEvidence',[]))},'fitIds':list(set(o['fitId'] for o in ops if o.get('fitId'))),'unresolved':profile.get('unresolved',[]),'streetFacing':True},components=len(ops)+bay_windows)
