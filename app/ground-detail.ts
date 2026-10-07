@@ -61,6 +61,24 @@ vec3 gdGrass(vec3 albedo){
 }
 `;
 
+const GARDEN = /* glsl */`
+vec3 gdGarden(vec3 albedo){
+ vec2 p=vGdPos.xz;
+ // what the bare terrain shows is mostly back gardens: lawn, darker planting beds, rectangular patios and bare soil
+ float kind=gdFbm(p*.11+3.3),wear=gdFbm(p*.6+8.1),bed=gdFbm(p*.22+6.6);
+ vec3 lawn=vec3(.15,.21,.09)*mix(.7,1.12,gdFbm(p*.35+1.)),planting=vec3(.07,.11,.05)*mix(.8,1.2,wear),soil=vec3(.25,.19,.13)*mix(.8,1.15,wear);
+ vec3 c=mix(lawn,planting,smoothstep(.56,.62,bed));c=mix(c,soil,smoothstep(.3,.27,kind));
+ // patios and decks: about one 9 m cell in five holds a rectangle of paving 3-6 m across, squared to the street grid
+ vec2 cell=floor(p/9.);float pick=gdHash(cell+11.3);float paved=smoothstep(.66,.69,kind);
+ if(pick<.2){vec2 q=fract(p/9.)*9.;vec2 lo=vec2(.4)+gdHash2(cell+2.)*2.,hi=lo+vec2(3.)+gdHash2(cell+5.)*3.;
+  paved=max(paved,step(lo.x,q.x)*step(q.x,hi.x)*step(lo.y,q.y)*step(q.y,hi.y));}
+ c=mix(c,albedo*mix(.82,1.04,wear),paved);
+ c*=mix(1.,.86+.28*gdNoise(p*12.),gdKeep(12.));
+ gdHeight=(1.-paved)*gdNoise(p*6.)*gdKeep(6.);
+ return c;
+}
+`;
+
 function patch(materials: Iterable<THREE.MeshStandardMaterial>, tag: string, body: string, call: string, bump: number, roughness: string) {
   for (const m of materials) {
     if (m.userData.groundDetail) continue; m.userData.groundDetail = tag;
@@ -88,6 +106,11 @@ export function detailAsphalt(materials: Iterable<THREE.MeshStandardMaterial>) {
 /** Lush and dry patches, mowing stripes, blade grain and relief on lawns. */
 export function detailGrass(materials: Iterable<THREE.MeshStandardMaterial>) {
   patch(materials, 'grass', GRASS, 'gdGrass', .012, 'clamp(max(roughnessFactor,.9),.0,1.)');
+}
+
+/** Back gardens, patios and bare soil where the terrain itself shows (its material is one paving texture). */
+export function detailGarden(materials: Iterable<THREE.MeshStandardMaterial>) {
+  patch(materials, 'garden', GARDEN, 'gdGarden', .01, 'clamp(max(roughnessFactor,.82),.0,1.)');
 }
 
 /** Ground classes this module details, by a mesh's material class. */
