@@ -2,6 +2,17 @@ import * as THREE from 'three';
 import {Sky} from 'three/addons/objects/Sky.js';
 import {CSM} from 'three/addons/csm/CSM.js';
 
+// Distance haze is exponential in distance, as an atmosphere's is (THREE's FogExp2 is exponential-squared: a fog bank
+// that hid the model's edge at about a kilometre and would hide the real hills 20 km out). The density is the inverse of
+// the haze length: a clear afternoon here sees the East Bay hills and Mt Tamalpais, softened (22 km).
+// The haze thins with height (a scale height of 1.2 km): a ray to a hilltop crosses thinner air than one along the water,
+// so a mountain's top is clearer than its foot, as it is seen across the bay. At the height of the streets the two agree.
+THREE.ShaderChunk.fog_pars_vertex=THREE.ShaderChunk.fog_pars_vertex.replace('varying float vFogDepth;','varying float vFogDepth;varying float vFogWorldY;');
+THREE.ShaderChunk.fog_vertex=THREE.ShaderChunk.fog_vertex.replace('vFogDepth = - mvPosition.z;','vFogDepth = - mvPosition.z;vFogWorldY = ( transpose( mat3( viewMatrix ) ) * ( mvPosition.xyz - viewMatrix[ 3 ].xyz ) ).y;');
+THREE.ShaderChunk.fog_pars_fragment=THREE.ShaderChunk.fog_pars_fragment.replace('varying float vFogDepth;','varying float vFogDepth;varying float vFogWorldY;');
+THREE.ShaderChunk.fog_fragment=THREE.ShaderChunk.fog_fragment.replace('float fogFactor = 1.0 - exp( - fogDensity * fogDensity * vFogDepth * vFogDepth );',
+ 'float hzH0 = max( cameraPosition.y, 0.0 ), hzH1 = max( vFogWorldY, 0.0 ), hzDh = hzH1 - hzH0;\n\t\tfloat hzK = abs( hzDh ) < 1.0 ? exp( - hzH0 / 1200.0 ) : 1200.0 / hzDh * ( exp( - hzH0 / 1200.0 ) - exp( - hzH1 / 1200.0 ) );\n\t\tfloat fogFactor = 1.0 - exp( - fogDensity * vFogDepth * hzK );');
+
 // Sky, clouds and lighting for the world viewer. Three presets (afternoon, golden hour, overcast) each set the
 // sun's position and colour, the atmosphere's scattering, a procedural cloud layer, the sky-lit environment,
 // the hemisphere fill, fog and exposure. Shadows come from cascaded shadow maps that follow the camera, so they
@@ -11,11 +22,11 @@ export type Preset='afternoon'|'golden'|'overcast';
 export const PRESET_ORDER:Preset[]=['afternoon','golden','overcast'];
 export const PRESET_LABEL:Record<Preset,string>={afternoon:'Afternoon sun',golden:'Golden hour',overcast:'Overcast'};
 
-type Spec={azimuthDeg:number;elevationDeg:number;sunColor:string;sunIntensity:number;hemiSky:string;hemiGround:string;hemiIntensity:number;env:number;exposure:number;turbidity:number;rayleigh:number;mie:number;mieG:number;fog:[string,number,number];coverage:number;cloudTint:string;cloudShade:string;cloudOpacity:number;cloudSpeed:number};
+type Spec={hazeKm:number;azimuthDeg:number;elevationDeg:number;sunColor:string;sunIntensity:number;hemiSky:string;hemiGround:string;hemiIntensity:number;env:number;exposure:number;turbidity:number;rayleigh:number;mie:number;mieG:number;fog:[string,number,number];coverage:number;cloudTint:string;cloudShade:string;cloudOpacity:number;cloudSpeed:number};
 const SPECS:Record<Preset,Spec>={
- afternoon:{azimuthDeg:262,elevationDeg:31,sunColor:'#fff0d8',sunIntensity:3,hemiSky:'#aeb6bf',hemiGround:'#a08a6c',hemiIntensity:.15,env:1.8,exposure:.9,turbidity:2.2,rayleigh:3.1,mie:.004,mieG:.82,fog:['#b8cadb',380,1500],coverage:.42,cloudTint:'#ffffff',cloudShade:'#a9b7c7',cloudOpacity:.97,cloudSpeed:1},
- golden:{azimuthDeg:286,elevationDeg:7,sunColor:'#ffb466',sunIntensity:3,hemiSky:'#c9b9ab',hemiGround:'#7a5f48',hemiIntensity:.2,env:2.2,exposure:1.2,turbidity:5.5,rayleigh:3.6,mie:.022,mieG:.93,fog:['#d6b69c',300,1400],coverage:.5,cloudTint:'#ffd6b0',cloudShade:'#7e6270',cloudOpacity:.95,cloudSpeed:1},
- overcast:{azimuthDeg:212,elevationDeg:45,sunColor:'#e9eef3',sunIntensity:.55,hemiSky:'#c9d0d6',hemiGround:'#85817a',hemiIntensity:.35,env:1.9,exposure:1.15,turbidity:18,rayleigh:1.1,mie:.006,mieG:.7,fog:['#c4cbd2',260,1300],coverage:.97,cloudTint:'#e0e4e9',cloudShade:'#98a1aa',cloudOpacity:1,cloudSpeed:.6},
+ afternoon:{hazeKm:22,azimuthDeg:262,elevationDeg:31,sunColor:'#fff0d8',sunIntensity:3,hemiSky:'#aeb6bf',hemiGround:'#a08a6c',hemiIntensity:.15,env:1.8,exposure:.9,turbidity:2.2,rayleigh:3.1,mie:.004,mieG:.82,fog:['#b8cadb',380,1500],coverage:.42,cloudTint:'#ffffff',cloudShade:'#a9b7c7',cloudOpacity:.97,cloudSpeed:1},
+ golden:{hazeKm:14,azimuthDeg:286,elevationDeg:7,sunColor:'#ffb466',sunIntensity:3,hemiSky:'#c9b9ab',hemiGround:'#7a5f48',hemiIntensity:.2,env:2.2,exposure:1.2,turbidity:5.5,rayleigh:3.6,mie:.022,mieG:.93,fog:['#d6b69c',300,1400],coverage:.5,cloudTint:'#ffd6b0',cloudShade:'#7e6270',cloudOpacity:.95,cloudSpeed:1},
+ overcast:{hazeKm:6,azimuthDeg:212,elevationDeg:45,sunColor:'#e9eef3',sunIntensity:.55,hemiSky:'#c9d0d6',hemiGround:'#85817a',hemiIntensity:.35,env:1.9,exposure:1.15,turbidity:18,rayleigh:1.1,mie:.006,mieG:.7,fog:['#c4cbd2',260,1300],coverage:.97,cloudTint:'#e0e4e9',cloudShade:'#98a1aa',cloudOpacity:1,cloudSpeed:.6},
 };
 // The analytic sky is authored for an exposure near one half; at filmic exposure it is scaled so the zenith keeps its
 // blue and the horizon does not wash to white. The same scaled sky, without its solar disc, is the environment that lights
@@ -69,7 +80,8 @@ void main(){
 }`;
 
 export function createAtmosphere(scene:THREE.Scene,renderer:THREE.WebGLRenderer,camera:THREE.PerspectiveCamera){
- const sky=new Sky();sky.scale.setScalar(1600);scene.add(sky);patchSky(sky,true);
+ // drawn first: the dome is 1.6 km across and writes no depth, so the horizon beyond it (horizon.ts) draws over it
+ const sky=new Sky();sky.scale.setScalar(1600);sky.renderOrder=-1;scene.add(sky);patchSky(sky,true);
  const cloudUniforms={uTime:{value:0},uCoverage:{value:.4},uOpacity:{value:.9},uSunDir:{value:new THREE.Vector3(0,1,0)},uTint:{value:new THREE.Color('#ffffff')},uShade:{value:new THREE.Color('#a0abb8')},uHorizon:{value:new THREE.Color('#b8cad8')}};
  const clouds=new THREE.Mesh(new THREE.SphereGeometry(900,48,20,0,Math.PI*2,0,Math.PI*.52),new THREE.ShaderMaterial({vertexShader:CLOUD_VERTEX,fragmentShader:CLOUD_FRAGMENT,uniforms:cloudUniforms,transparent:true,depthWrite:false,side:THREE.BackSide,fog:false}));
  clouds.renderOrder=1;clouds.frustumCulled=false;scene.add(clouds);
@@ -82,7 +94,7 @@ export function createAtmosphere(scene:THREE.Scene,renderer:THREE.WebGLRenderer,
  // The far cascade covers the static world: it is redrawn when the camera has moved 15 m or half a second has
  // passed, not every frame; its light keeps the matrix of its last render, so the map and the lookup stay paired.
  const farCascade=csm.lights[1];farCascade.shadow.autoUpdate=false;farCascade.shadow.needsUpdate=true;const farCascadeAt=new THREE.Vector3(Infinity,Infinity,Infinity);let farCascadeTime=-Infinity;
- const pmrem=new THREE.PMREMGenerator(renderer);let environment:THREE.WebGLRenderTarget|null=null;
+ const pmrem=new THREE.PMREMGenerator(renderer);let environment:THREE.WebGLRenderTarget|null=null,skyEnvironment:THREE.WebGLRenderTarget|null=null;
  let current:Preset='afternoon';let lastFov=camera.fov,lastAspect=camera.aspect;const sunDir=new THREE.Vector3();
  function apply(preset:Preset){
   const s=SPECS[preset];const LOOK_=LOOK;current=preset;sunDir.copy(sunDirection(s.azimuthDeg,s.elevationDeg));
@@ -90,10 +102,9 @@ export function createAtmosphere(scene:THREE.Scene,renderer:THREE.WebGLRenderer,
   csm.lightDirection.copy(sunDir).negate();csm.lightIntensity=s.sunIntensity;
   for(const light of csm.lights){light.color.set(s.sunColor);light.intensity=s.sunIntensity;}
   hemi.color.set(s.hemiSky);hemi.groundColor.set(s.hemiGround);hemi.intensity=s.hemiIntensity;
-  // Exponential haze reaching half density near the far end of the linear ramp it replaces: streets stay crisp, the
-  // edge of the modelled area fades into the horizon instead of ending against a flat background.
+  // Haze by the preset's haze length (exponential, thinning with height; see the shader chunks at the top of this file).
   (sky.material as THREE.ShaderMaterial).uniforms.uHaze.value.set(s.fog[0]);
-  scene.fog=new THREE.FogExp2(s.fog[0],Math.sqrt(Math.LN2)/(s.fog[1]+.55*(s.fog[2]-s.fog[1])));scene.background=new THREE.Color(s.fog[0]);
+  scene.fog=new THREE.FogExp2(s.fog[0],1/(s.hazeKm*1000));scene.background=new THREE.Color(s.fog[0]);
   renderer.toneMappingExposure=s.exposure;
   cloudUniforms.uCoverage.value=s.coverage;cloudUniforms.uOpacity.value=s.cloudOpacity;cloudUniforms.uSunDir.value.copy(sunDir);
   cloudUniforms.uTint.value.set(s.cloudTint);cloudUniforms.uShade.value.set(s.cloudShade);cloudUniforms.uHorizon.value.set(s.fog[0]);
@@ -108,6 +119,14 @@ export function createAtmosphere(scene:THREE.Scene,renderer:THREE.WebGLRenderer,
   const ground=new THREE.Mesh(new THREE.CircleGeometry(1500,48),groundMat);ground.rotation.x=-Math.PI/2;ground.position.y=-1.5;envScene.add(ground);
   const next=pmrem.fromScene(envScene,.04,.1,10000);environment?.dispose();environment=next;scene.environment=next.texture;scene.environmentIntensity=s.env;
   envSky.geometry.dispose();envSky.material.dispose();ground.geometry.dispose();groundMat.dispose();
+  // The sky as one sees it (its display saturation and horizon haze, no solar disc: the sun's glint is the direct light's),
+  // for surfaces that mirror it outright, open water: the lighting environment above is desaturated and its lower half
+  // is ground, so water that mirrored it read grey.
+  const seeScene=new THREE.Scene();const seeSky=new Sky();seeSky.scale.setScalar(1600);patchSky(seeSky,false);const su=seeSky.material.uniforms;
+  su.turbidity.value=s.turbidity;su.rayleigh.value=s.rayleigh;su.mieCoefficient.value=s.mie;su.mieDirectionalG.value=s.mieG;su.sunPosition.value.copy(sunDir);
+  su.uSkySat.value=SKY_LOOK.saturation;su.uHazeMix.value=.7;su.uHaze.value.set(s.fog[0]);seeScene.add(seeSky);
+  const seen=pmrem.fromScene(seeScene,.02,.1,10000);skyEnvironment?.dispose();skyEnvironment=seen;
+  seeSky.geometry.dispose();seeSky.material.dispose();
  }
  function setupMaterial(material:THREE.Material|THREE.Material[]){for(const m of Array.isArray(material)?material:[material]){if(m instanceof THREE.MeshStandardMaterial||m instanceof THREE.MeshLambertMaterial||m instanceof THREE.MeshPhongMaterial){csm.setupMaterial(m);}}}
  function update(now:number){
@@ -118,7 +137,7 @@ export function createAtmosphere(scene:THREE.Scene,renderer:THREE.WebGLRenderer,
   if(camera.position.distanceToSquared(farCascadeAt)>225||now-farCascadeTime>500){farCascade.shadow.needsUpdate=true;farCascadeAt.copy(camera.position);farCascadeTime=now;}
  }
  apply('afternoon');
- return {apply,update,setupMaterial,current:()=>current,resize:()=>csm.updateFrustums(),sunDirection:()=>sunDir.clone(),csm,sky,clouds,hemi,
-  dispose:()=>{csm.dispose();environment?.dispose();pmrem.dispose();scene.remove(sky,clouds,hemi);sky.geometry.dispose();sky.material.dispose();clouds.geometry.dispose();(clouds.material as THREE.Material).dispose();}};
+ return {apply,update,setupMaterial,current:()=>current,skyEnvironment:()=>skyEnvironment?.texture??null,resize:()=>csm.updateFrustums(),sunDirection:()=>sunDir.clone(),csm,sky,clouds,hemi,
+  dispose:()=>{csm.dispose();environment?.dispose();skyEnvironment?.dispose();pmrem.dispose();scene.remove(sky,clouds,hemi);sky.geometry.dispose();sky.material.dispose();clouds.geometry.dispose();(clouds.material as THREE.Material).dispose();}};
 }
 export type Atmosphere=ReturnType<typeof createAtmosphere>;

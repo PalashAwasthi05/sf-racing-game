@@ -20,11 +20,14 @@ import {createGrade} from './grade';
 import {MultisampledRenderPass,buildDepthProxies,installDepthProxies,cullTransmission,cacheArrayUniforms} from './render-budget';
 import {attachCarLod} from './car-lod';
 import {buildSkyVisibility,occludeMaterials,occlusionComposite} from './occlusion';
+import {loadHorizon} from './horizon';
 
 export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(id:string)=>void,onProgress:(message:string)=>void,modelUrl?:string){
  const scene=new THREE.Scene();
  const roadster=loadRoadster();   // the car model downloads while the world loads
- const camera=new THREE.PerspectiveCamera(58,1,.18,1100);
+ // far enough for the backdrop (horizon.ts: the East Bay hills, Mount Tamalpais, Mount Diablo); depth precision near the
+ // camera is set by the near plane, not the far one
+ const camera=new THREE.PerspectiveCamera(58,1,.18,60000);
  // No canvas antialiasing: the canvas only receives the output pass's full-screen quad (the 3D image is antialiased in
  // its own multisampled target below), so canvas samples were memory and a resolve every frame for nothing.
  const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
@@ -152,7 +155,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  const staticMeshes=[...batches.filter(b=>!foliageBatches.includes(b)),...objects.filter(o=>!o.userData.batched&&o.visible)];
  const depth=buildDepthProxies(staticMeshes,getLayer);scene.add(depth.root);
  const proxiedStatics=depth.skipped.length?staticMeshes.filter(o=>!depth.skipped.includes(o)):[batchRoot,model.scene];
- const depthPasses=installDepthProxies({renderer,scene,ao,proxies:depth.root,statics:proxiedStatics,aoHidden:()=>foliageBatches,enabled:()=>budget.proxies});
+ const depthPasses=installDepthProxies({renderer,scene,ao,proxies:depth.root,statics:proxiedStatics,aoHidden:()=>horizon?[...foliageBatches,horizon.group]:foliageBatches,enabled:()=>budget.proxies});
  const shown=(o:THREE.Object3D)=>{const b=o.userData.batched as THREE.Mesh|undefined;return b?b.visible:o.visible;};
  // Street-local surroundings are needed for glossy materials; a sky-only
  // environment makes glazing and metal read as flat painted surfaces.
@@ -172,6 +175,9 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // Street lamps, trolleybus poles and wires, when the world brings them (overhead.ts).
  const overhead=overheadUrl&&/^\/compare\/[\w.-]+\.json$/.test(overheadUrl)?await loadOverhead(overheadUrl):null;
  if(overhead){scene.add(overhead.group);for(const m of overhead.materials)atmosphere.setupMaterial(m);}
+ // The backdrop round the area, when one is built for it (horizon.ts): the real ground and water out to 60 km, the bay, the
+ // hills and mountains round it; San Francisco's land beyond the model is plain ground that fades into the haze.
+ const horizon=await loadHorizon(data.center,m=>atmosphere.setupMaterial(m),(scene.fog as THREE.FogExp2).color,atmosphere.skyEnvironment).catch(()=>null);if(horizon)scene.add(horizon.group);
  // A capture draws the six cube faces one per frame (all six in one frame was a 15-25 ms hitch every few seconds on the
  // move); glossy surfaces keep the previous probe until the new one is filtered. A forced capture (review captures)
  // still draws all six at once.
@@ -299,7 +305,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // Sky visibility over the whole area (occlusion.ts): street canyons, building bases and courtyards see less of the sky and
  // are lit less by it; every world material, the canopies, the parked cars, the street lamps and wires and the player's car
  // take it.
- const skyVis=buildSkyVisibility(renderer,scene,[atmosphere.sky,atmosphere.clouds,ring,highlight,...(car?[car.group]:[])],reach+30);
+ const skyVis=buildSkyVisibility(renderer,scene,[atmosphere.sky,atmosphere.clouds,ring,highlight,...(car?[car.group]:[]),...(horizon?[horizon.group]:[])],reach+30);
  weathering?.setHeight(skyVis.height.texture,reach+30);
  {const mats=new Set<THREE.Material>();for(const o of renderables)for(const m of Array.isArray(o.material)?o.material:[o.material])mats.add(m);
   if(parked)for(const m of parked.materials)mats.add(m);car?.group.traverse(o=>{const m=(o as THREE.Mesh).material;if(m)for(const x of Array.isArray(m)?m:[m])mats.add(x);});
@@ -342,7 +348,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
    const input:CarInput={throttle:(keys.has('KeyW')||keys.has('ArrowUp'))?1:0,brake:(keys.has('KeyS')||keys.has('ArrowDown'))?1:0,steer:((keys.has('KeyA')||keys.has('ArrowLeft'))?1:0)-((keys.has('KeyD')||keys.has('ArrowRight'))?1:0),handbrake:keys.has('Space')};
    car.update(dt,input);if(!drag)car.relax(dt);
   }else{if(targetPosition&&targetLook){camera.position.lerp(targetPosition,.07);controls.target.lerp(targetLook,.07);if(camera.position.distanceTo(targetPosition)<.05){targetPosition=null;targetLook=null;}}controls.update();}
-  atmosphere.update(now);
+  atmosphere.update(now);horizon?.update(now);
   updateReflections(now);
   carLod?.update(camera);glass.prepare();patchUniforms();renderer.info.reset();composer.render(dt);lastCalls=renderer.info.render.calls;
  }
