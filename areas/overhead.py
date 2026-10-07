@@ -16,7 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent)); sys.path.insert(0, str
 import frontage_crops_v15 as fc
 from parking import roads_outline, kerbs, garage_doors, COMPARE
 
-STREETS = ('primary', 'secondary', 'tertiary', 'residential', 'unclassified', 'living_street', 'primary_link', 'secondary_link', 'tertiary_link')
+STREETS = ('trunk', 'trunk_link', 'primary', 'secondary', 'tertiary', 'residential', 'unclassified', 'living_street', 'primary_link', 'secondary_link', 'tertiary_link')
 TROLLEY_SPAN, LAMP_SPAN = 30., 36.
 WIRE_Z, SPAN_Z, PAIR, SAG = 5.6, 7.2, .3, .18
 BEHIND_KERB, PARKING_LANE = .45, 2.4

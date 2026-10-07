@@ -20,7 +20,7 @@ WORK = Path(__file__).resolve().parents[1]; COMPARE = WORK / 'king-street/public
 sys.path.insert(0, str(WORK))
 import frontage_crops_v15 as fc
 
-ROADS = ('primary', 'secondary', 'tertiary', 'residential', 'unclassified', 'living_street', 'service', 'primary_link', 'secondary_link', 'tertiary_link')
+ROADS = ('trunk', 'trunk_link', 'primary', 'secondary', 'tertiary', 'residential', 'unclassified', 'living_street', 'service', 'primary_link', 'secondary_link', 'tertiary_link')
 PARKED_BY_DEFAULT = ('secondary', 'tertiary', 'residential', 'unclassified', 'living_street')
 ALLOWED = {'lane', 'street_side', 'on_street', 'half_on_kerb', 'on_kerb', 'parallel', 'diagonal', 'perpendicular', 'marked', 'yes', 'shoulder'}
 REFUSED = {'no', 'no_parking', 'no_stopping', 'no_standing', 'fire_lane', 'separate'}

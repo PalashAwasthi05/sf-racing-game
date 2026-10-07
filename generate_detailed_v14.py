@@ -308,7 +308,7 @@ landmark_sites=[];landmark_records=[]
 # mapped carriageways and pedestrian ways (5 m either side of the centre line; alleys 4 m; parking aisles excluded).
 from shapely.strtree import STRtree
 building_index=STRtree([c['g'] for c in candidates]);building_sources=[c.get('sourceId',c['id']) for c in candidates]
-street_corridor=unary_union([w['g'].buffer(5.) for w in ways if w['g'].geom_type=='LineString' and w['tags'].get('highway') in ('primary','secondary','tertiary','unclassified','residential','living_street','pedestrian')]
+street_corridor=unary_union([w['g'].buffer(5.) for w in ways if w['g'].geom_type=='LineString' and w['tags'].get('highway') in ('trunk','trunk_link','primary','primary_link','secondary','secondary_link','tertiary','tertiary_link','unclassified','residential','living_street','pedestrian')]
                             +[w['g'].buffer(4.) for w in ways if w['g'].geom_type=='LineString' and w['tags'].get('highway')=='service' and w['tags'].get('service') not in ('parking_aisle','driveway')]
                             +[w['g'] for w in ways if w['g'].geom_type in ('Polygon','MultiPolygon') and w['tags'].get('highway')=='pedestrian'])
 import os as _os;_GEN_TRACE=bool(_os.environ.get('GEN_TRACE'))
@@ -506,7 +506,8 @@ for c in ([] if _args.streets_only else candidates):
 roads=[];rails=[];footpaths=[];road_specs={};road_polygons=[]
 for w in ways:
  t,g=w['tags'],w['g'];h=t.get('highway')
- if h in ['primary','secondary','tertiary','unclassified','residential','living_street','service'] and g.geom_type=='LineString':
+ # trunk roads and the link roads too: a city boulevard mapped as trunk (Van Ness Avenue) had markings and sidewalks but no carriageway
+ if h in ['trunk','trunk_link','primary','primary_link','secondary','secondary_link','tertiary','tertiary_link','unclassified','residential','living_street','service'] and g.geom_type=='LineString':
   road_spec=mobility.spec(t);road_specs[w['id']]=road_spec;lanes=road_spec['lanes'];width=road_spec['leftM']+road_spec['rightM']
   road=mobility.road_polygon(g,road_spec).intersection(boundary).difference(all_buildings)
   road_polygons.append(road);roads.append((w,width,lanes))
