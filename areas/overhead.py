@@ -7,26 +7,27 @@ Poles stand 0.45 m behind the kerb of the built road surface (found as areas/par
 intersections, crossings and the garage doors the photographed facades show; the wires follow the street's own slope.
 Written beside the preview's manifest (<label>-overhead.json, manifest 'overhead') for the viewer. Location-free: every
 rule reads the area's own data.
-Usage: overhead.py <area dir> <build label>     (SFW_AREA set to the area; any working directory)"""
+Usage: overhead.py <area dir> <build label> [--glb model.glb] [--profiles profiles.json]
+       (SFW_AREA set to the area, unset for King Street; any working directory)"""
 import json, sys, xml.etree.ElementTree as ET
 from pathlib import Path
 import numpy as np
 from shapely.geometry import LineString, Point
 sys.path.insert(0, str(Path(__file__).resolve().parent)); sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import frontage_crops_v15 as fc
-from parking import roads_outline, kerbs, garage_doors, COMPARE
+from parking import roads_outline, kerbs, garage_doors, surface, ground_triangles, inputs, COMPARE
 
 STREETS = ('trunk', 'trunk_link', 'primary', 'secondary', 'tertiary', 'residential', 'unclassified', 'living_street', 'primary_link', 'secondary_link', 'tertiary_link')
 TROLLEY_SPAN, LAMP_SPAN = 30., 36.
-WIRE_Z, SPAN_Z, PAIR, SAG = 5.6, 7.2, .3, .18
+WIRE_Z, SPAN_Z, PAIR, SAG = 5.6, 7., .3, .18      # contact wires over the road surface, span wires over the poles' feet
 BEHIND_KERB, PARKING_LANE = .45, 2.4
 
 
 def main():
-    area, label = Path(sys.argv[1]).resolve(), sys.argv[2]
-    build = area / label.split('-')[-1] if (area / label.split('-')[-1]).exists() else area / label
+    area, label, glb, profiles = inputs()
     world, frame = fc.load_world()
-    road = roads_outline(build / 'materials/candidate.glb'); inside, kerb = kerbs(road)
+    road = roads_outline(glb); inside, kerb = kerbs(road)
+    road_z, walk_z = surface(ground_triangles(glb, 'roads')), surface(ground_triangles(glb, 'sidewalks'))
     root = ET.parse(fc.OSM_PATH).getroot()
     nodes = {n.get('id'): np.array(frame.local(float(n.get('lon')), float(n.get('lat'))), float) for n in root.iter('node')}
     ntags = {n.get('id'): {t.get('k'): t.get('v') for t in n.iter('tag')} for n in root.iter('node')}
@@ -40,9 +41,12 @@ def main():
         for r in refs: use[r] = use.get(r, 0) + 1
     clear = [(nodes[r], 8.) for r, k in use.items() if k >= 2] + [(nodes[i], 3.) for i, t in ntags.items() if i in nodes and t.get('highway') in ('crossing', 'traffic_signals')]
     clear_p = np.array([p for p, _ in clear]); clear_r = np.array([r for _, r in clear])
-    doors = garage_doors(json.load(open(area / 'regen/profiles.json'))['profiles'])
+    doors = garage_doors(profiles)
     door_p = np.array([c for c, _ in doors]) if doors else np.zeros((0, 2)); door_r = np.array([h + .5 for _, h in doors]) if doors else np.zeros(0)
-    z_at = lambda p: float(fc.ground_at(p))
+    def foot(p):            # a pole stands on the built sidewalk (on the ground beside it where none was built)
+        z = walk_z(p); return float(z) if z is not None else float(fc.ground_at(p)) + .2
+    def over_road(p):       # the road surface under a wire
+        z = road_z(p); return float(z) if z is not None else float(fc.ground_at(p)) + .09
 
     from shapely.strtree import STRtree
     outlines = [g for g in fc.load_footprints(frame).values() if not g.is_empty]; otree = STRtree(outlines)
@@ -85,14 +89,14 @@ def main():
                 if not (free(pl) and free(pr)): continue
                 stations.append((s, kl[1], kr[1]))
                 for side, p, out in ((0, pl, n), (1, pr, -n)):
-                    poles.append({'x': round(float(p[0]), 2), 'y': round(float(p[1]), 2), 'z': round(z_at(p) + .2, 2), 'h': 9.,
+                    poles.append({'x': round(float(p[0]), 2), 'y': round(float(p[1]), 2), 'z': round(foot(p), 2), 'h': 9.,
                                   'arm': [round(float(-out[0]), 3), round(float(-out[1]), 3)] if side == k % 2 else None})
-                zl, zr = z_at(pl) + SPAN_Z, z_at(pr) + SPAN_Z; mid = (pl + pr) / 2
+                zl, zr = foot(pl) + SPAN_Z, foot(pr) + SPAN_Z; mid = (pl + pr) / 2
                 wires.append({'r': .008, 'p': [[round(float(pl[0]), 2), round(float(pl[1]), 2), round(zl, 2)], [round(float(mid[0]), 2), round(float(mid[1]), 2), round((zl + zr) / 2 - .25, 2)], [round(float(pr[0]), 2), round(float(pr[1]), 2), round(zr, 2)]]})
             else:
                 side = k % 2; p, out = (pl, n) if side == 0 else (pr, -n)
                 if not free(p): continue
-                poles.append({'x': round(float(p[0]), 2), 'y': round(float(p[1]), 2), 'z': round(z_at(p) + .2, 2), 'h': 8.5, 'arm': [round(float(-out[0]), 3), round(float(-out[1]), 3)]})
+                poles.append({'x': round(float(p[0]), 2), 'y': round(float(p[1]), 2), 'z': round(foot(p), 2), 'h': 8.5, 'arm': [round(float(-out[0]), 3), round(float(-out[1]), 3)]})
         if trolley and len(stations) >= 2:
             # the contact wires run the street between its first and last span, over the middle of each travel lane, hung
             # at the spans and sagging between them; a one-way street carries one pair, a two-way street a pair each way
@@ -106,7 +110,7 @@ def main():
                     for s in np.arange(s0, s1 + .01, 2.):
                         a, d, n = frame_at(line, s); p = a + n * (off + pair)
                         j = int(np.searchsorted(spans, s, side='right')) - 1; j = min(max(j, 0), len(spans) - 2)
-                        t = (s - spans[j]) / max(1., spans[j + 1] - spans[j]); z = z_at(p) + .09 + WIRE_Z - SAG * 4 * t * (1 - t)
+                        t = (s - spans[j]) / max(1., spans[j + 1] - spans[j]); z = over_road(p) + WIRE_Z - SAG * 4 * t * (1 - t)
                         pts.append([round(float(p[0]), 2), round(float(p[1]), 2), round(z, 2)])
                     wires.append({'r': .011, 'p': pts})
             stats['trolleyM'] += s1 - s0

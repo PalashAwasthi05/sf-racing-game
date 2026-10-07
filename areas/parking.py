@@ -8,7 +8,8 @@ and nowhere they say no; an untagged residential, tertiary, secondary or unclass
 primary or service road is not. The row stops short of intersections (12 m), crossings (5 m), signals (10 m) and bus
 stops (15 m), and leaves every garage door the photographed facades show clear. Cars face the traffic of their own
 side and take the slope of the street they stand on. Location-free: every rule reads the area's own data.
-Usage: parking.py <area dir> <build label>     (SFW_AREA set to the area; any working directory)"""
+Usage: parking.py <area dir> <build label> [--glb model.glb] [--profiles profiles.json]
+       (SFW_AREA set to the area, unset for King Street; any working directory)"""
 import json, math, struct, sys, os, xml.etree.ElementTree as ET
 from pathlib import Path
 import numpy as np
@@ -33,20 +34,56 @@ PAINT = [('#f2f2ef', .24), ('#18191b', .21), ('#6b6e72', .16), ('#b8bbbe', .13),
 LANE_FROM_KERB, STEP = 1.15, .5
 
 
-def roads_outline(glb):
-    """The built road surface as a 2-D outline, from the model's `roads` mesh (vertices are in the world frame)."""
+def ground_triangles(glb, prefix):
+    """The triangles (n, 3 corners, xyz) of the model's meshes whose node names start with `prefix` ('roads',
+    'sidewalks'), vertical faces left out. Vertices are in the world frame (x east, y north, z up); every node carries
+    only the turn to glTF's y-up, which the viewer applies."""
     f = open(glb, 'rb'); f.read(12); jl, _ = struct.unpack('<II', f.read(8)); j = json.loads(f.read(jl)); f.read(8); b0 = f.tell()
-    node = next(n for n in j['nodes'] if n.get('name', '').startswith('roads'))
     def read(acc):
         a = j['accessors'][acc]; v = j['bufferViews'][a['bufferView']]; f.seek(b0 + v.get('byteOffset', 0) + a.get('byteOffset', 0))
         dt = {5126: np.float32, 5125: np.uint32, 5123: np.uint16}[a['componentType']]; k = {'VEC3': 3, 'SCALAR': 1}[a['type']]
         return np.frombuffer(f.read(a['count'] * k * np.dtype(dt).itemsize), dt).reshape(-1, k) if k > 1 else np.frombuffer(f.read(a['count'] * np.dtype(dt).itemsize), dt)
     tris = []
-    for p in j['meshes'][node['mesh']]['primitives']:
-        V = read(p['attributes']['POSITION']); I = read(p['indices']).reshape(-1, 3) if 'indices' in p else np.arange(len(V)).reshape(-1, 3)
-        tris.append(V[I][:, :, :2])
+    for node in (n for n in j['nodes'] if n.get('name', '').startswith(prefix) and 'mesh' in n):
+        for p in j['meshes'][node['mesh']]['primitives']:
+            V = read(p['attributes']['POSITION']); I = read(p['indices']).reshape(-1, 3) if 'indices' in p else np.arange(len(V)).reshape(-1, 3)
+            tris.append(V[I].astype(float))
     T = np.concatenate(tris)
-    return unary_union([Polygon(t) for t in T if abs((t[1, 0] - t[0, 0]) * (t[2, 1] - t[0, 1]) - (t[2, 0] - t[0, 0]) * (t[1, 1] - t[0, 1])) > 1e-6]).buffer(.02).buffer(-.02)
+    plan = (T[:, 1, 0] - T[:, 0, 0]) * (T[:, 2, 1] - T[:, 0, 1]) - (T[:, 2, 0] - T[:, 0, 0]) * (T[:, 1, 1] - T[:, 0, 1])
+    return T[np.abs(plan) > 1e-6]
+
+
+def roads_outline(glb):
+    """The built road surface as a 2-D outline, from the model's `roads` mesh."""
+    return unary_union([Polygon(t[:, :2]) for t in ground_triangles(glb, 'roads')]).buffer(.02).buffer(-.02)
+
+
+def surface(tris):
+    """z(p): the height of the highest of these triangles over the plan point p, or None off them. Parked cars stand on
+    the built road and poles on the built sidewalk, wherever the generator draped them."""
+    tree = STRtree([Polygon(t[:, :2]) for t in tris])
+    def z(p):
+        best = None
+        for i in tree.query(Point(float(p[0]), float(p[1]))):
+            (x0, y0, z0), (x1, y1, z1), (x2, y2, z2) = tris[i]; d = (y1 - y2) * (x0 - x2) + (x2 - x1) * (y0 - y2)
+            l0 = ((y1 - y2) * (p[0] - x2) + (x2 - x1) * (p[1] - y2)) / d; l1 = ((y2 - y0) * (p[0] - x2) + (x0 - x2) * (p[1] - y2)) / d
+            if min(l0, l1, 1. - l0 - l1) < -1e-6: continue
+            h = l0 * z0 + l1 * z1 + (1. - l0 - l1) * z2
+            if best is None or h > best: best = h
+        return best
+    return z
+
+
+def inputs():
+    """(area dir, build label, model GLB, photo readings) from the command line. The model defaults to the build's
+    materials/candidate.glb and the readings to the area's regen/profiles.json (none when it has none); --glb and
+    --profiles name others (a published model reassembled from its chunks, a world outside areas/)."""
+    import argparse
+    ap = argparse.ArgumentParser(); ap.add_argument('area'); ap.add_argument('label'); ap.add_argument('--glb'); ap.add_argument('--profiles')
+    a = ap.parse_args(); area, label = Path(a.area).resolve(), a.label
+    build = area / label.split('-')[-1] if (area / label.split('-')[-1]).exists() else area / label
+    readings = Path(a.profiles) if a.profiles else area / 'regen/profiles.json'
+    return area, label, Path(a.glb) if a.glb else build / 'materials/candidate.glb', json.load(open(readings))['profiles'] if readings.exists() else []
 
 
 def kerbs(road, reach=14.):
@@ -92,10 +129,9 @@ def garage_doors(profiles):
 
 
 def main():
-    area, label = Path(sys.argv[1]).resolve(), sys.argv[2]
-    build = area / label.split('-')[-1] if (area / label.split('-')[-1]).exists() else area / label
+    area, label, glb, profiles = inputs()
     world, frame = fc.load_world(); rng = np.random.default_rng(1906)
-    road = roads_outline(build / 'materials/candidate.glb'); inside, kerb = kerbs(road)
+    road = roads_outline(glb); inside, kerb = kerbs(road); road_z = surface(ground_triangles(glb, 'roads'))
     root = ET.parse(fc.OSM_PATH).getroot()
     nodes = {n.get('id'): frame.local(float(n.get('lon')), float(n.get('lat'))) for n in root.iter('node')}
     ntags = {n.get('id'): {t.get('k'): t.get('v') for t in n.iter('tag')} for n in root.iter('node')}
@@ -114,7 +150,6 @@ def main():
         if i not in nodes: continue
         hw = tg.get('highway'); r = {'crossing': 5., 'traffic_signals': 10., 'bus_stop': 15., 'stop': 4.}.get(hw) or (15. if tg.get('public_transport') == 'platform' else None)
         if r: keep_clear.append((np.array([float(nodes[i][0]), float(nodes[i][1])]), r))
-    profiles = json.load(open(area / 'regen/profiles.json'))['profiles']
     doors = garage_doors(profiles)
     clear_pts = np.array([p for p, _ in keep_clear]); clear_r = np.array([r for _, r in keep_clear])
     door_pts = np.array([c for c, _ in doors]) if doors else np.zeros((0, 2)); door_r = np.array([h + .9 for _, h in doors]) if doors else np.zeros(0)
@@ -159,9 +194,10 @@ def main():
                     if pos + L > len(run) * STEP: break
                     if rng.random() < .86:
                         mid = run[min(len(run) - 1, int((pos + L / 2) / STEP))]; c, hd = mid[0], mid[1]
-                        zf, zb, zc = fc.ground_at(c + hd * L / 2), fc.ground_at(c - hd * L / 2), fc.ground_at(c)
+                        zs = [road_z(q) for q in (c + hd * L / 2, c - hd * L / 2, c)]
+                        zf, zb, zc = zs if None not in zs else [float(fc.ground_at(q)) + .09 for q in (c + hd * L / 2, c - hd * L / 2, c)]
                         pitch = math.atan2(zf - zb, L)          # nose up on a rising street
-                        cars.append({'x': round(float(c[0]), 2), 'y': round(float(c[1]), 2), 'z': round(float(zc) + .09, 2), 'heading': round(math.atan2(hd[1], hd[0]), 4),
+                        cars.append({'x': round(float(c[0]), 2), 'y': round(float(c[1]), 2), 'z': round(float(zc), 2), 'heading': round(math.atan2(hd[1], hd[0]), 4),
                                      'pitch': round(float(pitch), 4), 'type': t[0], 'paint': PAINT[rng.choice(len(PAINT), p=pw)][0]})
                         parked_here += 1
                     pos += L + rng.uniform(.7, 2.6)
