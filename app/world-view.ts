@@ -7,7 +7,8 @@ import {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
 import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import type {World} from './king-pilot';
 import {createCar,buildDistanceField,loadRoadster,type Car,type CarInput} from './car';
-import {buildCarGround} from './car-ground';
+import {buildCarGround,Obstacles} from './car-ground';
+import {loadParkedCars} from './parked-cars';
 import {createAtmosphere,PRESET_ORDER,type Preset} from './atmosphere';
 import {finishMaterials,classOf} from './finish';
 import {weatherMaterials,groundTexture,WEATHERED_LAYERS,UNWEATHERED} from './weathering';
@@ -39,11 +40,12 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // Bloom and film grade sit between the lit image and the tone-mapped output.
  const grade=createGrade(composer);const output=new OutputPass();composer.addPass(output);
  function lighting(preset:string){const p=(PRESET_ORDER as string[]).includes(preset)?preset as Preset:'afternoon';atmosphere.apply(p);grade.preset(p);}
+ let carsUrl:string|null=null;   // the world's parked cars, when its manifest names them
  async function loadBuffer(){
  if(modelUrl){const response=await fetch(modelUrl);if(!response.ok)throw new Error('Geometry preview unavailable');return response.arrayBuffer();}
  // `?manifest=/compare/x.json` loads another published build (local comparison only; same-origin paths only).
  const requested=new URL(window.location.href).searchParams.get('manifest');const manifestPath=requested&&/^\/compare\/[\w.-]+\.json$/.test(requested)?requested:'/model.json';
- const manifest=await fetch(manifestPath,{cache:'no-cache'}).then(r=>{if(!r.ok)throw new Error('Scene manifest unavailable');return r.json() as Promise<{chunks:string[];compressedBytes:number}>});
+ const manifest=await fetch(manifestPath,{cache:'no-cache'}).then(r=>{if(!r.ok)throw new Error('Scene manifest unavailable');return r.json() as Promise<{chunks:string[];compressedBytes:number;cars?:string}>});carsUrl=manifest.cars??null;
  let loaded=0;
  const packed=new ReadableStream<BufferSource>({async start(controller){try{for(const path of manifest.chunks){const response=await fetch(path);if(!response.ok||!response.body)throw new Error('Scene download failed');const reader=response.body.getReader();while(true){const {done,value}=await reader.read();if(done)break;loaded+=value.byteLength;onProgress('Loading detailed scene… '+Math.round(loaded/manifest.compressedBytes*100)+'%');controller.enqueue(value)}}controller.close()}catch(e){controller.error(e)}}});
  return new Response(packed.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
@@ -128,6 +130,10 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  const lastReflectionPosition=new THREE.Vector3(Infinity,Infinity,Infinity);
  let lastReflectionTime=-Infinity;
  const reflectiveMaterials:THREE.MeshStandardMaterial[]=probeMaterials;
+ // Parked cars along the kerbs, when the world brings them (parked-cars.ts): four batched draws, their paint and glass lit
+ // by the street probe like the world's other glossy surfaces.
+ const parked=carsUrl&&/^\/compare\/[\w.-]+\.json$/.test(carsUrl)?await loadParkedCars(carsUrl):null;
+ if(parked){scene.add(parked.group);for(const m of parked.materials)atmosphere.setupMaterial(m);reflectiveMaterials.push(...parked.reflective);}
  // A capture draws the six cube faces one per frame (all six in one frame was a 15-25 ms hitch every few seconds on the
  // move); glossy surfaces keep the previous probe until the new one is filtered. A forced capture (review captures)
  // still draws all six at once.
@@ -144,7 +150,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
   const shadowAuto=renderer.shadowMap.autoUpdate;
   ring.visible=false;highlight.visible=false;renderer.shadowMap.autoUpdate=false;
   // The probe is a blurred reflection: small objects and the car are left out of its six renders.
-  const hidden=renderables.filter(o=>o.visible&&['vegetation','street_objects','signs','markings'].includes(String(o.userData.layer||getLayer(o))));hidden.forEach(o=>o.visible=false);const carWasVisible=car?.group.visible??false;if(car)car.group.visible=false;
+  const hidden=renderables.filter(o=>o.visible&&['vegetation','street_objects','signs','markings'].includes(String(o.userData.layer||getLayer(o))));const parkedWasVisible=parked?.group.visible??false;if(parked)parked.group.visible=false;hidden.forEach(o=>o.visible=false);const carWasVisible=car?.group.visible??false;if(car)car.group.visible=false;
   // Avoid feedback: capture against the sky environment, then distribute one
   // filtered local probe to all glossy surfaces. This is a bounded approximation.
   const current=localReflection?.texture??null;
@@ -163,7 +169,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
     for(const material of reflectiveMaterials){material.envMap=next.texture;material.envMapIntensity=(material.userData.envIntensity as number|undefined)??.7;material.needsUpdate=true;}
     localReflection?.dispose();localReflection=next;completed=true;captureFace=-1;
    }
-  }finally{if(!completed)for(const material of reflectiveMaterials)material.envMap=current;ring.visible=ringVisible;highlight.visible=highlightVisible;hidden.forEach(o=>o.visible=true);if(car)car.group.visible=carWasVisible;renderer.shadowMap.autoUpdate=shadowAuto;renderer.setRenderTarget(previousTarget,previousFace,previousMip);}
+  }finally{if(!completed)for(const material of reflectiveMaterials)material.envMap=current;ring.visible=ringVisible;highlight.visible=highlightVisible;hidden.forEach(o=>o.visible=true);if(parked)parked.group.visible=parkedWasVisible;if(car)car.group.visible=carWasVisible;renderer.shadowMap.autoUpdate=shadowAuto;renderer.setRenderTarget(previousTarget,previousFace,previousMip);}
  }
  // The study-radius ring at the world's own radius, draped on the terrain: a flat ring at one height floated over or
  // sank under a hilly area's streets.
@@ -237,6 +243,8 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // the car's surface and walls cover the world's context radius (a larger area than the pilot's 265 m)
  const reach=Math.max(275,(data.contextRadiusM??265)+10);
  const carGround=buildCarGround(objects,getLayer,groundAt,reach);
+ // parked cars are obstacles too: three circles each along their length
+ if(parked){const o=carGround.obstacles,flat:number[]=[];for(let i=0;i<o.count;i++)flat.push(o.x[i],o.z[i],o.r[i]);carGround.obstacles=new Obstacles(flat.concat(parked.circles));carGround.stats.obstacles=carGround.obstacles.count;}
  const fieldStart=performance.now();field=buildDistanceField(objects,getLayer,reach,.25,carGround.blocked);carGround.stats.fieldMs=Math.round(performance.now()-fieldStart);const carSource=await roadster;car=carSource?createCar(scene,host,camera,groundAt,field,carSource,carGround):null;car?.group.traverse(o=>{if(!(o instanceof THREE.Mesh))return;atmosphere.setupMaterial(o.material);for(const m of Array.isArray(o.material)?o.material:[o.material]){if(m instanceof THREE.MeshStandardMaterial&&m.roughness<.5&&!reflectiveMaterials.includes(m)){m.userData.envIntensity=.7;reflectiveMaterials.push(m);}}});car?.stop();let carPlaced=false;
  // Lighter stand-ins for the car (car-lod.ts): merged, simplified parts in the depth-only passes, simplified parts in the
  // scene pass when the car is far from the camera. Built from whatever model loaded, so a rebuilt car needs nothing else.
@@ -302,5 +310,5 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
    carLod?.update(camera);glass.prepare();patchUniforms();composer.render(1/60);renderer.domElement.toBlob(b=>{applySize();resolve(b);},'image/png');}),
   lockQuality:(on:boolean)=>{qualityLocked=on;if(on){ao.enabled=true;grade.bloom.enabled=true;}},
   renderOnce:()=>{const t0=performance.now();composer.render(1/60);renderer.getContext().finish();return performance.now()-t0;},budget:{flags:budget,glass:glass.stats,proxies:depth.meshes.length,proxySkipped:depth.skipped.length,car:carLod?.stats??null},info:()=>({calls:lastCalls,triangles:renderer.info.render.triangles,frameMs:+frameMs.toFixed(1),renderScale:+renderScale.toFixed(2),ao:ao.enabled,bloom:grade.bloom.enabled,batches:batches.length,sceneTriangles:objects.reduce((n,o)=>n+(o.geometry.index?o.geometry.index.count:o.geometry.attributes.position.count)/3,0)}),atmosphere,scene,camera,objects,renderer,composer};
- return {downloadUrl,view,select,lighting,nextStreet,drive,car:driveCar,layer:(layer:string,on:boolean)=>{const wanted=(l:string)=>l===layer||(layer==='street_objects'&&l==='signs');for(const o of objects)if(!o.userData.batched&&wanted(getLayer(o)))o.visible=on;for(const b of batches)if(wanted(String(b.userData.layer)))b.visible=on;for(const p of depth.meshes)if(wanted(String(p.userData.layer)))p.visible=on;},evidence:(on:boolean)=>{const tint=(layer:string,evidence:unknown)=>['roofs','terrain'].includes(layer)?'#56b3c4':evidence==='visual-fit'?'#7caf8c':'#d2a25e';const paint=(o:THREE.Mesh,layer:string,evidence:unknown,original:THREE.Material|THREE.Material[])=>{if(on){let m=evidences.get(o);if(!m){m=new THREE.MeshStandardMaterial({color:tint(layer,evidence),roughness:.9});atmosphere.setupMaterial(m);evidences.set(o,m);}o.material=m;}else o.material=original;};for(const o of objects)if(!o.userData.batched)paint(o,getLayer(o),o.userData.evidence,originals.get(o)!);for(const b of batches)paint(b,String(b.userData.layer),b.userData.evidence,b.userData.original as THREE.Material);},dispose:()=>{cancelAnimationFrame(frame);car?.dispose();resize.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',down);window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',blur);objects.forEach(o=>o.geometry.dispose());batches.forEach(b=>{b.geometry.dispose();b.removeFromParent();if(b.name==='vegetation___foliage'){const m=b.material as THREE.MeshStandardMaterial;m.map?.dispose();m.dispose();}});wxGround.dispose();new Set([...originals.values()].flat()).forEach(m=>m.dispose());evidences.forEach(m=>m.dispose());localReflection?.dispose();reflectionTarget.dispose();reflectionFilter.dispose();depth.dispose();scenePass.dispose();ao.dispose();grade.dispose();output.dispose();composer.dispose();atmosphere.dispose();ring.geometry.dispose();(ring.material as THREE.Material).dispose();highlight.geometry.dispose();(highlight.material as THREE.Material).dispose();URL.revokeObjectURL(downloadUrl);renderer.dispose();renderer.domElement.remove();}};
+ return {downloadUrl,view,select,lighting,nextStreet,drive,car:driveCar,layer:(layer:string,on:boolean)=>{const wanted=(l:string)=>l===layer||(layer==='street_objects'&&l==='signs');if(parked&&wanted('street_objects'))parked.group.visible=on;for(const o of objects)if(!o.userData.batched&&wanted(getLayer(o)))o.visible=on;for(const b of batches)if(wanted(String(b.userData.layer)))b.visible=on;for(const p of depth.meshes)if(wanted(String(p.userData.layer)))p.visible=on;},evidence:(on:boolean)=>{const tint=(layer:string,evidence:unknown)=>['roofs','terrain'].includes(layer)?'#56b3c4':evidence==='visual-fit'?'#7caf8c':'#d2a25e';const paint=(o:THREE.Mesh,layer:string,evidence:unknown,original:THREE.Material|THREE.Material[])=>{if(on){let m=evidences.get(o);if(!m){m=new THREE.MeshStandardMaterial({color:tint(layer,evidence),roughness:.9});atmosphere.setupMaterial(m);evidences.set(o,m);}o.material=m;}else o.material=original;};for(const o of objects)if(!o.userData.batched)paint(o,getLayer(o),o.userData.evidence,originals.get(o)!);for(const b of batches)paint(b,String(b.userData.layer),b.userData.evidence,b.userData.original as THREE.Material);},dispose:()=>{cancelAnimationFrame(frame);car?.dispose();parked?.group.children.forEach(m=>(m as THREE.BatchedMesh).dispose());parked?.materials.forEach(m=>m.dispose());resize.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',down);window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',blur);objects.forEach(o=>o.geometry.dispose());batches.forEach(b=>{b.geometry.dispose();b.removeFromParent();if(b.name==='vegetation___foliage'){const m=b.material as THREE.MeshStandardMaterial;m.map?.dispose();m.dispose();}});wxGround.dispose();new Set([...originals.values()].flat()).forEach(m=>m.dispose());evidences.forEach(m=>m.dispose());localReflection?.dispose();reflectionTarget.dispose();reflectionFilter.dispose();depth.dispose();scenePass.dispose();ao.dispose();grade.dispose();output.dispose();composer.dispose();atmosphere.dispose();ring.geometry.dispose();(ring.material as THREE.Material).dispose();highlight.geometry.dispose();(highlight.material as THREE.Material).dispose();URL.revokeObjectURL(downloadUrl);renderer.dispose();renderer.domElement.remove();}};
 }
