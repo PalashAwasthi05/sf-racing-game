@@ -23,11 +23,24 @@ const SHAPES: Record<string, Shape> = {
   van: {top: [[0, .3], [.005, .95], [.03, 1], [.78, 1], [.88, .64], [.98, .56], [1, .46], [1, .3]], glass: [[.71, .64], [.775, .95], [.865, .655]], axles: [.17, .84], wheel: .34, bottom: .13, pillar: false},
   coupe: {top: [[0, .44], [.01, .6], [.06, .68], [.25, .72], [.45, 1], [.64, 1], [.79, .7], [.97, .6], [1, .5], [1, .3]], glass: [[.27, .73], [.455, .975], [.635, .975], [.775, .705]], axles: [.18, .81], wheel: .32, bottom: .14, pillar: false},
 };
-const BEVEL = .04, BEVEL_DEPTH = .05, TUMBLEHOME = .13;
+const BEVEL = .04, BEVEL_DEPTH = .05, TUMBLEHOME = .13, PLAN_TAPER = .09;
+
+/** The triangles of a non-indexed geometry that have area. A zero-area triangle (the extrusion leaves a few where a
+ *  rounded corner meets a straight edge) takes a zero normal, which the shader's normalize turns into NaN; the bloom
+ *  spread one NaN pixel into a black block over a third of the screen. */
+function dropDegenerate(g: THREE.BufferGeometry) {
+  const p = g.attributes.position.array as ArrayLike<number>, keep: number[] = [];
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  for (let t = 0; t < p.length; t += 9) {
+    a.set(p[t], p[t + 1], p[t + 2]); b.set(p[t + 3], p[t + 4], p[t + 5]); c.set(p[t + 6], p[t + 7], p[t + 8]);
+    if (b.sub(a).cross(c.sub(a)).lengthSq() > 1e-12) for (let k = 0; k < 9; k++) keep.push(p[t + k]);
+  }
+  const out = new THREE.BufferGeometry(); out.setAttribute('position', new THREE.Float32BufferAttribute(keep, 3)); return out;
+}
 
 /** Non-indexed, no uv, normals smoothed across rounded edges and kept sharp across creases (over 35 degrees). */
 function finish(g: THREE.BufferGeometry, colour?: THREE.Color) {
-  let n = g.index ? g.toNonIndexed() : g; n.deleteAttribute('uv'); n.deleteAttribute('normal'); n = toCreasedNormals(n, .61);
+  let n = dropDegenerate(g.index ? g.toNonIndexed() : g); n = toCreasedNormals(n, .61);
   if (n.index) n = n.toNonIndexed();
   if (colour) { const c = new Float32Array(n.attributes.position.count * 3); for (let i = 0; i < c.length; i += 3) { c[i] = colour.r; c[i + 1] = colour.g; c[i + 2] = colour.b; } n.setAttribute('color', new THREE.BufferAttribute(c, 3)); }
   return n;
@@ -42,6 +55,39 @@ function tumblehome(g: THREE.BufferGeometry, belt: number, top: number) {
 
 function box(w: number, h: number, d: number, x: number, y: number, z: number) { const b = new THREE.BoxGeometry(w, h, d); b.translate(x, y, z); return b; }
 
+/** The body narrows toward its bumpers in plan, as a car's corners round off (z drawn in near the ends). */
+function planTaper(g: THREE.BufferGeometry, L: number) {
+  const p = g.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < p.count; i++) { const t = THREE.MathUtils.smoothstep(Math.abs(p.getX(i)), .3 * L, .5 * L + BEVEL); p.setZ(i, p.getZ(i) * (1 - PLAN_TAPER * t * t)); }
+  p.needsUpdate = true;
+}
+
+/** Continues a shape from its current point pts[0] along pts, every inner corner rounded by a fillet of at most `r` (no
+ *  overshoot, unlike a spline through it). pts[0] is not drawn again: a repeated point is a zero-length edge, and the
+ *  extrusion's bevel divides by edge lengths (NaN vertices, which the bloom spread into black blocks on screen). */
+function filleted(shape: THREE.Shape, pts: [number, number][], r: number) {
+  for (let i = 1; i < pts.length; i++) {
+    const P = new THREE.Vector2(...pts[i]);
+    if (i === pts.length - 1) { shape.lineTo(P.x, P.y); continue; }
+    const A = new THREE.Vector2(...pts[i - 1]), B = new THREE.Vector2(...pts[i + 1]);
+    const ra = Math.min(r, A.distanceTo(P) * .45, B.distanceTo(P) * .45);
+    const p0 = P.clone().add(A.clone().sub(P).setLength(ra)), p1 = P.clone().add(B.clone().sub(P).setLength(ra));
+    shape.lineTo(p0.x, p0.y); shape.quadraticCurveTo(P.x, P.y, p1.x, p1.y);
+  }
+}
+
+/** A wheel's outer face: five silver spokes on a dark ground, coloured per triangle so the pattern stays crisp. */
+function spokedRim(radius: number) {
+  const disc = new THREE.CircleGeometry(radius, 30).toNonIndexed(), pos = disc.attributes.position, col = new Float32Array(pos.count * 3);
+  const silver = new THREE.Color('#c8ccd0'), dark = new THREE.Color('#2b2d30'), hub = new THREE.Color('#9ea3a7');
+  for (let t = 0; t < pos.count; t += 3) {
+    const cx = (pos.getX(t) + pos.getX(t + 1) + pos.getX(t + 2)) / 3, cy = (pos.getY(t) + pos.getY(t + 1) + pos.getY(t + 2)) / 3;
+    const a = (Math.atan2(cy, cx) + Math.PI * 2) % (Math.PI * 2), c = Math.floor(a / (Math.PI / 5)) % 2 === 0 ? silver : dark;
+    for (let k = 0; k < 3; k++) { const v = t + k, rr = Math.hypot(pos.getX(v), pos.getY(v)); const cc = rr < radius * .25 ? hub : c; col[v * 3] = cc.r; col[v * 3 + 1] = cc.g; col[v * 3 + 2] = cc.b; }
+  }
+  disc.setAttribute('color', new THREE.BufferAttribute(col, 3)); return disc;
+}
+
 /** One body type's parts by material: paint, glass, dark (tyres, pillar, grille), bright (rims, lights, plates). */
 function buildKind(k: Kind) {
   const s = SHAPES[k.name] ?? SHAPES.sedan, L = k.length, H = k.height, W = k.width, yb = s.bottom * H, r = s.wheel, ra = r + .05;
@@ -51,23 +97,29 @@ function buildKind(k: Kind) {
     for (let i = 0; i <= 10; i++) { const t = t0 + (t1 - t0) * i / 10; outline.lineTo(cx + ra * Math.cos(t), r + ra * Math.sin(t)); }
   }
   outline.lineTo(L, yb);
-  for (const [x, y] of [...s.top].reverse()) outline.lineTo(x * L, y * H);
-  const body = new THREE.ExtrudeGeometry(outline, {depth: W - 2 * BEVEL_DEPTH, bevelEnabled: true, bevelThickness: BEVEL_DEPTH, bevelSize: BEVEL, bevelSegments: 2, curveSegments: 1, steps: 1});
+  // up the front and over the top to the rear, every corner rounded (a box with corners cut read as a toy)
+  filleted(outline, [[L, yb], ...[...s.top].reverse().map(([x, y]) => [x * L, y * H] as [number, number])], .22);
+  const body = new THREE.ExtrudeGeometry(outline, {depth: W - 2 * BEVEL_DEPTH, bevelEnabled: true, bevelThickness: BEVEL_DEPTH, bevelSize: BEVEL, bevelSegments: 2, curveSegments: 4, steps: 1});
   body.translate(-L / 2, 0, -(W - 2 * BEVEL_DEPTH) / 2);
-  const belt = Math.min(...s.glass.map(p => p[1])) * H - .02; tumblehome(body, belt, H);
+  const belt = Math.min(...s.glass.map(p => p[1])) * H - .02; tumblehome(body, belt, H); planTaper(body, L);
   // glass: the window outline pushed out past the rounded body edge, a little wider than the body
   const gx = s.glass.map(p => p[0] * L), gy = s.glass.map(p => p[1] * H), mx = gx.reduce((a, b) => a + b) / gx.length, my = gy.reduce((a, b) => a + b) / gy.length;
   const glassShape = new THREE.Shape(s.glass.map((_, i) => { const dx = gx[i] - mx, dy = gy[i] - my, d = Math.hypot(dx, dy) || 1; return new THREE.Vector2(gx[i] + dx / d * (BEVEL + .02), gy[i] + dy / d * (BEVEL + .02)); }));
-  const glass = new THREE.ExtrudeGeometry(glassShape, {depth: W + .02, bevelEnabled: false, curveSegments: 1}); glass.translate(-L / 2, 0, -(W + .02) / 2); tumblehome(glass, belt, H);
+  const glass = new THREE.ExtrudeGeometry(glassShape, {depth: W + .02, bevelEnabled: false, curveSegments: 1}); glass.translate(-L / 2, 0, -(W + .02) / 2); tumblehome(glass, belt, H); planTaper(glass, L);
   const front = L / 2 + BEVEL, rear = -L / 2 - BEVEL, xs = gx.map(x => x - L / 2), aBase = Math.max(...xs);
   const paint = [body, box(.14, .1, .2, aBase - .1, belt + .08, W / 2 + .08), box(.14, .1, .2, aBase - .1, belt + .08, -W / 2 - .08)];
   const dark: THREE.BufferGeometry[] = [box(.05, .16 * H, .5 * W, front + .005, .4 * H, 0)], bright: THREE.BufferGeometry[] = [];
-  if (s.pillar) { const xm = (Math.min(...xs) + aBase) / 2 + .1; dark.push(box(.08, (Math.max(...gy) - Math.min(...gy)) * .95, W + .05, xm, my, 0)); tumblehome(dark[dark.length - 1], belt, H); }
+  if (s.pillar) {
+    const xm = (Math.min(...xs) + aBase) / 2 + .1; dark.push(box(.08, (Math.max(...gy) - Math.min(...gy)) * .95, W + .05, xm, my, 0)); tumblehome(dark[dark.length - 1], belt, H);
+    // door seams: the front door's leading edge, the B-pillar line and the rear door's trailing edge, sill to belt
+    for (const x of [aBase - .02, xm, Math.min(...xs) + .05]) for (const side of [-1, 1]) dark.push(box(.012, belt - yb - .12, .008, x, (belt + yb) / 2 + .02, side * (W / 2 + .002)));
+  }
   const tyre = new THREE.CylinderGeometry(r, r, .22, 16); tyre.rotateX(Math.PI / 2);
-  const rim = new THREE.CylinderGeometry(r * .62, r * .62, .232, 10); rim.rotateX(Math.PI / 2);
+  const rim = spokedRim(r * .64);
   for (const ax of s.axles) for (const side of [-1, 1]) {
     dark.push(tyre.clone().translate(ax * L - L / 2, r, side * (W / 2 - .13)));
-    bright.push(finish(rim.clone().translate(ax * L - L / 2, r, side * (W / 2 - .125)), new THREE.Color('#b4b8bc')));
+    const face = rim.clone(); if (side < 0) face.rotateY(Math.PI); face.translate(ax * L - L / 2, r, side * (W / 2 - .13 + .113));
+    face.deleteAttribute('uv'); face.computeVertexNormals(); bright.push(face);
   }
   const lightY = Math.max(.5, s.top[s.top.length - 2][1] - .06) * H, tailY = Math.max(.5, s.top[1][1] - .06) * H;
   for (const side of [-1, 1]) {
