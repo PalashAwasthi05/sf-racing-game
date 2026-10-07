@@ -14,7 +14,7 @@ import {createAtmosphere,PRESET_ORDER,type Preset} from './atmosphere';
 import {finishMaterials,classOf} from './finish';
 import {weatherMaterials,groundTexture,WEATHERED_LAYERS,UNWEATHERED} from './weathering';
 import {glazeMaterials,isGlazing} from './glazing';
-import {detailAsphalt,detailGrass,detailGarden,ASPHALT_CLASS,GRASS_CLASS} from './ground-detail';
+import {detailAsphalt,detailGrass,detailGarden,detailPavement,ASPHALT_CLASS,GRASS_CLASS} from './ground-detail';
 import {buildFoliage,finishFoliage} from './foliage';
 import {createGrade} from './grade';
 import {MultisampledRenderPass,buildDepthProxies,installDepthProxies,cullTransmission,cacheArrayUniforms} from './render-budget';
@@ -107,7 +107,11 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
   const ofClass=(re:RegExp)=>{const out=new Set<THREE.MeshStandardMaterial>();for(const o of objects){if(!re.test(classOf(o.name)))continue;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof THREE.MeshStandardMaterial)out.add(m);}return out;};
   detailAsphalt(ofClass(ASPHALT_CLASS));detailGrass(ofClass(GRASS_CLASS));
   // the bare terrain between buildings is mostly back gardens, not one plain of paving
-  const terrain=new Set<THREE.MeshStandardMaterial>();for(const o of objects)if(getLayer(o)==='terrain'&&o.material instanceof THREE.MeshStandardMaterial)terrain.add(o.material);detailGarden(terrain);}
+  const terrain=new Set<THREE.MeshStandardMaterial>();for(const o of objects)if(getLayer(o)==='terrain'&&o.material instanceof THREE.MeshStandardMaterial)terrain.add(o.material);detailGarden(terrain);
+  // sidewalk concrete (not its joints or tactile strips), on its own copy of a material other concrete shares
+  const walks=new Map<THREE.Material,THREE.MeshStandardMaterial>();
+  for(const o of objects)if(getLayer(o)==='sidewalks'&&classOf(o.name)==='concrete'&&o.material instanceof THREE.MeshStandardMaterial){let m=walks.get(o.material);if(!m){m=o.material.clone();atmosphere.setupMaterial(m);walks.set(o.material,m);}o.material=m;originals.set(o,m);}
+  detailPavement(walks.values());}
  // Coincident surfaces (a tier wall on the outline over the outer wall's top band, glazing in its curtain panel's
  // plane, an observed skin on its host wall) z-fight: the winner flips per pixel as the camera moves. Each material
  // gets a fixed depth priority instead: facade detail over roof caps over observed skins over host massing, with a

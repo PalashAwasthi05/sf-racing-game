@@ -32,10 +32,10 @@ vec3 gdAsphalt(vec3 albedo){
  float age=gdFbm(p*.06+7.3);                                   // older (greyer, lighter) or newer (darker) surfacing, ~15 m
  float blotch=gdFbm(p*.25+1.7);                                 // stains and wear, ~4 m
  vec3 c=albedo*mix(vec3(.72,.72,.75),vec3(1.5,1.44,1.34),smoothstep(.3,.7,age))*mix(.84,1.14,blotch);
- // utility cuts: about one 8 m cell in four carries a rectangle, of dark new asphalt or of pale fill
+ // utility cuts: about one 8 m cell in four carries a rectangle, mostly of dark new asphalt, now and then of paler fill
  vec2 cell=floor(p/8.);float pick=gdHash(cell+3.7);
  if(pick<.26){vec2 q=fract(p/8.)*8.;vec2 lo=vec2(.8)+gdHash2(cell)*3.,hi=lo+vec2(1.6)+gdHash2(cell+1.9)*3.4;
-  float inside=step(lo.x,q.x)*step(q.x,hi.x)*step(lo.y,q.y)*step(q.y,hi.y);c*=mix(1.,pick<.09?1.75:.62,inside);}
+  float inside=step(lo.x,q.x)*step(q.x,hi.x)*step(lo.y,q.y)*step(q.y,hi.y);c*=mix(1.,pick<.05?1.3:.66,inside);}
  // sealed cracks, thin dark lines in patchy stretches of older surfacing (not a pattern over the whole road)
  float zone=smoothstep(.6,.72,gdFbm(p*.035+5.1))*smoothstep(.4,.6,age);
  float crack=(1.-smoothstep(.0,.022,gdEdge(p*.45+vec2(gdNoise(p*.9)*.6))))*zone;c*=1.-.5*crack*gdKeep(12.);
@@ -79,6 +79,20 @@ vec3 gdGarden(vec3 albedo){
 }
 `;
 
+const PAVEMENT = /* glsl */`
+vec3 gdPavement(vec3 albedo){
+ vec2 p=vGdPos.xz;
+ // a sidewalk is laid in pours of different ages and wears unevenly: tone drift over metres, weathered blotches, and
+ // the dark spots of old chewing gum, densest nowhere in particular
+ float tone=gdFbm(p*.3+4.2),blot=gdFbm(p*1.1+9.9);
+ vec3 c=albedo*mix(.88,1.07,tone)*mix(1.,.9,smoothstep(.62,.8,blot));
+ vec2 g=floor(p*2.);float spot=step(.985,gdHash(g+1.3));vec2 o=fract(p*2.)-.5+(gdHash2(g)-.5)*.5;
+ c*=1.-.45*spot*(1.-smoothstep(.04,.07,length(o)))*gdKeep(4.);
+ gdHeight=gdNoise(p*7.)*gdKeep(7.)*.5;
+ return c;
+}
+`;
+
 function patch(materials: Iterable<THREE.MeshStandardMaterial>, tag: string, body: string, call: string, bump: number, roughness: string) {
   for (const m of materials) {
     if (m.userData.groundDetail) continue; m.userData.groundDetail = tag;
@@ -111,6 +125,11 @@ export function detailGrass(materials: Iterable<THREE.MeshStandardMaterial>) {
 /** Back gardens, patios and bare soil where the terrain itself shows (its material is one paving texture). */
 export function detailGarden(materials: Iterable<THREE.MeshStandardMaterial>) {
   patch(materials, 'garden', GARDEN, 'gdGarden', .01, 'clamp(max(roughnessFactor,.82),.0,1.)');
+}
+
+/** Tone drift, weathering and gum spots on sidewalk concrete (the slab joints are their own geometry). */
+export function detailPavement(materials: Iterable<THREE.MeshStandardMaterial>) {
+  patch(materials, 'pavement', PAVEMENT, 'gdPavement', .004, 'clamp(roughnessFactor*mix(1.05,.92,gdHeight),.4,1.)');
 }
 
 /** Ground classes this module details, by a mesh's material class. */
