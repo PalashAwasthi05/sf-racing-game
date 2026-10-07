@@ -69,8 +69,7 @@ void main(){
 }`;
 
 export function createAtmosphere(scene:THREE.Scene,renderer:THREE.WebGLRenderer,camera:THREE.PerspectiveCamera){
- // drawn first: the dome is 1.6 km across and writes no depth, so anything beyond it (the backdrop's ground) draws over it
- const sky=new Sky();sky.scale.setScalar(1600);sky.renderOrder=-1;scene.add(sky);patchSky(sky,true);
+ const sky=new Sky();sky.scale.setScalar(1600);scene.add(sky);patchSky(sky,true);
  const cloudUniforms={uTime:{value:0},uCoverage:{value:.4},uOpacity:{value:.9},uSunDir:{value:new THREE.Vector3(0,1,0)},uTint:{value:new THREE.Color('#ffffff')},uShade:{value:new THREE.Color('#a0abb8')},uHorizon:{value:new THREE.Color('#b8cad8')}};
  const clouds=new THREE.Mesh(new THREE.SphereGeometry(900,48,20,0,Math.PI*2,0,Math.PI*.52),new THREE.ShaderMaterial({vertexShader:CLOUD_VERTEX,fragmentShader:CLOUD_FRAGMENT,uniforms:cloudUniforms,transparent:true,depthWrite:false,side:THREE.BackSide,fog:false}));
  clouds.renderOrder=1;clouds.frustumCulled=false;scene.add(clouds);
