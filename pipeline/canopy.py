@@ -1,4 +1,5 @@
-"""Trees the LiDAR measures in open ground (parks, gardens, lawns) that no street-tree inventory lists.
+"""Trees the LiDAR measures off the streets that no street-tree inventory lists: in open ground (parks, gardens, lawns)
+and in the unbuilt land between buildings (back gardens, setbacks, courtyards), where a city block's trees stand.
 
 Every non-ground return outside the building outlines (kept 1.5 m clear of them) and inside the mapped open ground,
 standing 2.5-45 m over the terrain, goes into a 1 m canopy-height raster. A crown is a local peak of the smoothed
@@ -22,6 +23,13 @@ def open_ground(ways, boundary):
     parts = [w['g'] for w in ways if w['g'].geom_type in ('Polygon', 'MultiPolygon')
              and any(w['tags'].get(k) in v for k, v in OPEN_GROUND.items())]
     return unary_union(parts).intersection(boundary) if parts else None
+
+def yards(ctx):
+    """The unbuilt land off the streets: the boundary less the building outlines (1.5 m clear) and the street plan."""
+    plan = ctx.get('street_plan') or {}; y = ctx['boundary'].difference(ctx['all_buildings'].buffer(1.5))
+    for k in ('road', 'sidewalk', 'cycle', 'paths'):
+        if plan.get(k) is not None and not plan[k].is_empty: y = y.difference(plan[k])
+    return y
 
 def crowns(pts, elev, area, buildings, placed, cell=1., min_height=4., min_sep=4.):
     """(x, y, ground z, height, crown radius) of the crowns the returns over `area` show."""
@@ -64,16 +72,20 @@ def crowns(pts, elev, area, buildings, placed, cell=1., min_height=4., min_sep=4
     return out
 
 def compile(ctx):
-    """Draw the measured crowns of the open ground; returns their records."""
-    area = open_ground(ctx['ways'], ctx['boundary'])
+    """Draw the measured crowns of the open ground and the yards; returns their records. A yard keeps its crowns of 5 m
+    or more, at most 1,500, the tallest first (a block's gardens hold many small shrubs the LiDAR also peaks on)."""
+    park = open_ground(ctx['ways'], ctx['boundary']); yard = yards(ctx)
     placed = [item['position'] for item in ctx.get('tree_placements', [])]
-    found = crowns(ctx['pts'], ctx['elev'], area, ctx.get('all_buildings'), placed)
+    found = crowns(ctx['pts'], ctx['elev'], park, ctx.get('all_buildings'), placed)
+    in_park = [(x, y) for x, y, *_ in found]
+    extra = [c for c in crowns(ctx['pts'], ctx['elev'], yard, ctx.get('all_buildings'), placed + in_park) if c[3] >= 5.]
+    extra.sort(key=lambda c: -c[3]); found = [(*c, 'park') for c in found] + [(*c, 'yard') for c in extra[:1500]]
     put, cyl = ctx['put'], ctx['cylinder']; records = []
     def blade(a, b, width, key):
         a, b = np.array(a), np.array(b); v = b - a; n = np.cross(v, [0, 0, 1]); n = n / max(.001, np.linalg.norm(n)); mid = a + v * .55
         vv = np.array([a, mid + n * width, b, mid - n * width, mid + [0, 0, width * .2]])
         put(trimesh.Trimesh(vv, [[0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]], process=False), 'vegetation', key)
-    for x, y, z, height, radius in found:
+    for x, y, z, height, radius, where in found:
         rng = np.random.default_rng(int(abs(x) * 1000 + abs(y) * 7) % (2 ** 32))
         vr = min(.42 * height, max(1.6, radius * 1.05))          # the crown's vertical half-depth
         centre = np.array([x, y, z + height - vr]); trunk_top = z + max(1.8, height - 1.6 * vr)
@@ -89,6 +101,6 @@ def compile(ctx):
             end = pos + np.array([math.cos(ang), math.sin(ang), rng.uniform(-.4, .4)]) * .42
             blade(pos, end, .15, 'leaf' + str(1 + k % 3))
         records.append({'position': [round(x, 2), round(y, 2)], 'heightM': round(height, 1), 'crownRadiusM': round(radius, 1),
-                        'source': 'LiDAR canopy peak in mapped open ground', 'status': 'measured-crown, species unknown'})
-    ctx['counts']['lidarCanopyTrees'] = len(records)
+                        'source': 'LiDAR canopy peak in ' + ('mapped open ground' if where == 'park' else 'unbuilt land off the streets'), 'status': 'measured-crown, species unknown'})
+    ctx['counts']['lidarCanopyTrees'] = len(records); ctx['counts']['lidarYardTrees'] = sum(r['source'].endswith('streets') for r in records)
     return records
