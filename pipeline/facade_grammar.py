@@ -5,7 +5,7 @@ import math
 import numpy as np
 from shapely.geometry import Point,Polygon,box
 from .surface_evidence import admissible,resolve_material
-from . import bays
+from . import bays, facade_detail
 
 
 RIBBON_PIER_M=.3   # lights of a bank standing at most this far apart are one band of glazing per storey
@@ -205,7 +205,8 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
  bay_list=[]
  for bb in profile.get('bays',[]):
   bx0,bz0,bx1,bz1=bb['rect'];bx0*=W;bx1*=W;bz0*=Hs;bz1=min(bz1*Hs,H)
-  if bx1-bx0>=.8 and bz1-bz0>=1.:bay_list.append({'x0':bx0,'x1':bx1,'z0':bz0,'z1':bz1,'p':float(np.clip(bb.get('projectionM',.6),.25,1.2))})
+  if bx1-bx0>=.8 and bz1-bz0>=1.:bay_list.append({'x0':bx0,'x1':bx1,'z0':bz0,'z1':bz1,'p':float(np.clip(bb.get('projectionM',.6),.25,1.2)),'shape':bb.get('shape'),'sideAngleDeg':bb.get('sideAngleDeg',45),
+                                       'trim':bb.get('trim'),'storeys':[z*Hs for z in bb.get('storeys',[])],'corbel':bool(bb.get('corbel')),'cap':bb.get('cap','cornice')})
  bay_windows=0
  if bay_list:
   in_bay=lambda r,b:b['x0']-.1<=(r[0]+r[2])/2<=b['x1']+.1 and b['z0']-.1<=(r[1]+r[3])/2<=b['z1']+.1
@@ -218,7 +219,7 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
   for b in bay_list:
    if not low<=(b['x0']+b['x1'])/2<high:continue
    mine=[op for op in whole if in_bay(op['rect'],b)]
-   trim=next((op['style'].get('frameMaterial') for op in mine if op.get('style',{}).get('frameMaterial')),'#ece9e2')
+   trim=b.get('trim') or next((op['style'].get('frameMaterial') for op in mine if op.get('style',{}).get('frameMaterial')),'#ece9e2')
    bay_windows+=bays.draw(point,ctx['put'],layer,detail,b,mine,wall_mat((b['x0']+b['x1'])/2,(b['z0']+b['z1'])/2),trim)
  # Partition each horizontal slice around its openings and material boundaries.
  zs=sorted(set([0,H]+[v for op in ops for v in [op['rect'][1],op['rect'][3]]]+[min(H,p['rect'][k]*Hs) for p in panels for k in [1,3]]))
@@ -380,6 +381,11 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
    cuts=[0.]+list(s.get('jointFractions',[]))+[1.]      # a ribbon's lights take their blinds one by one
    for k,(fa,fb) in enumerate(zip(cuts,cuts[1:])):
     if (j+k)%5 in [1,3]:ch=h*(.22 if (j+k)%5==1 else .47);block(x1+w*(fa+fb)/2,y2-ch/2-fw,w*(fb-fa)-fw*2,ch,.02,'curtain',-recess-.07)
+ # Details read from the photograph that the lines above do not draw (pipeline/facade_detail.py): sashes, surrounds,
+ # hoods, doors and steps of the openings; rustication, quoins, fire escapes, balconies and relief panels of the wall.
+ dctx=dict(block=block,prism=prism,beam=beam,point=point,wall_mat=wall_mat,clip=clip_box,low=low,high=high,W=W,H=H,Hs=Hs,mat=mat)
+ for op in ops:facade_detail.opening(dctx,op)
+ facade_detail.wall(dctx,profile,ops)
  for band in profile.get('bands',[]):
   z=band['height']*Hs
   if z>H+.5:continue

@@ -25,6 +25,12 @@ def clean(r, piece):
     for k in ('materials', 'banks', 'openings', 'bays'): r[k] = [o for o in (r.get(k) or []) if isinstance(o, dict) and ok(o)]
     r['bands'] = [b for b in (r.get('bands') or []) if isinstance(b, dict) and isinstance(b.get('zM'), (int, float))]
     r['piers'] = [b for b in (r.get('piers') or []) if isinstance(b, dict) and isinstance(b.get('xM'), (int, float))]
+    num = lambda v: isinstance(v, (int, float))
+    for k in ('rustication', 'ornaments'): r[k] = [o for o in (r.get(k) or []) if isinstance(o, dict) and ok(o)]
+    r['quoins'] = [q for q in (r.get('quoins') or []) if isinstance(q, dict) and num(q.get('xM')) and num(q.get('z0')) and num(q.get('z1')) and q['z1'] > q['z0']]
+    r['fireEscapes'] = [f for f in (r.get('fireEscapes') or []) if isinstance(f, dict) and num(f.get('x0')) and num(f.get('x1')) and f['x1'] > f['x0']
+                        and isinstance(f.get('levels'), list) and all(num(z) for z in f['levels']) and f['levels']]
+    r['balconies'] = [b for b in (r.get('balconies') or []) if isinstance(b, dict) and num(b.get('x0')) and num(b.get('x1')) and b['x1'] > b['x0'] and num(b.get('zM'))]
     return r
 
 
@@ -54,6 +60,7 @@ def _style(o, dx=None, dz=None):
     kind = KIND.get(o.get('kind', 'window'), 'window')
     st = {'kind': kind, 'frameMaterial': hexok(o.get('frame'), '#3a3d40')}
     if o.get('head') in ('arch', 'segmental'): st['head'] = o['head']
+    if isinstance(o.get('springRatio'), (int, float)) and o.get('head') == 'arch': st['springRatio'] = float(np.clip(o['springRatio'], .2, .9))
     if o.get('recessM') is not None: st['recessM'] = float(np.clip(o['recessM'], .02, 1.5))
     m, t = int(o.get('mullions') or 0), int(o.get('transoms') or 0)
     st['mullionFractions'] = [round((k + 1) / (m + 1), 4) for k in range(m)]
@@ -62,12 +69,66 @@ def _style(o, dx=None, dz=None):
     if o.get('kind') == 'garage': st.update(material=st['frameMaterial'], slatMaterial=st['frameMaterial'], slatPitchM=.5)
     if o.get('kind') == 'curtain': st.update(ribbon=True, mullionFractions=st['mullionFractions'] or [.5])
     elif o.get('ribbon') is not None: st['ribbon'] = bool(o['ribbon'])
+    # reading v2 (areas/ring/read-v2.md): the window's sashes and panes, its trim, a door and the steps up to it
+    if o.get('sash') in ('double-hung', 'casement', 'fixed', 'sliding'): st['sash'] = o['sash']
+    if isinstance(o.get('lites'), list) and len(o['lites']) == 2: st['lites'] = [int(np.clip(v, 1, 8)) for v in o['lites']]
+    if isinstance(o.get('meetingRail'), (int, float)): st['meetingRail'] = float(np.clip(o['meetingRail'], .3, .75))
+    if isinstance(o.get('frameWidthM'), (int, float)): st['frameWidthM'] = float(np.clip(o['frameWidthM'], .03, .2))
+    trim = hexok(o.get('trimHex'), st['frameMaterial'])
+    if isinstance(o.get('surround'), dict):
+        st['surround'] = {'widthM': float(np.clip(o['surround'].get('widthM', .14), .04, .6)), 'projectionM': float(np.clip(o['surround'].get('projectionM', .04), .01, .2)),
+                          'material': hexok(o['surround'].get('hex'), trim)}
+    if isinstance(o.get('hood'), dict):
+        h = o['hood']; st['hood'] = {'kind': h.get('kind') if h.get('kind') in ('cornice', 'pediment', 'segmental') else 'cornice',
+                                     'heightM': float(np.clip(h.get('heightM', .3), .08, 1.2)), 'projectionM': float(np.clip(h.get('projectionM', .14), .03, .6)), 'material': hexok(h.get('hex'), trim)}
+    if o.get('keystone'): st['keystone'] = True
+    if isinstance(o.get('railing'), dict): st['railing'] = {'heightM': float(np.clip(o['railing'].get('heightM', .9), .3, 1.4)), 'material': hexok(o['railing'].get('hex'), '#2b2d2f')}
+    if isinstance(o.get('door'), dict) and o.get('kind') == 'entry':
+        st['door'] = {'kind': o['door'].get('kind') if o['door'].get('kind') in ('panel', 'glazed', 'double', 'none') else 'panel', 'material': hexok(o['door'].get('hex'), st['frameMaterial'])}
+    if isinstance(o.get('transomM'), (int, float)) and o['transomM'] > 0: st['transomM'] = float(np.clip(o['transomM'], .1, 1.6))
+    if isinstance(o.get('steps'), dict) and o.get('kind') == 'entry':
+        st['steps'] = {'count': int(np.clip(o['steps'].get('count', 0) or 0, 0, 40)) or None, 'widthM': float(np.clip(o['steps'].get('widthM', 1.6), .6, 8.)),
+                       'material': material({'family': o['steps'].get('family', 'stone'), 'hex': o['steps'].get('hex')})}
     if dx: st['openingRatio'] = round(float(np.clip((o.get('openingWidthM') or dx * .7) / dx, .1, .98)), 4)
     if dz: st['openingHeightRatio'] = round(float(np.clip((o.get('openingHeightM') or dz * .7) / dz, .1, .98)), 4)
     return st
 
 
+def lay_bay_windows(r):
+    """A copy of a reading with the windows of its bays laid on their faces, for bays read per storey (rows, front,
+    side). In a rectified photograph a bay's windows are shifted by parallax (they stand out of the wall plane), so they
+    are read as the storeys' sill and head heights and the windows' built widths, not as positions on the image; the
+    wall's bank cells inside such a bay are dropped for the laid ones."""
+    r = json.loads(json.dumps(r))
+    for b in r.get('bays') or []:
+        rows = [q for q in (b.get('rows') or []) if isinstance(q, list) and len(q) == 2 and q[1] > q[0]]
+        if not rows: continue
+        p = float(np.clip(b.get('projectionM', .6), .2, 1.5)); x0, x1 = b['x0'], b['x1']; shape = b.get('shape')
+        run = p / np.tan(np.radians(float(np.clip(b.get('sideAngleDeg') or 45., 20, 80))))
+        if shape == 'square' or (shape != 'curved' and x1 - x0 < 2 * run + .4): run = 0.
+        fa, fb = (x0 + run, x1 - run) if shape != 'curved' else (x0 + .15 * (x1 - x0), x1 - .15 * (x1 - x0))
+        win = {k: b[k] for k in ('sash', 'lites', 'meetingRail', 'frame', 'head', 'springRatio') if k in b}; win.setdefault('frame', b.get('trimHex'))
+        front = b.get('front') or {'count': 1}; n = max(1, int(front.get('count', 1))); fw = float(front.get('widthM') or (fb - fa) * .7 / n)
+        side = b.get('side'); sw = float(side.get('widthM', 0)) if isinstance(side, dict) else 0.
+        for z0, z1 in rows:
+            gap = (fb - fa - n * fw) / (n + 1)
+            for k in range(n):
+                xa = fa + gap + k * (fw + gap); r.setdefault('openings', []).append({**win, 'x0': xa, 'x1': xa + fw, 'z0': z0, 'z1': z1, 'kind': 'window', 'bayWindow': True})
+            if sw > .2 and run > .2 and shape != 'curved':
+                half = sw * np.cos(np.arctan2(p, run)) / 2           # a side window's extent along the wall
+                for c in (x0 + run / 2, x1 - run / 2):
+                    r['openings'].append({**win, 'x0': c - half, 'x1': c + half, 'z0': z0, 'z1': z1, 'kind': 'window', 'bayWindow': True})
+        # the wall's bank cells inside the bay are the bay's windows read on the image: dropped for the laid ones
+        for bk in r.get('banks') or []:
+            nx, ny = max(1, int(bk.get('columns', 1))), max(1, int(bk.get('rows', 1)))
+            xc = bk.get('xCentersM') if bk.get('xCentersM') and len(bk['xCentersM']) == nx else [bk['x0'] + (i + .5) * (bk['x1'] - bk['x0']) / nx for i in range(nx)]
+            zc = bk.get('zCentersM') if bk.get('zCentersM') and len(bk['zCentersM']) == ny else [bk['z0'] + (j + .5) * (bk['z1'] - bk['z0']) / ny for j in range(ny)]
+            bk['omit'] = list(bk.get('omit', [])) + [[i, j] for i in range(nx) for j in range(ny) if x0 <= xc[i] <= x1 and b['z0'] <= zc[j] <= b['z1'] and [i, j] not in bk.get('omit', [])]
+    return r
+
+
 def to_profile(r, piece):
+    r = lay_bay_windows(r)
     W, H = float(piece['lengthM']), float(piece['heightM'])
     fx = lambda x: round(float(np.clip(x / W, 0, 1)), 5)
     fz = lambda z: round(float(np.clip(z / H, 0, 1.2)), 5)
@@ -86,11 +147,17 @@ def to_profile(r, piece):
     if piece.get('baseM'): prof['zBaseM'] = float(piece['baseM'])   # a set-back tier, rectified from the roof it stands on
     prof['materialEvidence'].pop('family') if prof['materialEvidence']['family'] not in ('brick', 'terracotta', 'render', 'timber', 'metal-panel') else None
     if 'family' not in prof['materialEvidence']: prof.pop('materialEvidence')
+    floors = [z for z in (r.get('storeys') or []) if isinstance(z, (int, float))]
     for m in mats[1:]:
         prof['panels'].append({'rect': [fx(m['x0']), fz(m['z0']), fx(m['x1']), fz(m['z1'])], 'material': material(m)})
     bays = r.get('bays') or []
     # a bay is drawn as one volume standing out from the wall, its windows set in its faces (pipeline/bays.py)
-    prof['bays'] = [{'rect': [fx(b['x0']), fz(b['z0']), fx(b['x1']), fz(b['z1'])], 'projectionM': float(np.clip(b.get('projectionM', .6), .2, 1.5))}
+    prof['bays'] = [{'rect': [fx(b['x0']), fz(b['z0']), fx(b['x1']), fz(b['z1'])], 'projectionM': float(np.clip(b.get('projectionM', .6), .2, 1.5)),
+                     **({'shape': b['shape']} if b.get('shape') in ('angled', 'square', 'curved') else {}),
+                     **({'sideAngleDeg': float(np.clip(b['sideAngleDeg'], 20, 80))} if isinstance(b.get('sideAngleDeg'), (int, float)) else {}),
+                     **({'trim': hexok(b['trimHex'])} if b.get('trimHex') else {}),
+                     'storeys': [fz(z) for z in floors if b['z0'] + .4 < z < b['z1'] - .4] if b.get('storeyTrim', True) else [],
+                     'corbel': bool(b.get('corbel')), 'cap': b.get('cap') if b.get('cap') in ('cornice', 'flat') else 'cornice'}
                     for b in bays if b['x1'] > b['x0'] and b['z1'] > b['z0']]
     for b in r.get('banks') or []:
         nx, ny = max(1, int(b.get('columns', 1))), max(1, int(b.get('rows', 1)))
@@ -112,9 +179,37 @@ def to_profile(r, piece):
             if rect[0] * W < c['x1'] and rect[2] * W > c['x0'] and abs(rect[3] * H - c['zM']) < 1.2:
                 st.update(canopy=True, canopyDepthM=float(np.clip(c.get('depthM', 1.4), .4, 3.)))
     for b in r.get('bands') or []:
-        prof['bands'].append({'height': fz(b['zM']), 'thicknessM': float(np.clip(b.get('thicknessM', .3), .05, 1.5)),
-                              'depthM': float(np.clip(b.get('projectionM', .1) * 2 + .1, .1, 1.5)), 'projectionM': float(np.clip(b.get('projectionM', .1), 0, 1.)),
-                              'material': hexok(b.get('hex'), '#9a9c9a')})
+        T, Pj = float(np.clip(b.get('thicknessM', .3), .05, 2.5)), float(np.clip(b.get('projectionM', .1), 0, 1.5))
+        band = {'height': fz(b['zM']), 'thicknessM': T, 'depthM': float(np.clip(Pj * 2 + .1, .1, 3.)), 'projectionM': Pj, 'material': hexok(b.get('hex'), '#9a9c9a')}
+        if isinstance(b.get('x0'), (int, float)) and isinstance(b.get('x1'), (int, float)) and b['x1'] > b['x0']: band['xRange'] = [fx(b['x0']), fx(b['x1'])]
+        prof['bands'].append(band)
+        # a moulded cornice or string course steps out in three members; modillions, dentils or brackets run under it
+        kind = b.get('profile')
+        if kind in ('moulded', 'modillion', 'dentil', 'bracketed') and Pj > .02:
+            band['section'] = [(-T * .35, T * .3, Pj * .35), (-T * .05, T * .3, Pj * .7), (T * .3, T * .4, Pj)]
+            row = {'modillion': (0., T * .22, .13, Pj * .8, .5), 'dentil': (-T * .2, min(.12, T * .2), .07, Pj * .45, .14),
+                   'bracketed': (-T * .1, T * .75, .2, Pj * .85, float(np.clip(b.get('bracketPitchM') or 1.1, .3, 3.)))}.get(kind)
+            if row:
+                rise, hh, size, pr, pitch = row
+                prof.setdefault('ornaments', []).append({'kind': 'dentil', 'z': fz(b['zM'] + rise), 'xRange': band.get('xRange', [0, 1]), 'pitchM': pitch,
+                                                         'sizeM': size, 'heightM': hh, 'projectionM': pr, 'material': band['material']})
+    for q in r.get('rustication') or []:
+        prof.setdefault('rustication', []).append({'rect': [fx(q['x0']), fz(q['z0']), fx(q['x1']), fz(q['z1'])], 'courseM': float(np.clip(q.get('courseM', .45), .2, 1.2)),
+                                                   **({'material': material({'family': q.get('family', 'stone'), 'hex': q['hex']})} if q.get('hex') else {})})
+    for q in r.get('quoins') or []:
+        prof.setdefault('quoins', []).append({'x': fx(q['xM']), 'y': [fz(q['z0']), fz(q['z1'])], 'widthM': float(np.clip(q.get('widthM', .7), .2, 1.5)),
+                                              'courseM': float(np.clip(q.get('courseM', .45), .2, 1.2)), 'material': material({'family': q.get('family', 'stone'), 'hex': q.get('hex')})})
+    for f in r.get('fireEscapes') or []:
+        prof.setdefault('fireEscapes', []).append({'x': [fx(f['x0']), fx(f['x1'])], 'levels': [fz(z) for z in f['levels']], 'depthM': float(np.clip(f.get('depthM', .9), .5, 1.6)),
+                                                   'material': hexok(f.get('hex'), '#2b2d2f')})
+    for b in r.get('balconies') or []:
+        prof.setdefault('balconies', []).append({'x': [fx(b['x0']), fx(b['x1'])], 'z': fz(b['zM']), 'depthM': float(np.clip(b.get('depthM', .8), .3, 2.5)),
+                                                 'railing': b.get('railing') if b.get('railing') in ('metal', 'balustrade', 'solid') else 'metal',
+                                                 'railingHeightM': float(np.clip(b.get('railingHeightM', 1.), .5, 1.4)), 'material': hexok(b.get('hex'), '#2b2d2f'),
+                                                 **({'slabMaterial': material({'family': b.get('slabFamily', 'render'), 'hex': b['slabHex']})} if b.get('slabHex') else {})})
+    for o in r.get('ornaments') or []:
+        prof.setdefault('reliefs', []).append({'rect': [fx(o['x0']), fz(o['z0']), fx(o['x1']), fz(o['z1'])], 'projectionM': float(np.clip(o.get('projectionM', .04), .01, .3)),
+                                               'material': material({'family': o.get('family', 'stone'), 'hex': o.get('hex')})})
     top = r.get('wallTopM') or H
     for p in r.get('piers') or []:
         prof['piers'].append({'x': fx(p['xM']), 'widthM': float(np.clip(p.get('widthM', .5), .1, 3.)), 'projectionM': float(np.clip(p.get('projectionM', .1), .02, 1.)),

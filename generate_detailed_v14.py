@@ -20,7 +20,10 @@ from general_world.roof_planes import roof_solid,evaluate as roof_evaluate
 from trimesh.visual.texture import TextureVisuals
 
 import argparse
-_args=argparse.ArgumentParser(description='Detailed pilot generator; writes a candidate (raw GLB, chunks, world.json, evidence) into --output instead of the live preview.');_args.add_argument('--output',required=True);_args.add_argument('--regen-profiles',default=None);_args.add_argument('--area',default=None);_args.add_argument('--streets-only',action='store_true',help='Emit street layers only for validated layer replacement; never publish this partial scene directly.');_args=_args.parse_args()
+_args=argparse.ArgumentParser(description='Detailed pilot generator; writes a candidate (raw GLB, chunks, world.json, evidence) into --output instead of the live preview.');_args.add_argument('--output',required=True);_args.add_argument('--regen-profiles',default=None);_args.add_argument('--area',default=None);_args.add_argument('--streets-only',action='store_true',help='Emit street layers only for validated layer replacement; never publish this partial scene directly.');_args.add_argument('--only',default=None,help='JSON list of building ids: build only those buildings, to splice into a built area (areas/ring/splice.py); the ground model still runs');_args=_args.parse_args()
+# --only FILE: the listed buildings alone (their parts by source id). Every other outline stays a neighbour for the walls'
+# facing rules; trees, street furniture and street surfaces are skipped (the splice keeps the built area's own).
+ONLY=set(json.load(open(_args.only))) if _args.only else None;ONLY_SRC={i.split('_p')[0] for i in ONLY} if ONLY else None
 ROOT=pathlib.Path(__file__).parent;DATA=ROOT/'data'
 # --area DIR: another model area (areas/<name>: its own config.json and data/). Every hand-made input of the pilot is
 # keyed to the pilot's buildings, so an area is built as a regeneration: its facade readings (--regen-profiles), or none.
@@ -296,6 +299,7 @@ def surfaceTop(x,y):
 from pipeline import building_parts
 _split=[];part_audit=[]
 for c in candidates:
+ if ONLY is not None and c['id'] not in ONLY_SRC:_split.append(c);continue
  if landmarks.entry(c):_split.append(c);continue       # a landmark's builder owns the whole outline
  _a={};_parts=building_parts.split(c['g'],get_points(c['g'].buffer(-.65))[:,:3],float(elev(c['g'].centroid.x,c['g'].centroid.y)),audit=_a)
  if len(_parts)<2:_split.append(c);continue
@@ -312,7 +316,7 @@ street_corridor=unary_union([w['g'].buffer(5.) for w in ways if w['g'].geom_type
                             +[w['g'].buffer(4.) for w in ways if w['g'].geom_type=='LineString' and w['tags'].get('highway')=='service' and w['tags'].get('service') not in ('parking_aisle','driveway')]
                             +[w['g'] for w in ways if w['g'].geom_type in ('Polygon','MultiPolygon') and w['tags'].get('highway')=='pedestrian'])
 import os as _os;_GEN_TRACE=bool(_os.environ.get('GEN_TRACE'))
-for c in ([] if _args.streets_only else candidates):
+for c in ([] if _args.streets_only else [c for c in candidates if ONLY is None or c.get('sourceId',c['id']) in ONLY_SRC]):
  id,g=c['id'],c['g'];og=c['old'];tags=c['osm']['tags'] if c['osm'] else {};name=tags.get('name') or (tags.get('addr:housenumber','').replace(';',' / ')+' '+tags.get('addr:street','')).strip() or 'Building '+og.get('sf16_bldgid',id)
  if _GEN_TRACE:print('START',id,name,flush=True)   # GEN_TRACE=1: name each building as it starts (a slow one shows itself)
  stadium=c['full_area']>18000
@@ -532,7 +536,7 @@ road_area=unary_union(road_polygons);counts['roadSegments']=len(roads)
 street_plan=street_space.prepare(globals());road_area=street_plan['road']
 (OUT/'street-space-geometry.json').write_text(json.dumps({k:street_plan[k].__geo_interface__ for k in ['road','cycle','sidewalk','crossings','curb','forbidden']}))
 surface(road_area,'roads','asphalt',.09)
-tree_placements=street_space.tree_candidates(globals())
+tree_placements=street_space.tree_candidates(globals()) if ONLY is None else []
 for w in footpaths:
  g=w['g'];t=w['tags']
  if t.get('footway')=='crossing':
@@ -559,11 +563,11 @@ for w in rails:
  counts['railSegments']+=1
 
 # Shared species templates replace low-detail canopy primitives.
-vegetation.compile(globals())
+if ONLY is None:vegetation.compile(globals())
 # Trees the LiDAR measures in the mapped open ground (parks, gardens, lawns), which no street-tree inventory lists.
 from pipeline import canopy
-canopy_records=canopy.compile(globals())
-street_space.furniture(globals())
+canopy_records=canopy.compile(globals()) if ONLY is None else []
+if ONLY is None:street_space.furniture(globals())
 
 # Barriers are generated only from mapped barrier or explicit handrail evidence.
 for w in ways:
@@ -581,9 +585,8 @@ if _open is not None and not _open.is_empty:
  surface(_turf,'landscape','grass',.12);counts['openGroundTurfM2']=round(_turf.area,1)
 
 # Street compiler uses source topology and ROW; every snap remains an uncertain record.
-make_sign=signs.install(globals());sign_records,sidewalk_geometry=streets.compile(globals())
-mobility_records=mobility.compile(globals())
-mobility_records.extend(ground_paint.compile(globals()))
+make_sign=signs.install(globals());sign_records,sidewalk_geometry=streets.compile(globals()) if ONLY is None else ([],None)
+if ONLY is None:mobility_records=mobility.compile(globals());mobility_records.extend(ground_paint.compile(globals()))
 (OUT/'street-space-audit.json').write_text(json.dumps({'surfaceSource':street_plan['surfaceSource'],'measuredSidewalkAreaM2':street_plan['measuredSidewalkAreaM2'],'sidewalkAreaM2':round(street_plan['sidewalk'].area,2),'placements':street_plan['records']},indent=2))
 street_views=[]
 # New envelope viewpoints lead the street route. Positions snap to mapped road centers.
