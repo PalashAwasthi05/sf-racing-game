@@ -30,7 +30,11 @@ let view: any = null, api: any = null, loadError: string | null = null;
 let clock = performance.now() + 1e6;
 
 async function boot() {
-  const world = await fetch('/world.json', { cache: 'no-cache' }).then(r => r.json());
+  // ?manifest=/compare/x.json (as in the viewer): another area's build, whose manifest names its own world data
+  const requested = params.get('manifest'), same = (p: unknown) => typeof p === 'string' && /^\/compare\/[\w.-]+\.json$/.test(p);
+  let worldPath = '/world.json';
+  if (same(requested)) { const m = await fetch(requested!, { cache: 'no-cache' }).then(r => r.json()).catch(() => null); if (same(m?.world)) worldPath = m.world; }
+  const world = await fetch(worldPath, { cache: 'no-cache' }).then(r => r.json());
   const mod = await import(`./variants/${variant}/world-view.ts`);
   const host = document.getElementById('host') as HTMLDivElement;
   api = await mod.createWorldView(host, world, () => {}, (m: string) => {
