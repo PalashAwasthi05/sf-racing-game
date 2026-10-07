@@ -20,11 +20,13 @@ import {createGrade} from './grade';
 import {MultisampledRenderPass,buildDepthProxies,installDepthProxies,cullTransmission,cacheArrayUniforms} from './render-budget';
 import {attachCarLod} from './car-lod';
 import {buildSkyVisibility,occludeMaterials,occlusionComposite} from './occlusion';
+import {buildBackdrop} from './backdrop';
 
 export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(id:string)=>void,onProgress:(message:string)=>void,modelUrl?:string){
  const scene=new THREE.Scene();
  const roadster=loadRoadster();   // the car model downloads while the world loads
- const camera=new THREE.PerspectiveCamera(58,1,.18,1100);
+ // far enough for the backdrop's ground to reach the haze at the horizon (backdrop.ts)
+ const camera=new THREE.PerspectiveCamera(58,1,.18,4000);
  // No canvas antialiasing: the canvas only receives the output pass's full-screen quad (the 3D image is antialiased in
  // its own multisampled target below), so canvas samples were memory and a resolve every frame for nothing.
  const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
@@ -96,10 +98,10 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
    A.sort((x,y)=>x-y);return A.length>0&&A[A.length>>1]<.25&&A[A.length-1]<2;};
   for(const o of objects){if(classOf(o.name)!=='recess'||Array.isArray(o.material)||!thin(o))continue;const m=area.get(getId(o));if(!m)continue;let best:THREE.Material|null=null,bn=-1;for(const [mat,n] of m)if(n>bn){best=mat;bn=n;}if(best){o.material=best;originals.set(o,best);}}}
  // Street grime, rain streaks and tone drift on walls, patched membranes on flat roofs (world space, no per-building data).
- const wxGround=groundTexture(data.grid,data.ground);
+ const wxGround=groundTexture(data.grid,data.ground);let weathering:ReturnType<typeof weatherMaterials>|null=null;
  {const tex=wxGround;const wx=new Set<THREE.MeshStandardMaterial>();
   for(const o of objects){if(!WEATHERED_LAYERS.has(getLayer(o))||UNWEATHERED.test(classOf(o.name)))continue;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof THREE.MeshStandardMaterial)wx.add(m);}
-  weatherMaterials(wx,tex,data.grid);
+  weathering=weatherMaterials(wx,tex,data.grid);
   // A dim room behind every window instead of an opaque black pane.
   const glass=new Set<THREE.MeshStandardMaterial>();for(const o of objects){if(!isGlazing(classOf(o.name)))continue;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof THREE.MeshStandardMaterial)glass.add(m);}
   glazeMaterials(glass);
@@ -168,6 +170,9 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // Street lamps, trolleybus poles and wires, when the world brings them (overhead.ts).
  const overhead=overheadUrl&&/^\/compare\/[\w.-]+\.json$/.test(overheadUrl)?await loadOverhead(overheadUrl):null;
  if(overhead){scene.add(overhead.group);for(const m of overhead.materials)atmosphere.setupMaterial(m);}
+ // A generic horizon outside the modelled area (backdrop.ts): ground to the horizon and plain blocks on the model's own
+ // street grid, fading into the haze; hidden in high aerial views.
+ const backdrop=buildBackdrop({roads:objects.filter(o=>getLayer(o)==='roads'),buildings:data.buildings,groundAt,radius:data.contextRadiusM??265,haze:(scene.fog as THREE.FogExp2).color,setup:m=>atmosphere.setupMaterial(m)});scene.add(backdrop.group);
  // A capture draws the six cube faces one per frame (all six in one frame was a 15-25 ms hitch every few seconds on the
  // move); glossy surfaces keep the previous probe until the new one is filtered. A forced capture (review captures)
  // still draws all six at once.
@@ -296,9 +301,11 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // are lit less by it; every world material, the canopies, the parked cars, the street lamps and wires and the player's car
  // take it.
  const skyVis=buildSkyVisibility(renderer,scene,[atmosphere.sky,atmosphere.clouds,ring,highlight,...(car?[car.group]:[])],reach+30);
+ weathering?.setHeight(skyVis.height.texture,reach+30);
  {const mats=new Set<THREE.Material>();for(const o of renderables)for(const m of Array.isArray(o.material)?o.material:[o.material])mats.add(m);
   if(parked)for(const m of parked.materials)mats.add(m);car?.group.traverse(o=>{const m=(o as THREE.Mesh).material;if(m)for(const x of Array.isArray(m)?m:[m])mats.add(x);});
   if(overhead)for(const m of overhead.materials)mats.add(m);
+  for(const m of backdrop.materials)mats.add(m);
   occludeMaterials(mats,skyVis);}
  onProgress('Preparing shaders and textures…');await new Promise(r=>setTimeout(r,0));
  {applySize();if(car)car.group.visible=false;atmosphere.update(performance.now());patchUniforms();composer.render(0);
@@ -337,7 +344,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
    const input:CarInput={throttle:(keys.has('KeyW')||keys.has('ArrowUp'))?1:0,brake:(keys.has('KeyS')||keys.has('ArrowDown'))?1:0,steer:((keys.has('KeyA')||keys.has('ArrowLeft'))?1:0)-((keys.has('KeyD')||keys.has('ArrowRight'))?1:0),handbrake:keys.has('Space')};
    car.update(dt,input);if(!drag)car.relax(dt);
   }else{if(targetPosition&&targetLook){camera.position.lerp(targetPosition,.07);controls.target.lerp(targetLook,.07);if(camera.position.distanceTo(targetPosition)<.05){targetPosition=null;targetLook=null;}}controls.update();}
-  atmosphere.update(now);
+  atmosphere.update(now);backdrop.update(camera,groundAt(camera.position.x,camera.position.z));
   updateReflections(now);
   carLod?.update(camera);glass.prepare();patchUniforms();renderer.info.reset();composer.render(dt);lastCalls=renderer.info.render.calls;
  }
