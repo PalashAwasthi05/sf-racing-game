@@ -36,11 +36,12 @@ vec3 gdAsphalt(vec3 albedo){
  vec2 cell=floor(p/8.);float pick=gdHash(cell+3.7);
  if(pick<.26){vec2 q=fract(p/8.)*8.;vec2 lo=vec2(.8)+gdHash2(cell)*3.,hi=lo+vec2(1.6)+gdHash2(cell+1.9)*3.4;
   float inside=step(lo.x,q.x)*step(q.x,hi.x)*step(lo.y,q.y)*step(q.y,hi.y);c*=mix(1.,pick<.09?1.75:.62,inside);}
- // sealed cracks in the older stretches
- float crack=1.-smoothstep(.0,.035,gdEdge(p*.38));c*=1.-.45*crack*smoothstep(.45,.7,age)*gdKeep(10.);
+ // sealed cracks, thin dark lines in patchy stretches of older surfacing (not a pattern over the whole road)
+ float zone=smoothstep(.6,.72,gdFbm(p*.035+5.1))*smoothstep(.4,.6,age);
+ float crack=(1.-smoothstep(.0,.022,gdEdge(p*.45+vec2(gdNoise(p*.9)*.6))))*zone;c*=1.-.5*crack*gdKeep(12.);
  // aggregate speckle and a fine relief
  float grain=gdNoise(p*9.)*.6+gdNoise(p*23.)*.4;c*=mix(1.,.9+.2*grain,gdKeep(23.));
- gdHeight=(grain*.6+gdNoise(p*3.1)*.4)*gdKeep(9.)-crack*.5;
+ gdHeight=(grain*.6+gdNoise(p*3.1)*.4)*gdKeep(9.)-crack*.12;
  return c;
 }
 `;
