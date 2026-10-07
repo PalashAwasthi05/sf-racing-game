@@ -13,6 +13,7 @@ import {createAtmosphere,PRESET_ORDER,type Preset} from './atmosphere';
 import {finishMaterials,classOf} from './finish';
 import {weatherMaterials,groundTexture,WEATHERED_LAYERS,UNWEATHERED} from './weathering';
 import {glazeMaterials,isGlazing} from './glazing';
+import {detailAsphalt,detailGrass,ASPHALT_CLASS,GRASS_CLASS} from './ground-detail';
 import {buildFoliage,finishFoliage} from './foliage';
 import {createGrade} from './grade';
 import {MultisampledRenderPass,buildDepthProxies,installDepthProxies,cullTransmission,cacheArrayUniforms} from './render-budget';
@@ -55,6 +56,15 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  const model=await new GLTFLoader().parseAsync(buffer,'/');scene.add(model.scene);
  const objects:THREE.Mesh[]=[];const originals=new Map<THREE.Mesh,THREE.Material|THREE.Material[]>();const evidences=new Map<THREE.Mesh,THREE.Material>();
  model.scene.traverse(o=>{if(!(o instanceof THREE.Mesh))return;objects.push(o);o.castShadow=!['terrain','roads','markings','sidewalks','cycleways'].some(n=>o.name.startsWith(n));o.receiveShadow=true;
+ // The terrain and the lawns draped on it come without normals, so they were drawn flat-shaded: a quilt of 3 m facets on
+ // every slope. They are height fields: each vertex takes the slope of the world's ground grid under it, and its own
+ // copy of the material is drawn smooth-shaded.
+ for(const o of objects)if(['terrain','landscape'].includes(getLayer(o))&&!o.geometry.attributes.normal&&!Array.isArray(o.material)){
+  const p=o.geometry.attributes.position,v=new THREE.Vector3(),w=new THREE.Vector3(),n=new Float32Array(p.count*3);o.updateMatrixWorld(true);
+  const toLocal=new THREE.Matrix3().getNormalMatrix(o.matrixWorld).invert();   // the model's root turns z-up into y-up
+  for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i).applyMatrix4(o.matrixWorld);const hx=(groundAt(v.x+1.5,v.z)-groundAt(v.x-1.5,v.z))/3,hz=(groundAt(v.x,v.z+1.5)-groundAt(v.x,v.z-1.5))/3;w.set(-hx,1,-hz).applyMatrix3(toLocal).normalize();n[i*3]=w.x;n[i*3+1]=w.y;n[i*3+2]=w.z;}
+  o.geometry.setAttribute('normal',new THREE.BufferAttribute(n,3));
+  const m=o.material.clone() as THREE.MeshStandardMaterial;m.flatShading=false;atmosphere.setupMaterial(m);o.material=m;originals.set(o,m);}
   // Meshes exported without normals are shaded flat from screen derivatives, but the shadow lookup still needs a
   // vertex normal for its bias: a zero normal makes that term undefined and every shadow test fails silently.
   if(!o.geometry.attributes.normal)o.geometry.computeVertexNormals();
@@ -78,7 +88,10 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
   weatherMaterials(wx,tex,data.grid);
   // A dim room behind every window instead of an opaque black pane.
   const glass=new Set<THREE.MeshStandardMaterial>();for(const o of objects){if(!isGlazing(classOf(o.name)))continue;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof THREE.MeshStandardMaterial)glass.add(m);}
-  glazeMaterials(glass);}
+  glazeMaterials(glass);
+  // Worn asphalt and grown lawns instead of one repeating texture and one flat green (ground-detail.ts).
+  const ofClass=(re:RegExp)=>{const out=new Set<THREE.MeshStandardMaterial>();for(const o of objects){if(!re.test(classOf(o.name)))continue;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof THREE.MeshStandardMaterial)out.add(m);}return out;};
+  detailAsphalt(ofClass(ASPHALT_CLASS));detailGrass(ofClass(GRASS_CLASS));}
  // Coincident surfaces (a tier wall on the outline over the outer wall's top band, glazing in its curtain panel's
  // plane, an observed skin on its host wall) z-fight: the winner flips per pixel as the camera moves. Each material
  // gets a fixed depth priority instead: facade detail over roof caps over observed skins over host massing, with a
