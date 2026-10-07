@@ -317,6 +317,17 @@ for c in ([] if _args.streets_only else candidates):
  if _GEN_TRACE:print('START',id,name,flush=True)   # GEN_TRACE=1: name each building as it starts (a slow one shows itself)
  stadium=c['full_area']>18000
  sample=get_points(g.buffer(-.65));z0=float(elev(g.centroid.x,g.centroid.y));roof=sample[sample[:,2]>z0+3]
+ # A small free-standing outline under tree canopy: its returns spread over the canopy's whole height instead of
+ # gathering in a roof layer (its densest 4 m band holds under 40 % of them). Its roof is the lowest 2 m band holding
+ # 5 % of them, and the canopy above is not the building (a park's 56 m2 shelter stood 25 m tall as a dark tower among
+ # its trees). An outline with another building within 3 m is left alone: in a row the spread can be a stepped roof or
+ # an outline taking in its neighbours, and a stub would open a gap in the street wall.
+ under_canopy=None
+ if g.area<200 and not any(building_sources[j]!=c.get('sourceId',id) and candidates[j]['g'].distance(g)<3. for j in building_index.query(g.buffer(3.))):
+  _h=np.sort(sample[:,2]-z0);_h=_h[_h>1.]
+  if len(_h)>=50 and (np.searchsorted(_h,_h+4.,'right')-np.arange(len(_h))).max()<.4*len(_h):
+   _k=np.flatnonzero(np.histogram(_h,bins=np.arange(1.,_h.max()+2.,2.))[0]>=.05*len(_h))
+   if len(_k):under_canopy=1.+2.*(_k[0]+1);roof=roof[roof[:,2]<z0+under_canopy+.5]
  roof_step=2.0 if stadium else 1.5
  wxmin,wymin,wxmax,wymax=g.bounds;wnx=max(2,math.ceil((wxmax-wxmin)/roof_step));wny=max(2,math.ceil((wymax-wymin)/roof_step))
  # Roof heights come from roof SURFACES: each raster cell reads its highest dense thin layer of returns,
@@ -339,6 +350,8 @@ for c in ([] if _args.streets_only else candidates):
  if rr is not None and len(roof)>50:rr,_=spatial_rules.surface_raster(frame.points(roof),xmin,ymax,roof_step,nx,ny)
  if len(roof)>50:
   lo,top=np.quantile(roof[:,2],[.55,.97]);height=max(3.,float(top-z0));source='USGS LiDAR 2023'
+ elif under_canopy is not None:
+  height=max(3.,under_canopy);lo=z0+height;top=lo;source='USGS LiDAR 2023 (roof under canopy: its lowest dense layer)'
  else:
   try:height=float(tags.get('height',og.get('hgt_median_m','12')).split()[0])
   except:height=12.
