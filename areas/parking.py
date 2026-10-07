@@ -49,6 +49,24 @@ def roads_outline(glb):
     return unary_union([Polygon(t) for t in T if abs((t[1, 0] - t[0, 0]) * (t[2, 1] - t[0, 1]) - (t[2, 0] - t[0, 0]) * (t[1, 1] - t[0, 1])) > 1e-6]).buffer(.02).buffer(-.02)
 
 
+def kerbs(road, reach=14.):
+    """(prepared road, kerb(a, n)): kerb gives the nearest point of the road's edge on the ray from a along n, and its
+    distance, or None within `reach` metres."""
+    inside = prep(road)
+    segs = [LineString([a, b]) for ring in getattr(road.boundary, 'geoms', [road.boundary]) for a, b in zip(ring.coords, ring.coords[1:])]
+    tree = STRtree(segs)
+    def kerb(a, n):
+        ray = LineString([tuple(a), tuple(a + n * reach)]); best = None
+        for g in tree.query(ray):
+            h = ray.intersection(segs[g])
+            for q in getattr(h, 'geoms', [h]):
+                if q.is_empty or q.geom_type != 'Point': continue
+                q = np.asarray(q.coords[0]); dd = float(np.linalg.norm(q - a))
+                if best is None or dd < best[1]: best = (q, dd)
+        return best
+    return inside, kerb
+
+
 def side_rule(tags, side, highway):
     """('parallel' | 'diagonal' | 'perpendicular') when a side is parked, else None."""
     for key in (f'parking:{side}', 'parking:both', f'parking:lane:{side}', 'parking:lane:both'):
@@ -77,19 +95,7 @@ def main():
     area, label = Path(sys.argv[1]).resolve(), sys.argv[2]
     build = area / label.split('-')[-1] if (area / label.split('-')[-1]).exists() else area / label
     world, frame = fc.load_world(); rng = np.random.default_rng(1906)
-    road = roads_outline(build / 'materials/candidate.glb'); inside = prep(road)
-    segs = [LineString([a, b]) for ring in getattr(road.boundary, 'geoms', [road.boundary]) for a, b in zip(ring.coords, ring.coords[1:])]
-    tree = STRtree(segs)
-    def kerb(a, n):
-        """The nearest point of the road's edge on the ray from a along n (14 m), or None."""
-        ray = LineString([tuple(a), tuple(a + n * 14.)]); best = None
-        for g in tree.query(ray):
-            h = ray.intersection(segs[g])
-            for q in getattr(h, 'geoms', [h]):
-                if q.is_empty or q.geom_type != 'Point': continue
-                q = np.asarray(q.coords[0]); dd = float(np.linalg.norm(q - a))
-                if best is None or dd < best[1]: best = (q, dd)
-        return best
+    road = roads_outline(build / 'materials/candidate.glb'); inside, kerb = kerbs(road)
     root = ET.parse(fc.OSM_PATH).getroot()
     nodes = {n.get('id'): frame.local(float(n.get('lon')), float(n.get('lat'))) for n in root.iter('node')}
     ntags = {n.get('id'): {t.get('k'): t.get('v') for t in n.iter('tag')} for n in root.iter('node')}

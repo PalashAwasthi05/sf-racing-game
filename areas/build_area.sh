@@ -16,4 +16,5 @@ caffeinate -i -s $py work/watch_mem.py 20 $LOG $py work/areas/slim_textures.py $
 caffeinate -i -s $py work/watch_mem.py 20 $LOG $py work/apply_materials_v13.py --scene $D/textures/candidate-slim.glb --observations work/regen/v1/no-material-observations.json --output $D/materials
 caffeinate -i -s $py work/preview_area_v1.py $D $1-$2
 SFW_AREA=$A $py work/areas/parking.py $A $1-$2    # parked cars along the kerbs OSM marks for parking
+SFW_AREA=$A $py work/areas/overhead.py $A $1-$2   # street lamps, trolleybus poles and wires on the streets OSM tags lit / trolley_wire
 echo PIPELINE-DONE $1 $2
