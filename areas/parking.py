@@ -167,10 +167,19 @@ def main():
                     pos += L + rng.uniform(.7, 2.6)
                 i = j
             sides_parked += parked_here > 0
+    # where two ways of one street meet mid-block, their rows can overlap: a car overlapping one already kept is dropped
+    from shapely.geometry import Polygon
+    kept, boxes, tw_ = [], [], {t[0]: t for t in TYPES}
+    for c in cars:
+        t = tw_[c['type']]; u = np.array([np.cos(c['heading']), np.sin(c['heading'])]); n = np.array([-u[1], u[0]]); m = np.array([c['x'], c['y']])
+        b = Polygon([m + u * a * t[1] / 2 + n * e * t[2] / 2 for a, e in ((1, 1), (1, -1), (-1, -1), (-1, 1))])
+        if any(b.intersects(q) and b.intersection(q).area > .05 for q in boxes[-60:]) or any(b.intersects(q) and b.intersection(q).area > .05 for q in boxes[:-60] if q.distance(b) < .5): continue
+        kept.append(c); boxes.append(b)
+    dropped = len(cars) - len(kept); cars = kept
     out = COMPARE / f'{label}-cars.json'
     out.write_text(json.dumps({'types': [{'name': t[0], 'length': t[1], 'width': t[2], 'height': t[3]} for t in TYPES], 'cars': cars}))
     manifest = COMPARE / f'{label}.json'; m = json.loads(manifest.read_text()); m['cars'] = f'/compare/{label}-cars.json'; manifest.write_text(json.dumps(m))
-    print(json.dumps({'cars': len(cars), 'streetSidesParked': sides_parked, 'garageDoorsKeptClear': len(doors), 'keepClearPoints': len(keep_clear)}))
+    print(json.dumps({'cars': len(cars), 'overlapsDropped': dropped, 'streetSidesParked': sides_parked, 'garageDoorsKeptClear': len(doors), 'keepClearPoints': len(keep_clear)}))
 
 
 if __name__ == '__main__':

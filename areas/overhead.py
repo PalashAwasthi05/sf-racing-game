@@ -44,7 +44,10 @@ def main():
     door_p = np.array([c for c, _ in doors]) if doors else np.zeros((0, 2)); door_r = np.array([h + .5 for _, h in doors]) if doors else np.zeros(0)
     z_at = lambda p: float(fc.ground_at(p))
 
+    from shapely.strtree import STRtree
+    outlines = [g for g in fc.load_footprints(frame).values() if not g.is_empty]; otree = STRtree(outlines)
     def free(p):
+        if any(outlines[j].contains(Point(*p)) for j in otree.query(Point(*p))): return False      # never inside a building
         return not ((len(clear_p) and (np.hypot(*(clear_p - p).T) < clear_r).any()) or (len(door_p) and (np.hypot(*(door_p - p).T) < door_r + 3.).any()))
 
     def frame_at(line, s):
