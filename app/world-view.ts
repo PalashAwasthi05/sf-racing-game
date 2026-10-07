@@ -19,6 +19,7 @@ import {buildFoliage,finishFoliage} from './foliage';
 import {createGrade} from './grade';
 import {MultisampledRenderPass,buildDepthProxies,installDepthProxies,cullTransmission,cacheArrayUniforms} from './render-budget';
 import {attachCarLod} from './car-lod';
+import {buildSkyVisibility,occludeMaterials,occlusionComposite} from './occlusion';
 
 export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(id:string)=>void,onProgress:(message:string)=>void,modelUrl?:string){
  const scene=new THREE.Scene();
@@ -39,6 +40,8 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  const composer=new EffectComposer(renderer,new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,depthBuffer:false}));const scenePass=new MultisampledRenderPass(scene,camera);composer.addPass(scenePass);
  // Ambient occlusion at the scale of buildings (inner corners, under cornices and eaves, the foot of every wall).
  const ao=new GTAOPass(scene,camera,1,1);ao.updateGtaoMaterial({radius:2.5,distanceExponent:1.4,thickness:1.5,samples:16});ao.blendIntensity=.9;composer.addPass(ao);
+ // ... applied to the indirect share of each pixel's light only (occlusion.ts): sunlit kerbs and ledges are not outlined.
+ composer.addPass(occlusionComposite(ao));
  // Bloom and film grade sit between the lit image and the tone-mapped output.
  const grade=createGrade(composer);const output=new OutputPass();composer.addPass(output);
  function lighting(preset:string){const p=(PRESET_ORDER as string[]).includes(preset)?preset as Preset:'afternoon';atmosphere.apply(p);grade.preset(p);}
@@ -82,6 +85,16 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
   for(const o of objects)if(!ranked.has(getLayer(o))){o.material=Array.isArray(o.material)?o.material.map(own):own(o.material);originals.set(o,o.material);}}
  // Each material class gets the finish of the surface it names; glazing, metal, paint and asphalt reflect a local probe.
  const probeMaterials=finishMaterials(objects);
+ // Window and door reveals are drawn by the generator as a near-black 'recess' surface, which outlined every opening in thick
+ // black; a reveal is the wall turned inward, so each takes its building's main wall material (the occlusion passes shade it
+ // as a recess). Reveals are many thin strips; a recess mesh of large panels (a venue's dark backings) keeps its finish.
+ {const wallClass=/^(brick|render|stucco|stone|limestone|cast_stone|concrete|terracotta|timber|panel_dark|venue_concrete)/;const area=new Map<string,Map<THREE.Material,number>>();
+  for(const o of objects){const l=getLayer(o);if(l!=='buildings'&&l!=='facades')continue;if(!wallClass.test(classOf(o.name))||Array.isArray(o.material))continue;const id=getId(o);if(!id)continue;
+   const g=o.geometry,n=(g.index?g.index.count:g.attributes.position.count)/3;let m=area.get(id);if(!m){m=new Map();area.set(id,m);}m.set(o.material,(m.get(o.material)??0)+n);}
+  const thin=(o:THREE.Mesh)=>{const g=o.geometry,p=g.attributes.position,idx=g.index,n=idx?idx.count:p.count,A:number[]=[],a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
+   for(let i=0;i<n;i+=3){a.fromBufferAttribute(p,idx?idx.getX(i):i);b.fromBufferAttribute(p,idx?idx.getX(i+1):i+1);c.fromBufferAttribute(p,idx?idx.getX(i+2):i+2);A.push(b.sub(a).cross(c.sub(a)).length()/2);}
+   A.sort((x,y)=>x-y);return A.length>0&&A[A.length>>1]<.25&&A[A.length-1]<2;};
+  for(const o of objects){if(classOf(o.name)!=='recess'||Array.isArray(o.material)||!thin(o))continue;const m=area.get(getId(o));if(!m)continue;let best:THREE.Material|null=null,bn=-1;for(const [mat,n] of m)if(n>bn){best=mat;bn=n;}if(best){o.material=best;originals.set(o,best);}}}
  // Street grime, rain streaks and tone drift on walls, patched membranes on flat roofs (world space, no per-building data).
  const wxGround=groundTexture(data.grid,data.ground);
  {const tex=wxGround;const wx=new Set<THREE.MeshStandardMaterial>();
@@ -140,7 +153,9 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // Street-local surroundings are needed for glossy materials; a sky-only
  // environment makes glazing and metal read as flat painted surfaces.
  const reflectionTarget=new THREE.WebGLCubeRenderTarget(128,{type:THREE.HalfFloatType,generateMipmaps:true,minFilter:THREE.LinearMipmapLinearFilter});
- const reflectionCamera=new THREE.CubeCamera(.35,420,reflectionTarget);
+ // far enough to take in the sky dome (800 m half-size) and the cloud deck: at 420 m the probe held a flat background colour
+ // where windows should reflect the sky and its clouds
+ const reflectionCamera=new THREE.CubeCamera(.35,2000,reflectionTarget);
  const reflectionFilter=new THREE.PMREMGenerator(renderer);
  let localReflection:THREE.WebGLRenderTarget|null=null;
  const lastReflectionPosition=new THREE.Vector3(Infinity,Infinity,Infinity);
@@ -277,6 +292,14 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // every material texture uploaded, the first reflection capture, then every shader variant compiled against that probe,
  // car included. Without it the first visible frame froze for close to two seconds (about 900 MB of texture uploads and
  // the probe-lit programs), textures still unseen uploaded on first sight, and the first drive compiled the car's.
+ // Sky visibility over the whole area (occlusion.ts): street canyons, building bases and courtyards see less of the sky and
+ // are lit less by it; every world material, the canopies, the parked cars, the street lamps and wires and the player's car
+ // take it.
+ const skyVis=buildSkyVisibility(renderer,scene,[atmosphere.sky,atmosphere.clouds,ring,highlight,...(car?[car.group]:[])],reach+30);
+ {const mats=new Set<THREE.Material>();for(const o of renderables)for(const m of Array.isArray(o.material)?o.material:[o.material])mats.add(m);
+  if(parked)for(const m of parked.materials)mats.add(m);car?.group.traverse(o=>{const m=(o as THREE.Mesh).material;if(m)for(const x of Array.isArray(m)?m:[m])mats.add(x);});
+  if(overhead)for(const m of overhead.materials)mats.add(m);
+  occludeMaterials(mats,skyVis);}
  onProgress('Preparing shaders and textures…');await new Promise(r=>setTimeout(r,0));
  {applySize();if(car)car.group.visible=false;atmosphere.update(performance.now());patchUniforms();composer.render(0);
   const maps=new Set<THREE.Texture>();scene.traverse(o=>{const m=(o as THREE.Mesh).material;if(!m)return;for(const x of Array.isArray(m)?m:[m])for(const v of Object.values(x))if(v instanceof THREE.Texture&&!(v as THREE.CubeTexture).isCubeTexture&&!v.isRenderTargetTexture)maps.add(v);});
@@ -321,8 +344,8 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  frame=requestAnimationFrame(animate);
  // Review hook: `pose` puts the orbit camera at metric ENU coordinates (as ?viewFrom/?viewAt do) without a reload,
  // `capture` renders one frame and returns it as a PNG blob; both are for same-pose A/B comparisons only.
- (window as unknown as {__view?:unknown}).__view={pose:(from:number[],at:number[])=>{mode='orbit';controls.enabled=true;targetPosition=null;targetLook=null;highlight.visible=false;camera.position.set(from[0],from[2],-from[1]);controls.target.set(at[0],at[2],-at[1]);controls.update();},
-  capture:(w=1800,h=1125)=>new Promise<Blob|null>(resolve=>{qualityLocked=true;ao.enabled=true;grade.bloom.enabled=true;
+ (window as unknown as {__view?:unknown}).__view={exposure:()=>grade.exposure.read(renderer),pose:(from:number[],at:number[])=>{grade.snap();mode='orbit';controls.enabled=true;targetPosition=null;targetLook=null;highlight.visible=false;camera.position.set(from[0],from[2],-from[1]);controls.target.set(at[0],at[2],-at[1]);controls.update();},
+  capture:(w=1800,h=1125)=>new Promise<Blob|null>(resolve=>{qualityLocked=true;ao.enabled=true;grade.bloom.enabled=true;grade.snap();
    renderer.setPixelRatio(1);renderer.setSize(w,h,false);composer.setPixelRatio(1);composer.setSize(w,h);ao.setSize(Math.round(w*.6),Math.round(h*.6));camera.aspect=w/h;camera.updateProjectionMatrix();atmosphere.resize();
    // the animation loop may be throttled (hidden pane): place the shadow cascades and the reflection probe for this pose
    controls.update();atmosphere.update(performance.now()+1000);atmosphere.csm.lights[1].shadow.needsUpdate=true;updateReflections(performance.now()+1e7,true);

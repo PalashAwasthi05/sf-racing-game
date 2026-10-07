@@ -11,20 +11,24 @@ type Finish={roughness?:number;metalness?:number;probe?:boolean;env?:number;norm
 // not a mirror. Frames and fixings are satin anodised or painted metal; only bare fixtures read as bright metal.
 const GLAZING:Finish={roughness:.06,metalness:0,probe:true,env:1.3};
 const METAL:Finish={roughness:.5,metalness:.35,probe:true,env:.5};
-const PAINT:Finish={roughness:.6,metalness:0,probe:true,env:.35};
+// Rough dielectrics (paint, timber, terracotta, dark panels, asphalt) take the scene's sky-and-bounce environment like every
+// other surface: a material given the street probe as its envMap takes its diffuse light from it too, scaled by its
+// reflection strength, and these read murky in shade (asphalt at a third of the light of the ground beside it, and blue
+// from mirroring the sky at a driver's grazing angle). Only glazing, water and metals keep the probe.
+const PAINT:Finish={roughness:.72,metalness:0};
 const RENDER:Finish={roughness:.85,normal:1.4};
 const FINISH:Record<string,Finish>={
  glass:GLAZING,glass_dark:GLAZING,glass_light:GLAZING,glass_blue:GLAZING,glass_clear:GLAZING,water:{roughness:.05,metalness:0,probe:true,env:1.3},
  curtain:{roughness:.35,metalness:.25,probe:true,env:.7},
  steel:METAL,aluminum:METAL,silver:{roughness:.45,metalness:.45,probe:true,env:.6},zinc:{roughness:.42,metalness:.8,probe:true,env:.9},copper:{roughness:.4,metalness:.75,probe:true,env:.9},
- charcoal:{roughness:.62,metalness:.05,probe:true,env:.35},verdigris:{roughness:.7,metalness:.15},lamp:{roughness:.3,metalness:.5},
+ charcoal:{roughness:.7,metalness:.05},verdigris:{roughness:.7,metalness:.15},lamp:{roughness:.3,metalness:.5},
  white:PAINT,redpaint:PAINT,greenpaint:PAINT,yellow:PAINT,
- panel_dark:{roughness:.62,probe:true,env:.45,normal:1.2},panel_silver:{roughness:.3,probe:true,env:1,normal:1.2},
- asphalt:{roughness:.62,probe:true,env:.9,normal:1.3},
+ panel_dark:{roughness:.66,normal:1.2},panel_silver:{roughness:.3,probe:true,env:1,normal:1.2},
+ asphalt:{roughness:.9,normal:1.3},
  concrete:{normal:1.3},stone:{normal:1.5},limestone:{normal:1.4},cast_stone:{normal:1.4},brick:{normal:1.5},brick_modular:{normal:1.6},brick_dark:{normal:1.6},
  stucco:{normal:1.3},stucco_red:{normal:1.3},render_white:RENDER,render_gray:RENDER,render_salmon:RENDER,
- timber_dark:{roughness:.55,normal:1.4,probe:true,env:.5},timber_tan:{roughness:.55,normal:1.4,probe:true,env:.5},
- terracotta:{roughness:.6},terracotta_panel:{roughness:.5,normal:1.3,probe:true,env:.5},terracotta_ribbed:{roughness:.5,normal:1.3,probe:true,env:.5},
+ timber_dark:{roughness:.7,normal:1.4},timber_tan:{roughness:.7,normal:1.4},
+ terracotta:{roughness:.7},terracotta_panel:{roughness:.6,normal:1.3},terracotta_ribbed:{roughness:.6,normal:1.3},
  roofing:{roughness:.8,metalness:.1},
  // Venue surfaces: painted seat shells have a light sheen, turf and clay stay matte with relief, a video screen and
  // a glass-look bottle reflect like glazing.

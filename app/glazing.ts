@@ -47,7 +47,10 @@ export function glazeMaterials(materials: Iterable<THREE.MeshStandardMaterial>) 
       shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vGlPos;varying vec3 vGlNrm;')
         .replace('#include <project_vertex>', '#include <project_vertex>\nvGlPos=(modelMatrix*vec4(transformed,1.)).xyz;vGlNrm=normalize(mat3(modelMatrix)*objectNormal);');
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\n' + HEADER)
-        .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=glInterior();');
+        .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance+=glInterior();')
+        // coated glazing reflects about a tenth of the light face-on (plain glass 4 %): with 4 % every window in sun read
+        // as a black hole in a wall thirty times brighter
+        .replace('#include <lights_physical_fragment>', THREE.ShaderChunk.lights_physical_fragment.replace('mix( vec3( 0.04 ), diffuseColor.rgb, metalnessFactor )', 'mix( vec3( 0.1 ), diffuseColor.rgb, metalnessFactor )'));
     };
     const key = m.customProgramCacheKey.bind(m);
     m.customProgramCacheKey = () => key() + '|glazed';

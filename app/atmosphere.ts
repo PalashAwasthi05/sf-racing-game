@@ -13,15 +13,22 @@ export const PRESET_LABEL:Record<Preset,string>={afternoon:'Afternoon sun',golde
 
 type Spec={azimuthDeg:number;elevationDeg:number;sunColor:string;sunIntensity:number;hemiSky:string;hemiGround:string;hemiIntensity:number;env:number;exposure:number;turbidity:number;rayleigh:number;mie:number;mieG:number;fog:[string,number,number];coverage:number;cloudTint:string;cloudShade:string;cloudOpacity:number;cloudSpeed:number};
 const SPECS:Record<Preset,Spec>={
- afternoon:{azimuthDeg:262,elevationDeg:31,sunColor:'#fff0d8',sunIntensity:3,hemiSky:'#aeb6bf',hemiGround:'#a08a6c',hemiIntensity:.45,env:1,exposure:.9,turbidity:2.2,rayleigh:3.1,mie:.004,mieG:.82,fog:['#b8cadb',380,1500],coverage:.42,cloudTint:'#ffffff',cloudShade:'#a9b7c7',cloudOpacity:.97,cloudSpeed:1},
- golden:{azimuthDeg:286,elevationDeg:7,sunColor:'#ffb466',sunIntensity:3,hemiSky:'#c9b9ab',hemiGround:'#7a5f48',hemiIntensity:.45,env:1.25,exposure:1.2,turbidity:5.5,rayleigh:3.6,mie:.022,mieG:.93,fog:['#d6b69c',300,1400],coverage:.5,cloudTint:'#ffd6b0',cloudShade:'#7e6270',cloudOpacity:.95,cloudSpeed:1},
- overcast:{azimuthDeg:212,elevationDeg:45,sunColor:'#e9eef3',sunIntensity:.55,hemiSky:'#c9d0d6',hemiGround:'#85817a',hemiIntensity:.7,env:1.25,exposure:1.15,turbidity:18,rayleigh:1.1,mie:.006,mieG:.7,fog:['#c4cbd2',260,1300],coverage:.97,cloudTint:'#e0e4e9',cloudShade:'#98a1aa',cloudOpacity:1,cloudSpeed:.6},
+ afternoon:{azimuthDeg:262,elevationDeg:31,sunColor:'#fff0d8',sunIntensity:3,hemiSky:'#aeb6bf',hemiGround:'#a08a6c',hemiIntensity:.15,env:1.8,exposure:.9,turbidity:2.2,rayleigh:3.1,mie:.004,mieG:.82,fog:['#b8cadb',380,1500],coverage:.42,cloudTint:'#ffffff',cloudShade:'#a9b7c7',cloudOpacity:.97,cloudSpeed:1},
+ golden:{azimuthDeg:286,elevationDeg:7,sunColor:'#ffb466',sunIntensity:3,hemiSky:'#c9b9ab',hemiGround:'#7a5f48',hemiIntensity:.2,env:2.2,exposure:1.2,turbidity:5.5,rayleigh:3.6,mie:.022,mieG:.93,fog:['#d6b69c',300,1400],coverage:.5,cloudTint:'#ffd6b0',cloudShade:'#7e6270',cloudOpacity:.95,cloudSpeed:1},
+ overcast:{azimuthDeg:212,elevationDeg:45,sunColor:'#e9eef3',sunIntensity:.55,hemiSky:'#c9d0d6',hemiGround:'#85817a',hemiIntensity:.35,env:1.9,exposure:1.15,turbidity:18,rayleigh:1.1,mie:.006,mieG:.7,fog:['#c4cbd2',260,1300],coverage:.97,cloudTint:'#e0e4e9',cloudShade:'#98a1aa',cloudOpacity:1,cloudSpeed:.6},
 };
 // The analytic sky is authored for an exposure near one half; at filmic exposure it is scaled so the zenith keeps its
 // blue and the horizon does not wash to white. The same scaled sky, without its solar disc, is the environment that lights
 // and is reflected by every surface: rendered unscaled and with the disc, the environment was 2.5 times the sky one sees
 // and carried a second, unshadowable sun, so shaded walls were lit nearly as brightly as sunlit ones.
 const SKY_LOOK={scale:.4,saturation:1.55,zenithDim:.62};
+// Ambient calibrated on 18 % grey cards (2026-10-07). The environment that lights the world is the sky, less saturated than
+// the sky one sees (envSat: at full saturation every shaded road and pavement came out twice as blue as red) and at
+// skyK of its brightness, over a lower half of sunlit warm-grey ground (the street and the facades across it, albedo
+// `bounce`): before, the lower half was the sky shader's bright underside, so a shaded wall was lit more than the
+// shaded ground in front of it and every surface read evenly, flatly lit. Measured with these values (afternoon): sunlit
+// ground about 4x shaded ground, a wall facing the sun about 4.5x one facing away, shade a cool neutral.
+const LOOK={envSat:.42,groundAlbedo:[.2,.19,.17],skyIrradiance:[.55,.62,.75],bounce:.45,skyK:.68};
 // The saturation boost is for the sky as seen; the light it casts keeps the scattered colour it has (boosted, it tinted
 // every shadow a strong blue).
 // The sky as seen fades, over its lowest 20 degrees, to the preset's haze colour at its own brightness: the analytic
@@ -78,7 +85,7 @@ export function createAtmosphere(scene:THREE.Scene,renderer:THREE.WebGLRenderer,
  const pmrem=new THREE.PMREMGenerator(renderer);let environment:THREE.WebGLRenderTarget|null=null;
  let current:Preset='afternoon';let lastFov=camera.fov,lastAspect=camera.aspect;const sunDir=new THREE.Vector3();
  function apply(preset:Preset){
-  const s=SPECS[preset];current=preset;sunDir.copy(sunDirection(s.azimuthDeg,s.elevationDeg));
+  const s=SPECS[preset];const LOOK_=LOOK;current=preset;sunDir.copy(sunDirection(s.azimuthDeg,s.elevationDeg));
   const u=sky.material.uniforms;u.turbidity.value=s.turbidity;u.rayleigh.value=s.rayleigh;u.mieCoefficient.value=s.mie;u.mieDirectionalG.value=s.mieG;u.sunPosition.value.copy(sunDir);
   csm.lightDirection.copy(sunDir).negate();csm.lightIntensity=s.sunIntensity;
   for(const light of csm.lights){light.color.set(s.sunColor);light.intensity=s.sunIntensity;}
@@ -94,8 +101,13 @@ export function createAtmosphere(scene:THREE.Scene,renderer:THREE.WebGLRenderer,
   // walls are lit by it.
   const envScene=new THREE.Scene();const envSky=new Sky();envSky.scale.setScalar(1600);patchSky(envSky,false);const eu=envSky.material.uniforms;
   eu.turbidity.value=s.turbidity;eu.rayleigh.value=s.rayleigh;eu.mieCoefficient.value=s.mie;eu.mieDirectionalG.value=s.mieG;eu.sunPosition.value.copy(sunDir);envScene.add(envSky);
+  eu.uSkySat.value=LOOK_.envSat;eu.uSkyScale.value=SKY_LOOK.scale*LOOK_.skyK;
+  const sunE=s.sunIntensity*Math.max(0,sunDir.y),sc=new THREE.Color(s.sunColor),gs=LOOK_.bounce/.2;
+  const groundMat=new THREE.MeshBasicMaterial({fog:false,side:THREE.DoubleSide});
+  groundMat.color.setRGB((sc.r*sunE+LOOK_.skyIrradiance[0])*LOOK_.groundAlbedo[0]*gs/Math.PI,(sc.g*sunE+LOOK_.skyIrradiance[1])*LOOK_.groundAlbedo[1]*gs/Math.PI,(sc.b*sunE+LOOK_.skyIrradiance[2])*LOOK_.groundAlbedo[2]*gs/Math.PI);
+  const ground=new THREE.Mesh(new THREE.CircleGeometry(1500,48),groundMat);ground.rotation.x=-Math.PI/2;ground.position.y=-1.5;envScene.add(ground);
   const next=pmrem.fromScene(envScene,.04,.1,10000);environment?.dispose();environment=next;scene.environment=next.texture;scene.environmentIntensity=s.env;
-  envSky.geometry.dispose();envSky.material.dispose();
+  envSky.geometry.dispose();envSky.material.dispose();ground.geometry.dispose();groundMat.dispose();
  }
  function setupMaterial(material:THREE.Material|THREE.Material[]){for(const m of Array.isArray(material)?material:[material]){if(m instanceof THREE.MeshStandardMaterial||m instanceof THREE.MeshLambertMaterial||m instanceof THREE.MeshPhongMaterial){csm.setupMaterial(m);}}}
  function update(now:number){

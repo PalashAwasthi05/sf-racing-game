@@ -57,7 +57,9 @@ export function buildFoliage(leafMeshes: THREE.Mesh[]) {
     a.crossVectors(d, Math.abs(d.y) > .9 ? new THREE.Vector3(1, 0, 0) : up).normalize(); b.crossVectors(d, a).normalize();
     const size = 1.05 + r() * .6, rot = r() * Math.PI * 2, ca = Math.cos(rot), sa = Math.sin(rot);
     q.copy(a).multiplyScalar(ca).addScaledVector(b, sa); b.copy(a).multiplyScalar(-sa).addScaledVector(b, ca); a.copy(q);
-    tint.copy(tints[i]).multiplyScalar(1.15 + r() * .45);
+    // canopy albedo: a crown in sun is a dark, slightly olive green (about 0.05-0.1), not the bright lawn green the
+    // pipeline's leaf colours times this texture gave (about 0.15-0.28, a toy tree)
+    tint.copy(tints[i]).multiplyScalar(.62 + r() * .38); { const l = .2126 * tint.r + .7152 * tint.g + .0722 * tint.b; tint.lerp(new THREE.Color(l * 1.08, l, l * .78), .18); }
     const corners = [[-1, -1, 0, 0], [1, -1, 1, 0], [1, 1, 1, 1], [-1, 1, 0, 1]];
     for (let k = 0; k < 4; k++) {
       const [sx, sy, u, w] = corners[k]; const o = (4 * i + k) * 3;
