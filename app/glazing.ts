@@ -93,10 +93,15 @@ export function isGlazing(cls: string) { return GLASS.test(cls); }
 // how much light the glass lets through, by class (tinted glazing shows what is behind it darker)
 const TRANSMISSION: Record<string, number> = {glass: .72, glass_dark: .42, glass_light: .8, glass_blue: .6, glass_clear: .85};
 
+/** One window of ordinary size: its horizontal axis (x, z), its extent along it and up, and its glass plane's offset
+ *  across the axis (u = dot(P.xz, axis), off = dot(P.xz, (-az, ax))). */
+export type GlazedWindow = {ax: number; az: number; u0: number; u1: number; y0: number; y1: number; off: number};
+
 /** Gives every pane of the given glazing meshes its own coordinates across its face (glPane: u, v, width, height) and an
- *  identity (glId). A pane is a connected group of triangles (the generator draws each as a thin box). */
+ *  identity (glId). A pane is a connected group of triangles (the generator draws each as a thin box). Returns the
+ *  windows of ordinary size found (for the walls around them: weathering.ts, facademap.ts). */
 export function paneAttributes(meshes: THREE.Mesh[]) {
-  const P = new THREE.Vector3();
+  const P = new THREE.Vector3(); const windows: GlazedWindow[] = [];
   for (const mesh of meshes) {
     const g = mesh.geometry; if (g.attributes.glPane) continue;
     mesh.updateWorldMatrix(true, false);
@@ -151,6 +156,7 @@ export function paneAttributes(meshes: THREE.Mesh[]) {
       // a window of ordinary size takes one treatment across all its panes; a curtain wall (one great connected glazing)
       // takes one per room-sized cell (4 m bays, 3.6 m storeys), each pane across its own face
       const ordinary = umax - umin <= 4.5 && ymax - ymin <= 4.2;
+      if (ordinary && umax - umin > .2 && ymax - ymin > .3) windows.push({ax: p0.ax, az: p0.az, u0: umin, u1: umax, y0: ymin, y1: ymax, off: p0.off});
       for (const k of members) {
         const p = panes[k];
         const pu0 = ordinary ? umin : Math.min(...p.verts.map(i => world[3 * i] * p0.ax + world[3 * i + 2] * p0.az)), pu1 = ordinary ? umax : Math.max(...p.verts.map(i => world[3 * i] * p0.ax + world[3 * i + 2] * p0.az));
@@ -161,6 +167,7 @@ export function paneAttributes(meshes: THREE.Mesh[]) {
     }
     g.setAttribute('glPane', new THREE.BufferAttribute(pane, 4)); g.setAttribute('glId', new THREE.BufferAttribute(ident, 1));
   }
+  return windows;
 }
 
 /** Draws what stands behind each given glazing material's panes (chained after any existing onBeforeCompile). `cls` names

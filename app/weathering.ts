@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {FACADEMAP_GLSL} from './facademap';
 
 // Weathering: what makes a wall read as built and lived with rather than printed. The generated world gives every
 // facade one material, one colour and a texture that repeats every few metres; real walls are dirtier at the foot
@@ -51,14 +52,24 @@ vec3 wxTint(vec3 albedo){
  return mix(c,vec3(l)*vec3(1.04,1.,.93),clamp(.28*grime*wall+wxDirt*.55,0.,.6));
 }
 
-// Surface character by kind (uWxKind: 0 none, 1 render/stucco, 2 concrete, 3 cladding panels): what a real wall of that
-// kind shows at a few metres that its texture does not. All in wall-local metres (u along the wall, y up).
+// Surface character by kind (uWxKind: 0 none, 1 render/stucco, 2 concrete, 3 cladding panels, 4 dressed stone): what a
+// real wall of that kind shows at a few metres that its texture does not. All in wall-local metres (u along the wall, y
+// up). Around its windows (facademap.ts) a wall of render, concrete or cladding carries the dirt washed off every sill
+// down the wall below it, mostly from the sill's two ends, and render cracks from the corners of its openings.
 uniform float uWxKind;
 float wxH;
 float wxKeep(float x,float f){return 1.-smoothstep(.25,.5,fwidth(x)*f);}
+// the share of a pixel px metres wide covered by a hairline of half width w at signed distance o
+float wxLine(float o,float w,float px){return max(0.,min(o+.5*px,w)-max(o-.5*px,-w))/px;}
+// a crack running from a corner (q: the point less the corner, wall metres) along dir for up to len metres, wandering
+float wxCrackFrom(vec2 q,vec2 dir,float len,float seed,float px){
+ float s=dot(q,dir);if(s<0.||s>len)return 0.;
+ float o=dot(q,vec2(-dir.y,dir.x))-(wxNoise(vec2(s*5.,seed))-.5)*.14-(wxNoise(vec2(s*21.,seed+3.))-.5)*.035;
+ return wxLine(o,.0013,px)*(1.-smoothstep(.55*len,len,s));
+}
 vec3 wxSurface(vec3 albedo){
- vec3 P=vWxPos;vec3 N=normalize(vWxNrm);wxH=0.;
- float wall=smoothstep(.3,.7,1.-abs(N.y));if(wall<.01||uWxKind<.5)return albedo;
+ vec3 P=vWxPos;vec3 N=normalize(vWxNrm);wxH=0.;float px=max(length(fwidth(P))*.7,1e-4);
+ float wall=smoothstep(.3,.7,1.-abs(N.y));if(wall<.01||uWxKind<.5||uWxKind>3.5)return albedo;
  vec3 T=normalize(vec3(-N.z,0.,N.x)+vec3(1e-5,0.,0.));float u=dot(P.xz,T.xz),y=P.y;
  // each wall plane a slightly different tone: buildings of one material are painted, poured and weathered apart
  float plane=floor(dot(P.xz,N.xz)*2.+.5);vec2 nq=floor(N.xz*8.+.5);
@@ -92,6 +103,37 @@ vec3 wxSurface(vec3 albedo){
   vec2 e=min(f,1.-f)*vec2(1.2,3.);float joint=1.-smoothstep(.006,.016,min(e.x,e.y));
   c*=1.-.5*joint*wxKeep(u,40.);wxH=-joint+.3*wxNoise(f*vec2(2.,5.)+pc);
  }
+ // the windows in front of whose columns this point stands
+ float streak=0.,crack=0.;ivec2 ent=wmEntries(P);
+ for(int i=0;i<48;i++){
+  if(i>=ent.y)break;
+  int ri=wmListAt(ent.x+i);vec4 A=wmRunA(ri),B=wmRunB(ri);vec2 ax=A.xy;
+  if(abs(dot(N.xz,ax))>.3||abs(dot(P.xz,vec2(-ax.y,ax.x))-A.z)>.8)continue;      // a wall of the window's plane
+  float uu=dot(P.xz,ax);if(uu<B.x-.9||uu>B.y+.9)continue;
+  float cnt=floor(B.w),hh=fract(B.w)*10.,pitch=B.z,y0=A.w;
+  float k=pitch>.01?max(ceil((P.y-y0)/pitch),0.):P.y<=y0?0.:1.;                  // the window above: the first sill at or over P
+  float hs=fract(sin(float(ri)*12.9898+k*4.1)*43758.5453);
+  if(k<cnt){
+   float d=y0+k*pitch-P.y;                                                     // metres under that sill
+   float fade=exp(-d/mix(.6,2.8,hs*hs));
+   float w0=.07+.04*d;
+   float ends=exp(-pow((uu-B.x-.05)/w0,2.))+exp(-pow((uu-B.y+.05)/w0,2.));
+   float inside=smoothstep(B.x-.02,B.x+.06,uu)*smoothstep(B.y+.02,B.y-.06,uu);
+   float thin=inside*smoothstep(.5,.85,wxNoise(vec2(uu*7.+float(ri)*3.1,d*.35+hs*9.)));
+   streak=max(streak,(.85*ends+.55*thin)*fade*mix(.45,1.,hs)+.3*inside*exp(-d/.35));
+   // render cracks down and out from the sill's corners
+   if(uWxKind<1.5){vec2 q=vec2(uu,P.y)-vec2(B.x,y0+k*pitch);
+    if(hs>.6)crack=max(crack,wxCrackFrom(q,normalize(vec2(-.55,-1.)),.5+1.1*hs,hs*31.,px));
+    q.x=uu-B.y;if(fract(hs*7.3)>.6)crack=max(crack,wxCrackFrom(q,normalize(vec2(.55,-1.)),.5+1.1*fract(hs*3.7),hs*17.,px));}
+  }
+  // and up and out from the head corners of the window below
+  if(uWxKind<1.5&&k>.5&&k-1.<cnt){float yh=y0+(k-1.)*pitch+hh,hb=fract(sin(float(ri)*7.13+k*2.9)*43758.5453);
+   vec2 q=vec2(uu-B.x,P.y-yh);if(hb>.65)crack=max(crack,wxCrackFrom(q,normalize(vec2(-.5,1.)),.4+.9*hb,hb*23.,px));
+   q.x=uu-B.y;if(fract(hb*5.1)>.65)crack=max(crack,wxCrackFrom(q,normalize(vec2(.5,1.)),.4+.9*fract(hb*2.3),hb*41.,px));}
+ }
+ // dirt off the sills is a grey-brown: it darkens a pale wall and pales a dark one
+ c=mix(c,vec3(.17,.155,.135),.48*clamp(streak,0.,1.));
+ c*=1.-.45*crack;
  return mix(albedo,c,wall);
 }
 vec3 wxBump(vec3 n,float h,float k){vec3 dpx=dFdx(-vViewPosition),dpy=dFdy(-vViewPosition);float hx=dFdx(h),hy=dFdy(h);
@@ -111,9 +153,11 @@ export function groundTexture(grid: { min: number; step: number; n: number }, gr
 /** Adds weathering to the given materials; chained after any existing onBeforeCompile (the shadow cascades'). */
 // the surface character of a wall material class (wxSurface): render and stucco, concrete, cladding panels; brick, stone,
 // timber and roofs keep their own textures
-export function surfaceKind(cls: string) { return /^(render|stucco)/.test(cls) ? 1 : /^(concrete|venue_concrete|cast_stone)/.test(cls) ? 2 : /^(panel_|terracotta_panel|curtain_panel)/.test(cls) ? 3 : 0; }
+export function surfaceKind(cls: string) { return /^(render|stucco)/.test(cls) ? 1 : /^(concrete|venue_concrete|cast_stone)/.test(cls) ? 2 : /^(panel_|terracotta_panel|curtain_panel)/.test(cls) ? 3 : /^(stone|limestone)/.test(cls) ? 4 : 0; }
 export function weatherMaterials(materials: Iterable<THREE.MeshStandardMaterial>, tex: THREE.DataTexture, grid: { min: number; step: number; n: number }, kinds?: Map<THREE.Material, number>) {
-  const uniforms = { uWxGround: { value: tex }, uWxGrid: { value: new THREE.Vector4(grid.min, grid.step, grid.n, 0) }, uWxHeight: { value: null as THREE.Texture | null }, uWxH: { value: new THREE.Vector2(1, 0) } };
+  // the facade map's tables (facademap.ts) are set once the windows are known: setFacadeMap below
+  const uniforms = { uWxGround: { value: tex }, uWxGrid: { value: new THREE.Vector4(grid.min, grid.step, grid.n, 0) }, uWxHeight: { value: null as THREE.Texture | null }, uWxH: { value: new THREE.Vector2(1, 0) },
+    uWmCol: { value: null as THREE.Texture | null }, uWmCell: { value: null as THREE.Texture | null }, uWmList: { value: null as THREE.Texture | null }, uWmGrid: { value: new THREE.Vector4() } };
   for (const m of materials) {
     if (m.userData.weathered) continue; m.userData.weathered = true;
     const kind = kinds?.get(m) ?? 0;
@@ -123,15 +167,18 @@ export function weatherMaterials(materials: Iterable<THREE.MeshStandardMaterial>
       Object.assign(shader.uniforms, uniforms); shader.uniforms.uWxKind = {value: kind};
       shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWxPos;varying vec3 vWxNrm;')
         .replace('#include <project_vertex>', '#include <project_vertex>\nvWxPos=(modelMatrix*vec4(transformed,1.)).xyz;vWxNrm=normalize(mat3(modelMatrix)*objectNormal);');
-      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\n' + HEADER)
-        .replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb=wxTint(wxSurface(diffuseColor.rgb));')
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\n' + FACADEMAP_GLSL + HEADER)
+        // dressed stone: the scan's blotches (a metre across) kept at a quarter, its grain whole
+        .replace('#include <map_fragment>', '#include <map_fragment>\n#ifdef USE_MAP\nif(uWxKind>3.5){vec3 t0=texture2D(map,vMapUv).rgb,m1=textureLod(map,vMapUv,4.).rgb,m2=textureLod(map,vMapUv,10.).rgb;diffuseColor.rgb*=max(m2+(t0-m1)+.25*(m1-m2),vec3(0.))/max(t0,vec3(1e-3));}\n#endif\ndiffuseColor.rgb=wxTint(wxSurface(diffuseColor.rgb));')
         .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nif(uWxKind>.5)normal=wxBump(normal,wxH,.0025);')
         .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=clamp(roughnessFactor*mix(.9,1.08,wxLarge)*(1.+.15*wxDirt),.04,1.);');
     };
     const key = m.customProgramCacheKey.bind(m);
-    m.customProgramCacheKey = () => key() + '|weathered' + kind;
+    m.customProgramCacheKey = () => key() + '|weathered2-' + kind;
     m.needsUpdate = true;
   }
   /** The static world's top-down height map (occlusion.ts), for the roof line over each point of a wall. */
-  return { setHeight(texture: THREE.Texture, radius: number) { uniforms.uWxHeight.value = texture; uniforms.uWxH.value.set(radius, 1); } };
+  return { setHeight(texture: THREE.Texture, radius: number) { uniforms.uWxHeight.value = texture; uniforms.uWxH.value.set(radius, 1); },
+    /** The windows' facade map (facademap.ts), for the streaks, cracks and repainting around them. */
+    setFacadeMap(map: {textures: {uWmCol: THREE.Texture; uWmCell: THREE.Texture; uWmList: THREE.Texture}; grid: THREE.Vector4}) { uniforms.uWmCol.value = map.textures.uWmCol; uniforms.uWmCell.value = map.textures.uWmCell; uniforms.uWmList.value = map.textures.uWmList; uniforms.uWmGrid.value.copy(map.grid); } };
 }

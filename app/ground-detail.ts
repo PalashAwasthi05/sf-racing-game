@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {ROADFIELD_GLSL} from './roadfield';
+import {PAVING_GLSL} from './paving';
 
 // Ground detail: what makes a road and a lawn read as worn and grown rather than painted. The generated world gives the
 // road one asphalt texture repeating every few metres and the lawns one flat green. Here, in world space:
@@ -99,6 +100,10 @@ vec3 gdGarden(vec3 albedo){
  if(pick<.2){vec2 q=fract(p/9.)*9.;vec2 lo=vec2(.4)+gdHash2(cell+2.)*2.,hi=lo+vec2(3.)+gdHash2(cell+5.)*3.;
   paved=max(paved,step(lo.x,q.x)*step(q.x,hi.x)*step(lo.y,q.y)*step(q.y,hi.y));}
  c=mix(c,albedo*mix(.82,1.04,wear),paved);
+ // where the terrain shows in the narrow gaps between a road and its kerb, or along a building's foot, it is the
+ // gutter's or the wall foot's grime, not lawn (roadfield.ts: distance from the road's edge and from the nearest wall)
+ vec4 rf=rfAt(vGdPos);float gap=max(1.-smoothstep(.45,.9,abs(rf.x)),1.-smoothstep(.5,1.,rf.w));
+ c=mix(c,albedo*vec3(.42,.41,.39)*mix(.8,1.1,wear),gap);paved=max(paved,gap);
  c*=mix(1.,.86+.28*gdNoise(p*12.),gdKeep(12.));
  gdHeight=(1.-paved)*gdNoise(p*6.)*gdKeep(6.);
  return c;
@@ -106,15 +111,75 @@ vec3 gdGarden(vec3 albedo){
 `;
 
 const PAVEMENT = /* glsl */`
+// the share of a pixel (px metres wide) covered by a line of half width hw at signed distance x: a box filter, so a thin
+// line far away greys the pixel by its true share instead of shimmering
+float gdLine(float x,float hw,float px){return max(0.,min(x+.5*px,hw)-max(x-.5*px,-hw))/px;}
 vec3 gdPavement(vec3 albedo){
  vec2 p=vGdPos.xz;
- // a sidewalk is laid in pours of different ages and wears unevenly: tone drift over metres, weathered blotches, and
- // the dark spots of old chewing gum, densest nowhere in particular
- float tone=gdFbm(p*.3+4.2),blot=gdFbm(p*1.1+9.9);
- vec3 c=albedo*mix(.88,1.07,tone)*mix(1.,.9,smoothstep(.62,.8,blot));
- vec2 g=floor(p*2.);float spot=step(.985,gdHash(g+1.3));vec2 o=fract(p*2.)-.5+(gdHash2(g)-.5)*.5;
- c*=1.-.45*spot*(1.-smoothstep(.04,.07,length(o)))*gdKeep(4.);
- gdHeight=gdNoise(p*7.)*gdKeep(7.)*.5;
+ float level=smoothstep(.6,.8,abs(normalize(cross(dFdx(vGdPos),dFdy(vGdPos))).y));   // the walk, not the kerb's face
+ // where this point stands: metres from the kerb's edge, and from the nearest building wall (roadfield.ts)
+ vec4 rf=rfAt(vGdPos);float dk=max(-rf.x,0.),db=rf.w;
+ // the slabs: the generator's joint runs where they reach (paving.ts), else a layout along the kerb of its own
+ vec4 pv=pfAt(vGdPos);bool run=pv.w>.1;vec2 a;float ph,rid,ks,span;
+ if(run){
+  a=vec2(cos(pv.x),sin(pv.x));ph=pv.y;rid=fract(sin(pv.z*1.913+pv.x*7.31)*43758.5);
+  // across the run in its own straight frame: the strips reach from the kerb to their far end, which is the end the
+  // kerb distance grows toward
+  vec2 n=vec2(-a.y,a.x);float v=dot(p,n)-pv.z,hl=pv.w;vec3 n3=vec3(n.x,0.,n.y);
+  float s=-rfAt(vGdPos+n3*(hl-v)).x>-rfAt(vGdPos-n3*(hl+v)).x?1.:-1.;
+  ks=max(hl+s*v,0.);span=2.*hl;
+ }else{
+  // no run: square slabs along the kerb. The direction is snapped to 5 degree steps, so it is one constant along a
+  // straight kerb: a direction that turned a little from pixel to pixel would swing dot(p, along) by metres this far
+  // from the origin and bend every joint into loops
+  vec2 g=rfAcross(vGdPos,rf.x);float ang=atan(g.x,g.y);ang=floor(ang/.0872665+.5)*.0872665;
+  a=vec2(cos(ang),sin(ang));ph=0.;rid=.37+ang;ks=dot(p,vec2(-a.y,a.x));span=0.;
+ }
+ float t=dot(p,a)-ph,k=floor(t/1.8),ft=t-k*1.8;
+ // across the walk: the generator's slabs span its strips' length from the kerb; a wider walk is scored in 1.6 m bands
+ float band=ks<span?0.:1.+floor((ks-span)/1.6),fb=ks<span?ks/span:fract((ks-span)/1.6);
+ if(!run){float q=dot(p,vec2(-a.y,a.x))/1.6;band=floor(q);fb=fract(q);}
+ vec2 sid=vec2(k+floor(rid*997.)*61.,band);
+ float r1=gdHash(sid+.17),r2=gdHash(sid*1.31+4.7),r3=gdHash(sid*.71+9.3),r4=gdHash(sid*2.03+1.9);
+ // pours of different ages: most slabs within a few percent of each other, one in fourteen replaced (paler, cleaner,
+ // cooler) and one in sixteen stained darker; over tens of metres the whole walk drifts in tone
+ bool fresh=r2<.07,stained=r2>.94;
+ vec3 c=albedo*vec3(1.03,1.,.95)*(.86+.24*r1)*mix(.93,1.05,gdFbm(p*.3+4.2));
+ if(fresh)c=albedo*vec3(1.13,1.15,1.19);
+ if(stained)c*=.74+.1*gdNoise(p*2.+r3*9.);
+ // grime by the kerb and dirt banked against the frontage; the walking line between is kept cleaner by feet
+ float kerbZone=1.-smoothstep(0.,.9,dk),wallZone=1.-smoothstep(0.,.7,db);
+ float walk=smoothstep(1.,1.8,dk)*smoothstep(.5,1.4,db);
+ c*=1.-.24*(1.-smoothstep(.05,.45,dk))*mix(.7,1.,gdNoise(p*2.1));          // the kerb: tyre scuffs, gutter splash
+ c*=1.-.14*kerbZone*mix(.5,1.,gdNoise(p*1.3));
+ c*=1.-.27*wallZone*mix(.5,1.,gdNoise(p*.9+3.));
+ c*=1.+.05*walk;
+ // ground-in grime: specks and smears of a few centimetres to a few decimetres, thicker away from the walking line
+ float speck=smoothstep(.5,.75,gdNoise(p*9.+r1*5.)*.6+gdNoise(p*23.)*.4)*gdKeep(9.);
+ float smear=smoothstep(.45,.75,gdFbm(p*3.3+1.1));
+ c*=1.-(.1*speck+.08*smear)*(1.-.5*walk);
+ // spills and drips: irregular dark patches, more of them toward the kerb and the frontage
+ float spill=smoothstep(.66,.8,gdFbm(p*1.7+vec2(r1*3.,0.))+.12*(kerbZone+wallZone));
+ c*=1.-.26*spill*(fresh?.4:1.);
+ // chewing gum: dark spots of a centimetre or two, most of them in the walking line
+ vec2 gq=p*4.,gi=floor(gq);float gum=0.;
+ if(gdHash(gi+.3)<.03+.07*walk){vec2 o=fract(gq)-.5+(gdHash2(gi)-.5)*.6;gum=1.-smoothstep(.035,.06,length(o));}
+ c*=1.-.5*gum*gdKeep(8.)*level;
+ // a crack across one slab in eleven, wandering, a hairline of dirt
+ float pxT=max(fwidth(t),1e-4),pxK=max(fwidth(ks),1e-4),crack=0.;
+ if(r3<.09&&!fresh){float x0=.3+1.2*r4,x1=.3+1.2*fract(r4*13.7);
+  float xc=mix(x0,x1,fb)+(gdNoise(vec2(fb*9.,r3*40.))-.5)*.22+(gdNoise(vec2(fb*31.,r4*20.))-.5)*.05;
+  crack=gdLine(ft-xc,.0025,pxT);}
+ // the joints: a tooled groove a centimetre wide with dirt worked into its edges, drawn here too so the grid holds
+ // where the generator drew none (past 3.2 m from the kerb, and where no run reaches)
+ float jx=min(ft,1.8-ft),jy=run&&ks<span?span-ks:min(fb,1.-fb)*1.6;
+ float joint=max(gdLine(jx,.006,pxT),gdLine(jy,.006,pxK)),halo=max(gdLine(jx,.035,pxT),gdLine(jy,.035,pxK));
+ // a broom finish: fine ridges along the joints, seen only close to
+ float broom=gdNoise(vec2(t*140.,fb*3.+r1*9.));
+ c*=mix(1.,.97+.06*broom,gdKeep(140.)*level);
+ c*=1.-level*(.16*halo+.5*joint+.55*crack);
+ gdHeight=gdNoise(p*7.)*gdKeep(7.)*.5+broom*.25*gdKeep(140.)-.8*joint-.5*crack;
+ gdRough=1.-.1*walk+.05*spill+(fresh?.04:0.);   // a factor on the scan's own roughness
  return c;
 }
 `;
@@ -149,14 +214,17 @@ export function detailGrass(materials: Iterable<THREE.MeshStandardMaterial>) {
   patch(materials, 'grass', GRASS, 'gdGrass', .012, 'clamp(max(roughnessFactor,.9),.0,1.)');
 }
 
-/** Back gardens, patios and bare soil where the terrain itself shows (its material is one paving texture). */
-export function detailGarden(materials: Iterable<THREE.MeshStandardMaterial>) {
-  patch(materials, 'garden', GARDEN, 'gdGarden', .01, 'clamp(max(roughnessFactor,.82),.0,1.)');
+/** Back gardens, patios and bare soil where the terrain itself shows (its material is one paving texture); grime in the
+ *  gaps it shows through along kerbs and building walls. `field` holds the road field's uniforms (roadfield.ts). */
+export function detailGarden(materials: Iterable<THREE.MeshStandardMaterial>, field: Record<string, THREE.IUniform>) {
+  patch(materials, 'garden2', GARDEN, 'gdGarden', .01, 'clamp(max(roughnessFactor,.82),.0,1.)', field, ROADFIELD_GLSL);
 }
 
-/** Tone drift, weathering and gum spots on sidewalk concrete (the slab joints are their own geometry). */
-export function detailPavement(materials: Iterable<THREE.MeshStandardMaterial>) {
-  patch(materials, 'pavement', PAVEMENT, 'gdPavement', .004, 'clamp(roughnessFactor*mix(1.05,.92,gdHeight),.4,1.)');
+/** Slab by slab tone, joints, cracks, gum, spills, kerb and frontage dirt on sidewalk concrete. `fields` holds the road
+ *  field's and the paving field's uniforms (roadfield.ts, paving.ts); their textures may be set after this call, before
+ *  the first frame. */
+export function detailPavement(materials: Iterable<THREE.MeshStandardMaterial>, fields: Record<string, THREE.IUniform>) {
+  patch(materials, 'pavement2', PAVEMENT, 'gdPavement', .004, 'clamp(roughnessFactor*gdRough,.45,1.)', fields, ROADFIELD_GLSL + PAVING_GLSL);
 }
 
 /** Ground classes this module details, by a mesh's material class. */
