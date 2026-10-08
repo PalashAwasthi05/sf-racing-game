@@ -100,3 +100,46 @@ export function finishFoliage(material: THREE.MeshStandardMaterial) {
   material.customProgramCacheKey = () => key() + '|foliage';
   material.needsUpdate = true;
 }
+
+// Bark: the generated trunks are one flat tan. Real bark is grey-brown, streaked up the trunk, patched with grey-green
+// lichen. A 3D pattern stretched vertically gives any upright trunk vertical streaks without knowing where its axis is;
+// they carry a little relief. Generic, not a species (palms and broadleaf trees share the class).
+const BARK = /* glsl */`
+varying vec3 vBkPos;
+float bkHash(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
+float bkNoise(vec3 p){vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+ return mix(mix(mix(bkHash(i),bkHash(i+vec3(1,0,0)),f.x),mix(bkHash(i+vec3(0,1,0)),bkHash(i+vec3(1,1,0)),f.x),f.y),
+            mix(mix(bkHash(i+vec3(0,0,1)),bkHash(i+vec3(1,0,1)),f.x),mix(bkHash(i+vec3(0,1,1)),bkHash(i+vec3(1,1,1)),f.x),f.y),f.z);}
+float bkH;
+vec3 bkBark(){
+ // grey-brown, streaked up the trunk: noise stretched about twelvefold vertically, three octaves, low contrast; a little
+ // lichen. Neutral on purpose: palms and broadleaf trunks share this class
+ vec3 q=vBkPos*vec3(30.,2.5,30.);
+ float keep=1.-smoothstep(.25,.5,max(fwidth(q.x),fwidth(q.z)));
+ float st=bkNoise(q)*.5+bkNoise(q*vec3(2.3,2.1,2.3)+5.)*.3+bkNoise(q*vec3(5.,4.,5.)+11.)*.2;
+ vec3 c=mix(vec3(.15,.13,.11),vec3(.23,.21,.18),bkNoise(vBkPos*vec3(4.,.8,4.)));
+ c*=mix(1.,.72+.5*st,keep);
+ float lichen=smoothstep(.65,.82,bkNoise(vBkPos*vec3(2.5,1.2,2.5)+7.));c=mix(c,vec3(.25,.27,.2),lichen*.45);
+ bkH=mix(.5,st,keep);
+ return c;
+}
+vec3 bkBump(vec3 n,float h,float k){vec3 dpx=dFdx(-vViewPosition),dpy=dFdy(-vViewPosition);float hx=dFdx(h),hy=dFdy(h);
+ vec3 r1=cross(dpy,n),r2=cross(n,dpx);float det=dot(dpx,r1);vec3 g=sign(det)*(hx*r1+hy*r2);return normalize(abs(det)*n-k*g);}
+`;
+
+/** Fissured bark on the trunk materials (chained after the shadow cascades' onBeforeCompile). */
+export function barkMaterials(materials: Iterable<THREE.MeshStandardMaterial>) {
+  for (const m of materials) {
+    if (m.userData.bark) continue; m.userData.bark = true; m.roughness = .92;
+    const previous = m.onBeforeCompile.bind(m);
+    m.onBeforeCompile = (shader, renderer) => {
+      previous(shader, renderer);
+      shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vBkPos;')
+        .replace('#include <project_vertex>', '#include <project_vertex>\nvBkPos=(modelMatrix*vec4(transformed,1.)).xyz;');
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\n' + BARK)
+        .replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb=bkBark();')
+        .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nnormal=bkBump(normal,bkH,.006);');
+    };
+    const key = m.customProgramCacheKey.bind(m); m.customProgramCacheKey = () => key() + '|bark'; m.needsUpdate = true;
+  }
+}

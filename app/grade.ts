@@ -40,8 +40,8 @@ const METER=`uniform sampler2D tDiffuse;varying vec2 vUv;
   // centre-weighted, and the sky's brightness counts only up to a sunlit wall's: a frame of sky must not darken the street
   vec2 d=(vUv-.5)*vec2(1.,.85);float w=exp(-dot(d,d)*3.5);float lg=log2(clamp(l,1e-4,.6));
   gl_FragColor=vec4(lg*w,w,0.,1.);}`;
-// Partial adaptation, as an eye's: a view metered k stops darker than the key gets 0.45 k stops more exposure (at most
-// 1.7x), so shade still reads darker than sun and the sky over a shaded street keeps its colour.
+// Partial adaptation, as an eye's: a view metered k stops darker than the key gets 0.4 k stops more exposure (at most
+// 1.35x), so shade still reads darker than sun and the sky over a shaded street keeps its colour (at 1.7x it washed white).
 const ADAPT=`uniform sampler2D tLum;uniform sampler2D tPrev;uniform float uKey,uComp,uMin,uMax,uRate;varying vec2 vUv;
  void main(){vec4 m=textureLod(tLum,vec2(.5),12.);float avg=m.x/max(m.y,1e-6);float target=clamp(exp2((uKey-avg)*uComp),uMin,uMax);
   float prev=texture2D(tPrev,vec2(.5)).r;float e=prev<=0.?target:mix(prev,target,uRate);gl_FragColor=vec4(e,avg,target,1.);}`;
@@ -55,7 +55,7 @@ class AutoExposurePass extends Pass {
  adapt=[0,1].map(()=>new THREE.WebGLRenderTarget(1,1,{type:THREE.FloatType,format:THREE.RGBAFormat,minFilter:THREE.NearestFilter,magFilter:THREE.NearestFilter,depthBuffer:false}));
  cur=0;snapNext=true;speed=1.6;
  meter=new THREE.ShaderMaterial({uniforms:{tDiffuse:{value:null}},vertexShader:VERT,fragmentShader:METER,depthTest:false,depthWrite:false});
- adaptMat=new THREE.ShaderMaterial({uniforms:{tLum:{value:null},tPrev:{value:null},uKey:{value:-2.5},uComp:{value:.45},uMin:{value:.75},uMax:{value:1.7},uRate:{value:1}},vertexShader:VERT,fragmentShader:ADAPT,depthTest:false,depthWrite:false});
+ adaptMat=new THREE.ShaderMaterial({uniforms:{tLum:{value:null},tPrev:{value:null},uKey:{value:-2.5},uComp:{value:.4},uMin:{value:.75},uMax:{value:1.35},uRate:{value:1}},vertexShader:VERT,fragmentShader:ADAPT,depthTest:false,depthWrite:false});
  expose=new THREE.ShaderMaterial({uniforms:{tDiffuse:{value:null},tExp:{value:null}},vertexShader:VERT,fragmentShader:EXPOSE,depthTest:false,depthWrite:false});
  quad=new FullScreenQuad();
  render(renderer:THREE.WebGLRenderer,writeBuffer:THREE.WebGLRenderTarget,readBuffer:THREE.WebGLRenderTarget,deltaTime:number){

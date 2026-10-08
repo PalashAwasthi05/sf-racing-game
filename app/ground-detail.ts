@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {ROADFIELD_GLSL} from './roadfield';
 
 // Ground detail: what makes a road and a lawn read as worn and grown rather than painted. The generated world gives the
 // road one asphalt texture repeating every few metres and the lawns one flat green. Here, in world space:
@@ -23,25 +24,50 @@ float gdEdge(vec2 p){vec2 i=floor(p),f=fract(p);float d1=8.,d2=8.;
 // a bumped normal from a height field h (derivative bump mapping)
 vec3 gdBump(vec3 n,float h,float k){vec3 dpx=dFdx(-vViewPosition),dpy=dFdy(-vViewPosition);float hx=dFdx(h),hy=dFdy(h);
  vec3 r1=cross(dpy,n),r2=cross(n,dpx);float det=dot(dpx,r1);vec3 g=sign(det)*(hx*r1+hy*r2);return normalize(abs(det)*n-k*g);}
-float gdHeight;
+float gdHeight;float gdRough;
 `;
 
 const ASPHALT = /* glsl */`
+float gdBand(float x,float c,float w){return 1.-smoothstep(w*.5,w,abs(x-c));}
 vec3 gdAsphalt(vec3 albedo){
- vec2 p=vGdPos.xz;
+ vec2 p=vGdPos.xz;vec2 en=vec2(p.x,-p.y);
  float age=gdFbm(p*.06+7.3);                                   // older (greyer, lighter) or newer (darker) surfacing, ~15 m
  float blotch=gdFbm(p*.25+1.7);                                 // stains and wear, ~4 m
- vec3 c=albedo*mix(vec3(.72,.72,.75),vec3(1.5,1.44,1.34),smoothstep(.3,.7,age))*mix(.84,1.14,blotch);
- // utility cuts: about one 8 m cell in four carries a rectangle, mostly of dark new asphalt, now and then of paler fill
- vec2 cell=floor(p/8.);float pick=gdHash(cell+3.7);
- if(pick<.26){vec2 q=fract(p/8.)*8.;vec2 lo=vec2(.8)+gdHash2(cell)*3.,hi=lo+vec2(1.6)+gdHash2(cell+1.9)*3.4;
-  float inside=step(lo.x,q.x)*step(q.x,hi.x)*step(lo.y,q.y)*step(q.y,hi.y);c*=mix(1.,pick<.05?1.3:.66,inside);}
- // sealed cracks, thin dark lines in patchy stretches of older surfacing (not a pattern over the whole road)
- float zone=smoothstep(.6,.72,gdFbm(p*.035+5.1))*smoothstep(.4,.6,age);
- float crack=(1.-smoothstep(.0,.022,gdEdge(p*.45+vec2(gdNoise(p*.9)*.6))))*zone;c*=1.-.5*crack*gdKeep(12.);
- // aggregate speckle and a fine relief
- float grain=gdNoise(p*9.)*.6+gdNoise(p*23.)*.4;c*=mix(1.,.9+.2*grain,gdKeep(23.));
- gdHeight=(grain*.6+gdNoise(p*3.1)*.4)*gdKeep(9.)-crack*.12;
+ vec3 c=albedo*mix(vec3(.78,.78,.8),vec3(1.42,1.38,1.3),smoothstep(.3,.7,age))*mix(.86,1.12,blotch);
+ // the road field (roadfield.ts): which way the road runs, how far the kerb is, how wide the road is
+ vec4 rf=rfAt(vGdPos);float on=smoothstep(.2,.6,rf.y);float d=rf.x;
+ vec2 g=rfAcross(vGdPos,d);vec2 t=vec2(-g.y,g.x);if(dot(t,vec2(1.,.37))<0.)t=-t;   // one sense along the road
+ float s=dot(en,t),hw=max(rf.y,.5),w=2.*hw;
+ float lanes=max(1.,floor(w/3.3+.35)),lw=w/lanes,q=fract(d/lw);
+ float laneLike=on*smoothstep(.5,.9,rf.z)*smoothstep(1.2,2.,hw);      // along a street, not in an intersection
+ // wheel paths: two polished, rubber-darkened bands per lane, broken up along the road
+ float wheel=(gdBand(q,.24,.13)+gdBand(q,.76,.13))*laneLike*mix(.45,1.,gdNoise(vec2(s*.07,d*.9)));
+ c*=1.-.16*wheel;
+ // oil drips down the middle of each lane: dark smudges stretched along it
+ float oil=gdBand(q,.5,.11)*laneLike*smoothstep(.55,.85,gdNoise(vec2(s*.45,q*9.+3.)))*smoothstep(.35,.6,gdNoise(vec2(s*.05,7.)));
+ c*=1.-.3*oil;
+ // the gutter: grit, leaves and run-off darken the last half metre before the kerb
+ float gutter=on*(1.-smoothstep(.15,.75,d));c*=1.-.25*gutter*mix(.6,1.,gdNoise(p*1.7));
+ // utility cuts: about one 8 m cell in five carries a rectangle, mostly of dark new asphalt, now and then of paler fill
+ vec2 cell=floor(p/8.);float pick=gdHash(cell+3.7);float cut=0.;
+ if(pick<.2){vec2 qq=fract(p/8.)*8.;vec2 lo=vec2(.8)+gdHash2(cell)*3.,hi=lo+vec2(1.6)+gdHash2(cell+1.9)*3.4;
+  cut=step(lo.x,qq.x)*step(qq.x,hi.x)*step(lo.y,qq.y)*step(qq.y,hi.y);c*=mix(1.,pick<.04?1.25:.7,cut);}
+ // cracks, sealed with tar: across the road every 6-14 m in older stretches (wandering, not always kerb to kerb); plain
+ // wandering cracks where the road is not lane-like
+ float older=smoothstep(.42,.62,age)*(1.-cut);
+ float cs=s/9.;float ci=floor(cs);float cpos=.2+.6*gdHash(vec2(ci,4.1));
+ float wob=(gdNoise(vec2(d*.35,ci*7.1))-.5)*1.1+(gdNoise(vec2(d*2.3,ci*3.3))-.5)*.18;
+ float xd=abs((fract(cs)-cpos)*9.-wob);
+ float across=step(gdHash(vec2(ci,9.7)),.6)*smoothstep(.25,.45,gdNoise(vec2(d*.5,ci*1.9)))*laneLike;
+ float crack=across*(1.-smoothstep(.006,.02,xd))*older;
+ float seal=across*(1.-smoothstep(.03,.07,xd))*older;                    // the tar sealant band either side of the crack
+ float wander=(1.-smoothstep(.0,.022,gdEdge(p*.45+vec2(gdNoise(p*.9)*.6))))*smoothstep(.6,.72,gdFbm(p*.035+5.1))*older*(1.-laneLike);
+ c*=1.-.35*seal*gdKeep(8.);c*=1.-.55*max(crack,wander)*gdKeep(20.);
+ // aggregate: stones of a few millimetres to two centimetres, the lighter ones showing where the binder has worn off
+ float grain=gdNoise(p*9.)*.55+gdNoise(p*23.)*.45;float stone=gdNoise(p*61.);
+ c*=mix(1.,.86+.28*grain,gdKeep(23.));c*=mix(1.,.9+.24*smoothstep(.55,.9,stone)*(1.-.6*wheel),gdKeep(61.));
+ gdHeight=(grain*.6+gdNoise(p*3.1)*.4)*gdKeep(9.)+stone*.35*gdKeep(61.)-max(crack,wander)*.25-seal*.05;
+ gdRough=clamp(.82-.18*wheel-.22*seal+.08*gutter,.45,.95);
  return c;
 }
 `;
@@ -93,15 +119,15 @@ vec3 gdPavement(vec3 albedo){
 }
 `;
 
-function patch(materials: Iterable<THREE.MeshStandardMaterial>, tag: string, body: string, call: string, bump: number, roughness: string) {
+function patch(materials: Iterable<THREE.MeshStandardMaterial>, tag: string, body: string, call: string, bump: number, roughness: string, uniforms: Record<string, THREE.IUniform> = {}, extra = '') {
   for (const m of materials) {
     if (m.userData.groundDetail) continue; m.userData.groundDetail = tag;
     const previous = m.onBeforeCompile.bind(m);
     m.onBeforeCompile = (shader, renderer) => {
-      previous(shader, renderer);
+      previous(shader, renderer); Object.assign(shader.uniforms, uniforms);
       shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vGdPos;')
         .replace('#include <project_vertex>', '#include <project_vertex>\nvGdPos=(modelMatrix*vec4(transformed,1.)).xyz;');
-      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\n' + COMMON + body)
+      shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\n' + COMMON + extra + body)
         .replace('#include <map_fragment>', `#include <map_fragment>\ndiffuseColor.rgb=${call}(diffuseColor.rgb);`)
         .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>\nroughnessFactor=${roughness};`)
         .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>\nnormal=gdBump(normal,gdHeight,${bump.toFixed(4)});`);
@@ -112,9 +138,10 @@ function patch(materials: Iterable<THREE.MeshStandardMaterial>, tag: string, bod
   }
 }
 
-/** Wear, patches, cracks and relief on road asphalt. */
-export function detailAsphalt(materials: Iterable<THREE.MeshStandardMaterial>) {
-  patch(materials, 'asphalt', ASPHALT, 'gdAsphalt', .006, 'clamp(roughnessFactor*mix(1.04,.9,step(.5,gdHeight)),.3,1.)');
+/** Wear, lane wheel paths, oil, gutters, patches, sealed cracks and aggregate on road asphalt. `field` holds the road
+ *  field's uniforms (roadfield.ts); its texture may be set after this call, before the first frame. */
+export function detailAsphalt(materials: Iterable<THREE.MeshStandardMaterial>, field: Record<string, THREE.IUniform>) {
+  patch(materials, 'asphalt2', ASPHALT, 'gdAsphalt', .006, 'gdRough', field, ROADFIELD_GLSL);
 }
 
 /** Lush and dry patches, mowing stripes, blade grain and relief on lawns. */

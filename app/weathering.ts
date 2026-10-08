@@ -50,6 +50,52 @@ vec3 wxTint(vec3 albedo){
  // dirt and grime are a grey-brown that takes the colour out of what they cover
  return mix(c,vec3(l)*vec3(1.04,1.,.93),clamp(.28*grime*wall+wxDirt*.55,0.,.6));
 }
+
+// Surface character by kind (uWxKind: 0 none, 1 render/stucco, 2 concrete, 3 cladding panels): what a real wall of that
+// kind shows at a few metres that its texture does not. All in wall-local metres (u along the wall, y up).
+uniform float uWxKind;
+float wxH;
+float wxKeep(float x,float f){return 1.-smoothstep(.25,.5,fwidth(x)*f);}
+vec3 wxSurface(vec3 albedo){
+ vec3 P=vWxPos;vec3 N=normalize(vWxNrm);wxH=0.;
+ float wall=smoothstep(.3,.7,1.-abs(N.y));if(wall<.01||uWxKind<.5)return albedo;
+ vec3 T=normalize(vec3(-N.z,0.,N.x)+vec3(1e-5,0.,0.));float u=dot(P.xz,T.xz),y=P.y;
+ // each wall plane a slightly different tone: buildings of one material are painted, poured and weathered apart
+ float plane=floor(dot(P.xz,N.xz)*2.+.5);vec2 nq=floor(N.xz*8.+.5);
+ float wt=wxHash(nq*17.3+vec2(plane*.37,plane*.11));
+ vec3 c=albedo*(.95+.1*wt);
+ if(uWxKind<1.5){
+  // render: paint fading unevenly (0.3-1 m), now and then a repaired patch, a fine sand-float grain
+  c*=.94+.12*wxFbm(vec2(u,y)*1.3+7.7);
+  c*=.9+.2*smoothstep(.25,.75,wxFbm(vec2(u,y)*.22+3.3));                         // repainted bays and fading over metres
+  vec2 cell=floor(vec2(u,y)/vec2(2.3,1.7));float pick=wxHash(cell+nq*3.1);
+  if(pick<.08){vec2 q=fract(vec2(u,y)/vec2(2.3,1.7));vec2 lo=wxHash(cell+4.4)*vec2(.4,.4),hi=lo+vec2(.3)+wxHash(cell+8.8)*vec2(.3);
+   float inside=step(lo.x,q.x)*step(q.x,hi.x)*step(lo.y,q.y)*step(q.y,hi.y);c*=mix(1.,.9+.18*wxHash(cell+2.2),inside);}
+  float grain=wxNoise(vec2(u,y)*190.)*.6+wxNoise(vec2(u,y)*71.)*.4;
+  c*=mix(1.,.95+.1*grain,wxKeep(u,190.));wxH=grain*wxKeep(u,190.);
+ }else if(uWxKind<2.5){
+  // concrete: formwork panels (2.4 x 1.2 m) with their seams, four tie holes each, each pour a different tone
+  vec2 q=vec2(u,y)/vec2(2.4,1.2);vec2 pc=floor(q);vec2 f=fract(q);
+  c*=.93+.14*wxHash(pc+nq*5.3);
+  vec2 e=min(f,1.-f)*vec2(2.4,1.2);float seam=1.-smoothstep(.004,.014,min(e.x,e.y));
+  c*=1.-.22*seam*wxKeep(u,40.);
+  vec2 th=fract(f*vec2(2.,2.))-.5;float hole=1.-smoothstep(.012,.02,length(th*vec2(1.2,.6)));
+  c*=1.-.45*hole*wxKeep(u,30.);
+  // lime bleeding from the seams, pale streaks below the horizontal ones
+  float bleed=smoothstep(.0,.25,1.-f.y)*(1.-smoothstep(.25,.6,1.-f.y))*smoothstep(.55,.85,wxNoise(vec2(u*3.,pc.y)));
+  c=mix(c,c*1.12+.015,.5*bleed);
+  float grain=wxNoise(vec2(u,y)*120.)*.6+wxNoise(vec2(u,y)*43.)*.4;c*=mix(1.,.94+.12*grain,wxKeep(u,120.));wxH=grain*wxKeep(u,120.)-seam*.6;
+ }else{
+  // cladding panels: joints on a 1.2 x 3 m module, each panel a little different, a faint oil-canning shimmer
+  vec2 q=vec2(u,y)/vec2(1.2,3.);vec2 pc=floor(q);vec2 f=fract(q);
+  c*=.95+.1*wxHash(pc+nq*7.1);
+  vec2 e=min(f,1.-f)*vec2(1.2,3.);float joint=1.-smoothstep(.006,.016,min(e.x,e.y));
+  c*=1.-.5*joint*wxKeep(u,40.);wxH=-joint+.3*wxNoise(f*vec2(2.,5.)+pc);
+ }
+ return mix(albedo,c,wall);
+}
+vec3 wxBump(vec3 n,float h,float k){vec3 dpx=dFdx(-vViewPosition),dpy=dFdy(-vViewPosition);float hx=dFdx(h),hy=dFdy(h);
+ vec3 r1=cross(dpy,n),r2=cross(n,dpx);float det=dot(dpx,r1);vec3 g=sign(det)*(hx*r1+hy*r2);return normalize(abs(det)*n-k*g);}
 `;
 
 // Layers that are weathered, and the surface classes on them that are not (glazing, interiors behind it, metal fixings).
@@ -63,22 +109,27 @@ export function groundTexture(grid: { min: number; step: number; n: number }, gr
 }
 
 /** Adds weathering to the given materials; chained after any existing onBeforeCompile (the shadow cascades'). */
-export function weatherMaterials(materials: Iterable<THREE.MeshStandardMaterial>, tex: THREE.DataTexture, grid: { min: number; step: number; n: number }) {
+// the surface character of a wall material class (wxSurface): render and stucco, concrete, cladding panels; brick, stone,
+// timber and roofs keep their own textures
+export function surfaceKind(cls: string) { return /^(render|stucco)/.test(cls) ? 1 : /^(concrete|venue_concrete|cast_stone)/.test(cls) ? 2 : /^(panel_|terracotta_panel|curtain_panel)/.test(cls) ? 3 : 0; }
+export function weatherMaterials(materials: Iterable<THREE.MeshStandardMaterial>, tex: THREE.DataTexture, grid: { min: number; step: number; n: number }, kinds?: Map<THREE.Material, number>) {
   const uniforms = { uWxGround: { value: tex }, uWxGrid: { value: new THREE.Vector4(grid.min, grid.step, grid.n, 0) }, uWxHeight: { value: null as THREE.Texture | null }, uWxH: { value: new THREE.Vector2(1, 0) } };
   for (const m of materials) {
     if (m.userData.weathered) continue; m.userData.weathered = true;
+    const kind = kinds?.get(m) ?? 0;
     const previous = m.onBeforeCompile.bind(m);
     m.onBeforeCompile = (shader, renderer) => {
       previous(shader, renderer);
-      Object.assign(shader.uniforms, uniforms);
+      Object.assign(shader.uniforms, uniforms); shader.uniforms.uWxKind = {value: kind};
       shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWxPos;varying vec3 vWxNrm;')
         .replace('#include <project_vertex>', '#include <project_vertex>\nvWxPos=(modelMatrix*vec4(transformed,1.)).xyz;vWxNrm=normalize(mat3(modelMatrix)*objectNormal);');
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\n' + HEADER)
-        .replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb=wxTint(diffuseColor.rgb);')
+        .replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb=wxTint(wxSurface(diffuseColor.rgb));')
+        .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nif(uWxKind>.5)normal=wxBump(normal,wxH,.0025);')
         .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=clamp(roughnessFactor*mix(.9,1.08,wxLarge)*(1.+.15*wxDirt),.04,1.);');
     };
     const key = m.customProgramCacheKey.bind(m);
-    m.customProgramCacheKey = () => key() + '|weathered';
+    m.customProgramCacheKey = () => key() + '|weathered' + kind;
     m.needsUpdate = true;
   }
   /** The static world's top-down height map (occlusion.ts), for the roof line over each point of a wall. */

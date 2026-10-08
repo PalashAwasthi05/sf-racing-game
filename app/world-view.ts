@@ -12,14 +12,15 @@ import {loadParkedCars} from './parked-cars';
 import {loadOverhead} from './overhead';
 import {createAtmosphere,PRESET_ORDER,type Preset} from './atmosphere';
 import {finishMaterials,classOf} from './finish';
-import {weatherMaterials,groundTexture,WEATHERED_LAYERS,UNWEATHERED} from './weathering';
-import {glazeMaterials,isGlazing} from './glazing';
+import {weatherMaterials,groundTexture,surfaceKind,WEATHERED_LAYERS,UNWEATHERED} from './weathering';
+import {glazeMaterials,isGlazing,paneAttributes} from './glazing';
 import {detailAsphalt,detailGrass,detailGarden,detailPavement,ASPHALT_CLASS,GRASS_CLASS} from './ground-detail';
-import {buildFoliage,finishFoliage} from './foliage';
+import {buildFoliage,finishFoliage,barkMaterials} from './foliage';
 import {createGrade} from './grade';
 import {MultisampledRenderPass,buildDepthProxies,installDepthProxies,cullTransmission,cacheArrayUniforms} from './render-budget';
 import {attachCarLod} from './car-lod';
 import {buildSkyVisibility,occludeMaterials,occlusionComposite} from './occlusion';
+import {buildRoadField} from './roadfield';
 import {loadHorizon} from './horizon';
 
 export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(id:string)=>void,onProgress:(message:string)=>void,modelUrl?:string){
@@ -99,16 +100,22 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
    A.sort((x,y)=>x-y);return A.length>0&&A[A.length>>1]<.25&&A[A.length-1]<2;};
   for(const o of objects){if(classOf(o.name)!=='recess'||Array.isArray(o.material)||!thin(o))continue;const m=area.get(getId(o));if(!m)continue;let best:THREE.Material|null=null,bn=-1;for(const [mat,n] of m)if(n>bn){best=mat;bn=n;}if(best){o.material=best;originals.set(o,best);}}}
  // Street grime, rain streaks and tone drift on walls, patched membranes on flat roofs (world space, no per-building data).
- const wxGround=groundTexture(data.grid,data.ground);let weathering:ReturnType<typeof weatherMaterials>|null=null;
+ const wxGround=groundTexture(data.grid,data.ground);
+ // the road field's uniforms (roadfield.ts): its texture is drawn once the world is batched, before the first frame
+ const roadField:Record<string,THREE.IUniform>={uRfTex:{value:null},uRfR:{value:1}};let weathering:ReturnType<typeof weatherMaterials>|null=null;
  {const tex=wxGround;const wx=new Set<THREE.MeshStandardMaterial>();
   for(const o of objects){if(!WEATHERED_LAYERS.has(getLayer(o))||UNWEATHERED.test(classOf(o.name)))continue;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof THREE.MeshStandardMaterial)wx.add(m);}
-  weathering=weatherMaterials(wx,tex,data.grid);
+  // render, concrete and cladding get their own surface character (weathering.ts surfaceKind)
+  const kinds=new Map<THREE.Material,number>();for(const o of objects){const k=surfaceKind(classOf(o.name));if(k)for(const m of Array.isArray(o.material)?o.material:[o.material])kinds.set(m,k);}
+  weathering=weatherMaterials(wx,tex,data.grid,kinds);
   // A dim room behind every window instead of an opaque black pane.
-  const glass=new Set<THREE.MeshStandardMaterial>();for(const o of objects){if(!isGlazing(classOf(o.name)))continue;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof THREE.MeshStandardMaterial)glass.add(m);}
-  glazeMaterials(glass);
+  const glass=new Set<THREE.MeshStandardMaterial>(),glassMeshes:THREE.Mesh[]=[],glassCls=new Map<THREE.Material,string>();
+  for(const o of objects){const c=classOf(o.name);if(!isGlazing(c))continue;glassMeshes.push(o);for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof THREE.MeshStandardMaterial){glass.add(m);glassCls.set(m,c);}}
+  // every window its own coordinates and identity, so each gets its own blinds, curtains or room (glazing.ts)
+  paneAttributes(glassMeshes);glazeMaterials(glass,glassCls);
   // Worn asphalt and grown lawns instead of one repeating texture and one flat green (ground-detail.ts).
   const ofClass=(re:RegExp)=>{const out=new Set<THREE.MeshStandardMaterial>();for(const o of objects){if(!re.test(classOf(o.name)))continue;for(const m of Array.isArray(o.material)?o.material:[o.material])if(m instanceof THREE.MeshStandardMaterial)out.add(m);}return out;};
-  detailAsphalt(ofClass(ASPHALT_CLASS));detailGrass(ofClass(GRASS_CLASS));
+  detailAsphalt(ofClass(ASPHALT_CLASS),roadField);barkMaterials(ofClass(/^bark$/));detailGrass(ofClass(GRASS_CLASS));
   // the bare terrain between buildings is mostly back gardens, not one plain of paving
   const terrain=new Set<THREE.MeshStandardMaterial>();for(const o of objects)if(getLayer(o)==='terrain'&&o.material instanceof THREE.MeshStandardMaterial)terrain.add(o.material);detailGarden(terrain);
   // sidewalk concrete (not its joints or tactile strips), on its own copy of a material other concrete shares
@@ -305,6 +312,8 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // Sky visibility over the whole area (occlusion.ts): street canyons, building bases and courtyards see less of the sky and
  // are lit less by it; every world material, the canopies, the parked cars, the street lamps and wires and the player's car
  // take it.
+ // the road field (roadfield.ts): kerb distance, road width and straightness for every road pixel, for lane-aware wear
+ {const rf=buildRoadField(renderer,scene,renderables.filter(o=>String(o.userData.layer||getLayer(o))==='roads'),reach+30);roadField.uRfTex.value=rf.texture;roadField.uRfR.value=reach+30;}
  const skyVis=buildSkyVisibility(renderer,scene,[atmosphere.sky,atmosphere.clouds,ring,highlight,...(car?[car.group]:[]),...(horizon?[horizon.group]:[])],reach+30);
  weathering?.setHeight(skyVis.height.texture,reach+30);
  {const mats=new Set<THREE.Material>();for(const o of renderables)for(const m of Array.isArray(o.material)?o.material:[o.material])mats.add(m);
