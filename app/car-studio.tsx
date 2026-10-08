@@ -5,7 +5,6 @@ import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
 import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
 import {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
-import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import {createAtmosphere,PRESET_ORDER,type Preset} from './atmosphere';
 import {createGrade} from './grade';
 import {loadRoadster,buildRoadster} from './car';
@@ -23,7 +22,7 @@ export default function CarStudio(){
   const atmosphere=createAtmosphere(scene,renderer,camera);
   const composer=new EffectComposer(renderer,new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,samples:4}));composer.addPass(new RenderPass(scene,camera));
   const ao=new GTAOPass(scene,camera,1,1);ao.updateGtaoMaterial({radius:.6,distanceExponent:1.4,thickness:.6,samples:16});ao.blendIntensity=.9;composer.addPass(ao);
-  const grade=createGrade(composer);composer.addPass(new OutputPass());
+  const grade=createGrade(composer);   // its last pass tone maps and draws to the screen
   // ground: a large asphalt disc with a faint aggregate texture
   const tex=(()=>{const c=document.createElement('canvas');c.width=c.height=512;const g=c.getContext('2d')!;g.fillStyle='#5b5c5d';g.fillRect(0,0,512,512);for(let i=0;i<9000;i++){const v=70+Math.random()*50;g.fillStyle=`rgb(${v},${v},${v+2})`;g.fillRect(Math.random()*512,Math.random()*512,1.4,1.4);}const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(60,60);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=8;return t;})();
   const ground=new THREE.Mesh(new THREE.CircleGeometry(120,96),new THREE.MeshStandardMaterial({map:tex,roughness:.92,color:'#9a9a98'}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);atmosphere.setupMaterial(ground.material);

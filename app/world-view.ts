@@ -4,7 +4,6 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
 import {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
-import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 import type {World} from './king-pilot';
 import {createCar,buildDistanceField,loadRoadster,type Car,type CarInput} from './car';
 import {buildCarGround,Obstacles} from './car-ground';
@@ -15,12 +14,13 @@ import {finishMaterials,classOf} from './finish';
 import {weatherMaterials,groundTexture,surfaceKind,WEATHERED_LAYERS,UNWEATHERED} from './weathering';
 import {glazeMaterials,isGlazing,paneAttributes,type GlazedWindow} from './glazing';
 import {buildFacadeMap} from './facademap';
+import {mergeTintVariants} from './material-merge';
 import {detailAsphalt,detailGrass,detailGarden,detailPavement,ASPHALT_CLASS,GRASS_CLASS} from './ground-detail';
 import {buildFoliage,finishFoliage,barkMaterials} from './foliage';
 import {createGrade} from './grade';
 import {MultisampledRenderPass,buildDepthProxies,installDepthProxies,cullTransmission,cacheArrayUniforms} from './render-budget';
 import {attachCarLod} from './car-lod';
-import {buildSkyVisibility,occludeMaterials,occlusionComposite} from './occlusion';
+import {buildSkyVisibility,occludeMaterials} from './occlusion';
 import {buildRoadField} from './roadfield';
 import {buildPavingField} from './paving';
 import {loadHorizon} from './horizon';
@@ -35,7 +35,11 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // its own multisampled target below), so canvas samples were memory and a resolve every frame for nothing.
  const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
  // Render scale adapts to the frame time between 0.7 and the device ratio (capped at 1.25); everything sized from it.
- const maxScale=Math.min(window.devicePixelRatio,1.25);let renderScale=maxScale;renderer.setPixelRatio(renderScale);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.85;
+ // The most it renders is 1.25 render pixels per CSS pixel and four million pixels in all: a maximised window on a 5K
+ // display at 1.25 was 5.3 million, and the frame's cost grows with them (antialiasing, occlusion, post-processing).
+ const PIXEL_BUDGET=4e6;
+ const scaleCap=()=>Math.max(.5,Math.min(window.devicePixelRatio,1.25,Math.sqrt(PIXEL_BUDGET/Math.max(1,host.clientWidth*host.clientHeight))));
+ let maxScale=scaleCap();let renderScale=maxScale,qualityLocked=false;renderer.setPixelRatio(renderScale);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.85;
  host.appendChild(renderer.domElement);renderer.domElement.setAttribute('aria-label','3D neighborhood. Use the camera controls to explore.');
  const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.08;controls.minDistance=4;controls.maxDistance=700;controls.maxPolarAngle=Math.PI*.49;
  // Sky, clouds, sun, sky-lit environment, fog, exposure and cascaded shadows live in one module with three presets.
@@ -44,12 +48,17 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // antialiasing never touches the 3D image once post-processing is on, so every edge and window frame was aliased.
  // Only the scene pass is multisampled; the post passes read its resolved copy on single-sample, depthless targets.
  const composer=new EffectComposer(renderer,new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,depthBuffer:false}));const scenePass=new MultisampledRenderPass(scene,camera);composer.addPass(scenePass);
- // Ambient occlusion at the scale of buildings (inner corners, under cornices and eaves, the foot of every wall).
- const ao=new GTAOPass(scene,camera,1,1);ao.updateGtaoMaterial({radius:2.5,distanceExponent:1.4,thickness:1.5,samples:16});ao.blendIntensity=.9;composer.addPass(ao);
- // ... applied to the indirect share of each pixel's light only (occlusion.ts): sunlit kerbs and ledges are not outlined.
- composer.addPass(occlusionComposite(ao));
- // Bloom and film grade sit between the lit image and the tone-mapped output.
- const grade=createGrade(composer);const output=new OutputPass();composer.addPass(output);
+ // Ambient occlusion at the scale of buildings (inner corners, under cornices and eaves, the foot of every wall). It draws
+ // its own normals and depth at its own resolution: reading the scene pass's full-resolution depth instead was slower (the
+ // samples scatter over a 20 MB texture) and would let the canopies' leaf cards occlude themselves.
+ const ao=new GTAOPass(scene,camera,1,1);ao.updateGtaoMaterial({radius:2.5,distanceExponent:1.4,thickness:1.5,samples:8});ao.updatePdMaterial({samples:8});ao.blendIntensity=.9;
+ ao.output=-1;ao.needsSwap=false;   // computed only: the composite applies it
+ composer.addPass(ao);
+ // ... applied to the indirect share of each pixel's light only, with the exposure, in one pass over the scene's own
+ // resolved image (no copy of it); then the bloom and the grade, tone mapping and output in one more (grade.ts).
+ scenePass.direct=true;
+ const grade=createGrade(composer,scenePass.target.texture,ao);
+ let aoScale=.4;
  function lighting(preset:string){const p=(PRESET_ORDER as string[]).includes(preset)?preset as Preset:'afternoon';atmosphere.apply(p);grade.preset(p);}
  let carsUrl:string|null=null,overheadUrl:string|null=null;   // the world's parked cars and overhead equipment, when its manifest names them
  async function loadBuffer(){
@@ -101,6 +110,15 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
    for(let i=0;i<n;i+=3){a.fromBufferAttribute(p,idx?idx.getX(i):i);b.fromBufferAttribute(p,idx?idx.getX(i+1):i+1);c.fromBufferAttribute(p,idx?idx.getX(i+2):i+2);A.push(b.sub(a).cross(c.sub(a)).length()/2);}
    A.sort((x,y)=>x-y);return A.length>0&&A[A.length>>1]<.25&&A[A.length-1]<2;};
   for(const o of objects){if(classOf(o.name)!=='recess'||Array.isArray(o.material)||!thin(o))continue;const m=area.get(getId(o));if(!m)continue;let best:THREE.Material|null=null,bn=-1;for(const [mat,n] of m)if(n>bn){best=mat;bn=n;}if(best){o.material=best;originals.set(o,best);}}}
+ // One material per surface class where the buildings' own copies differ only by a tint (material-merge.ts): the tint
+ // goes into a vertex colour, the copies' maps are never uploaded, and the class batches across buildings below.
+ {const built=objects.filter(o=>['buildings','facades','foundations','roofs'].includes(getLayer(o)));
+  // the depth priority's layer rank (below): merged only within one rank
+  const rankOf=(o:THREE.Mesh)=>{const l=getLayer(o);return l==='facades'||l==='signs'?3:l==='roofs'?2:l==='buildings'?(o.name.includes('__observed_')?1:0):-1;};
+  const {replaced}=mergeTintVariants(built,o=>classOf(o.name),rankOf);
+  const kept=new Set<THREE.Texture>();for(const o of objects)for(const m of Array.isArray(o.material)?o.material:[o.material])for(const v of Object.values(m))if(v instanceof THREE.Texture)kept.add(v);
+  for(const m of replaced){for(const v of Object.values(m))if(v instanceof THREE.Texture&&!kept.has(v))v.dispose();m.dispose();}
+  for(const o of objects)originals.set(o,o.material);}
  // Street grime, rain streaks and tone drift on walls, patched membranes on flat roofs (world space, no per-building data).
  const wxGround=groundTexture(data.grid,data.ground);
  // the road field's uniforms (roadfield.ts): its texture is drawn once the world is batched, before the first frame
@@ -133,13 +151,14 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
    for(const m of Array.isArray(o.material)?o.material:[o.material])rank.set(m,Math.max(rank.get(m)??-1,r));}
   const byName=[...rank.keys()].sort((a,b)=>a.name.localeCompare(b.name));
   byName.forEach((m,i)=>{const r=rank.get(m)!*3+(i%3);if(r>0){m.polygonOffset=true;m.polygonOffsetFactor=-.35*r;m.polygonOffsetUnits=-2*r;m.needsUpdate=true;}});}
- // Draw-call batching. The world is static, so the meshes of one layer, material, evidence class and attribute
- // layout inside one 60 m cell are stitched into a single geometry for rendering; the cells keep frustum culling
- // effective while a thousand draws a pass become a couple of hundred. The source meshes stay in the scene,
- // invisible, for picking, bounds and the car's distance field.
+ // Draw-call batching. The world is static, so the meshes of one layer, material and attribute layout inside one 300 m
+ // cell are stitched into a single geometry for rendering. Each WebGL draw costs the browser's GPU process about 20 us
+ // of CPU to translate (it, not the GPU, was the frame's limit), so the cells are large: a material's whole area is
+ // usually one draw, at the price of the GPU transforming some vertices off screen. The source meshes stay in the scene, invisible, for picking, bounds, the
+ // car's distance field and the evidence colours (which paint the sources: a batch mixes evidence classes).
  const batches:THREE.Mesh[]=[];const batchRoot=new THREE.Group();batchRoot.name='batches';scene.add(batchRoot);{
   const groups=new Map<string,THREE.Mesh[]>();const box=new THREE.Box3(),centre=new THREE.Vector3();
-  for(const o of objects){if(Array.isArray(o.material))continue;const g=o.geometry;box.setFromObject(o);box.getCenter(centre);const cell=Math.floor(centre.x/60)+','+Math.floor(centre.z/60);const key=[getLayer(o),o.material.uuid,String(o.userData.evidence),g.index?'i':'n',Object.keys(g.attributes).sort().join(','),cell].join('|');const list=groups.get(key);if(list)list.push(o);else groups.set(key,[o]);}
+  for(const o of objects){if(Array.isArray(o.material))continue;const g=o.geometry;box.setFromObject(o);box.getCenter(centre);const cell=Math.floor(centre.x/300)+','+Math.floor(centre.z/300);const key=[getLayer(o),o.material.uuid,g.index?'i':'n',Object.keys(g.attributes).sort().join(','),cell].join('|');const list=groups.get(key);if(list)list.push(o);else groups.set(key,[o]);}
   for(const [key,list] of groups){
    if(list.length<2)continue;
    const parts=list.map(o=>{o.updateWorldMatrix(true,false);const g=o.geometry.clone();g.applyMatrix4(o.matrixWorld);return g;});
@@ -147,7 +166,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
    if(!merged)continue;
    const first=list[0];const batch=new THREE.Mesh(merged,first.material);batch.name='batch|'+key;batch.castShadow=first.castShadow;batch.receiveShadow=true;
    batch.userData.layer=getLayer(first);batch.userData.evidence=first.userData.evidence;batch.userData.original=first.material;
-   batchRoot.add(batch);batches.push(batch);for(const o of list){o.visible=false;o.userData.batched=batch;}
+   batch.userData.members=list;batchRoot.add(batch);batches.push(batch);for(const o of list){o.visible=false;o.userData.batched=batch;}
   }
  }
  // Dense leaf-cluster canopies grown on the pipeline's leaf quads (which are hidden; the layer toggle handles both).
@@ -162,18 +181,28 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // scene pass is unchanged. The occlusion pass also stops redrawing the shadow maps it never reads.
  const budget={proxies:true,glass:true,carLod:true};
  const staticMeshes=[...batches.filter(b=>!foliageBatches.includes(b)),...objects.filter(o=>!o.userData.batched&&o.visible)];
- const depth=buildDepthProxies(staticMeshes,getLayer);scene.add(depth.root);
+ // Thin facade detail, and what stands behind glass or is a few millimetres tall: glass, room interiors, blinds and the
+ // tactile studs cast no shadow (glass passes the sun; the rest is inside or too small); frames, mullions, trims and seats
+ // stand in for the depth passes only near the camera (render-budget.ts).
+ const thin=/^(aluminum|steel|silver|charcoal|white|chrome|seats)$/,inside=/^(glass|glass_dark|glass_light|glass_blue|glass_clear|interior|curtain|screen|yellow)$/;
+ const clsOf=(o:THREE.Object3D)=>classOf(((o.userData.members as THREE.Mesh[]|undefined)?.[0]??o).name);   // a batch's: its members'
+ for(const o of staticMeshes)if(inside.test(clsOf(o)))o.castShadow=false;
+ const isDetail=(o:THREE.Mesh)=>{const c=clsOf(o),l=getLayer(o);return (l==='facades'||l==='roofs'||l==='street_objects')&&(thin.test(c)||inside.test(c));};
+ const depth=buildDepthProxies(staticMeshes,getLayer,120,isDetail);scene.add(depth.root);
+ const probeSkip=new Set<THREE.Object3D>(staticMeshes.filter(o=>thin.test(clsOf(o))));
  const proxiedStatics=depth.skipped.length?staticMeshes.filter(o=>!depth.skipped.includes(o)):[batchRoot,model.scene];
- const depthPasses=installDepthProxies({renderer,scene,ao,proxies:depth.root,statics:proxiedStatics,aoHidden:()=>horizon?[...foliageBatches,horizon.group]:foliageBatches,enabled:()=>budget.proxies});
+ const depthPasses=installDepthProxies({renderer,scene,ao,proxies:depth.root,statics:proxiedStatics,aoHidden:()=>horizon?[...foliageBatches,horizon.group]:foliageBatches,enabled:()=>budget.proxies,near:()=>camera.position,detailM:50});
  const shown=(o:THREE.Object3D)=>{const b=o.userData.batched as THREE.Mesh|undefined;return b?b.visible:o.visible;};
  // Street-local surroundings are needed for glossy materials; a sky-only
  // environment makes glazing and metal read as flat painted surfaces.
- const reflectionTarget=new THREE.WebGLCubeRenderTarget(128,{type:THREE.HalfFloatType,generateMipmaps:true,minFilter:THREE.LinearMipmapLinearFilter});
+ // No mipmaps: the filter reads the cube at its own size, and generating them for a half-float cube stalled the GPU for
+ // 30-100 ms in the frame each capture completed.
+ const reflectionTarget=new THREE.WebGLCubeRenderTarget(128,{type:THREE.HalfFloatType,generateMipmaps:false,minFilter:THREE.LinearFilter});
  // far enough to take in the sky dome (800 m half-size) and the cloud deck: at 420 m the probe held a flat background colour
  // where windows should reflect the sky and its clouds
  const reflectionCamera=new THREE.CubeCamera(.35,2000,reflectionTarget);
  const reflectionFilter=new THREE.PMREMGenerator(renderer);
- let localReflection:THREE.WebGLRenderTarget|null=null;
+ let localReflection:THREE.WebGLRenderTarget|null=null,probeSpare:THREE.WebGLRenderTarget|null=null;
  const lastReflectionPosition=new THREE.Vector3(Infinity,Infinity,Infinity);
  let lastReflectionTime=-Infinity;
  const reflectiveMaterials:THREE.MeshStandardMaterial[]=probeMaterials;
@@ -188,9 +217,16 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // hills and mountains round it; San Francisco's land beyond the model is plain ground that fades into the haze.
  const horizon=await loadHorizon(data.center,m=>atmosphere.setupMaterial(m),(scene.fog as THREE.FogExp2).color,atmosphere.skyEnvironment).catch(()=>null);if(horizon)scene.add(horizon.group);
  // A capture draws the six cube faces one per frame (all six in one frame was a 15-25 ms hitch every few seconds on the
- // move); glossy surfaces keep the previous probe until the new one is filtered. A forced capture (review captures)
- // still draws all six at once.
- let captureFace=-1;
+ // move); with the last face it filters them and hands the result to the glossy surfaces. The filtered probe alternates
+ // between two targets, so the one written was last read by the GPU seconds ago: filtering into the one in use made the
+ // driver drain the frames still in flight first, a 30-100 ms stall at every capture. A forced capture (load, review
+ // captures) draws all six faces at once.
+ let captureFace=-1,probePending:THREE.WebGLRenderTarget|null=null;   // -1 idle, else the last face drawn
+ function handOver(){
+  if(!probePending)return;const first=!localReflection;probeSpare=localReflection;localReflection=probePending;probePending=null;
+  for(const material of reflectiveMaterials){material.envMap=localReflection.texture;if(first){material.envMapIntensity=(material.userData.envIntensity as number|undefined)??.7;material.needsUpdate=true;}}
+ }
+ function filterProbe(){probePending=probeSpare?reflectionFilter.fromCubemap(reflectionTarget.texture,probeSpare):reflectionFilter.fromCubemap(reflectionTarget.texture);}
  function updateReflections(now:number,force=false){
   if(force)captureFace=-1;
   else if(captureFace<0){
@@ -202,27 +238,20 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
   const previousTarget=renderer.getRenderTarget(),previousFace=renderer.getActiveCubeFace(),previousMip=renderer.getActiveMipmapLevel(),ringVisible=ring.visible,highlightVisible=highlight.visible;
   const shadowAuto=renderer.shadowMap.autoUpdate;
   ring.visible=false;highlight.visible=false;renderer.shadowMap.autoUpdate=false;
-  // The probe is a blurred reflection: small objects and the car are left out of its six renders.
-  const hidden=renderables.filter(o=>o.visible&&['vegetation','street_objects','signs','markings'].includes(String(o.userData.layer||getLayer(o))));const parkedWasVisible=parked?.group.visible??false,overheadWasVisible=overhead?.group.visible??false;if(parked)parked.group.visible=false;if(overhead)overhead.group.visible=false;hidden.forEach(o=>o.visible=false);const carWasVisible=car?.group.visible??false;if(car)car.group.visible=false;
-  // Avoid feedback: capture against the sky environment, then distribute one
-  // filtered local probe to all glossy surfaces. This is a bounded approximation.
+  // The probe is a blurred reflection: small objects, thin facade detail (under a texel of it) and the car are left out of
+  // its six renders.
+  const hidden=renderables.filter(o=>o.visible&&(['vegetation','street_objects','signs','markings'].includes(String(o.userData.layer||getLayer(o)))||probeSkip.has(o)));const parkedWasVisible=parked?.group.visible??false,overheadWasVisible=overhead?.group.visible??false;if(parked)parked.group.visible=false;if(overhead)overhead.group.visible=false;hidden.forEach(o=>o.visible=false);const carWasVisible=car?.group.visible??false;if(car)car.group.visible=false;
+  // Avoid feedback: glossy surfaces in the faces reflect the sky environment, not the probe being replaced.
   const current=localReflection?.texture??null;
   for(const material of reflectiveMaterials)material.envMap=null;
-  let completed=false;
   try{
    if(reflectionCamera.coordinateSystem!==renderer.coordinateSystem){reflectionCamera.coordinateSystem=renderer.coordinateSystem;reflectionCamera.updateCoordinateSystem();}
    reflectionCamera.updateMatrixWorld();
-   const mips=reflectionTarget.texture.generateMipmaps;
-   // as CubeCamera.update draws them: mipmaps once, with the last face
-   for(const face of force?[0,1,2,3,4,5]:[captureFace+1]){reflectionTarget.texture.generateMipmaps=face===5&&mips;renderer.setRenderTarget(reflectionTarget,face);renderer.render(scene,reflectionCamera.children[face] as THREE.Camera);}
-   reflectionTarget.texture.generateMipmaps=mips;
+   for(const face of force?[0,1,2,3,4,5]:[captureFace+1]){renderer.setRenderTarget(reflectionTarget,face);renderer.render(scene,reflectionCamera.children[face] as THREE.Camera);}
    captureFace=force?5:captureFace+1;
-   if(captureFace===5){
-    const next=reflectionFilter.fromCubemap(reflectionTarget.texture);
-    for(const material of reflectiveMaterials){material.envMap=next.texture;material.envMapIntensity=(material.userData.envIntensity as number|undefined)??.7;material.needsUpdate=true;}
-    localReflection?.dispose();localReflection=next;completed=true;captureFace=-1;
-   }
-  }finally{if(!completed)for(const material of reflectiveMaterials)material.envMap=current;ring.visible=ringVisible;highlight.visible=highlightVisible;hidden.forEach(o=>o.visible=true);if(parked)parked.group.visible=parkedWasVisible;if(overhead)overhead.group.visible=overheadWasVisible;if(car)car.group.visible=carWasVisible;renderer.shadowMap.autoUpdate=shadowAuto;renderer.setRenderTarget(previousTarget,previousFace,previousMip);}
+   if(captureFace===5&&!force){filterProbe();handOver();captureFace=-1;}
+  }finally{for(const material of reflectiveMaterials)material.envMap=current;ring.visible=ringVisible;highlight.visible=highlightVisible;hidden.forEach(o=>o.visible=true);if(parked)parked.group.visible=parkedWasVisible;if(overhead)overhead.group.visible=overheadWasVisible;if(car)car.group.visible=carWasVisible;renderer.shadowMap.autoUpdate=shadowAuto;renderer.setRenderTarget(previousTarget,previousFace,previousMip);}
+  if(force){filterProbe();handOver();captureFace=-1;}
  }
  // The study-radius ring at the world's own radius, draped on the terrain: a flat ring at one height floated over or
  // sank under a hilly area's streets.
@@ -288,7 +317,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  function keyup(e:KeyboardEvent){keys.delete(e.code)}
  function blur(){keys.clear();drag=false}
  renderer.domElement.addEventListener('pointerdown',down);window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);window.addEventListener('keydown',keydown);window.addEventListener('keyup',keyup);window.addEventListener('blur',blur);
- function applySize(){const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();atmosphere.resize();renderer.setPixelRatio(renderScale);renderer.setSize(w,h);composer.setPixelRatio(renderScale);composer.setSize(w,h);ao.setSize(Math.max(1,Math.round(w*renderScale*.6)),Math.max(1,Math.round(h*renderScale*.6)));}
+ function applySize(){const w=host.clientWidth,h=host.clientHeight;if(!w||!h)return;maxScale=scaleCap();if(!qualityLocked)renderScale=Math.min(renderScale,maxScale);camera.aspect=w/h;camera.updateProjectionMatrix();atmosphere.resize();renderer.setPixelRatio(renderScale);renderer.setSize(w,h);composer.setPixelRatio(renderScale);composer.setSize(w,h);ao.setSize(Math.max(1,Math.round(w*renderScale*aoScale)),Math.max(1,Math.round(h*renderScale*aoScale)));}
  const resize=new ResizeObserver(applySize);resize.observe(host);
  // The car is built now and hidden, so its shaders compile with the rest of the scene rather than on the first drive.
  // What the car stands on and runs into: the drivable surface, street objects and cells it cannot enter (car-ground.ts),
@@ -333,18 +362,42 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
   for(const t of maps)renderer.initTexture(t);
   updateReflections(performance.now(),true);if(car)car.group.visible=true;
   // compiled for the target the scene pass draws into: against the canvas it builds tone-mapped variants nothing uses
-  renderer.setRenderTarget(scenePass.target);renderer.compile(scene,camera);renderer.setRenderTarget(null);}
+  renderer.setRenderTarget(scenePass.target);renderer.compile(scene,camera);renderer.setRenderTarget(null);
+  // ... and every material drawn once, culling off: the GPU driver builds each pipeline (shader, vertex layout, target
+  // format) at its first draw, so what was not in the first view stalled the frame it first appeared in, 0.1-0.3 s while
+  // driving. The car is in view, so its glass's transmission copy is built too.
+  {const culled:THREE.Object3D[]=[];scene.traverse(o=>{if(o.frustumCulled){o.frustumCulled=false;culled.push(o);}});if(car)car.group.visible=true;
+   try{composer.render(0);}finally{culled.forEach(o=>{o.frustumCulled=true;});}
+   // and the probe's second target: allocated and drawn with now, not at the first capture on the road
+   filterProbe();handOver();composer.render(0);}}
  if(car)car.group.visible=false;(window as unknown as {__car?:unknown}).__car={car,field,ground:carGround,objects,getLayer};
  let frame=0,previous=performance.now();const forward=new THREE.Vector3(),right=new THREE.Vector3(),worldUp=new THREE.Vector3(0,1,0),delta=new THREE.Vector3();
- let frameMs=16,frames=0,lastCalls=0,qualityLocked=false;renderer.info.autoReset=false;
- function animate(now:number){frame=requestAnimationFrame(animate);const raw=now-previous;const dt=Math.min(raw/1000,.05);previous=now;
-  // Adaptive quality: sustained slow frames step the render scale down, then switch off ambient occlusion, then
-  // bloom, then take the last resolution step; fast frames restore them in the opposite order. Frames over a
-  // quarter second are a hidden or throttled tab, not a measure of the renderer, and are ignored.
-  if(raw<250)frameMs+=(raw-frameMs)*.06;
-  if(!qualityLocked&&++frames%45===0){const slow=frameMs>24,fast=frameMs<11;
-   if(slow){if(renderScale>.85){renderScale=Math.max(.85,renderScale-.15);applySize();}else if(ao.enabled)ao.enabled=false;else if(grade.bloom.enabled)grade.bloom.enabled=false;else if(renderScale>.7){renderScale=.7;applySize();}frameMs=16;}
-   else if(fast){if(renderScale<.85){renderScale=.85;applySize();}else if(!grade.bloom.enabled)grade.bloom.enabled=true;else if(!ao.enabled)ao.enabled=true;else if(renderScale<maxScale){renderScale=Math.min(maxScale,renderScale+.1);applySize();}frameMs=16;}}
+ let frameMs=16,lastCalls=0;renderer.info.autoReset=false;
+ // Adaptive quality, for 60 frames a second. Two signals: frames that missed a 60 Hz deadline (an interval over 20 ms),
+ // and the time the frame's own work took. The browser holds the frame's WebGL calls back when the GPU is behind, so
+ // that time stays near the frame's pure CPU cost (a few ms) while there is headroom and climbs toward the whole frame
+ // when there is none: it shows headroom even when the display's refresh caps the frame rate. Missed deadlines or
+ // saturated work step the render scale down a level (12 % fewer pixels each), then switch off the ambient occlusion,
+ // then the bloom; sustained headroom brings them back in the opposite order. A step up that soon has to be undone bars
+ // further steps up for 20 s. Every step reallocates the render targets, so steps are at least 1.5 s apart.
+ const LEVELS=[1,.94,.88,.82,.76,.7];let level=0,workMs=6,lastWork=6,lastChange=performance.now(),upBlockedUntil=0,lastUp=-1e9;const late=new Uint8Array(90);let lateCount=0,lateAt=0,settle=60;   // the first second after load is no measure
+ const scaleAt=(l:number)=>Math.max(.5,maxScale*LEVELS[l]);
+ function adapt(now:number,raw:number){
+  if(qualityLocked||raw>250){settle=10;return;}                       // a hidden or throttled tab is no measure
+  if(settle>0){settle--;return;}                                         // the frames after a step reallocate targets
+  const miss=raw>20?1:0;lateCount+=miss-late[lateAt];late[lateAt]=miss;lateAt=(lateAt+1)%late.length;
+  workMs+=(lastWork-workMs)*.08;
+  if(now-lastChange<1500)return;
+  const missRate=lateCount/late.length;
+  const step=(down:boolean)=>{lastChange=now;settle=10;late.fill(0);lateCount=0;workMs=down?8:6;
+   if(down){if(now-lastUp<3000)upBlockedUntil=now+20000;
+    if(level<LEVELS.length-1){level++;renderScale=scaleAt(level);applySize();}else if(ao.enabled)ao.enabled=false;else if(grade.bloom.enabled)grade.bloom.enabled=false;}
+   else{lastUp=now;if(!grade.bloom.enabled)grade.bloom.enabled=true;else if(!ao.enabled)ao.enabled=true;else if(level>0){level--;renderScale=scaleAt(level);applySize();}}};
+  if(missRate>.06||workMs>13.5)step(true);
+  else if(now-lastChange>4000&&now>upBlockedUntil&&missRate<.012&&workMs<8&&(level>0||!ao.enabled||!grade.bloom.enabled))step(false);
+ }
+ function animate(now:number){frame=requestAnimationFrame(animate);const raw=now-previous;const dt=Math.min(raw/1000,.05);previous=now;const workStart=performance.now();
+  if(raw<250)frameMs+=(raw-frameMs)*.06;adapt(now,raw);
   if(mode==='street'){
    if(driving){
     let remaining=dt*10;
@@ -367,17 +420,18 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
   atmosphere.update(now);horizon?.update(now);
   updateReflections(now);
   carLod?.update(camera);glass.prepare();patchUniforms();renderer.info.reset();composer.render(dt);lastCalls=renderer.info.render.calls;
+  lastWork=performance.now()-workStart;
  }
  frame=requestAnimationFrame(animate);
  // Review hook: `pose` puts the orbit camera at metric ENU coordinates (as ?viewFrom/?viewAt do) without a reload,
  // `capture` renders one frame and returns it as a PNG blob; both are for same-pose A/B comparisons only.
- (window as unknown as {__view?:unknown}).__view={exposure:()=>grade.exposure.read(renderer),pose:(from:number[],at:number[])=>{grade.snap();mode='orbit';controls.enabled=true;targetPosition=null;targetLook=null;highlight.visible=false;camera.position.set(from[0],from[2],-from[1]);controls.target.set(at[0],at[2],-at[1]);controls.update();},
+ (window as unknown as {__view?:unknown}).__view={quality:(scale?:number,lock=true)=>{qualityLocked=lock;if(scale){renderScale=scale;applySize();}return {renderScale,maxScale,level,workMs:+workMs.toFixed(1),ao:ao.enabled,bloom:grade.bloom.enabled};},exposure:()=>grade.exposure.read(renderer),pose:(from:number[],at:number[])=>{grade.snap();mode='orbit';controls.enabled=true;targetPosition=null;targetLook=null;highlight.visible=false;camera.position.set(from[0],from[2],-from[1]);controls.target.set(at[0],at[2],-at[1]);controls.update();},
   capture:(w=1800,h=1125)=>new Promise<Blob|null>(resolve=>{qualityLocked=true;ao.enabled=true;grade.bloom.enabled=true;grade.snap();
-   renderer.setPixelRatio(1);renderer.setSize(w,h,false);composer.setPixelRatio(1);composer.setSize(w,h);ao.setSize(Math.round(w*.6),Math.round(h*.6));camera.aspect=w/h;camera.updateProjectionMatrix();atmosphere.resize();
+   renderer.setPixelRatio(1);renderer.setSize(w,h,false);composer.setPixelRatio(1);composer.setSize(w,h);ao.setSize(Math.round(w*aoScale),Math.round(h*aoScale));camera.aspect=w/h;camera.updateProjectionMatrix();atmosphere.resize();
    // the animation loop may be throttled (hidden pane): place the shadow cascades and the reflection probe for this pose
    controls.update();atmosphere.update(performance.now()+1000);atmosphere.csm.lights[1].shadow.needsUpdate=true;updateReflections(performance.now()+1e7,true);
    carLod?.update(camera);glass.prepare();patchUniforms();composer.render(1/60);renderer.domElement.toBlob(b=>{applySize();resolve(b);},'image/png');}),
   lockQuality:(on:boolean)=>{qualityLocked=on;if(on){ao.enabled=true;grade.bloom.enabled=true;}},
   renderOnce:()=>{const t0=performance.now();composer.render(1/60);renderer.getContext().finish();return performance.now()-t0;},budget:{flags:budget,glass:glass.stats,proxies:depth.meshes.length,proxySkipped:depth.skipped.length,car:carLod?.stats??null},info:()=>({calls:lastCalls,triangles:renderer.info.render.triangles,frameMs:+frameMs.toFixed(1),renderScale:+renderScale.toFixed(2),ao:ao.enabled,bloom:grade.bloom.enabled,batches:batches.length,sceneTriangles:objects.reduce((n,o)=>n+(o.geometry.index?o.geometry.index.count:o.geometry.attributes.position.count)/3,0)}),atmosphere,scene,camera,objects,renderer,composer};
- return {downloadUrl,view,select,lighting,nextStreet,drive,car:driveCar,layer:(layer:string,on:boolean)=>{const wanted=(l:string)=>l===layer||(layer==='street_objects'&&l==='signs');if(wanted('street_objects')){if(parked)parked.group.visible=on;if(overhead)overhead.group.visible=on;}for(const o of objects)if(!o.userData.batched&&wanted(getLayer(o)))o.visible=on;for(const b of batches)if(wanted(String(b.userData.layer)))b.visible=on;for(const p of depth.meshes)if(wanted(String(p.userData.layer)))p.visible=on;},evidence:(on:boolean)=>{const tint=(layer:string,evidence:unknown)=>['roofs','terrain'].includes(layer)?'#56b3c4':evidence==='visual-fit'?'#7caf8c':'#d2a25e';const paint=(o:THREE.Mesh,layer:string,evidence:unknown,original:THREE.Material|THREE.Material[])=>{if(on){let m=evidences.get(o);if(!m){m=new THREE.MeshStandardMaterial({color:tint(layer,evidence),roughness:.9});atmosphere.setupMaterial(m);evidences.set(o,m);}o.material=m;}else o.material=original;};for(const o of objects)if(!o.userData.batched)paint(o,getLayer(o),o.userData.evidence,originals.get(o)!);for(const b of batches)paint(b,String(b.userData.layer),b.userData.evidence,b.userData.original as THREE.Material);},dispose:()=>{cancelAnimationFrame(frame);car?.dispose();parked?.group.children.forEach(m=>(m as THREE.BatchedMesh).dispose());parked?.materials.forEach(m=>m.dispose());overhead?.group.traverse(o=>{if(o instanceof THREE.Mesh)o.geometry.dispose();});overhead?.materials.forEach(m=>m.dispose());resize.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',down);window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',blur);objects.forEach(o=>o.geometry.dispose());batches.forEach(b=>{b.geometry.dispose();b.removeFromParent();if(b.name==='vegetation___foliage'){const m=b.material as THREE.MeshStandardMaterial;m.map?.dispose();m.dispose();}});wxGround.dispose();new Set([...originals.values()].flat()).forEach(m=>m.dispose());evidences.forEach(m=>m.dispose());localReflection?.dispose();reflectionTarget.dispose();reflectionFilter.dispose();depth.dispose();scenePass.dispose();ao.dispose();grade.dispose();output.dispose();composer.dispose();atmosphere.dispose();ring.geometry.dispose();(ring.material as THREE.Material).dispose();highlight.geometry.dispose();(highlight.material as THREE.Material).dispose();URL.revokeObjectURL(downloadUrl);renderer.dispose();renderer.domElement.remove();}};
+ return {downloadUrl,view,select,lighting,nextStreet,drive,car:driveCar,layer:(layer:string,on:boolean)=>{const wanted=(l:string)=>l===layer||(layer==='street_objects'&&l==='signs');if(wanted('street_objects')){if(parked)parked.group.visible=on;if(overhead)overhead.group.visible=on;}for(const o of objects)if(!o.userData.batched&&wanted(getLayer(o)))o.visible=on;for(const b of batches)if(wanted(String(b.userData.layer)))b.visible=on;for(const p of depth.meshes)if(wanted(String(p.userData.layer)))p.visible=on;},evidence:(on:boolean)=>{const tint=(layer:string,evidence:unknown)=>['roofs','terrain'].includes(layer)?'#56b3c4':evidence==='visual-fit'?'#7caf8c':'#d2a25e';const paint=(o:THREE.Mesh,layer:string,evidence:unknown,original:THREE.Material|THREE.Material[])=>{if(on){let m=evidences.get(o);if(!m){m=new THREE.MeshStandardMaterial({color:tint(layer,evidence),roughness:.9});atmosphere.setupMaterial(m);evidences.set(o,m);}o.material=m;}else o.material=original;};for(const o of objects)paint(o,getLayer(o),o.userData.evidence,originals.get(o)!);for(const b of batches){if(b.name==='vegetation___foliage'){paint(b,String(b.userData.layer),b.userData.evidence,b.userData.original as THREE.Material);continue;}const members=b.userData.members as THREE.Mesh[]|undefined;if(!members)continue;if(on){b.userData.wasVisible=b.visible;b.visible=false;for(const o of members)o.visible=b.userData.wasVisible;}else{b.visible=b.userData.wasVisible??true;for(const o of members)o.visible=false;}}},dispose:()=>{cancelAnimationFrame(frame);car?.dispose();parked?.group.children.forEach(m=>(m as THREE.BatchedMesh).dispose());parked?.materials.forEach(m=>m.dispose());overhead?.group.traverse(o=>{if(o instanceof THREE.Mesh)o.geometry.dispose();});overhead?.materials.forEach(m=>m.dispose());resize.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',down);window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',blur);objects.forEach(o=>o.geometry.dispose());batches.forEach(b=>{b.geometry.dispose();b.removeFromParent();if(b.name==='vegetation___foliage'){const m=b.material as THREE.MeshStandardMaterial;m.map?.dispose();m.dispose();}});wxGround.dispose();new Set([...originals.values()].flat()).forEach(m=>m.dispose());evidences.forEach(m=>m.dispose());localReflection?.dispose();probeSpare?.dispose();reflectionTarget.dispose();reflectionFilter.dispose();depth.dispose();scenePass.dispose();ao.dispose();grade.dispose();composer.dispose();atmosphere.dispose();ring.geometry.dispose();(ring.material as THREE.Material).dispose();highlight.geometry.dispose();(highlight.material as THREE.Material).dispose();URL.revokeObjectURL(downloadUrl);renderer.dispose();renderer.domElement.remove();}};
 }

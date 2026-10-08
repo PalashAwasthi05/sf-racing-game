@@ -1,6 +1,4 @@
 import * as THREE from 'three';
-import {ShaderPass} from 'three/addons/postprocessing/ShaderPass.js';
-import type {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
 
 // Occlusion of the light a surface receives from the sky and its surroundings, at two scales.
 //
@@ -14,7 +12,7 @@ import type {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
 // Detail scale: the screen-space ambient occlusion pass (inner corners, under ledges, the foot of a kerb) used to multiply
 // the whole lit image, sunlight included, which drew dark outlines along every sunlit kerb and window reveal. Each
 // material now writes the share of its light that is indirect into the scene target's alpha; the AO is applied to that
-// share only.
+// share only (the composite pass in grade.ts).
 //
 // Nothing here is location specific.
 
@@ -124,25 +122,4 @@ export function occludeMaterials(materials: Iterable<THREE.Material>, sky: SkyVi
     m.customProgramCacheKey = () => key() + (useSky ? '|occluded' : glass ? '|glass-alpha' : '|indirect-alpha');
     m.needsUpdate = true;
   }
-}
-
-/** Applies the detail-scale ambient occlusion (the GTAO pass's denoised result) to the indirect share of each pixel's
- *  light. The GTAO pass keeps computing its AO but no longer blends it over the whole image. */
-export function occlusionComposite(ao: GTAOPass) {
-  ao.output = -1; // GTAOPass.OUTPUT.Off: the AO is computed, nothing is drawn
-  ao.needsSwap = false;
-  const pass = new ShaderPass({
-    uniforms: {tDiffuse: {value: null}, tAO: {value: null}, uStrength: {value: 1}},
-    vertexShader: 'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader: /* glsl */`uniform sampler2D tDiffuse;uniform sampler2D tAO;uniform float uStrength;varying vec2 vUv;
-     void main(){vec4 c=texture2D(tDiffuse,vUv);float ao=texture2D(tAO,vUv).r;c.rgb*=mix(1.,ao,clamp(c.a,0.,1.)*uStrength);
-      // one NaN or infinite pixel here would spread through the bloom's mip chain into a black block
-      if(!(c.r==c.r&&c.g==c.g&&c.b==c.b))c.rgb=vec3(0.);gl_FragColor=vec4(min(c.rgb,vec3(6e4)),1.);}`,
-  });
-  // ShaderPass clones its uniforms, and a render target's texture does not survive the clone: set it on the pass
-  pass.uniforms.tAO.value = ao.pdRenderTarget.texture;
-  // follows the AO pass: when adaptive quality switches AO off, its last result must not stay applied
-  const render = pass.render.bind(pass), strength = pass.uniforms.uStrength;
-  pass.render = (...args: Parameters<typeof render>) => { strength.value = ao.enabled ? 1 : 0; render(...args); };
-  return pass;
 }

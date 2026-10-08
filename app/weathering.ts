@@ -169,7 +169,8 @@ export function weatherMaterials(materials: Iterable<THREE.MeshStandardMaterial>
         .replace('#include <project_vertex>', '#include <project_vertex>\nvWxPos=(modelMatrix*vec4(transformed,1.)).xyz;vWxNrm=normalize(mat3(modelMatrix)*objectNormal);');
       shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\n' + FACADEMAP_GLSL + HEADER)
         // dressed stone: the scan's blotches (a metre across) kept at a quarter, its grain whole
-        .replace('#include <map_fragment>', '#include <map_fragment>\n#ifdef USE_MAP\nif(uWxKind>3.5){vec3 t0=texture2D(map,vMapUv).rgb,m1=textureLod(map,vMapUv,4.).rgb,m2=textureLod(map,vMapUv,10.).rgb;diffuseColor.rgb*=max(m2+(t0-m1)+.25*(m1-m2),vec3(0.))/max(t0,vec3(1e-3));}\n#endif\ndiffuseColor.rgb=wxTint(wxSurface(diffuseColor.rgb));')
+        // after the vertex colour (a class's walls share one material and carry their own tint: material-merge.ts)
+        .replace('#include <color_fragment>', '#include <color_fragment>\n#ifdef USE_MAP\nif(uWxKind>3.5){vec3 t0=texture2D(map,vMapUv).rgb,m1=textureLod(map,vMapUv,4.).rgb,m2=textureLod(map,vMapUv,10.).rgb;diffuseColor.rgb*=max(m2+(t0-m1)+.25*(m1-m2),vec3(0.))/max(t0,vec3(1e-3));}\n#endif\ndiffuseColor.rgb=wxTint(wxSurface(diffuseColor.rgb));')
         .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\nif(uWxKind>.5)normal=wxBump(normal,wxH,.0025);')
         .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor=clamp(roughnessFactor*mix(.9,1.08,wxLarge)*(1.+.15*wxDirt),.04,1.);');
     };

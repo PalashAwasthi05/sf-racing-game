@@ -16,6 +16,8 @@ import type {GTAOPass} from 'three/addons/postprocessing/GTAOPass.js';
 export class MultisampledRenderPass extends RenderPass {
   readonly target: THREE.WebGLRenderTarget;
   private readonly copy: FullScreenQuad;
+  /** When set, the next pass reads `target.texture` itself and the copy into the composer's buffer is skipped. */
+  direct = false;
   constructor(scene: THREE.Scene, camera: THREE.Camera, samples = 4) {
     super(scene, camera);
     this.target = new THREE.WebGLRenderTarget(1, 1, {type: THREE.HalfFloatType, samples, resolveDepthBuffer: false, resolveStencilBuffer: false});
@@ -31,6 +33,7 @@ export class MultisampledRenderPass extends RenderPass {
   render(renderer: THREE.WebGLRenderer, writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget, deltaTime: number, maskActive: boolean) {
     if (this.renderToScreen) { super.render(renderer, writeBuffer, readBuffer, deltaTime, maskActive); return; }
     super.render(renderer, writeBuffer, this.target, deltaTime, maskActive); // resolved at the end of renderer.render
+    if (this.direct) return;
     renderer.setRenderTarget(readBuffer);
     this.copy.render(renderer);
   }
@@ -46,8 +49,8 @@ function toggleGroup(layer: string) { return layer === 'signs' ? 'street_objects
  *  exactly where it puts the sources (baking the transform in would round a depth or two differently and move shadow
  *  edges by a texel). They are drawn only in the depth-only passes (shadow maps and the occlusion normals), which never
  *  read a material: a hundred-odd draws there instead of one per material and 60 m cell. Hidden everywhere else. */
-export function buildDepthProxies(meshes: THREE.Mesh[], layerOf: Layered, cellM = 120) {
-  type Group = {parts: THREE.BufferGeometry[]; verts: number; indices: number; cast: boolean; side: THREE.Side; shadowSide: THREE.Side | null; layer: string; transform: THREE.Matrix4};
+export function buildDepthProxies(meshes: THREE.Mesh[], layerOf: Layered, cellM = 120, isDetail: (o: THREE.Mesh) => boolean = () => false) {
+  type Group = {parts: THREE.BufferGeometry[]; verts: number; indices: number; cast: boolean; side: THREE.Side; shadowSide: THREE.Side | null; layer: string; transform: THREE.Matrix4; detail: boolean};
   const groups = new Map<string, Group>(), transforms: THREE.Matrix4[] = [], box = new THREE.Box3(), centre = new THREE.Vector3();
   const transformId = (m: THREE.Matrix4) => { let i = transforms.findIndex(t => t.equals(m)); if (i < 0) i = transforms.push(m.clone()) - 1; return i; };
   const eligible = (m: THREE.Material) => !(m.alphaTest > 0 || m.alphaToCoverage || m.transparent || (m as THREE.MeshStandardMaterial).displacementMap || m.clippingPlanes?.length || (m as THREE.MeshBasicMaterial).wireframe);
@@ -57,10 +60,11 @@ export function buildDepthProxies(meshes: THREE.Mesh[], layerOf: Layered, cellM 
     if (Array.isArray(m) || !eligible(m) || !g.attributes.position || !g.attributes.normal || g.morphAttributes.position || o.customDepthMaterial) { skipped.push(o); continue; }
     o.updateWorldMatrix(true, false);
     box.setFromObject(o); box.getCenter(centre);
-    const layer = toggleGroup(layerOf(o)), t = transformId(o.matrixWorld);
-    const key = [Math.floor(centre.x / cellM), Math.floor(centre.z / cellM), layer, o.castShadow ? 1 : 0, m.side, m.shadowSide ?? '-', t].join('|');
+    // thin facade detail (frames, mullions, trims) in 40 m cells, drawn only near the camera (installDepthProxies)
+    const layer = toggleGroup(layerOf(o)), t = transformId(o.matrixWorld), detail = isDetail(o), cell = detail ? 40 : cellM;
+    const key = [Math.floor(centre.x / cell), Math.floor(centre.z / cell), layer, o.castShadow ? 1 : 0, m.side, m.shadowSide ?? '-', t, detail ? 'd' : ''].join('|');
     let grp = groups.get(key);
-    if (!grp) { grp = {parts: [], verts: 0, indices: 0, cast: o.castShadow, side: m.side, shadowSide: m.shadowSide, layer, transform: transforms[t]}; groups.set(key, grp); }
+    if (!grp) { grp = {parts: [], verts: 0, indices: 0, cast: o.castShadow, side: m.side, shadowSide: m.shadowSide, layer, transform: transforms[t], detail}; groups.set(key, grp); }
     grp.parts.push(g);
     grp.verts += g.attributes.position.count; grp.indices += g.index ? g.index.count : g.attributes.position.count;
   }
@@ -89,7 +93,7 @@ export function buildDepthProxies(meshes: THREE.Mesh[], layerOf: Layered, cellM 
     let material = materials.get(mkey);
     if (!material) { material = new THREE.MeshBasicMaterial({side: grp.side, colorWrite: false}); material.shadowSide = grp.shadowSide; material.name = 'depth-proxy'; materials.set(mkey, material); }
     const mesh = new THREE.Mesh(geometry, material); mesh.name = 'depth-proxy|' + key; mesh.castShadow = grp.cast; mesh.receiveShadow = false;
-    mesh.userData.layer = grp.layer; mesh.matrixAutoUpdate = false; mesh.matrix.copy(grp.transform); mesh.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
+    mesh.userData.layer = grp.layer; mesh.userData.detail = grp.detail; mesh.matrixAutoUpdate = false; mesh.matrix.copy(grp.transform); mesh.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
     root.add(mesh);
   }
   root.updateMatrixWorld(true);
@@ -100,11 +104,18 @@ export type DepthSwap = {enter(): void; leave(): void};
 /** Draws the depth-only passes with the proxies in place of the static world it stands for. `statics` are the roots
  *  that hold that world (hidden for the pass), `keep` the static meshes the proxies could not stand for. More stand-ins
  *  (the car's) join through `addSwap`; every swap enters before a depth pass draws and leaves after it. */
-export function installDepthProxies(o: {renderer: THREE.WebGLRenderer; scene: THREE.Scene; ao: GTAOPass; proxies: THREE.Group; statics: THREE.Object3D[]; aoHidden: () => THREE.Object3D[]; enabled: () => boolean}) {
+export function installDepthProxies(o: {renderer: THREE.WebGLRenderer; scene: THREE.Scene; ao: GTAOPass; proxies: THREE.Group; statics: THREE.Object3D[]; aoHidden: () => THREE.Object3D[]; enabled: () => boolean; near?: () => THREE.Vector3; detailM?: number}) {
   const {renderer, scene, ao, proxies, statics} = o;
   const saved: boolean[] = []; let swapped = false;
+  // Thin detail stands in only within detailM of the camera: farther out its shadow is under a texel of the near cascade
+  // and its occlusion under a pixel of the occlusion pass, and it was a third of their triangles.
+  const details = (proxies.children as THREE.Mesh[]).filter(m => m.userData.detail), sphere = new THREE.Sphere();
   const world: DepthSwap = {
-    enter() { if (!o.enabled() || swapped) return; swapped = true; statics.forEach((s, i) => { saved[i] = s.visible; s.visible = false; }); proxies.visible = true; },
+    enter() {
+      if (!o.enabled() || swapped) return; swapped = true; statics.forEach((s, i) => { saved[i] = s.visible; s.visible = false; }); proxies.visible = true;
+      const at = o.near?.(), r = o.detailM ?? 50;
+      if (at) for (const m of details) { sphere.copy(m.geometry.boundingSphere!).applyMatrix4(m.matrixWorld); m.visible = sphere.center.distanceTo(at) - sphere.radius < r; }
+    },
     leave() { if (!swapped) return; swapped = false; statics.forEach((s, i) => { s.visible = saved[i]; }); proxies.visible = false; },
   };
   const swaps: DepthSwap[] = [world];
