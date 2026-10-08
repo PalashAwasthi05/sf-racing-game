@@ -16,7 +16,7 @@ const { chromium } = require('playwright');
 const args = process.argv.slice(2), opt = k => args.find(a => a.startsWith(`--${k}=`))?.split('=')[1];
 const [variant = 'live', out = `drive-${variant}`] = args.filter(a => !a.startsWith('--'));
 const W = Number(opt('w') || 2560), H = Number(opt('h') || 1330), DPR = Number(opt('dpr') || 2), SECONDS = Number(opt('seconds') || 40);
-const free = args.includes('--free'), manifest = opt('manifest') || '';
+const free = args.includes('--free'), manifest = opt('manifest') || '', hz = Number(opt('hz') || 0);   // --hz=60 with --free: paced as on a 60 Hz display
 const port = Number(process.env.BENCH_PORT || 3107);
 mkdirSync(out, { recursive: true });
 
@@ -34,10 +34,13 @@ if (boot.loadError) { console.log(boot.loadError); await browser.close(); proces
 // --js='...': run after load (live switches, e.g. __view.tune({...}) or __view.quality(1.25, true))
 if (opt('js')) await page.evaluate(code => (0, eval)(code), args.find(a => a.startsWith('--js=')).slice(5));
 
+// --gc: a full garbage collection after load, before the drive (the load leaves ~1 GB of garbage that V8 otherwise
+// collects some seconds into the drive)
+if (args.includes('--gc')) { const c = await page.context().newCDPSession(page); await c.send('HeapProfiler.collectGarbage'); await page.waitForTimeout(500); }
 // --trace=<file.json>: a Chrome trace of the drive, every process (what the GPU process was doing during a long frame)
 const trace = opt('trace');
 if (trace) await browser.startTracing(page, { path: trace, categories: ['devtools.timeline', 'disabled-by-default-devtools.timeline', 'disabled-by-default-devtools.timeline.frame', 'toplevel', 'blink', 'v8', 'disabled-by-default-v8.gc', 'gpu', 'gpu.angle', 'disabled-by-default-gpu.service', 'disabled-by-default-gpu.decoder', 'viz', 'cc', 'benchmark'] });
-const result = await page.evaluate(async ({ SECONDS, free }) => {
+const result = await page.evaluate(async ({ SECONDS, free, hz }) => {
   const B = window.__bench, api = B.api(), C = window.__car, car = C.car;
   const route = await fetch('/review-routes.json').then(r => r.json()).then(d => d.routes[0].map(p => [p[0], -p[1]]));   // three x, z
   // the engine sound is not part of the measure
@@ -72,7 +75,9 @@ const result = await page.evaluate(async ({ SECONDS, free }) => {
   } else {
     // the page paces itself: the pilot runs in its own animation frame callback, after the viewer's (which is timed)
     const held = new Set(), R = window.__view.renderer; let js = 0;
-    { const raf = window.requestAnimationFrame; window.requestAnimationFrame = cb => raf(t => { const a = performance.now(); cb(t); js = performance.now() - a; }); }
+    { const raf = window.requestAnimationFrame, timed = cb => t => { const a = performance.now(); cb(t); js = performance.now() - a; };
+      // hz=60: a callback every second vsync, as on a 60 Hz display (headless paces at 120 Hz here)
+      window.requestAnimationFrame = hz === 60 ? cb => raf(() => raf(timed(cb))) : cb => raf(timed(cb)); }
     await new Promise(done => {
       let n = 0, last = performance.now();
       const tick = now => {
@@ -89,7 +94,7 @@ const result = await page.evaluate(async ({ SECONDS, free }) => {
     for (const k of held) B.key(k, false);
   }
   return { frames, samples, resets, distance: frames.reduce((d, f, i) => i ? d + Math.hypot(f.x - frames[i - 1].x, f.z - frames[i - 1].z) : 0, 0) };
-}, { SECONDS, free });
+}, { SECONDS, free, hz });
 
 if (trace) await browser.stopTracing();
 const t = result.frames.map(f => f.t).sort((a, b) => a - b), q = p => t[Math.min(t.length - 1, Math.floor(p * t.length))];

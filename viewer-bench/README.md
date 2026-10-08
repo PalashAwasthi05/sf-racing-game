@@ -41,11 +41,13 @@ browser's GPU process (it translates every WebGL call into Metal and sits at 100
 between drained frames, and a 5K window renders 2.5x the pixels of the default viewport. Three tools measure it as used:
 
 ```
-node drive.mjs <variant> <out> --w=2560 --h=1330 --dpr=2 --seconds=40 --free             # paced like a browser
+node drive.mjs <variant> <out> --w=2560 --h=1330 --dpr=2 --seconds=40 --free --hz=60     # the Studio Display (60 Hz)
+node drive.mjs <variant> <out> --w=1512 --h=860 --dpr=2 --seconds=40 --free              # the laptop's screen (120 Hz)
 node drive.mjs <variant> <out> --w=2560 --h=1330 --dpr=2 --free --uncapped               # no vsync: throughput
 node drive.mjs <variant> <out> ... "--js=__view.quality(1.25, true)"                     # fixed render scale
 node ab.mjs <variant> '{"name":["<js on>","<js off>"]}' [--scale=1.25]                    # live switch A/B
 node profile.mjs <variant> <out.cpuprofile> --seconds=8                                  # CPU profile while driving
+node heap.mjs <variant> <out-dir>                                                        # what the load allocates
 ```
 
 `drive.mjs` drives the car round the review route with an autopilot (steering for a point 10 m ahead, ~40 km/h) and
@@ -65,6 +67,11 @@ Traps:
   JS is short shows in the GPU process as `IOSurfaceImageBacking::WaitForCommandsToBeScheduled` (the GPU was behind);
   `SharedImageStub::OnCreateSharedImage` next to it is a canvas resize. Tracing changes the timing: a hitch seen in
   most plain runs did not appear in three traced ones.
-- The machine is short of memory (24 GB, swap nearly full on 2026-10-08). The one-off 50-100 ms frames still left fell
-  mostly in runs where the load's ~1 GB of garbage was not yet collected (the drive's `heap` column drops from ~1.6 GB
-  to ~0.6 GB when it is).
+- Pace as the display does. The Studio Display (5K) runs at 60 Hz and the laptop's screen at 120 Hz
+  (`system_profiler SPDisplaysDataType -json`); headless Chromium paces `--free` at 120 Hz, so a 5K run without
+  `--hz=60` keeps the GPU at 100 % and turns the reflection probe's face renders into a backlog (50-250 ms frames at
+  the sixth face). At 60 Hz four 5K drives in five missed no frame; one still had ~2 s of 25 ms frames after its first
+  probe capture (cause not found). With `--hz=60` an interval of 20-22 ms is pacing jitter; a missed frame is 25 ms or
+  more.
+- The load leaves ~1 GB of garbage (heap ~1.6 GB, ~0.6 GB live; `heap.mjs` lists the allocators). It is not what
+  stalls the probe: `--gc` (a full collection before the drive) left those frames as they were.
