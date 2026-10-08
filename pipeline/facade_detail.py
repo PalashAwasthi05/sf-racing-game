@@ -11,6 +11,7 @@ Profile keys (rectangles as fractions of the frame, like the grammar's openings)
     door {kind 'panel' | 'glazed' | 'double', material}, transomM, steps {count, widthM, material}
   rustication [{rect, courseM, material}], quoins [{x, y, widthM, courseM, material}],
   fireEscapes [{x, levels, depthM, material}], balconies [{x, z, depthM, railing, railingHeightM, material}],
+  hedges [{x, heightM, depthM, offsetM, material}],
   reliefs [{rect, projectionM, material}]"""
 import math
 import numpy as np
@@ -181,6 +182,13 @@ def wall(ctx, profile, ops):
             for x in np.arange(x0 + .05, x1, pitch): B(x, z + rh / 2, size, rh, size, m, d - .03)
             for dd in np.arange(.1, d - .05, pitch):
                 for x in (x0 + .03, x1 - .03): B(x, z + rh / 2, size, rh, size, m, dd)
+    for hg in profile.get('hedges', []):
+        # a clipped hedge standing in front of the wall (on its ground line), as the photograph shows it hiding the wall
+        x0, x1 = max(low, hg['x'][0] * W), min(high, hg['x'][1] * W)
+        if x1 - x0 < .3: continue
+        h, d, off, m = hg['heightM'], hg.get('depthM', 1.2), hg.get('offsetM', .5), hg.get('material', '#3f5a2c')
+        B((x0 + x1) / 2, h * .46, x1 - x0, h * .92, d, m, off + d / 2)
+        B((x0 + x1) / 2, h * .96, x1 - x0 - .2, h * .08, d - .25, m, off + d / 2)          # a softened top
     for rf in profile.get('reliefs', []):
         x0, z0, x1, z1 = rf['rect']; poly = box(x0 * W, z0 * Hs, x1 * W, min(H, z1 * Hs)).intersection(clip)
         if poly.is_empty: continue

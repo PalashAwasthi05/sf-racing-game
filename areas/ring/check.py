@@ -85,6 +85,8 @@ def draw(r, piece, v):
         d.line([P(b['x0'], b['zM']), P(b['x1'], b['zM'])], fill=(255, 80, 200), width=4); rect(b['x0'], b['zM'], b['x1'], b['zM'] + b.get('railingHeightM', 1.), (255, 80, 200), 1)
     for k, o in enumerate(r.get('ornaments') or []):
         rect(o['x0'], o['z0'], o['x1'], o['z1'], (255, 150, 220), 1)
+    for k, h in enumerate(r.get('hedges') or []):
+        rect(h['x0'], 0, h['x1'], h['heightM'], (40, 200, 40), 3); text(h['x0'] + .2, h['heightM'] - .3, f"H{k} hedge {h.get('offsetM', .5)} m out", (60, 230, 60))
     if r.get('wallTopM'): d.line([P(0, r['wallTopM']), P(L, r['wallTopM'])], fill=(255, 255, 255), width=2)
     if r.get('parapetTop'): d.line([P(x, z) for x, z in r['parapetTop']], fill=(255, 255, 255), width=3)
     return im, photo, (pad, ppm, H)
@@ -112,7 +114,7 @@ def grid(side, view, x0, z0, x1, z1, out, scale=3.):
     piece = piece_of(side); v = piece['views'][view]; im = Image.open(AREA / 'regen/sides/img' / v['rect']).convert('RGB')
     pad, ppm, H = v['rectPad'], v['ppm'], float(piece['heightM'])
     box = (int(pad + x0 * ppm), int(pad + (H - z1) * ppm), int(pad + x1 * ppm), int(pad + (H - z0) * ppm))
-    crop = im.crop(box); s = min(scale, 1800 / max(1, crop.width), 1800 / max(1, crop.height)); crop = crop.resize((int(crop.width * s), int(crop.height * s)), Image.LANCZOS)
+    crop = im.crop(box); s = min(scale, 1400 / max(1, crop.width), 1400 / max(1, crop.height)); crop = crop.resize((int(crop.width * s), int(crop.height * s)), Image.LANCZOS)
     d = ImageDraw.Draw(crop); P = lambda x, z: ((pad + x * ppm - box[0]) * s, (pad + (H - z) * ppm - box[1]) * s)
     for x in np.arange(math.ceil(x0 * 2) / 2, x1 + 1e-6, .5):
         a, b = P(x, z0), P(x, z1); major = abs(x - round(x)) < 1e-6

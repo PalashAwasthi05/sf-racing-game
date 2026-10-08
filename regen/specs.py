@@ -31,6 +31,7 @@ def clean(r, piece):
     r['fireEscapes'] = [f for f in (r.get('fireEscapes') or []) if isinstance(f, dict) and num(f.get('x0')) and num(f.get('x1')) and f['x1'] > f['x0']
                         and isinstance(f.get('levels'), list) and all(num(z) for z in f['levels']) and f['levels']]
     r['balconies'] = [b for b in (r.get('balconies') or []) if isinstance(b, dict) and num(b.get('x0')) and num(b.get('x1')) and b['x1'] > b['x0'] and num(b.get('zM'))]
+    r['hedges'] = [h for h in (r.get('hedges') or []) if isinstance(h, dict) and num(h.get('x0')) and num(h.get('x1')) and h['x1'] > h['x0'] and num(h.get('heightM'))]
     return r
 
 
@@ -207,6 +208,9 @@ def to_profile(r, piece):
                                                  'railing': b.get('railing') if b.get('railing') in ('metal', 'balustrade', 'solid') else 'metal',
                                                  'railingHeightM': float(np.clip(b.get('railingHeightM', 1.), .5, 1.4)), 'material': hexok(b.get('hex'), '#2b2d2f'),
                                                  **({'slabMaterial': material({'family': b.get('slabFamily', 'render'), 'hex': b['slabHex']})} if b.get('slabHex') else {})})
+    for h in r.get('hedges') or []:
+        prof.setdefault('hedges', []).append({'x': [fx(h['x0']), fx(h['x1'])], 'heightM': float(np.clip(h['heightM'], .4, 9.)), 'depthM': float(np.clip(h.get('depthM', 1.2), .4, 4.)),
+                                              'offsetM': float(np.clip(h.get('offsetM', .5), 0., 25.)), 'material': hexok(h.get('hex'), '#3f5a2c')})
     for o in r.get('ornaments') or []:
         prof.setdefault('reliefs', []).append({'rect': [fx(o['x0']), fz(o['z0']), fx(o['x1']), fz(o['z1'])], 'projectionM': float(np.clip(o.get('projectionM', .04), .01, .3)),
                                                'material': material({'family': o.get('family', 'stone'), 'hex': o.get('hex')})})

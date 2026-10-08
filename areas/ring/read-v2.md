@@ -121,6 +121,9 @@ Everything from reading v1, and more. Example (a 7-storey apartment block, abrid
 - `piers`: pilasters / vertical strips standing out of the wall. `ornaments`: low relief panels, plaques, cartouches.
 - `fireEscapes`: platform `levels` (z of each platform), its x extent, depth, colour (painted or black).
 - `balconies`: a slab at `zM` with a railing (metal, balustrade, solid).
+- `hedges`: a clipped hedge or tall planting standing in front of the wall and hiding it: {x0, x1, heightM, depthM,
+  offsetM (how far in front of the wall it stands), hex}. Give it when it hides the lower storeys, and read only what
+  shows above it.
 - `parapetTop`: when the top of the wall is not level (a gable, a stepped or shaped parapet, a false front).
 
 ## How to work, per side
@@ -129,7 +132,9 @@ Everything from reading v1, and more. Example (a 7-storey apartment block, abrid
    edge), each door and special opening, the bays, the bands, the wall top. Count windows twice.
 3. Write the JSON. Then run the check, Read the overlay, and fix everything that does not sit on the photograph: a
    window box that is off by more than 0.15 m, a missing row or column, a band at the wrong height. Repeat until it
-   matches (usually 2-4 rounds). Check the colours last.
+   matches (usually 2-4 rounds). Check the colours last. After your LAST edit, run the check once more and look at
+   it: a reading is not done until you have seen its final overlay sit on the photograph.
+   Windows behind a fire escape, a railing or thin branches are still windows: look between the bars.
 4. A side that is mostly hidden (trees, a truck, another building in front): read what you can see, give
    `confidence` medium or low and say what is missing. A side whose views show another building or nothing:
    `{"id": ..., "thisBuilding": false, "notes": "..."}`.
