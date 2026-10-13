@@ -49,3 +49,6 @@ __pycache__/
 
 # TypeScript incremental build state
 *.tsbuildinfo
+
+# Generated A/B preview manifests (publish/preview scripts rewrite them)
+/public/compare/*.json
