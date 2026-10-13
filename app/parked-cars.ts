@@ -3,10 +3,11 @@ import {mergeGeometries,toCreasedNormals} from 'three/addons/utils/BufferGeometr
 
 // Parked cars along the kerbs. Where they stand comes with the world (areas/parking.py: the kerbs of the built road
 // surface on the streets OpenStreetMap marks for parking, clear of corners, crossings and the garage doors the
-// photographs show). Seven body types, each a side profile extruded across its width with rounded edges, the cabin
-// drawn in toward the roof, wheel arches cut over the wheels, glass standing proud of the body, a dark B-pillar,
-// grille, mirrors, lights and plates. Every car of one material is one BatchedMesh, so the whole lot is four draws,
-// each car culled on its own and painted its own colour. Nothing here is location specific.
+// photographs show). The cars are modelled (public/vehicle/parked/, see modelledCars below); when those files are
+// missing, seven simple body types are drawn instead, each a side profile extruded across its width with rounded edges,
+// the cabin drawn in toward the roof, wheel arches cut over the wheels, glass standing proud of the body, a dark
+// B-pillar, grille, mirrors, lights and plates. Either way every car of one material is one BatchedMesh, each car culled
+// on its own and painted its own colour. Nothing here is location specific.
 
 export type ParkedCar = {x: number; y: number; z: number; heading: number; pitch: number; type: string; paint: string};
 type Kind = {name: string; length: number; width: number; height: number};
@@ -132,10 +133,112 @@ function buildKind(k: Kind) {
 
 export type ParkedCars = {group: THREE.Group; materials: THREE.Material[]; reflective: THREE.MeshStandardMaterial[]; circles: number[]; count: number};
 
+// ---------------------------------------------------------------------------------------------------------------
+// Modelled cars (public/vehicle/parked/, baked by viewer-bench/bake from "Generic passenger car pack" by Comrade1280,
+// CC BY 4.0; see CREDITS.txt there). Ten unbranded cars, each in three levels of detail; one colour atlas whose paint is
+// neutral grey under a paint mask (the surface atlas's red channel; green roughness, blue metalness), so every parked
+// car takes its own paint and its trim, lamps and tyres keep theirs. All cars are two draws: opaque parts and glass.
+
+/** Which modelled cars stand in for each parking body type (parking.py's types). */
+const MODELS: Record<string, string[]> = {sedan: ['sedan'], hatch: ['hatchback', 'compact'], suv: ['suv', 'offroad'], wagon: ['wagon'], pickup: ['pickup'], van: ['minivan'], coupe: ['coupe']};
+/** Camera distances (m) out to which the full and the middle level of detail are drawn. */
+export const PARKED_LOD = {full: 40, middle: 140};
+
+type Kit = {geometry: Map<string, THREE.BufferGeometry>; colour: THREE.Texture; surface: THREE.Texture; paintGain: number};
+
+async function loadKit(base: string): Promise<Kit | null> {
+  try {
+    const [bin, colour, surface] = await Promise.all([
+      fetch(base + 'cars.bin.gz').then(async r => {
+        if (!r.ok) throw new Error('cars.bin.gz ' + r.status);
+        // a server may already have undone the gzip (Content-Encoding); decompress only what still starts with its magic
+        const raw = await r.arrayBuffer(), b = new Uint8Array(raw, 0, 2);
+        return b[0] === 0x1f && b[1] === 0x8b ? new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer() : raw;
+      }),
+      new THREE.TextureLoader().loadAsync(base + 'atlas-colour.webp'), new THREE.TextureLoader().loadAsync(base + 'atlas-surface.webp')]);
+    const n = new Uint32Array(bin, 0, 1)[0], head = JSON.parse(new TextDecoder().decode(new Uint8Array(bin, 4, n))), start = 4 + n + (4 - n % 4) % 4;
+    const geometry = new Map<string, THREE.BufferGeometry>();
+    for (const m of head.meshes as {name: string; count: number; lo: number[]; span: number[]; position: number; normal: number; uv: number; index: number; indexCount: number}[]) {
+      const P = new Int16Array(bin, start + m.position, m.count * 3), N = new Int8Array(bin, start + m.normal, m.count * 4), pos = new Float32Array(m.count * 3), nrm = new Float32Array(m.count * 3);
+      for (let i = 0; i < m.count; i++) for (let j = 0; j < 3; j++) { pos[i * 3 + j] = m.lo[j] + (P[i * 3 + j] + 32768) / 65535 * m.span[j]; nrm[i * 3 + j] = N[i * 4 + j] / 127; }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
+      if (m.uv >= 0) g.setAttribute('uv', new THREE.BufferAttribute(new Uint16Array(bin, start + m.uv, m.count * 2), 2, true));
+      else g.setAttribute('uv', new THREE.BufferAttribute(new Uint16Array(m.count * 2), 2, true));   // glass: one material, no texture
+      g.setIndex(new THREE.BufferAttribute(new Uint16Array(bin, start + m.index, m.indexCount), 1)); geometry.set(m.name, g);
+    }
+    for (const t of [colour, surface]) { t.flipY = false; t.anisotropy = 4; t.needsUpdate = true; }
+    colour.colorSpace = THREE.SRGBColorSpace;
+    return {geometry, colour, surface, paintGain: head.paintGain};
+  } catch (e) { console.warn('parked car models unavailable, drawing the simple bodies', e); return null; }
+}
+
+/** The paint mask, as a branch in three's colour and roughness chunks that only materials defining PARKED_PAINT take
+ *  (so it holds whatever onBeforeCompile patches other modules chain onto the material: cascades, occlusion). Under the
+ *  mask the grey atlas takes the car's own colour (its batch colour); trim, lamps and tyres keep theirs. The pack's maps
+ *  go to zero roughness on some trim, and a mirror there blooms into a blob: roughness is held at 0.2 or more. */
+function installPaintChunks() {
+  const c = THREE.ShaderChunk as unknown as Record<string, string>;
+  if (c.color_fragment.includes('PARKED_PAINT')) return;
+  c.color_fragment = `#if defined( PARKED_PAINT ) && defined( USE_COLOR ) && defined( USE_ROUGHNESSMAP )
+  { float paintMask = texture2D( roughnessMap, vRoughnessMapUv ).r; diffuseColor.rgb = mix( diffuseColor.rgb, diffuseColor.rgb * vColor * PARKED_PAINT, paintMask ); }
+#else
+${c.color_fragment}
+#endif`;
+  c.roughnessmap_fragment = `${c.roughnessmap_fragment}
+#ifdef PARKED_PAINT
+  roughnessFactor = max( roughnessFactor, .2 );
+#endif`;
+}
+
+function modelledCars(data: {types: Kind[]; cars: ParkedCar[]}, kit: Kit): ParkedCars {
+  const paint = new THREE.MeshPhysicalMaterial({map: kit.colour, roughnessMap: kit.surface, metalnessMap: kit.surface, roughness: 1, metalness: 1, clearcoat: 1, clearcoatMap: kit.surface, clearcoatRoughness: .14});
+  paint.userData.envIntensity = 1.25;
+  installPaintChunks(); const withDefines = paint as unknown as {defines?: Record<string, string>}; withDefines.defines = {...withDefines.defines, PARKED_PAINT: kit.paintGain.toFixed(3)};
+  const glassMat = new THREE.MeshStandardMaterial({color: '#0b1014', metalness: .1, roughness: .05}); glassMat.userData.envIntensity = 1.4;
+  const group = new THREE.Group(); group.name = 'parked_cars'; group.userData.layer = 'street_objects';
+  const models = [...new Set(Object.values(MODELS).flat())].filter(m => kit.geometry.has(`${m}__opaque__0`));
+  const make = (part: 'opaque' | 'glass', material: THREE.Material) => {
+    let verts = 0, index = 0; for (const m of models) for (let l = 0; l < 3; l++) { const g = kit.geometry.get(`${m}__${part}__${l}`)!; verts += g.attributes.position.count; index += g.index!.count; }
+    const mesh = new THREE.BatchedMesh(data.cars.length, verts, index, material); mesh.name = 'parked_cars__' + part; mesh.castShadow = true; mesh.receiveShadow = true; mesh.sortObjects = false;
+    const ids = new Map(models.map(m => [m, [0, 1, 2].map(l => mesh.addGeometry(kit.geometry.get(`${m}__${part}__${l}`)!))]));
+    group.add(mesh); return {mesh, ids};
+  };
+  const opaque = make('opaque', paint), glass = make('glass', glassMat);
+  const matrix = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(0, 0, 0, 'YZX'), one = new THREE.Vector3(1, 1, 1), at = new THREE.Vector3(), colour = new THREE.Color();
+  const circles: number[] = [], placed: {x: number; z: number; model: string; o: number; g: number; lod: number}[] = [];
+  data.cars.forEach((c, n) => {
+    const options = (MODELS[c.type] ?? MODELS.sedan).filter(m => models.includes(m)); if (!options.length) return;
+    // a stable pick among the stand-ins, from where the car stands
+    const model = options[Math.abs(Math.floor(c.x * 7.31 + c.y * 3.17 + n * .5)) % options.length];
+    e.set(0, c.heading, c.pitch); q.setFromEuler(e); at.set(c.x, c.z, -c.y); matrix.compose(at, q, one);
+    const o = opaque.mesh.addInstance(opaque.ids.get(model)![2]), g = glass.mesh.addInstance(glass.ids.get(model)![2]);
+    opaque.mesh.setMatrixAt(o, matrix); glass.mesh.setMatrixAt(g, matrix); opaque.mesh.setColorAt(o, colour.set(c.paint));
+    placed.push({x: c.x, z: -c.y, model, o, g, lod: 2});
+    const k = data.types.find(t => t.name === c.type)!, r = k.width / 2, ux = Math.cos(c.heading), uz = -Math.sin(c.heading);
+    for (const f of [-1, 0, 1]) { const d = f * (k.length / 2 - r); circles.push(c.x + ux * d, -c.y + uz * d, r); }
+  });
+  // levels of detail by distance from the viewing camera, refreshed when it has moved a metre (the shadow passes use
+  // orthographic cameras and leave them alone)
+  // (BatchedMesh draws its culled list from its own onBeforeRender, so that runs after this)
+  const last = new THREE.Vector3(Infinity, 0, 0), batchBefore = opaque.mesh.onBeforeRender.bind(opaque.mesh);
+  opaque.mesh.onBeforeRender = (renderer, scene, camera, geometry, material, group) => { updateLod(camera); batchBefore(renderer, scene, camera, geometry, material, group); };
+  const updateLod = (camera: THREE.Camera) => {
+    if (!(camera as THREE.PerspectiveCamera).isPerspectiveCamera || camera.position.distanceToSquared(last) < 1) return;
+    last.copy(camera.position); const full = PARKED_LOD.full ** 2, middle = PARKED_LOD.middle ** 2;
+    for (const p of placed) {
+      const d = (p.x - last.x) ** 2 + (p.z - last.z) ** 2, lod = d < full ? 0 : d < middle ? 1 : 2;
+      if (lod !== p.lod) { p.lod = lod; opaque.mesh.setGeometryIdAt(p.o, opaque.ids.get(p.model)![lod]); glass.mesh.setGeometryIdAt(p.g, glass.ids.get(p.model)![lod]); }
+    }
+  };
+  group.updateMatrixWorld(true); group.traverse(o => { o.matrixAutoUpdate = false; });
+  return {group, materials: [paint, glassMat], reflective: [paint, glassMat], circles, count: placed.length};
+}
+
 /** The parked cars of a world, or null when it has none. Coordinates are the world's (x east, y north, z up). */
-export async function loadParkedCars(url: string): Promise<ParkedCars | null> {
-  const data = await fetch(url, {cache: 'no-cache'}).then(r => r.ok ? r.json() as Promise<{types: Kind[]; cars: ParkedCar[]}> : null).catch(() => null);
+export async function loadParkedCars(url: string, models = '/vehicle/parked/'): Promise<ParkedCars | null> {
+  const [data, kit] = await Promise.all([fetch(url, {cache: 'no-cache'}).then(r => r.ok ? r.json() as Promise<{types: Kind[]; cars: ParkedCar[]}> : null).catch(() => null), models ? loadKit(models) : Promise.resolve(null)]);
   if (!data || !data.cars?.length) return null;
+  if (kit) return modelledCars(data, kit);
   const materials = {
     paint: new THREE.MeshPhysicalMaterial({color: '#ffffff', metalness: .5, roughness: .3, clearcoat: 1, clearcoatRoughness: .05}),
     glass: new THREE.MeshStandardMaterial({color: '#0d1317', metalness: .1, roughness: .06}),

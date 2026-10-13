@@ -177,11 +177,16 @@ class FinishPass extends Pass {
 }
 
 // key: the metered log2 luminance that keeps the base exposure (a sunlit street view)
+// Vibrance and extra saturation are off and the afternoon's warm/cool split is low: measured against 41 street
+// photographs from registered cameras (work/areas/ring/colour_check.py), vibrance .26 + saturation .06 + warm 1.35 rendered
+// walls 1.8x as saturated as the photographs (grey concrete with the right source colour at 2x); these values bring
+// shaded walls to the photographs' saturation (1.0x) and sunlit ones to 1.47x. ACES stays: a neutral tone map (Khronos)
+// raised sunlit walls to 2x, as did lowering the environment light; a neutral sun and lower contrast barely moved them.
 type Look = {contrast: number; vibrance: number; saturation: number; warm: number; vignette: number; bloom: number; threshold: number; key: number};
 const LOOKS: Record<string, Look> = {
- afternoon: {contrast: 1.12, vibrance: .26, saturation: .06, warm: 1.35, vignette: .2, bloom: .3, threshold: 1.1, key: -2.5},
- golden: {contrast: 1.08, vibrance: .2, saturation: .06, warm: 1.6, vignette: .24, bloom: .38, threshold: 1, key: -2.8},
- overcast: {contrast: 1.08, vibrance: .2, saturation: .04, warm: .35, vignette: .18, bloom: .18, threshold: 1.3, key: -2.6},
+ afternoon: {contrast: 1.12, vibrance: 0, saturation: 0, warm: .4, vignette: .2, bloom: .3, threshold: 1.1, key: -2.5},
+ golden: {contrast: 1.08, vibrance: 0, saturation: 0, warm: 1.6, vignette: .24, bloom: .38, threshold: 1, key: -2.8},
+ overcast: {contrast: 1.08, vibrance: 0, saturation: 0, warm: .35, vignette: .18, bloom: .18, threshold: 1.3, key: -2.6},
 };
 /** Adds the exposure, occlusion composite, bloom and grade passes after the scene and occlusion passes. `scene` is the
  *  scene pass's resolved texture (its alpha the indirect share of each pixel's light), `ao` the occlusion pass whose

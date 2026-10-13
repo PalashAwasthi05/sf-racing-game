@@ -20,6 +20,7 @@ import {buildFoliage,finishFoliage,barkMaterials} from './foliage';
 import {createGrade} from './grade';
 import {MultisampledRenderPass,buildDepthProxies,installDepthProxies,cullTransmission,cacheArrayUniforms} from './render-budget';
 import {attachCarLod} from './car-lod';
+import {roadSpots,spawnOnRoad,onRoad,type RoadSpots} from './car-spawn';
 import {buildSkyVisibility,occludeMaterials} from './occlusion';
 import {buildRoadField} from './roadfield';
 import {buildPavingField} from './paving';
@@ -292,10 +293,15 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
   driving=false;mode='car';controls.enabled=false;keys.clear();targetPosition=null;targetLook=null;highlight.visible=false;
   if(!car)return;car.group.visible=true;if(carPlaced){const [x,z,yaw0]=car.position();car.placeAt(x,z,yaw0);}else{resetCar();carPlaced=true;}
  }
+ // The car starts on the review route when that route runs on this world's roads and passes nearby (another area shares
+ // the pilot's origin, and a point or two of the pilot's route lands on its streets or in its park), otherwise on the nearest straight stretch of carriageway
+ // (car-spawn.ts), clear of parked cars and poles.
+ let roads:RoadSpots|null=null,routeHere=false,spawnClear:(x:number,z:number)=>boolean=()=>true;
  function resetCar(){
   if(!car)return;const anchor=car.group.visible&&mode==='car'?car.position():[camera.position.x,camera.position.z,0];
-  if(reviewRoute.length>1){const i=nearestRoutePoint(anchor[0],anchor[1]);const p=reviewRoute[i],q=reviewRoute[(i+1)%reviewRoute.length];car.placeAt(p[0],-p[1],routeHeading(p,q));}
-  else car.placeAt(anchor[0],anchor[1],anchor[2]);
+  if(reviewRoute.length>1){const i=nearestRoutePoint(anchor[0],anchor[1]);const p=reviewRoute[i],q=reviewRoute[(i+1)%reviewRoute.length];if(!roads||routeHere&&Math.hypot(p[0]-anchor[0],-p[1]-anchor[1])<60){car.placeAt(p[0],-p[1],routeHeading(p,q));return;}}
+  const spot=roads?spawnOnRoad(roads,anchor[0],anchor[1],spawnClear,anchor[2]):null;
+  if(spot)car.placeAt(spot[0],spot[1],spot[2]);else car.placeAt(anchor[0],anchor[1],anchor[2]);
  }
  camera.position.set(102,74,125);controls.target.set(1,12,0);controls.update();
  const target=[...data.buildings].sort((a,b)=>Math.hypot(a.center[0],a.center[1])-Math.hypot(b.center[0],b.center[1]))[0];if(target)highlightId(target.id);view('street');
@@ -325,6 +331,8 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // the car's surface and walls cover the world's context radius (a larger area than the pilot's 265 m)
  const reach=Math.max(275,(data.contextRadiusM??265)+10);
  const carGround=buildCarGround(objects,getLayer,groundAt,reach);
+ roads=roadSpots(objects,getLayer);{const r=roads;const on=reviewRoute.filter(p=>onRoad(r,p[0],-p[1])).length;routeHere=reviewRoute.length>1&&on>=.9*reviewRoute.length;}   // the route belongs to this world when nearly all of it runs on its roads
+{const near:number[]=[];spawnClear=(x,z)=>{const o=carGround.obstacles;for(const k of o.near(x,z,3,near))if(Math.hypot(o.x[k]-x,o.z[k]-z)<o.r[k]+1.4)return false;return true;};}
  // parked cars (three circles each along their length) and street poles are obstacles too
  if(parked||overhead){const o=carGround.obstacles,flat:number[]=[];for(let i=0;i<o.count;i++)flat.push(o.x[i],o.z[i],o.r[i]);carGround.obstacles=new Obstacles(flat.concat(parked?.circles??[],overhead?.circles??[]));carGround.stats.obstacles=carGround.obstacles.count;}
  const fieldStart=performance.now();field=buildDistanceField(objects,getLayer,reach,.25,carGround.blocked);carGround.stats.fieldMs=Math.round(performance.now()-fieldStart);const carSource=await roadster;car=carSource?createCar(scene,host,camera,groundAt,field,carSource,carGround):null;car?.group.traverse(o=>{if(!(o instanceof THREE.Mesh))return;atmosphere.setupMaterial(o.material);for(const m of Array.isArray(o.material)?o.material:[o.material]){if(m instanceof THREE.MeshStandardMaterial&&m.roughness<.5&&!reflectiveMaterials.includes(m)){m.userData.envIntensity=.7;reflectiveMaterials.push(m);}}});car?.stop();let carPlaced=false;
@@ -424,8 +432,9 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  }
  frame=requestAnimationFrame(animate);
  // Review hook: `pose` puts the orbit camera at metric ENU coordinates (as ?viewFrom/?viewAt do) without a reload,
- // `capture` renders one frame and returns it as a PNG blob; both are for same-pose A/B comparisons only.
- (window as unknown as {__view?:unknown}).__view={quality:(scale?:number,lock=true)=>{qualityLocked=lock;if(scale){renderScale=scale;applySize();}return {renderScale,maxScale,level,workMs:+workMs.toFixed(1),ao:ao.enabled,bloom:grade.bloom.enabled};},exposure:()=>grade.exposure.read(renderer),pose:(from:number[],at:number[])=>{grade.snap();mode='orbit';controls.enabled=true;targetPosition=null;targetLook=null;highlight.visible=false;camera.position.set(from[0],from[2],-from[1]);controls.target.set(at[0],at[2],-at[1]);controls.update();},
+ // `capture` renders one frame and returns it as a PNG blob; both are for same-pose A/B comparisons only. `pose` lifts
+ // the orbit's ground limit, which would otherwise raise a street-level camera looking up at a facade to its target's height.
+ (window as unknown as {__view?:unknown}).__view={quality:(scale?:number,lock=true)=>{qualityLocked=lock;if(scale){renderScale=scale;applySize();}return {renderScale,maxScale,level,workMs:+workMs.toFixed(1),ao:ao.enabled,bloom:grade.bloom.enabled};},exposure:()=>grade.exposure.read(renderer),pose:(from:number[],at:number[])=>{grade.snap();mode='orbit';controls.enabled=true;controls.maxPolarAngle=Math.PI*.98;targetPosition=null;targetLook=null;highlight.visible=false;camera.position.set(from[0],from[2],-from[1]);controls.target.set(at[0],at[2],-at[1]);controls.update();},
   capture:(w=1800,h=1125)=>new Promise<Blob|null>(resolve=>{qualityLocked=true;ao.enabled=true;grade.bloom.enabled=true;grade.snap();
    renderer.setPixelRatio(1);renderer.setSize(w,h,false);composer.setPixelRatio(1);composer.setSize(w,h);ao.setSize(Math.round(w*aoScale),Math.round(h*aoScale));camera.aspect=w/h;camera.updateProjectionMatrix();atmosphere.resize();
    // the animation loop may be throttled (hidden pane): place the shadow cascades and the reflection probe for this pose
