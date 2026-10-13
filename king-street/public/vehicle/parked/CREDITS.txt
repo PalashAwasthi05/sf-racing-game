@@ -1,0 +1,20 @@
+Parked car models
+=================
+
+cars.bin.gz, atlas-colour.webp, atlas-surface.webp
+  Original: "Generic passenger car pack" by Comrade1280
+  https://sketchfab.com/comrade1280
+  https://sketchfab.com/3d-models/generic-passenger-car-pack-20f9af9b8a404d5cb022ac6fe87f21f5
+  Licence: CC BY 4.0 - https://creativecommons.org/licenses/by/4.0/
+
+  Obtained as the meshopt-compressed copy with 512 px WebP textures redistributed (CC BY 4.0) in
+  https://github.com/zazochannel-art/Idle-Car-Empire (public/models/car-pack.glb, sha256
+  07c4a6801e968eb94d305e969ff6bb879bd4d8264c8ad09a596c46e721b392e8), whose credits note that two
+  textures of the Wagon body were missing and were replaced with plain grey.
+
+  Changes made here (work/viewer-bench/bake/bake.ts): each car taken out of the pack, turned to face
+  +x and set on the ground, scaled by 1.08; the sports car left out; textures packed into one colour
+  atlas whose paint is turned neutral grey under a paint mask, and one surface atlas (paint mask,
+  roughness, metalness); two simplified levels of detail added per car (meshoptimizer); geometry
+  quantised into a custom binary file. The viewer repaints each car in the colour its parking record
+  gives.

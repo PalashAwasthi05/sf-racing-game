@@ -1,0 +1,287 @@
+{
+  "schemaVersion": 1,
+  "annotationMethod": "Manual edge picks; source pixels excluded from deliverable",
+  "packets": [
+    {
+      "id": "loft-small-stack-boundaries",
+      "profileId": "deep-framed-loft",
+      "sourceIds": [
+        "188-broker",
+        "king-2025-c"
+      ],
+      "imageSize": [
+        1280,
+        853
+      ],
+      "quadPx": [
+        [
+          752,
+          0
+        ],
+        [
+          834,
+          0
+        ],
+        [
+          863,
+          728
+        ],
+        [
+          774,
+          728
+        ]
+      ],
+      "region": [
+        0.825,
+        0,
+        0.92,
+        0.89
+      ],
+      "planeStatus": "manually identified; top of photograph cropped; metric extent estimated",
+      "openings": [
+        {
+          "id": "small-stack-0",
+          "cornersPx": [
+            [
+              759,
+              80
+            ],
+            [
+              819,
+              80
+            ],
+            [
+              819,
+              119
+            ],
+            [
+              759,
+              119
+            ]
+          ],
+          "style": {
+            "kind": "window",
+            "frameMaterial": "silver",
+            "recessM": 0.18,
+            "mullionFractions": [
+              0.74
+            ],
+            "transomFractions": []
+          }
+        },
+        {
+          "id": "small-stack-1",
+          "cornersPx": [
+            [
+              760,
+              147
+            ],
+            [
+              821,
+              147
+            ],
+            [
+              821,
+              185
+            ],
+            [
+              760,
+              185
+            ]
+          ],
+          "style": {
+            "kind": "window",
+            "frameMaterial": "silver",
+            "recessM": 0.18,
+            "mullionFractions": [
+              0.74
+            ],
+            "transomFractions": []
+          }
+        },
+        {
+          "id": "small-stack-2",
+          "cornersPx": [
+            [
+              764,
+              218
+            ],
+            [
+              823,
+              218
+            ],
+            [
+              823,
+              253
+            ],
+            [
+              764,
+              253
+            ]
+          ],
+          "style": {
+            "kind": "window",
+            "frameMaterial": "silver",
+            "recessM": 0.18,
+            "mullionFractions": [
+              0.74
+            ],
+            "transomFractions": []
+          }
+        },
+        {
+          "id": "small-stack-3",
+          "cornersPx": [
+            [
+              767,
+              287
+            ],
+            [
+              826,
+              287
+            ],
+            [
+              826,
+              326
+            ],
+            [
+              767,
+              326
+            ]
+          ],
+          "style": {
+            "kind": "window",
+            "frameMaterial": "silver",
+            "recessM": 0.18,
+            "mullionFractions": [
+              0.74
+            ],
+            "transomFractions": []
+          }
+        },
+        {
+          "id": "small-stack-4",
+          "cornersPx": [
+            [
+              772,
+              357
+            ],
+            [
+              831,
+              357
+            ],
+            [
+              831,
+              397
+            ],
+            [
+              772,
+              397
+            ]
+          ],
+          "style": {
+            "kind": "window",
+            "frameMaterial": "silver",
+            "recessM": 0.18,
+            "mullionFractions": [
+              0.74
+            ],
+            "transomFractions": []
+          }
+        },
+        {
+          "id": "small-stack-5",
+          "cornersPx": [
+            [
+              775,
+              432
+            ],
+            [
+              834,
+              432
+            ],
+            [
+              834,
+              475
+            ],
+            [
+              775,
+              475
+            ]
+          ],
+          "style": {
+            "kind": "window",
+            "frameMaterial": "silver",
+            "recessM": 0.18,
+            "mullionFractions": [
+              0.74
+            ],
+            "transomFractions": []
+          }
+        },
+        {
+          "id": "small-stack-6",
+          "cornersPx": [
+            [
+              778,
+              508
+            ],
+            [
+              839,
+              508
+            ],
+            [
+              839,
+              557
+            ],
+            [
+              778,
+              557
+            ]
+          ],
+          "style": {
+            "kind": "window",
+            "frameMaterial": "silver",
+            "recessM": 0.18,
+            "mullionFractions": [
+              0.74
+            ],
+            "transomFractions": []
+          }
+        },
+        {
+          "id": "small-stack-7",
+          "cornersPx": [
+            [
+              783,
+              600
+            ],
+            [
+              847,
+              600
+            ],
+            [
+              847,
+              713
+            ],
+            [
+              783,
+              713
+            ]
+          ],
+          "style": {
+            "kind": "entry",
+            "frameMaterial": "silver",
+            "recessM": 0.18,
+            "mullionFractions": [
+              0.74
+            ],
+            "transomFractions": [
+              0.79
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

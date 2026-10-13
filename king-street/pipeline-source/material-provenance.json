@@ -1,0 +1,122 @@
+{
+  "retrieved_on": "2026-09-08",
+  "provider": "ambientCG",
+  "license": "CC0-1.0",
+  "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+  "provider_license_url": "https://docs.ambientcg.com/license/",
+  "material_count": 3,
+  "materials": [
+    {
+      "id": "Bricks085",
+      "role": "red_brick",
+      "source_url": "https://ambientcg.com/a/Bricks085",
+      "download_url": "https://ambientcg.com/get?file=Bricks085_1K-JPG.zip",
+      "creation_method": "Height field photogrammetry",
+      "tile_size_m": [
+        2.4,
+        1.2
+      ],
+      "tile_scale_provenance": "Official ambientCG metadata; approximate physical dimensions. dimensionX and dimensionY values are centimeters.",
+      "pixel_size": [
+        1024,
+        512
+      ],
+      "uv_repeats_per_meter": [
+        0.4166666666666667,
+        0.8333333333333334
+      ],
+      "maps": {
+        "color": {
+          "path": "Bricks085/Bricks085_1K-JPG_Color.jpg",
+          "bytes": 779839,
+          "sha256": "d0c822cdb5c001e66d087eeced710c652391f69ecada3c19dc9e236c15095a46"
+        },
+        "normal_gl": {
+          "path": "Bricks085/Bricks085_1K-JPG_NormalGL.jpg",
+          "bytes": 862377,
+          "sha256": "96a09057e96518eea5212b090fab7f983278f5bb429fae8fed4dc066d291995e"
+        },
+        "roughness": {
+          "path": "Bricks085/Bricks085_1K-JPG_Roughness.jpg",
+          "bytes": 271991,
+          "sha256": "987c5c169d5880db2820fb649aa6e9d88697cf544fb138c730cb1617845840b6"
+        }
+      }
+    },
+    {
+      "id": "Asphalt033",
+      "role": "rough_asphalt",
+      "source_url": "https://ambientcg.com/a/Asphalt033",
+      "download_url": "https://ambientcg.com/get?file=Asphalt033_1K-JPG.zip",
+      "creation_method": "Height field photogrammetry",
+      "tile_size_m": [
+        2.5,
+        2.5
+      ],
+      "tile_scale_provenance": "Official ambientCG metadata; approximate physical dimensions. dimensionX and dimensionY values are centimeters.",
+      "pixel_size": [
+        1024,
+        1024
+      ],
+      "uv_repeats_per_meter": [
+        0.4,
+        0.4
+      ],
+      "maps": {
+        "color": {
+          "path": "Asphalt033/Asphalt033_1K-JPG_Color.jpg",
+          "bytes": 1229353,
+          "sha256": "126edfd31019dcc0e108ce6966eb0c23f772f130a3abcc3be6daedc590cbb7f8"
+        },
+        "normal_gl": {
+          "path": "Asphalt033/Asphalt033_1K-JPG_NormalGL.jpg",
+          "bytes": 2213358,
+          "sha256": "34bf3e95a41a3856c291d2cb039dc75e5a72cc9499343248c6c7e9c1a91a9336"
+        },
+        "roughness": {
+          "path": "Asphalt033/Asphalt033_1K-JPG_Roughness.jpg",
+          "bytes": 715145,
+          "sha256": "ab1dee12de196e7f1462fd01ebb629e0ae68af9de08c26d38abd2d11dfe2022a"
+        }
+      }
+    },
+    {
+      "id": "Concrete034",
+      "role": "light_gray_concrete",
+      "source_url": "https://ambientcg.com/a/Concrete034",
+      "download_url": "https://ambientcg.com/get?file=Concrete034_1K-JPG.zip",
+      "creation_method": "Height field photogrammetry",
+      "tile_size_m": [
+        1.1,
+        0.55
+      ],
+      "tile_scale_provenance": "Official ambientCG metadata; approximate physical dimensions. dimensionX and dimensionY values are centimeters.",
+      "pixel_size": [
+        1024,
+        512
+      ],
+      "uv_repeats_per_meter": [
+        0.9090909090909091,
+        1.8181818181818181
+      ],
+      "maps": {
+        "color": {
+          "path": "Concrete034/Concrete034_1K-JPG_Color.jpg",
+          "bytes": 269501,
+          "sha256": "8ceb9186d990b31fce785e06fdc6974c160f1d27c43f6160266f164deba713aa"
+        },
+        "normal_gl": {
+          "path": "Concrete034/Concrete034_1K-JPG_NormalGL.jpg",
+          "bytes": 821681,
+          "sha256": "e509eb9dfa978e780fbebfd2acacc2ce158b5b7ced722ddc0759039dd51e18ca"
+        },
+        "roughness": {
+          "path": "Concrete034/Concrete034_1K-JPG_Roughness.jpg",
+          "bytes": 217708,
+          "sha256": "a4a9e39857a19afd23a778e5abf44fcdf6bd7f93918f1cf6878b41933e553511"
+        }
+      }
+    }
+  ],
+  "texture_total_bytes": 7380953
+}

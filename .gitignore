@@ -34,8 +34,8 @@
 *cache*/
 node_modules/
 
-# The viewer is its own repository
-/king-street/
+# The viewer (king-street/) has its own .gitignore; track it by default
+!/king-street/**
 
 # Binary data, even inside tracked folders
 *.glb

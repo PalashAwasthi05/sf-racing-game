@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 1,
+  "fits": [
+    {
+      "id": "loft-small-stack-boundaries",
+      "profileId": "deep-framed-loft",
+      "openings": [
+        {
+          "id": "small-stack-0",
+          "rect": [
+            0.8295743846723506,
+            0.7342731583208049,
+            0.898285254376823,
+            0.7848353690918746
+          ],
+          "style": {
+            "kind": "window",
+            "frameMaterial": "silver",
+            "recessM": 0.18,
+            "mullionFractions": [
+              0.74
+            ],
+            "transomFractions": []
+          },
+          "sourceIds": [
+            "188-broker",
+            "king-2025-c"
+          ],
+          "evidence": "observed-boundary",
+          "cornerResidualPx": [
+            0.5969617869119475,
+            0.7322688298170306,
+            0.7355864976102566,
+            0.5996664232608282
+          ]
+        },
+        {
+          "id": "small-stack-1",
+          "rect": [
+            0.8283919578156684,
+            0.6497375022544309,
+            0.897713659959373,
+            0.6982524495677234
+          ],
+          "style": {
+            "kind": "window",
+            "frameMaterial": "silver",
+            "recessM": 0.18,
+            "mullionFractions": [
+              0.74
+            ],
+            "transomFractions": []
+          },
+          "sourceIds": [
+            "188-broker",
+            "king-2025-c"
+          ],
+          "evidence": "observed-boundary",
+          "cornerResidualPx": [
+            0.579429751930661,
+            0.7124493777771477,
+            0.7155701934950685,
+            0.5819678880196761
+          ]
+        },
+        {
+          "id": "small-stack-2",
+          "rect": [
+            0.8305065960982908,
+            0.5639692843314298,
+            0.8970236639947922,
+            0.6079481232236777
+          ],
+          "style": {
+            "kind": "window",
+            "frameMaterial": "silver",
+            "recessM": 0.18,
+            "mullionFractions": [
+              0.74
+            ],
+            "transomFractions": []
+          },
+          "sourceIds": [
+            "188-broker",
+            "king-2025-c"
+          ],
+          "evidence": "observed-boundary",
+          "cornerResidualPx": [
+            0.5375241999772697,
+            0.6551076187222407,
+            0.6577292476559933,
+            0.5396752801279945
+          ]
+        },
+        {
+          "id": "small-stack-3",
+          "rect": [
+            0.8314181316822079,
+            0.473360869986124,
+            0.8974006819099458,
+            0.5215813953488371
+          ],
+          "style": {
+            "kind": "window",
+            "frameMaterial": "silver",
+            "recessM": 0.18,
+            "mullionFractions": [
+              0.74
+            ],
+            "transomFractions": []
+          },
+          "sourceIds": [
+            "188-broker",
+            "king-2025-c"
+          ],
+          "evidence": "observed-boundary",
+          "cornerResidualPx": [
+            0.6006244151149076,
+            0.7305656845978774,
+            0.7337979094077127,
+            0.6032817437808262
+          ]
+        },
+        {
+          "id": "small-stack-4",
+          "rect": [
+            0.834551084992241,
+            0.3866567426970788,
+            0.9000112692009836,
+            0.4353337084974676
+          ],
+          "style": {
+            "kind": "window",
+            "frameMaterial": "silver",
+            "recessM": 0.18,
+            "mullionFractions": [
+              0.74
+            ],
+            "transomFractions": []
+          },
+          "sourceIds": [
+            "188-broker",
+            "king-2025-c"
+          ],
+          "evidence": "observed-boundary",
+          "cornerResidualPx": [
+            0.6223289315727243,
+            0.7545418167267144,
+            0.7579387410564777,
+            0.6251306375111199
+          ]
+        },
+        {
+          "id": "small-stack-5",
+          "rect": [
+            0.8352269943819746,
+            0.2929807524475968,
+            0.9001296654658196,
+            0.34442091836734695
+          ],
+          "style": {
+            "kind": "window",
+            "frameMaterial": "silver",
+            "recessM": 0.18,
+            "mullionFractions": [
+              0.74
+            ],
+            "transomFractions": []
+          },
+          "sourceIds": [
+            "188-broker",
+            "king-2025-c"
+          ],
+          "evidence": "observed-boundary",
+          "cornerResidualPx": [
+            0.6703717808348983,
+            0.8112692594532973,
+            0.8151626275509898,
+            0.6735889668367463
+          ]
+        },
+        {
+          "id": "small-stack-6",
+          "rect": [
+            0.8358063804743807,
+            0.19623523861938827,
+            0.9023241672128304,
+            0.2538354518434199
+          ],
+          "style": {
+            "kind": "window",
+            "frameMaterial": "silver",
+            "recessM": 0.18,
+            "mullionFractions": [
+              0.74
+            ],
+            "transomFractions": []
+          },
+          "sourceIds": [
+            "188-broker",
+            "king-2025-c"
+          ],
+          "evidence": "observed-boundary",
+          "cornerResidualPx": [
+            0.7651073197580445,
+            0.929609246009818,
+            0.9346502877378953,
+            0.7692563081008075
+          ]
+        },
+        {
+          "id": "small-stack-7",
+          "rect": [
+            0.8370176175461078,
+            0.016923029356748713,
+            0.9058666490456904,
+            0.14619757105296105
+          ],
+          "style": {
+            "kind": "entry",
+            "frameMaterial": "silver",
+            "recessM": 0.18,
+            "mullionFractions": [
+              0.74
+            ],
+            "transomFractions": [
+              0.79
+            ]
+          },
+          "sourceIds": [
+            "188-broker",
+            "king-2025-c"
+          ],
+          "evidence": "observed-boundary",
+          "cornerResidualPx": [
+            1.7652155765454154,
+            2.1565152194411894,
+            2.183211781645241,
+            1.787068048078254
+          ]
+        }
+      ],
+      "method": "four-corner plane rectification, opposing-edge fit; no repetition completion",
+      "inputSha256": "98581d4cd40cc6e4d1d2e6f1e4a33485738e256145a7b4475d58f728f9e1dbbd",
+      "meanCornerResidualPx": 0.854161668658346,
+      "independentValidation": false
+    }
+  ]
+}

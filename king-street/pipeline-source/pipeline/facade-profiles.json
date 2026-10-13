@@ -1,0 +1,986 @@
+{
+  "schemaVersion": 1,
+  "description": "Reusable grammar data derived from observations; manually annotated grammar parameters are distinct from numerical image fits. Do not transfer a profile to an unseen facade silently.",
+  "profiles": [
+    {
+      "id": "deep-framed-loft",
+      "match": {
+        "osmWayId": "149167949"
+      },
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "sourceIds": [
+        "king-2025-c",
+        "king-2025-b",
+        "loft-architecture-report",
+        "188-broker"
+      ],
+      "material": "brick",
+      "panels": [
+        {
+          "rect": [
+            0,
+            0.845,
+            0.82,
+            1
+          ],
+          "material": "charcoal"
+        }
+      ],
+      "groups": [
+        {
+          "region": [
+            0,
+            0,
+            0.82,
+            0.13
+          ],
+          "columns": 5,
+          "rows": 1,
+          "style": {
+            "kind": "shopfront",
+            "openingRatio": 0.71,
+            "openingHeightRatio": 0.94,
+            "frameMaterial": "silver",
+            "recessM": 0.6,
+            "canopy": true,
+            "mullionFractions": [
+              0.5
+            ],
+            "transomFractions": [
+              0.8
+            ]
+          },
+          "omit": [
+            [
+              3,
+              0
+            ],
+            [
+              4,
+              0
+            ]
+          ]
+        },
+        {
+          "region": [
+            0,
+            0.13,
+            0.82,
+            0.3
+          ],
+          "columns": 5,
+          "rows": 1,
+          "style": {
+            "openingRatio": 0.74,
+            "openingHeightRatio": 0.92,
+            "frameMaterial": "silver",
+            "mullionFractions": [
+              0.25,
+              0.64
+            ],
+            "transomFractions": [
+              0.79
+            ]
+          }
+        },
+        {
+          "fitId": "loft-projecting-frame-bank",
+          "region": [
+            0,
+            0.31,
+            0.82,
+            0.84
+          ]
+        },
+        {
+          "region": [
+            0,
+            0.87,
+            0.82,
+            1
+          ],
+          "columns": 10,
+          "rows": 1,
+          "style": {
+            "openingRatio": 0.96,
+            "openingHeightRatio": 0.93,
+            "frameMaterial": "silver",
+            "recessM": 1.8,
+            "mullionFractions": [],
+            "transomFractions": [
+              0.28
+            ]
+          }
+        },
+        {
+          "region": [
+            0.928,
+            0.13,
+            1,
+            0.93
+          ],
+          "columns": 1,
+          "rows": 8,
+          "style": {
+            "openingRatio": 0.95,
+            "openingHeightRatio": 0.86,
+            "frameMaterial": "silver",
+            "mullionFractions": [
+              0.48
+            ],
+            "transomFractions": [
+              0.77
+            ]
+          }
+        }
+      ],
+      "bands": [
+        {
+          "height": 0.848,
+          "thicknessM": 0.18,
+          "depthM": 0.7,
+          "material": "silver"
+        },
+        {
+          "height": 1,
+          "thicknessM": 0.17,
+          "depthM": 0.5,
+          "material": "silver"
+        }
+      ],
+      "unresolved": [
+        "Main-bank facade width and absolute region heights are image estimates; not survey dimensions.",
+        "Seven small-window boundaries and the narrow entry are rectified from an undated broker photograph, checked for topology against Jan2025 street view.",
+        "Penthouse and far-right glazing repeats remain estimates.",
+        "Ground retail window films/artwork remain unresolved; historical TOTO campaign text excluded.",
+        "No independent street-photo accuracy evaluation has passed."
+      ],
+      "openings": [
+        {
+          "rect": [
+            0.507,
+            0.006,
+            0.641,
+            0.12
+          ],
+          "style": {
+            "kind": "rollup"
+          },
+          "sourceIds": [
+            "king-2025-c"
+          ],
+          "id": "garage"
+        },
+        {
+          "rect": [
+            0.676,
+            0.005,
+            0.797,
+            0.128
+          ],
+          "style": {
+            "kind": "entry",
+            "recessM": 0.65,
+            "canopy": true,
+            "frameMaterial": "silver",
+            "mullionFractions": [
+              0.5
+            ],
+            "transomFractions": [
+              0.82
+            ]
+          },
+          "sourceIds": [
+            "king-2025-c"
+          ],
+          "id": "residential-entry"
+        }
+      ],
+      "surfaceEvidence": [
+        {
+          "rect": [
+            0.817,
+            0.13,
+            0.829,
+            0.84
+          ],
+          "label": "solid",
+          "sourceIds": [
+            "king-2025-c"
+          ],
+          "confidence": "visual",
+          "boundaryStatus": "image-estimated",
+          "note": "Brick boundary between broad loft bank and independent small-window stack"
+        },
+        {
+          "rect": [
+            0.821,
+            0.84,
+            0.922,
+            1
+          ],
+          "label": "unknown",
+          "sourceIds": [
+            "188-broker"
+          ],
+          "confidence": "visual",
+          "boundaryStatus": "image-estimated",
+          "note": "Upper strip beyond photo coverage; classification is unresolved"
+        }
+      ],
+      "materialEvidence": {
+        "family": "brick",
+        "finish": "default",
+        "sourceIds": [
+          "king-2025-c",
+          "king-2025-b",
+          "loft-architecture-report",
+          "188-broker"
+        ],
+        "status": "visually observed family; appearance parameters estimated"
+      }
+    },
+    {
+      "id": "brick-and-projecting-window-strips",
+      "match": {
+        "osmWayId": "149167937"
+      },
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "sourceIds": [
+        "king-2025-a",
+        "king-2025-d"
+      ],
+      "material": "brick",
+      "groups": [
+        {
+          "region": [
+            0,
+            0,
+            1,
+            0.13
+          ],
+          "columns": 5,
+          "rows": 1,
+          "style": {
+            "kind": "entry",
+            "openingRatio": 0.68,
+            "openingHeightRatio": 0.94,
+            "frameMaterial": "silver",
+            "recessM": 0.4,
+            "mullionFractions": [
+              0.18,
+              0.82
+            ],
+            "transomFractions": [
+              0.76
+            ]
+          },
+          "omit": [
+            [
+              2,
+              0
+            ]
+          ]
+        },
+        {
+          "region": [
+            0,
+            0.13,
+            1,
+            0.23
+          ],
+          "columns": 5,
+          "rows": 1,
+          "style": {
+            "openingRatio": 0.71,
+            "openingHeightRatio": 0.86,
+            "frameMaterial": "silver",
+            "mullionFractions": [
+              0.2,
+              0.8
+            ],
+            "transomFractions": [
+              0.85
+            ]
+          }
+        },
+        {
+          "region": [
+            0,
+            0.265,
+            1,
+            0.955
+          ],
+          "columns": 5,
+          "rows": 8,
+          "style": {
+            "kind": "window",
+            "openingRatio": 0.7,
+            "openingHeightRatio": 0.94,
+            "frameMaterial": "silver",
+            "mullionFractions": [
+              0.24,
+              0.8
+            ],
+            "transomFractions": [
+              0.86
+            ]
+          }
+        },
+        {
+          "region": [
+            0,
+            0.965,
+            1,
+            1
+          ],
+          "columns": 7,
+          "rows": 1,
+          "style": {
+            "openingRatio": 0.84,
+            "openingHeightRatio": 0.92,
+            "frameMaterial": "silver",
+            "mullionFractions": [],
+            "transomFractions": []
+          }
+        }
+      ],
+      "panels": [
+        {
+          "rect": [
+            0.225,
+            0.265,
+            0.375,
+            0.955
+          ],
+          "material": "silver"
+        },
+        {
+          "rect": [
+            0.625,
+            0.265,
+            0.775,
+            0.955
+          ],
+          "material": "silver"
+        }
+      ],
+      "openings": [
+        {
+          "rect": [
+            0.45,
+            0.005,
+            0.55,
+            0.126
+          ],
+          "style": {
+            "kind": "entry",
+            "canopy": true,
+            "canopyDepthM": 2.1,
+            "frameMaterial": "silver",
+            "mullionFractions": [
+              0.5
+            ]
+          }
+        }
+      ],
+      "bands": [
+        {
+          "height": 0.125,
+          "thicknessM": 0.65,
+          "depthM": 0.3,
+          "material": "stone"
+        },
+        {
+          "height": 0.245,
+          "thicknessM": 0.45,
+          "depthM": 0.48,
+          "material": "stone"
+        }
+      ],
+      "unresolved": [
+        "Palm-occluded window strips completed from adjacent visible repeats",
+        "Eight upper rows and five bays are visual grammar estimates, not numerical landmark fits",
+        "Figurative sculptural frieze not reconstructed; continuous base band only",
+        "No material scan tied to this exact building"
+      ],
+      "surfaceEvidence": [
+        {
+          "rect": [
+            0,
+            0.235,
+            1,
+            0.256
+          ],
+          "label": "solid",
+          "sourceIds": [
+            "king-2025-a"
+          ],
+          "confidence": "visual",
+          "boundaryStatus": "image-estimated",
+          "note": "Opaque sculptural belt; no window row"
+        }
+      ],
+      "materialEvidence": {
+        "family": "brick",
+        "finish": "default",
+        "sourceIds": [
+          "king-2025-a",
+          "king-2025-d"
+        ],
+        "status": "visually observed family; appearance parameters estimated"
+      }
+    },
+    {
+      "id": "brick-hotel-third",
+      "match": {
+        "osmWayId": "573287814"
+      },
+      "normal": [
+        -0.707,
+        -0.707
+      ],
+      "sourceIds": [
+        "hyatt-dusk"
+      ],
+      "material": "brick",
+      "groups": [
+        {
+          "region": [
+            0,
+            0,
+            1,
+            0.095
+          ],
+          "columns": 9,
+          "rows": 1,
+          "style": {
+            "kind": "shopfront",
+            "openingRatio": 0.74,
+            "openingHeightRatio": 0.93,
+            "frameMaterial": "charcoal",
+            "mullionFractions": [
+              0.5
+            ],
+            "transomFractions": [
+              0.77
+            ]
+          }
+        },
+        {
+          "fitId": "hotel-bay-bank"
+        },
+        {
+          "region": [
+            0,
+            0.125,
+            1,
+            0.79
+          ],
+          "columns": 4,
+          "rows": 9,
+          "style": {
+            "openingRatio": 0.3,
+            "openingHeightRatio": 0.58,
+            "frameMaterial": "charcoal",
+            "mullionFractions": [
+              0.4
+            ],
+            "transomFractions": []
+          },
+          "xCenters": [
+            0.117,
+            0.37,
+            0.622,
+            0.91
+          ],
+          "spacingX": 0.13
+        },
+        {
+          "region": [
+            0,
+            0.805,
+            1,
+            1
+          ],
+          "columns": 14,
+          "rows": 3,
+          "style": {
+            "openingRatio": 0.95,
+            "openingHeightRatio": 0.92,
+            "frameMaterial": "silver",
+            "mullionFractions": [],
+            "transomFractions": [
+              0.32,
+              0.82
+            ]
+          }
+        },
+        {
+          "region": [
+            0,
+            0.1,
+            0.095,
+            0.8
+          ],
+          "columns": 1,
+          "rows": 10,
+          "style": {
+            "openingRatio": 0.97,
+            "openingHeightRatio": 0.96,
+            "frameMaterial": "silver",
+            "mullionFractions": [
+              0.5
+            ],
+            "transomFractions": [
+              0.28,
+              0.8
+            ]
+          }
+        }
+      ],
+      "panels": [
+        {
+          "rect": [
+            0,
+            0.79,
+            1,
+            1
+          ],
+          "material": "silver"
+        },
+        {
+          "rect": [
+            0,
+            0.1,
+            0.095,
+            0.8
+          ],
+          "material": "silver"
+        }
+      ],
+      "bands": [
+        {
+          "height": 0.1,
+          "thicknessM": 0.13,
+          "material": "stone"
+        },
+        {
+          "height": 0.79,
+          "thicknessM": 0.17,
+          "material": "stone"
+        },
+        {
+          "height": 0.858,
+          "thicknessM": 0.045,
+          "depthM": 0.45,
+          "material": "silver"
+        },
+        {
+          "height": 0.925,
+          "thicknessM": 0.045,
+          "depthM": 0.45,
+          "material": "silver"
+        }
+      ],
+      "unresolved": [
+        "Unknown capture date",
+        "Depth estimated from oblique imagery",
+        "Townsend pattern transferred from same photographed building; not independently fitted",
+        "Entrance portal and lower wing silhouette need further fitting"
+      ],
+      "surfaceEvidence": [
+        {
+          "rect": [
+            0.096,
+            0.105,
+            0.985,
+            0.121
+          ],
+          "label": "solid",
+          "sourceIds": [
+            "hyatt-dusk"
+          ],
+          "confidence": "visual",
+          "boundaryStatus": "image-estimated",
+          "note": "Opaque floor spandrel above shopfronts"
+        }
+      ],
+      "materialEvidence": {
+        "family": "brick",
+        "finish": "dark",
+        "sourceIds": [
+          "hyatt-dusk"
+        ],
+        "status": "visually observed family; appearance parameters estimated"
+      }
+    },
+    {
+      "id": "brick-hotel-townsend",
+      "match": {
+        "osmWayId": "573287814"
+      },
+      "normal": [
+        -0.707,
+        0.707
+      ],
+      "sourceIds": [
+        "hyatt-dusk"
+      ],
+      "material": "brick",
+      "groups": [
+        {
+          "region": [
+            0,
+            0,
+            1,
+            0.095
+          ],
+          "columns": 9,
+          "rows": 1,
+          "style": {
+            "kind": "shopfront",
+            "openingRatio": 0.74,
+            "openingHeightRatio": 0.93,
+            "frameMaterial": "charcoal",
+            "mullionFractions": [
+              0.5
+            ],
+            "transomFractions": [
+              0.77
+            ]
+          }
+        },
+        {
+          "region": [
+            0.16,
+            0.17,
+            0.86,
+            0.75
+          ],
+          "columns": 3,
+          "rows": 7,
+          "style": {
+            "kind": "projected_bay",
+            "material": "panel_dark",
+            "frameMaterial": "charcoal",
+            "openingRatio": 0.74,
+            "openingHeightRatio": 0.66,
+            "projectionM": 0.5,
+            "recessM": 0.13,
+            "mullionFractions": [
+              0.22,
+              0.78
+            ],
+            "transomFractions": [
+              0.7
+            ]
+          }
+        },
+        {
+          "region": [
+            0,
+            0.125,
+            1,
+            0.79
+          ],
+          "columns": 4,
+          "rows": 9,
+          "style": {
+            "openingRatio": 0.3,
+            "openingHeightRatio": 0.58,
+            "frameMaterial": "charcoal",
+            "mullionFractions": [
+              0.4
+            ],
+            "transomFractions": []
+          },
+          "xCenters": [
+            0.13,
+            0.393,
+            0.627,
+            0.914
+          ],
+          "spacingX": 0.13
+        },
+        {
+          "region": [
+            0,
+            0.805,
+            1,
+            1
+          ],
+          "columns": 14,
+          "rows": 3,
+          "style": {
+            "openingRatio": 0.95,
+            "openingHeightRatio": 0.92,
+            "frameMaterial": "silver",
+            "mullionFractions": [],
+            "transomFractions": [
+              0.32,
+              0.82
+            ]
+          }
+        },
+        {
+          "region": [
+            0,
+            0.1,
+            0.095,
+            0.8
+          ],
+          "columns": 1,
+          "rows": 10,
+          "style": {
+            "openingRatio": 0.97,
+            "openingHeightRatio": 0.96,
+            "frameMaterial": "silver",
+            "mullionFractions": [
+              0.5
+            ],
+            "transomFractions": [
+              0.28,
+              0.8
+            ]
+          }
+        }
+      ],
+      "panels": [
+        {
+          "rect": [
+            0,
+            0.79,
+            1,
+            1
+          ],
+          "material": "silver"
+        },
+        {
+          "rect": [
+            0,
+            0.1,
+            0.095,
+            0.8
+          ],
+          "material": "silver"
+        }
+      ],
+      "bands": [
+        {
+          "height": 0.1,
+          "thicknessM": 0.13,
+          "material": "stone"
+        },
+        {
+          "height": 0.79,
+          "thicknessM": 0.17,
+          "material": "stone"
+        },
+        {
+          "height": 0.858,
+          "thicknessM": 0.045,
+          "depthM": 0.45,
+          "material": "silver"
+        },
+        {
+          "height": 0.925,
+          "thicknessM": 0.045,
+          "depthM": 0.45,
+          "material": "silver"
+        }
+      ],
+      "unresolved": [
+        "Unknown capture date",
+        "Depth estimated from oblique imagery",
+        "Townsend pattern transferred from same photographed building; not independently fitted",
+        "Entrance portal and lower wing silhouette need further fitting"
+      ],
+      "surfaceEvidence": [
+        {
+          "rect": [
+            0.096,
+            0.105,
+            0.985,
+            0.121
+          ],
+          "label": "solid",
+          "sourceIds": [
+            "hyatt-dusk"
+          ],
+          "confidence": "visual",
+          "boundaryStatus": "image-estimated",
+          "note": "Opaque floor spandrel above shopfronts"
+        }
+      ],
+      "materialEvidence": {
+        "family": "brick",
+        "finish": "dark",
+        "sourceIds": [
+          "hyatt-dusk"
+        ],
+        "status": "visually observed family; appearance parameters estimated"
+      }
+    },
+    {
+      "id": "terracotta-hotel-with-shades",
+      "match": {
+        "osmWayId": "148547438"
+      },
+      "normal": [
+        0.707,
+        -0.707
+      ],
+      "sourceIds": [
+        "via-engineer"
+      ],
+      "material": "terracotta",
+      "panels": [
+        {
+          "rect": [
+            0.26,
+            0.095,
+            0.59,
+            0.94
+          ],
+          "material": "stucco"
+        },
+        {
+          "rect": [
+            0.66,
+            0.095,
+            0.95,
+            0.94
+          ],
+          "material": "stucco"
+        }
+      ],
+      "groups": [
+        {
+          "region": [
+            0,
+            0,
+            1,
+            0.09
+          ],
+          "columns": 5,
+          "rows": 1,
+          "style": {
+            "kind": "shopfront",
+            "openingRatio": 0.9,
+            "openingHeightRatio": 0.96,
+            "mullionFractions": [
+              0.5
+            ],
+            "transomFractions": [
+              0.75
+            ],
+            "recessM": 0.25
+          }
+        },
+        {
+          "region": [
+            0,
+            0.11,
+            0.22,
+            0.94
+          ],
+          "columns": 1,
+          "rows": 10,
+          "style": {
+            "openingRatio": 0.92,
+            "openingHeightRatio": 0.75,
+            "frameMaterial": "charcoal",
+            "mullionFractions": [
+              0.67
+            ],
+            "transomFractions": [],
+            "shade": true
+          }
+        },
+        {
+          "region": [
+            0.27,
+            0.11,
+            0.58,
+            0.94
+          ],
+          "columns": 2,
+          "rows": 10,
+          "style": {
+            "openingRatio": 0.78,
+            "openingHeightRatio": 0.63,
+            "frameMaterial": "charcoal",
+            "mullionFractions": [],
+            "transomFractions": [],
+            "shade": true
+          }
+        },
+        {
+          "region": [
+            0.66,
+            0.11,
+            0.94,
+            0.94
+          ],
+          "columns": 2,
+          "rows": 10,
+          "style": {
+            "openingRatio": 0.78,
+            "openingHeightRatio": 0.63,
+            "frameMaterial": "charcoal",
+            "mullionFractions": [],
+            "transomFractions": [],
+            "shade": true
+          }
+        },
+        {
+          "region": [
+            0,
+            0.955,
+            1,
+            1
+          ],
+          "columns": 6,
+          "rows": 1,
+          "style": {
+            "openingRatio": 0.9,
+            "openingHeightRatio": 0.92,
+            "frameMaterial": "charcoal",
+            "mullionFractions": [],
+            "transomFractions": []
+          }
+        }
+      ],
+      "bands": [
+        {
+          "height": 0.97,
+          "thicknessM": 0.25,
+          "depthM": 1.7,
+          "material": "charcoal",
+          "projectionM": 0.6
+        }
+      ],
+      "unresolved": [
+        "Historical construction photograph establishes upper facade only",
+        "Ten repeated rows are visual count estimate",
+        "Ground storefront pattern inferred from completed alley entry photograph; frontage details unresolved",
+        "Exact tile size and shade depth inferred"
+      ],
+      "materialEvidence": {
+        "family": "terracotta",
+        "finish": "default",
+        "sourceIds": [
+          "via-engineer"
+        ],
+        "status": "visually observed family; appearance parameters estimated"
+      }
+    }
+  ]
+}

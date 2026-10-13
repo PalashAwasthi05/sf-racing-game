@@ -1,0 +1,482 @@
+{
+ "schema": "surface-material-observations/v1",
+ "observations": [
+  {
+   "sourceMaterialFingerprint": "b63870740488c6ef4e5828a034997ab186f7e92c38d9d35a0065aba08dbb6aae",
+   "sourceMaterialName": "brick_modular",
+   "sourceRepeatM": [
+    1.8,
+    0.6
+   ],
+   "surface": {
+    "substrate_family": "brick",
+    "pattern": "brick_running",
+    "finish_class": "matte",
+    "tile_size_m": [
+     1.8,
+     0.6
+    ],
+    "color_rgb": [
+     145,
+     70,
+     49
+    ],
+    "roughness": 0.82,
+    "metallic": 0,
+    "relief_m": 0.0018,
+    "strong_weathering": false,
+    "unit_size_m": [
+     0.225,
+     0.075
+    ],
+    "joint_width_m": 0.006,
+    "joint_rgb": [
+     139,
+     128,
+     108
+    ]
+   },
+   "provenance": "inherited generic material recipe; structure, color and scale not verified against street photographs",
+   "scanCandidate": {
+    "color": "work/material-assets/Bricks085/Bricks085_1K-JPG_Color.jpg",
+    "normal": "work/material-assets/Bricks085/Bricks085_1K-JPG_NormalGL.jpg",
+    "roughness": "work/material-assets/Bricks085/Bricks085_1K-JPG_Roughness.jpg",
+    "tile_size_m": [
+     2.4,
+     1.2
+    ],
+    "license": "CC0-1.0",
+    "source_url": "https://ambientcg.com/a/Bricks085"
+   }
+  },
+  {
+   "sourceMaterialFingerprint": "34587c99a1a1e38b6480cbc5d02e370bf84bea0aaf3b6bb1a49dd5c685e16c01",
+   "sourceMaterialName": "brick_dark",
+   "sourceRepeatM": [
+    1.8,
+    0.6
+   ],
+   "surface": {
+    "substrate_family": "brick",
+    "pattern": "brick_running",
+    "finish_class": "matte",
+    "tile_size_m": [
+     1.8,
+     0.6
+    ],
+    "color_rgb": [
+     112,
+     65,
+     48
+    ],
+    "roughness": 0.85,
+    "metallic": 0,
+    "relief_m": 0.0018,
+    "strong_weathering": false,
+    "unit_size_m": [
+     0.225,
+     0.075
+    ],
+    "joint_width_m": 0.006,
+    "joint_rgb": [
+     120,
+     112,
+     98
+    ]
+   },
+   "provenance": "inherited generic material recipe; structure, color and scale not verified against street photographs",
+   "scanCandidate": {
+    "color": "work/material-assets/Bricks085/Bricks085_1K-JPG_Color.jpg",
+    "normal": "work/material-assets/Bricks085/Bricks085_1K-JPG_NormalGL.jpg",
+    "roughness": "work/material-assets/Bricks085/Bricks085_1K-JPG_Roughness.jpg",
+    "tile_size_m": [
+     2.4,
+     1.2
+    ],
+    "license": "CC0-1.0",
+    "source_url": "https://ambientcg.com/a/Bricks085"
+   }
+  },
+  {
+   "sourceMaterialFingerprint": "3f2a0fd611f14b2437240ba4f346d8835bc87fe4c317519e54c247ac8bdca09d",
+   "sourceMaterialName": "stone",
+   "sourceRepeatM": [
+    2.4,
+    1.2
+   ],
+   "surface": {
+    "substrate_family": "stone",
+    "pattern": "stone_grain",
+    "finish_class": "matte",
+    "tile_size_m": [
+     2.4,
+     1.2
+    ],
+    "color_rgb": [
+     199,
+     193,
+     177
+    ],
+    "roughness": 0.8,
+    "metallic": 0,
+    "relief_m": 0,
+    "strong_weathering": false
+   },
+   "provenance": "inherited generic material recipe; structure, color and scale not verified against street photographs"
+  },
+  {
+   "sourceMaterialFingerprint": "3f2a0fd611f14b2437240ba4f346d8835bc87fe4c317519e54c247ac8bdca09d",
+   "sourceMaterialName": "limestone",
+   "sourceRepeatM": [
+    2.4,
+    1.2
+   ],
+   "surface": {
+    "substrate_family": "stone",
+    "pattern": "stone_grain",
+    "finish_class": "matte",
+    "tile_size_m": [
+     2.4,
+     1.2
+    ],
+    "color_rgb": [
+     199,
+     193,
+     177
+    ],
+    "roughness": 0.8,
+    "metallic": 0,
+    "relief_m": 0,
+    "strong_weathering": false
+   },
+   "provenance": "inherited generic material recipe; structure, color and scale not verified against street photographs"
+  },
+  {
+   "sourceMaterialFingerprint": "0d516ce102e5c81fae78ef45c13ff247b59711a2f272426787f728744a17bc9f",
+   "sourceMaterialName": "timber_tan",
+   "sourceRepeatM": [
+    2.4,
+    1.2
+   ],
+   "surface": {
+    "substrate_family": "wood",
+    "pattern": "timber_boards",
+    "finish_class": "matte",
+    "tile_size_m": [
+     2.4,
+     1.2
+    ],
+    "color_rgb": [
+     151,
+     128,
+     96
+    ],
+    "roughness": 0.85,
+    "metallic": 0,
+    "relief_m": 0.001,
+    "strong_weathering": false,
+    "unit_size_m": [
+     0.1,
+     1.2
+    ],
+    "joint_width_m": 0.003,
+    "joint_rgb": [
+     94,
+     78,
+     56
+    ],
+    "grain_direction": "vertical"
+   },
+   "provenance": "inherited generic material recipe; structure, color and scale not verified against street photographs"
+  },
+  {
+   "sourceMaterialFingerprint": "a2d6d1aeb2ef68e7e5fa1db7258eb2f82ceecbaa66ad575f8b0d1aea39d8d0e9",
+   "sourceMaterialName": "timber_dark",
+   "sourceRepeatM": [
+    2.4,
+    1.2
+   ],
+   "surface": {
+    "substrate_family": "wood",
+    "pattern": "timber_boards",
+    "finish_class": "matte",
+    "tile_size_m": [
+     2.4,
+     1.2
+    ],
+    "color_rgb": [
+     60,
+     69,
+     75
+    ],
+    "roughness": 0.84,
+    "metallic": 0,
+    "relief_m": 0.001,
+    "strong_weathering": false,
+    "unit_size_m": [
+     2.4,
+     0.15
+    ],
+    "joint_width_m": 0.003,
+    "joint_rgb": [
+     38,
+     44,
+     47
+    ],
+    "grain_direction": "horizontal"
+   },
+   "provenance": "inherited generic material recipe; structure, color and scale not verified against street photographs"
+  },
+  {
+   "sourceMaterialFingerprint": "3c835782a3ecea5195c8469309bf035b80ebd2081f47afc8c6ab820a18075e76",
+   "sourceMaterialName": "terracotta_panel",
+   "sourceRepeatM": [
+    2.4,
+    1.2
+   ],
+   "surface": {
+    "substrate_family": "ceramic",
+    "pattern": "panel_grid",
+    "finish_class": "matte",
+    "tile_size_m": [
+     2.4,
+     1.2
+    ],
+    "color_rgb": [
+     174,
+     92,
+     61
+    ],
+    "roughness": 0.67,
+    "metallic": 0,
+    "relief_m": 0.001,
+    "strong_weathering": false,
+    "unit_size_m": [
+     0.6,
+     0.3
+    ],
+    "joint_width_m": 0.004,
+    "joint_rgb": [
+     90,
+     66,
+     50
+    ]
+   },
+   "provenance": "inherited generic material recipe; structure, color and scale not verified against street photographs"
+  },
+  {
+   "sourceMaterialFingerprint": "a442d4527414830adac651f604295d26e6e50a8c6b6207647c8d12d652484f22",
+   "sourceMaterialName": "terracotta_ribbed",
+   "sourceRepeatM": [
+    2.4,
+    1.2
+   ],
+   "surface": {
+    "substrate_family": "ceramic",
+    "pattern": "ribbed_panel",
+    "finish_class": "matte",
+    "tile_size_m": [
+     2.4,
+     1.2
+    ],
+    "color_rgb": [
+     170,
+     80,
+     50
+    ],
+    "roughness": 0.72,
+    "metallic": 0,
+    "relief_m": 0.001,
+    "strong_weathering": false,
+    "unit_size_m": [
+     0.6,
+     0.3
+    ],
+    "joint_width_m": 0.004,
+    "joint_rgb": [
+     90,
+     61,
+     45
+    ],
+    "rib_pitch_m": 0.025
+   },
+   "provenance": "inherited generic material recipe; structure, color and scale not verified against street photographs"
+  },
+  {
+   "sourceMaterialFingerprint": "5716aef187bc04c23ff547b6a3b8e5b646a3851d936b682cdcb9bb5d0cc3b899",
+   "sourceMaterialName": "panel_dark",
+   "sourceRepeatM": [
+    2.4,
+    1.2
+   ],
+   "surface": {
+    "substrate_family": "metal",
+    "pattern": "panel_grid",
+    "finish_class": "matte",
+    "tile_size_m": [
+     2.4,
+     1.2
+    ],
+    "color_rgb": [
+     55,
+     62,
+     64
+    ],
+    "roughness": 0.74,
+    "metallic": 0,
+    "relief_m": 0.0006,
+    "strong_weathering": false,
+    "unit_size_m": [
+     1.2,
+     0.3
+    ],
+    "joint_width_m": 0.003,
+    "joint_rgb": [
+     36,
+     41,
+     43
+    ]
+   },
+   "provenance": "inherited generic material recipe; structure, color and scale not verified against street photographs"
+  },
+  {
+   "sourceMaterialFingerprint": "8d49718e97318f5d081418213ee76b760a8e87109c78e23960edb53c58773777",
+   "sourceMaterialName": "panel_silver",
+   "sourceRepeatM": [
+    2.4,
+    1.2
+   ],
+   "surface": {
+    "substrate_family": "metal",
+    "pattern": "panel_grid",
+    "finish_class": "matte",
+    "tile_size_m": [
+     2.4,
+     1.2
+    ],
+    "color_rgb": [
+     176,
+     181,
+     177
+    ],
+    "roughness": 0.37,
+    "metallic": 0.55,
+    "relief_m": 0.0005,
+    "strong_weathering": false,
+    "unit_size_m": [
+     1.2,
+     0.6
+    ],
+    "joint_width_m": 0.003,
+    "joint_rgb": [
+     117,
+     123,
+     121
+    ]
+   },
+   "provenance": "inherited generic material recipe; structure, color and scale not verified against street photographs"
+  },
+  {
+   "sourceMaterialFingerprint": "c10849caf51f657f485ebdd24d426134fd993edbf65b9d9cee43c73fc38c47bb",
+   "sourceMaterialName": "roofing",
+   "sourceRepeatM": [
+    2,
+    2
+   ],
+   "surface": {
+    "substrate_family": "bitumen",
+    "pattern": "bitumen_grain",
+    "finish_class": "matte",
+    "tile_size_m": [
+     2,
+     2
+    ],
+    "color_rgb": [
+     105,
+     109,
+     106
+    ],
+    "roughness": 0.94,
+    "metallic": 0,
+    "relief_m": 0,
+    "strong_weathering": false
+   },
+   "provenance": "inherited generic material recipe; structure, color and scale not verified against street photographs"
+  },
+  {
+   "sourceMaterialFingerprint": "name:cast_stone",
+   "sourceMaterialName": "cast_stone",
+   "sourceRepeatM": [
+    2.4,
+    1.2
+   ],
+   "surface": {
+    "substrate_family": "stone",
+    "pattern": "panel_grid",
+    "finish_class": "matte",
+    "tile_size_m": [
+     6.0,
+     3.0
+    ],
+    "color_rgb": [
+     205,
+     199,
+     184
+    ],
+    "roughness": 0.86,
+    "metallic": 0,
+    "relief_m": 0.0008,
+    "strong_weathering": false,
+    "unit_size_m": [
+     3.0,
+     1.5
+    ],
+    "joint_width_m": 0.008,
+    "joint_rgb": [
+     186,
+     180,
+     166
+    ]
+   },
+   "provenance": "cast stone panels (about 3.0 x 1.5 m with narrow reveals, as the rectified panoramas show): jointed stone surface; colour replaced by the measured colour of each variant"
+  },
+  {
+   "sourceMaterialFingerprint": "name:venue_concrete",
+   "sourceMaterialName": "venue_concrete",
+   "sourceRepeatM": [
+    2.4,
+    1.2
+   ],
+   "surface": {
+    "substrate_family": "concrete",
+    "pattern": "stone_grain",
+    "finish_class": "matte",
+    "tile_size_m": [
+     2.4,
+     1.2
+    ],
+    "color_rgb": [
+     146,
+     147,
+     142
+    ],
+    "roughness": 0.88,
+    "metallic": 0,
+    "relief_m": 0.0015,
+    "strong_weathering": false
+   },
+   "provenance": "venue concrete: the concrete scan in the recipe colour",
+   "scanCandidate": {
+    "color": "work/material-assets/Concrete034/Concrete034_1K-JPG_Color.jpg",
+    "normal": "work/material-assets/Concrete034/Concrete034_1K-JPG_NormalGL.jpg",
+    "roughness": "work/material-assets/Concrete034/Concrete034_1K-JPG_Roughness.jpg",
+    "tile_size_m": [
+     1.1,
+     0.55
+    ],
+    "license": "CC0-1.0",
+    "source_url": "https://ambientcg.com/a/Concrete034"
+   }
+  }
+ ]
+}

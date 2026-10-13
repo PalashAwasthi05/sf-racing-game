@@ -1,0 +1,20 @@
+{
+ "areas": [
+  {
+   "id": "king-street",
+   "center": {
+    "lat": 37.7786228425823,
+    "lon": -122.39182032784258
+   },
+   "meta": "/horizon/king-street.json"
+  },
+  {
+   "id": "pacific-heights",
+   "center": {
+    "lat": 37.79155780918472,
+    "lon": -122.42768152470886
+   },
+   "meta": "/horizon/pacific-heights.json"
+  }
+ ]
+}

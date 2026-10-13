@@ -1,0 +1,51 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/.vinext/
+/out/
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# local environment
+.env*
+
+# deployment and generated files
+.vercel
+next-env.d.ts
+/dist/
+/.wrangler/
+/outputs/
+/work/
+
+# Python generator cache
+__pycache__/
+*.pyc
+
+# World model chunks and generated models (~2.3 GB, content-addressed; the
+# work/ publish scripts rebuild them from candidates). The 2026-09-08 chunks
+# stay in history.
+/public/**/*.bin
+/public/**/*.glb
+
+# TypeScript incremental build state
+*.tsbuildinfo

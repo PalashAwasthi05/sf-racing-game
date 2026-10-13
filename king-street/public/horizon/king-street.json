@@ -1,0 +1,93 @@
+{
+ "angles": 1024,
+ "rings": 361,
+ "center": {
+  "lat": 37.7786228425823,
+  "lon": -122.39182032784258
+ },
+ "verticalOrigin": 4.969999999999999,
+ "innerRadiusM": 265.0,
+ "outerRadiusM": 60000,
+ "waterLevelNAVD88": 0.0,
+ "waterLevelLocal": -4.969999999999999,
+ "earthRadiusEffM": 7432833.333333333,
+ "sfMask": {
+  "bounds": [
+   -11400.90393295174,
+   -9108.746811611112,
+   3948.434027620475,
+   6825.494477918372
+  ],
+  "shape": [
+   1594,
+   1535
+  ],
+  "landParts": 8
+ },
+ "arrays": {
+  "terrain.radii": {
+   "offset": 0,
+   "dtype": "float32",
+   "shape": [
+    361
+   ]
+  },
+  "terrain.height": {
+   "offset": 1444,
+   "dtype": "float32",
+   "shape": [
+    361,
+    1024
+   ]
+  },
+  "terrain.water": {
+   "offset": 1480100,
+   "dtype": "uint8",
+   "shape": [
+    361,
+    1024
+   ]
+  },
+  "terrain.slope": {
+   "offset": 1849764,
+   "dtype": "uint8",
+   "shape": [
+    361,
+    1024
+   ]
+  },
+  "terrain.north": {
+   "offset": 2219428,
+   "dtype": "int8",
+   "shape": [
+    361,
+    1024
+   ]
+  },
+  "sf.mask": {
+   "offset": 2589092,
+   "dtype": "uint8",
+   "shape": [
+    1594,
+    1535
+   ]
+  }
+ },
+ "sources": [
+  {
+   "name": "USGS 3DEP 1 arc-second DEM",
+   "tiles": [
+    "n38w123",
+    "n38w122"
+   ],
+   "url": "https://www.usgs.gov/3d-elevation-program"
+  },
+  {
+   "name": "DataSF Building Footprints (city extent only)",
+   "id": "ynuv-fyni",
+   "url": "https://data.sfgov.org/d/ynuv-fyni"
+  }
+ ],
+ "bytes": 5035882,
+ "bin": "king-street.bin"
+}

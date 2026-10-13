@@ -1,0 +1,3599 @@
+{
+ "schemaVersion": 1,
+ "method": "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+ "street": "townsend-street",
+ "sources": {
+  "mapillary:3771189959840750": {
+   "url": "https://www.mapillary.com/app/?pKey=3771189959840750",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:4317096991859927": {
+   "url": "https://www.mapillary.com/app/?pKey=4317096991859927",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:1288839519609441": {
+   "url": "https://www.mapillary.com/app/?pKey=1288839519609441",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:753688944087228": {
+   "url": "https://www.mapillary.com/app/?pKey=753688944087228",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:1706049164117963": {
+   "url": "https://www.mapillary.com/app/?pKey=1706049164117963",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:743561541725632": {
+   "url": "https://www.mapillary.com/app/?pKey=743561541725632",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:1148745777138459": {
+   "url": "https://www.mapillary.com/app/?pKey=1148745777138459",
+   "captureDate": "2025-08-23",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:1934852830636676": {
+   "url": "https://www.mapillary.com/app/?pKey=1934852830636676",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:1272858814248771": {
+   "url": "https://www.mapillary.com/app/?pKey=1272858814248771",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:1007833391314982": {
+   "url": "https://www.mapillary.com/app/?pKey=1007833391314982",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:992071882959976": {
+   "url": "https://www.mapillary.com/app/?pKey=992071882959976",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:1515197226517069": {
+   "url": "https://www.mapillary.com/app/?pKey=1515197226517069",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:1313205307182366": {
+   "url": "https://www.mapillary.com/app/?pKey=1313205307182366",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:1116788053715766": {
+   "url": "https://www.mapillary.com/app/?pKey=1116788053715766",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:831187729571881": {
+   "url": "https://www.mapillary.com/app/?pKey=831187729571881",
+   "captureDate": "2025-08-23",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:796988149388548": {
+   "url": "https://www.mapillary.com/app/?pKey=796988149388548",
+   "captureDate": "2025-08-23",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:794306886410093": {
+   "url": "https://www.mapillary.com/app/?pKey=794306886410093",
+   "captureDate": "2025-08-23",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:1307934004407564": {
+   "url": "https://www.mapillary.com/app/?pKey=1307934004407564",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:1324172332613036": {
+   "url": "https://www.mapillary.com/app/?pKey=1324172332613036",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:1317673733162120": {
+   "url": "https://www.mapillary.com/app/?pKey=1317673733162120",
+   "captureDate": "2025-08-23",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:1337674954440267": {
+   "url": "https://www.mapillary.com/app/?pKey=1337674954440267",
+   "captureDate": "2025-08-23",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:1666987637270881": {
+   "url": "https://www.mapillary.com/app/?pKey=1666987637270881",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:2746898365507499": {
+   "url": "https://www.mapillary.com/app/?pKey=2746898365507499",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:4047190205531944": {
+   "url": "https://www.mapillary.com/app/?pKey=4047190205531944",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "coarse"
+  },
+  "mapillary:1348507013561281": {
+   "url": "https://www.mapillary.com/app/?pKey=1348507013561281",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:1855680055330144": {
+   "url": "https://www.mapillary.com/app/?pKey=1855680055330144",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:1803933466888508": {
+   "url": "https://www.mapillary.com/app/?pKey=1803933466888508",
+   "captureDate": "2025-08-23",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:703061736068691": {
+   "url": "https://www.mapillary.com/app/?pKey=703061736068691",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:1305504364466919": {
+   "url": "https://www.mapillary.com/app/?pKey=1305504364466919",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:795857919689937": {
+   "url": "https://www.mapillary.com/app/?pKey=795857919689937",
+   "captureDate": "2025-08-23",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:741612348844109": {
+   "url": "https://www.mapillary.com/app/?pKey=741612348844109",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:2820288604822601": {
+   "url": "https://www.mapillary.com/app/?pKey=2820288604822601",
+   "captureDate": "2025-08-23",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:1473024280580179": {
+   "url": "https://www.mapillary.com/app/?pKey=1473024280580179",
+   "captureDate": "2025-08-23",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:1236233868254431": {
+   "url": "https://www.mapillary.com/app/?pKey=1236233868254431",
+   "captureDate": "2025-08-18",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  },
+  "mapillary:740074475582829": {
+   "url": "https://www.mapillary.com/app/?pKey=740074475582829",
+   "captureDate": "2025-08-22",
+   "provider": "Mapillary",
+   "type": "street panorama",
+   "use": "perspective frontage crop read by the observation step; no pixels embedded",
+   "registrationGrade": "unregistered"
+  }
+ },
+ "profiles": [
+  {
+   "id": "sf_201006_0003021-f0",
+   "match": {
+    "osmWayId": "129176920",
+    "featureId": "sf_201006_0003021"
+   },
+   "normal": [
+    0.707,
+    -0.707
+   ],
+   "sourceIds": [
+    "mapillary:3771189959840750",
+    "mapillary:4317096991859927"
+   ],
+   "materialEvidence": {
+    "family": "render",
+    "finish": "gray",
+    "colorRgb": [
+     78,
+     80,
+     82
+    ],
+    "sourceIds": [
+     "mapillary:3771189959840750",
+     "mapillary:4317096991859927"
+    ]
+   },
+   "groups": [
+    {
+     "region": [
+      0.0,
+      0.0,
+      0.1784071583178726,
+      0.6486012537626688
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.97,
+      "openingHeightRatio": 0.98,
+      "recessM": 3.0,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.1808180658627087,
+      0.0,
+      0.22180349412492267,
+      0.3385435364944354
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.95,
+      "glassMaterial": "charcoal",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.4484288033395177,
+      0.2007401065974428,
+      0.6413014069264069,
+      0.39366490845323243
+     ],
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.55,
+      "openingHeightRatio": 0.9,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.5
+      ]
+     },
+     "xCenters": [
+      0.1999999999999996,
+      0.7875
+     ],
+     "columns": 2
+    },
+    {
+     "region": [
+      0.5786178107606679,
+      0.47634696639142804,
+      0.6123705163883735,
+      0.5590290243296235
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.9,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.7329158936301793,
+      0.0,
+      0.7811340445269016,
+      0.3523238794841347
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.97,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.5062905844155844,
+      0.8966474275772556,
+      0.5593305504019789,
+      1.0
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.9,
+      "frameMaterial": "redpaint",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.5737959956709956,
+      0.8966474275772556,
+      0.6461232220160791,
+      1.0
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.92,
+      "openingHeightRatio": 0.9,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": []
+     }
+    }
+   ],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "Dark painted concrete below a light corrugated metal band that continues up as the shed's sloped wall; the open parking entrance is a 3 m deep dark recess; the taller section behind rises as LiDAR roof tiers.",
+    "Frame: frontage width 21.12 m from the footprint; wall heights [7.39] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at 1.0 m; scale x 1.018 z 1.018, roof line 1.018); heights as fractions of 7.39 m"
+   ],
+   "panels": [
+    {
+     "rect": [
+      0.0,
+      0.7106127972163155,
+      1.0,
+      1.0
+     ],
+     "material": "panel_silver"
+    }
+   ],
+   "copingMaterial": "panel_silver",
+   "signs": [
+    {
+     "rect": [
+      0.4628942486085343,
+      0.5314683383502251,
+      0.5834396258503401,
+      0.683052111236917
+     ],
+     "boardMaterial": "white",
+     "text": "PARK HERE",
+     "textMaterial": "charcoal"
+    },
+    {
+     "rect": [
+      0.32306161100803954,
+      0.39366490845323243,
+      0.4050324675324676,
+      0.7243931402060148
+     ],
+     "boardMaterial": "redpaint",
+     "text": "PARKING",
+     "textMaterial": "white"
+    }
+   ],
+   "heightRefM": 7.39
+  },
+  {
+   "id": "sf_201006_0002044-f0",
+   "match": {
+    "osmWayId": "129176910",
+    "featureId": "sf_201006_0002044"
+   },
+   "normal": [
+    0.702,
+    -0.712
+   ],
+   "sourceIds": [
+    "mapillary:4317096991859927",
+    "mapillary:1288839519609441"
+   ],
+   "materialEvidence": {
+    "family": "render",
+    "finish": "gray",
+    "colorRgb": [
+     128,
+     118,
+     106
+    ],
+    "sourceIds": [
+     "mapillary:4317096991859927",
+     "mapillary:1288839519609441"
+    ]
+   },
+   "groups": [
+    {
+     "region": [
+      0.14066496163682862,
+      0.08302583025830258,
+      1.0,
+      0.36900369003690037
+     ],
+     "rows": 1,
+     "style": {
+      "kind": "shopfront",
+      "openingRatio": 0.74,
+      "openingHeightRatio": 0.95,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.33,
+       0.66
+      ],
+      "transomFractions": [
+       0.25,
+       0.5,
+       0.75
+      ]
+     },
+     "xCenters": [
+      0.10044642857142862,
+      0.30877976190476186,
+      0.5245535714285714,
+      0.7403273809523809
+     ],
+     "columns": 4
+    },
+    {
+     "region": [
+      0.07033248081841433,
+      0.0,
+      0.11508951406649617,
+      0.23985239852398524
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.97,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": [
+       0.8
+      ]
+     }
+    },
+    {
+     "region": [
+      0.0639386189258312,
+      0.5719557195571956,
+      1.0,
+      0.7933579335793358
+     ],
+     "rows": 1,
+     "pierWidthM": 0.55,
+     "pierProjectionM": 0.08,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.73,
+      "openingHeightRatio": 0.95,
+      "frameMaterial": "white",
+      "mullionFractions": [
+       0.25,
+       0.5,
+       0.75
+      ],
+      "transomFractions": [
+       0.5
+      ]
+     },
+     "xCenters": [
+      0.13319672131147536,
+      0.42008196721311475,
+      0.7069672131147541
+     ],
+     "columns": 3
+    },
+    {
+     "region": [
+      0.0639386189258312,
+      0.9132841328413285,
+      1.0,
+      1.0
+     ],
+     "rows": 1,
+     "pierWidthM": 0.55,
+     "pierProjectionM": 0.08,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.73,
+      "openingHeightRatio": 0.95,
+      "frameMaterial": "white",
+      "mullionFractions": [
+       0.25,
+       0.5,
+       0.75
+      ],
+      "transomFractions": [
+       0.5
+      ]
+     },
+     "xCenters": [
+      0.13319672131147536,
+      0.42008196721311475,
+      0.7069672131147541
+     ],
+     "columns": 3
+    }
+   ],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "The parapet stands about 2.4 m above the LiDAR wall level and is taken from the photo; the frontage continues beyond the footprint's extent on the right.",
+    "Frame: frontage width 15.64 m from the footprint; wall heights [10.84] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at 2.6 m; scale x 1.000 z 1.000); heights as fractions of 10.84 m"
+   ],
+   "panels": [
+    {
+     "rect": [
+      0.0,
+      0.37822878228782286,
+      1.0,
+      0.488929889298893
+     ],
+     "material": "charcoal"
+    },
+    {
+     "rect": [
+      0.0,
+      0.0,
+      1.0,
+      0.08302583025830258
+     ],
+     "material": "charcoal"
+    }
+   ],
+   "bands": [
+    {
+     "height": 0.8579335793357934,
+     "thicknessM": 0.7,
+     "depthM": 0.06,
+     "projectionM": 0.03,
+     "material": "render_gray#7e7266"
+    },
+    {
+     "height": 1.0,
+     "material": "render_gray#7e7266",
+     "section": [
+      [
+       0,
+       0.15,
+       0.1
+      ],
+      [
+       0.15,
+       0.15,
+       0.2
+      ]
+     ]
+    }
+   ],
+   "observedWallTopM": 13.2,
+   "ornaments": [
+    {
+     "kind": "diamond",
+     "z": 0.8579335793357934,
+     "xs": [
+      0.210997442455243,
+      0.42199488491048587,
+      0.6138107416879794,
+      0.8120204603580563
+     ],
+     "sizeM": 0.45,
+     "material": "render_gray#8a8074"
+    },
+    {
+     "kind": "block",
+     "z": 0.8579335793357934,
+     "xs": [
+      0.12148337595907928,
+      0.3069053708439898,
+      0.5179028132992327,
+      0.7097186700767263
+     ],
+     "sizeM": 0.4,
+     "material": "render_gray#8a8074"
+    }
+   ],
+   "heightRefM": 10.84
+  },
+  {
+   "id": "sf_201006_0001102-f0",
+   "match": {
+    "osmWayId": "129176912",
+    "featureId": "sf_201006_0001102"
+   },
+   "normal": [
+    0.706,
+    -0.708
+   ],
+   "sourceIds": [
+    "mapillary:753688944087228",
+    "mapillary:1706049164117963"
+   ],
+   "materialEvidence": {
+    "family": "render",
+    "finish": "white",
+    "colorRgb": [
+     200,
+     194,
+     186
+    ],
+    "sourceIds": [
+     "mapillary:753688944087228",
+     "mapillary:1706049164117963"
+    ]
+   },
+   "groups": [
+    {
+     "region": [
+      0.22945965951147296,
+      0.6395348837209303,
+      0.9828522082408091,
+      0.7957364341085272
+     ],
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.85,
+      "openingHeightRatio": 0.9,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": []
+     },
+     "xCenters": [
+      0.0989847715736041,
+      0.3020304568527919,
+      0.49999999999999994,
+      0.6979695431472083,
+      0.8959390862944163
+     ],
+     "columns": 5
+    },
+    {
+     "region": [
+      0.22945965951147296,
+      0.0,
+      0.37860843819393036,
+      0.4112403100775194
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.96,
+      "openingHeightRatio": 0.98,
+      "recessM": 3.0,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.40155440414507765,
+      0.0,
+      0.4589193190229459,
+      0.4112403100775194
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.98,
+      "recessM": 3.0,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.5468788551690106,
+      0.0,
+      0.5812978040957314,
+      0.29108527131782946
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.97,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.627189735998026,
+      0.09883720930232559,
+      1.0,
+      0.3992248062015504
+     ],
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.78,
+      "openingHeightRatio": 0.95,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.5
+      ]
+     },
+     "xCenters": [
+      0.1743878226340175,
+      0.6154864328259427,
+      0.9847782925215087
+     ],
+     "columns": 3
+    },
+    {
+     "region": [
+      0.06501357019491734,
+      0.0,
+      0.09560819146311374,
+      0.26705426356589146
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.97,
+      "frameMaterial": "charcoal",
+      "glassMaterial": "glass_dark",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.04971625956081915,
+      0.45930232558139533,
+      0.11472982975573648,
+      0.6635658914728682
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.85,
+      "openingHeightRatio": 0.9,
+      "frameMaterial": "charcoal",
+      "glassMaterial": "glass_dark",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.04971625956081915,
+      0.8317829457364341,
+      0.11472982975573648,
+      1.0
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.85,
+      "openingHeightRatio": 0.9,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": []
+     }
+    }
+   ],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "Two open parking entrances read as 3 m deep dark recesses; the balconies at the left end are slabs without railings; the stepped parapet moulding is a three-step profile.",
+    "The facade continues about a metre beyond the footprint's frontage on the right; openings there are left to the neighbouring footprint.",
+    "Frame: frontage width 27.02 m from the footprint; wall heights [8.6] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at 0.0 m; scale x 1.033 z 1.033, roof line 1.033); heights as fractions of 8.6 m"
+   ],
+   "bands": [
+    {
+     "height": 0.49534883720930234,
+     "thicknessM": 0.35,
+     "depthM": 0.05,
+     "projectionM": 0.02,
+     "material": "render_white#b8b0a8"
+    },
+    {
+     "height": 0.867829457364341,
+     "material": "render_white#c8c2ba",
+     "section": [
+      [
+       0,
+       0.3,
+       0.12
+      ],
+      [
+       0.3,
+       0.3,
+       0.22
+      ],
+      [
+       0.6,
+       0.25,
+       0.32
+      ]
+     ]
+    },
+    {
+     "height": 0.3571705426356589,
+     "thicknessM": 0.16,
+     "depthM": 0.9,
+     "projectionM": 0.85,
+     "material": "render_white#d6d2ce",
+     "xRange": [
+      0.03824327658524549,
+      0.12620281273131012
+     ]
+    },
+    {
+     "height": 0.7356589147286822,
+     "thicknessM": 0.16,
+     "depthM": 0.9,
+     "projectionM": 0.85,
+     "material": "render_white#d6d2ce",
+     "xRange": [
+      0.03824327658524549,
+      0.12620281273131012
+     ]
+    }
+   ],
+   "ornaments": [
+    {
+     "kind": "diamond",
+     "z": 0.4773255813953488,
+     "xs": [
+      0.35757463607204537,
+      0.37669627436466807,
+      0.3958179126572908,
+      0.5793856402664692,
+      0.598507278559092,
+      0.6176289168517146,
+      0.7495682210708118,
+      0.7686898593634345,
+      0.7878114976560572,
+      0.8872440167776954,
+      0.9063656550703181,
+      0.925487293362941
+     ],
+     "sizeM": 0.5,
+     "material": "render_gray#8a8480"
+    }
+   ],
+   "heightRefM": 8.6
+  },
+  {
+   "id": "sf_201006_0001245-f0",
+   "match": {
+    "osmWayId": "129176905",
+    "featureId": "sf_201006_0001245"
+   },
+   "normal": [
+    0.709,
+    -0.705
+   ],
+   "sourceIds": [
+    "mapillary:743561541725632",
+    "mapillary:1148745777138459"
+   ],
+   "materialEvidence": {
+    "family": "brick",
+    "finish": "default",
+    "colorRgb": [
+     178,
+     84,
+     60
+    ],
+    "sourceIds": [
+     "mapillary:743561541725632",
+     "mapillary:1148745777138459"
+    ]
+   },
+   "groups": [
+    {
+     "region": [
+      0.09766454352441613,
+      0.0,
+      0.2208067940552017,
+      0.5369928400954653
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.93,
+      "openingHeightRatio": 0.98,
+      "head": "arch",
+      "springRatio": 0.78,
+      "recessM": 0.3,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.7
+      ],
+      "reliefArch": {
+       "bandM": 0.35,
+       "material": "brick_modular#9e4a34"
+      }
+     }
+    },
+    {
+     "region": [
+      0.47133757961783446,
+      0.0,
+      0.692144373673036,
+      0.4176610978520286
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.97,
+      "openingHeightRatio": 0.98,
+      "recessM": 2.5,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": [],
+      "reliefArch": {
+       "bandM": 0.4,
+       "riseRatio": 1.0,
+       "material": "brick_modular#9e4a34"
+      }
+     }
+    },
+    {
+     "region": [
+      0.5392781316348195,
+      0.7875894988066825,
+      0.5859872611464968,
+      0.9785202863961812
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.9,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.5
+      ]
+     }
+    }
+   ],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "The corbelled parapet lies above the top of the rectified image and is not read; the parapet steps come from LiDAR tiers.",
+    "Frame: frontage width 23.55 m from the footprint; wall heights [8.38] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at 2.7 m; scale x 1.000 z 1.000); heights as fractions of 8.38 m"
+   ],
+   "bands": [
+    {
+     "height": 0.8174224343675417,
+     "thicknessM": 0.3,
+     "depthM": 0.1,
+     "projectionM": 0.06,
+     "material": "brick_dark#8a4a38"
+    }
+   ],
+   "heightRefM": 8.38
+  },
+  {
+   "id": "sf_201006_0002005-f0",
+   "match": {
+    "osmWayId": "129176922",
+    "featureId": "sf_201006_0002005"
+   },
+   "normal": [
+    0.709,
+    -0.705
+   ],
+   "sourceIds": [
+    "mapillary:1934852830636676",
+    "mapillary:1706049164117963"
+   ],
+   "materialEvidence": {
+    "family": "render",
+    "finish": "white",
+    "colorRgb": [
+     214,
+     210,
+     206
+    ],
+    "sourceIds": [
+     "mapillary:1934852830636676",
+     "mapillary:1706049164117963"
+    ]
+   },
+   "groups": [
+    {
+     "region": [
+      0.08259587020648967,
+      0.0,
+      0.30678466076696165,
+      0.44731610337972166
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.95,
+      "openingHeightRatio": 0.98,
+      "recessM": 0.6,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.85
+      ]
+     }
+    },
+    {
+     "region": [
+      0.36578171091445427,
+      0.0397614314115308,
+      0.8613569321533924,
+      0.2932405566600398
+     ],
+     "rows": 1,
+     "style": {
+      "kind": "shopfront",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.95,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.33,
+       0.66
+      ],
+      "transomFractions": [
+       0.33,
+       0.66
+      ]
+     },
+     "xCenters": [
+      0.1785714285714285,
+      0.7916666666666666
+     ],
+     "columns": 2
+    },
+    {
+     "region": [
+      0.36578171091445427,
+      0.2982107355864811,
+      0.8613569321533924,
+      0.4324055666003976
+     ],
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.9,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.33,
+       0.66
+      ],
+      "transomFractions": []
+     },
+     "xCenters": [
+      0.1785714285714285,
+      0.7916666666666666
+     ],
+     "columns": 2
+    },
+    {
+     "region": [
+      0.08849557522123894,
+      0.4572564612326043,
+      0.8849557522123893,
+      0.6858846918489065
+     ],
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.88,
+      "openingHeightRatio": 0.95,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.33,
+       0.66
+      ],
+      "transomFractions": [
+       0.3,
+       0.6
+      ]
+     },
+     "xCenters": [
+      0.13703703703703707,
+      0.4962962962962964,
+      0.8592592592592594
+     ],
+     "columns": 3
+    },
+    {
+     "region": [
+      0.08849557522123894,
+      0.7952286282306162,
+      0.8849557522123893,
+      1.0
+     ],
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.88,
+      "openingHeightRatio": 0.95,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.33,
+       0.66
+      ],
+      "transomFractions": [
+       0.3,
+       0.6
+      ]
+     },
+     "xCenters": [
+      0.13703703703703707,
+      0.4962962962962964,
+      0.8592592592592594
+     ],
+     "columns": 3
+    }
+   ],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "The parapet at about 11.6 m is taken from the photo; the tall glazed entry and the two gridded doors are read as measured.",
+    "Frame: frontage width 16.95 m from the footprint; wall heights [10.06] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at 1.4 m; scale x 1.000 z 1.000); heights as fractions of 10.06 m"
+   ],
+   "panels": [
+    {
+     "rect": [
+      0.0,
+      0.0,
+      1.0,
+      0.0397614314115308
+     ],
+     "material": "charcoal"
+    },
+    {
+     "rect": [
+      0.0,
+      0.73558648111332,
+      1.0,
+      0.7753479125248509
+     ],
+     "material": "charcoal"
+    }
+   ],
+   "observedWallTopM": 11.6,
+   "heightRefM": 10.06
+  },
+  {
+   "id": "sf_201006_0002333-f0",
+   "match": {
+    "osmWayId": "112897758",
+    "featureId": "sf_201006_0002333"
+   },
+   "normal": [
+    0.708,
+    -0.706
+   ],
+   "sourceIds": [
+    "mapillary:1272858814248771",
+    "mapillary:1007833391314982"
+   ],
+   "materialEvidence": {
+    "family": "render",
+    "finish": "gray",
+    "colorRgb": [
+     112,
+     124,
+     138
+    ],
+    "sourceIds": [
+     "mapillary:1272858814248771",
+     "mapillary:1007833391314982"
+    ]
+   },
+   "groups": [
+    {
+     "region": [
+      0.04807692307692308,
+      0.08755039344000183,
+      0.986111111111111,
+      0.606205959274106
+     ],
+     "rows": 1,
+     "pierWidthM": 0.91,
+     "pierProjectionM": 0.08,
+     "pierMaterial": "render_gray#98a0a8",
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.48,
+      "openingHeightRatio": 0.98,
+      "head": "arch",
+      "springRatio": 0.82,
+      "frameMaterial": "redpaint",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.55
+      ]
+     },
+     "xCenters": [
+      0.04441913439635536,
+      0.13553530751708429,
+      0.2266514806378132,
+      0.3177676537585421,
+      0.4088838268792711,
+      0.5,
+      0.591116173120729,
+      0.6822323462414579,
+      0.7733485193621868,
+      0.8644646924829158,
+      0.9555808656036446
+     ],
+     "columns": 11
+    }
+   ],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "Blue-gray paint read as a colour variant of the gray render recipe; the green sawtooth eave is a plain green band; the left third of the frontage is behind street trees and its bays are continued at the measured pitch.",
+    "Frame: frontage width 47.33 m from the footprint; wall heights [10.81] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at 0.5 m; scale x 1.011 z 1.038, corners 1.011, roof line 1.038); heights as fractions of 10.81 m"
+   ],
+   "bands": [
+    {
+     "height": 0.846324276789895,
+     "material": "render_gray#98a0a8",
+     "section": [
+      [
+       0,
+       0.3,
+       0.12
+      ],
+      [
+       0.3,
+       0.3,
+       0.25
+      ],
+      [
+       0.6,
+       0.2,
+       0.35
+      ]
+     ]
+    },
+    {
+     "height": 0.9375692374458947,
+     "thicknessM": 0.45,
+     "depthM": 0.5,
+     "projectionM": 0.3,
+     "material": "greenpaint"
+    }
+   ],
+   "ornaments": [
+    {
+     "kind": "diamond",
+     "z": 0.740672217082948,
+     "xs": [
+      0.13247863247863248,
+      0.21794871794871792,
+      0.3034188034188034,
+      0.38888888888888884,
+      0.47435897435897434,
+      0.5598290598290598,
+      0.6452991452991453,
+      0.7307692307692308,
+      0.8162393162393162,
+      0.9017094017094017
+     ],
+     "sizeM": 0.55,
+     "material": "redpaint"
+    },
+    {
+     "kind": "dentil",
+     "z": 0.8319171777389477,
+     "pitchM": 0.5,
+     "sizeM": 0.25,
+     "heightM": 0.3,
+     "material": "render_gray#98a0a8",
+     "xRange": [
+      0.021367521367521368,
+      0.9935897435897435
+     ]
+    }
+   ],
+   "heightRefM": 10.81
+  },
+  {
+   "id": "sf_201006_0003024-f0",
+   "match": {
+    "osmWayId": "129176907",
+    "featureId": "sf_201006_0003024"
+   },
+   "normal": [
+    0.71,
+    -0.705
+   ],
+   "sourceIds": [
+    "mapillary:992071882959976",
+    "mapillary:3771189959840750",
+    "mapillary:1007833391314982"
+   ],
+   "materialEvidence": {
+    "family": "brick",
+    "finish": "default",
+    "colorRgb": [
+     172,
+     82,
+     62
+    ],
+    "sourceIds": [
+     "mapillary:992071882959976",
+     "mapillary:3771189959840750",
+     "mapillary:1007833391314982"
+    ]
+   },
+   "groups": [
+    {
+     "region": [
+      0.12934272300469482,
+      0.059853190287972896,
+      0.9321596244131455,
+      0.7713156408808581
+     ],
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.95,
+      "openingHeightRatio": 0.98,
+      "head": "arch",
+      "springRatio": 0.8,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.25,
+       0.5,
+       0.75
+      ],
+      "transomFractions": [
+       0.4,
+       0.7
+      ]
+     },
+     "xCenters": [
+      0.10833333333333334,
+      0.9305555555555555
+     ],
+     "columns": 2,
+     "spacingX": 0.2222222222222222
+    },
+    {
+     "region": [
+      0.4995305164319249,
+      0.0,
+      0.6779342723004694,
+      0.7374364765669114
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.96,
+      "openingHeightRatio": 0.98,
+      "head": "arch",
+      "springRatio": 0.8,
+      "recessM": 1.0,
+      "canopy": true,
+      "canopyDepthM": 1.2,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": [
+       0.7
+      ]
+     }
+    }
+   ],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "Awning rods not modelled; both corners visible and the roof line agree on the image scale.",
+    "Frame: frontage width 24.46 m from the footprint; wall heights [6.35, 6.9] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at 2.1 m; scale x 1.091 z 1.169, corners 1.091, roof line 1.169); heights as fractions of 6.9 m"
+   ],
+   "bands": [
+    {
+     "height": 0.9407114624505928,
+     "thicknessM": 0.4,
+     "depthM": 0.1,
+     "projectionM": 0.08,
+     "material": "brick_modular#ac523e"
+    }
+   ],
+   "ornaments": [
+    {
+     "kind": "lamp",
+     "z": 0.5511010728402033,
+     "xs": [
+      0.43708920187793426,
+      0.7046948356807512
+     ]
+    }
+   ],
+   "heightRefM": 6.9
+  },
+  {
+   "id": "sf_201006_0003596-f0",
+   "match": {
+    "osmWayId": "148325253",
+    "featureId": "sf_201006_0003596"
+   },
+   "normal": [
+    0.687,
+    -0.726
+   ],
+   "sourceIds": [
+    "mapillary:1515197226517069",
+    "mapillary:1313205307182366"
+   ],
+   "materialEvidence": {
+    "family": "render",
+    "finish": "gray",
+    "colorRgb": [
+     72,
+     82,
+     96
+    ],
+    "sourceIds": [
+     "mapillary:1515197226517069",
+     "mapillary:1313205307182366"
+    ]
+   },
+   "groups": [
+    {
+     "region": [
+      0.13117474108766738,
+      0.0,
+      1.0,
+      0.4646089840895036
+     ],
+     "columnPitchM": 4.881,
+     "rows": 1,
+     "style": {
+      "kind": "shopfront",
+      "openingRatio": 0.75,
+      "openingHeightRatio": 0.95,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.72
+      ]
+     }
+    },
+    {
+     "region": [
+      0.18864903832562174,
+      0.6571091246415921,
+      1.0,
+      0.8255467476246697
+     ],
+     "columnPitchM": 3.82,
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.3,
+      "openingHeightRatio": 0.95,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": [
+       0.5
+      ]
+     }
+    }
+   ],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "Dark blue-gray paint as a colour variant of the gray render recipe; shopfront rhythm read between street trees.",
+    "Frame: frontage width 35.08 m from the footprint; wall heights [8.72, 8.82] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at 3.9 m; scale x 1.061 z 1.061, roof line 1.061); heights as fractions of 8.82 m"
+   ],
+   "panels": [
+    {
+     "rect": [
+      0.11,
+      0.8736717827626919,
+      1.0,
+      0.9939843706077474
+     ],
+     "material": "stucco_red#6e2a2e"
+    },
+    {
+     "rect": [
+      0.11,
+      0.4646089840895036,
+      1.0,
+      0.560859054365548
+     ],
+     "material": "charcoal"
+    }
+   ],
+   "bands": [
+    {
+     "height": 1.0,
+     "material": "charcoal",
+     "section": [
+      [
+       0,
+       0.2,
+       0.15
+      ],
+      [
+       0.2,
+       0.2,
+       0.3
+      ]
+     ]
+    }
+   ],
+   "signs": [
+    {
+     "rect": [
+      0.4306460793275348,
+      0.8917186709394502,
+      0.8087664558930239,
+      0.9879687412154944
+     ],
+     "text": "TOWNSEND PLACE",
+     "textMaterial": "copper"
+    }
+   ],
+   "heightRefM": 8.82
+  },
+  {
+   "id": "sf_201006_0005523-f0",
+   "match": {
+    "osmWayId": "129176901",
+    "featureId": "sf_201006_0005523"
+   },
+   "normal": [
+    0.707,
+    -0.707
+   ],
+   "sourceIds": [
+    "mapillary:1116788053715766",
+    "mapillary:831187729571881"
+   ],
+   "materialEvidence": {
+    "family": "render",
+    "finish": "default",
+    "colorRgb": [
+     176,
+     152,
+     110
+    ],
+    "sourceIds": [
+     "mapillary:1116788053715766",
+     "mapillary:831187729571881"
+    ]
+   },
+   "groups": [
+    {
+     "region": [
+      0.07983242173862447,
+      0.0,
+      0.11404631676946356,
+      0.4274586173320351
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.97,
+      "frameMaterial": "charcoal",
+      "glassMaterial": "glass_dark",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.13685558012335625,
+      0.15709185329438488,
+      0.1710694751541953,
+      0.3479389808503733
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.9,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.2851157919236588,
+      0.6342096721843558,
+      0.6956825322937276,
+      0.8886725089256735
+     ],
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.55,
+      "openingHeightRatio": 0.95,
+      "frameMaterial": "charcoal",
+      "glassMaterial": "timber_tan",
+      "mullionFractions": [],
+      "transomFractions": []
+     },
+     "xCenters": [
+      0.0972222222222221,
+      0.5370370370370371,
+      0.8981481481481484
+     ],
+     "columns": 3
+    },
+    {
+     "region": [
+      0.7032856200783585,
+      0.7137293086660176,
+      0.7260948834322513,
+      0.8727685816293411
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.9,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    }
+   ],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "The mural is imagery and cannot be modelled without source pixels; its red ground stands for it. Boarded windows as timber infill.",
+    "Frame: frontage width 26.44 m from the footprint; wall heights [6.32] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at 2.9 m; scale x 1.005 z 1.005, roof line 1.005); heights as fractions of 6.32 m"
+   ],
+   "panels": [
+    {
+     "rect": [
+      0.0,
+      0.0,
+      0.2166880018619807,
+      1.0
+     ],
+     "material": "brick_dark#7a3a2e"
+    },
+    {
+     "rect": [
+      0.2166880018619807,
+      0.0,
+      0.6690717250475195,
+      0.5308341447581955
+     ],
+     "material": "redpaint"
+    },
+    {
+     "rect": [
+      0.6690717250475195,
+      0.0,
+      1.0,
+      1.0
+     ],
+     "material": "brick_dark#6a3a30"
+    },
+    {
+     "rect": [
+      0.057023158384731785,
+      0.6978253813696852,
+      0.2166880018619807,
+      0.8250567997403441
+     ],
+     "material": "charcoal"
+    }
+   ],
+   "bands": [
+    {
+     "height": 0.9045764362220059,
+     "thicknessM": 0.3,
+     "depthM": 0.5,
+     "projectionM": 0.4,
+     "material": "terracotta",
+     "xRange": [
+      0.2166880018619807,
+      1.0
+     ]
+    }
+   ],
+   "signs": [
+    {
+     "rect": [
+      0.057023158384731785,
+      0.6978253813696852,
+      0.2166880018619807,
+      0.8250567997403441
+     ],
+     "boardMaterial": "charcoal",
+     "text": "TOWNSEND CORNER STORE",
+     "textMaterial": "white"
+    }
+   ],
+   "heightRefM": 6.32
+  },
+  {
+   "id": "sf_201006_0006227-f0",
+   "match": {
+    "osmWayId": "129176913",
+    "featureId": "sf_201006_0006227"
+   },
+   "normal": [
+    -0.708,
+    0.706
+   ],
+   "sourceIds": [
+    "mapillary:796988149388548",
+    "mapillary:794306886410093"
+   ],
+   "materialEvidence": {
+    "family": "render",
+    "finish": "gray",
+    "colorRgb": [
+     124,
+     134,
+     142
+    ],
+    "sourceIds": [
+     "mapillary:796988149388548",
+     "mapillary:794306886410093"
+    ]
+   },
+   "groups": [
+    {
+     "region": [
+      0.009030612244897958,
+      0.4325625916065927,
+      0.07630102040816326,
+      0.8784062696299841
+     ],
+     "columns": 1,
+     "rows": 2,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.66,
+      "frameMaterial": "white",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.5
+      ]
+     }
+    },
+    {
+     "region": [
+      0.11666326530612246,
+      0.4325625916065927,
+      0.5696173469387756,
+      0.8784062696299841
+     ],
+     "rows": 2,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.72,
+      "openingHeightRatio": 0.66,
+      "frameMaterial": "white",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.5
+      ]
+     },
+     "xCenters": [
+      0.09900990099009899,
+      0.3366336633663366,
+      0.6831683168316832,
+      0.9009900990099011
+     ],
+     "columns": 4
+    },
+    {
+     "region": [
+      0.5785867346938777,
+      0.4974125811372678,
+      0.6279183673469388,
+      0.586581316741946
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.9,
+      "frameMaterial": "white",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.1032091836734694,
+      0.09615327091621549,
+      0.31847448979591836,
+      0.2825969908169065
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.96,
+      "openingHeightRatio": 0.95,
+      "frameMaterial": "charcoal",
+      "glassMaterial": "glass_light",
+      "mullionFractions": [
+       0.33,
+       0.66
+      ],
+      "transomFractions": [
+       0.5
+      ]
+     }
+    },
+    {
+     "region": [
+      0.3902295918367348,
+      0.0,
+      0.5247704081632655,
+      0.2785438664712393
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.97,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": [
+       0.8
+      ]
+     }
+    }
+   ],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "Blue-gray render over a charcoal base. The frontage ends at the downpipe where the brick neighbour begins; the LiDAR roof step along the frontage confirms the footprint boundary there, so the neighbour's wall is the neighbour's and its fire escape is not modelled.",
+    "Frame: frontage width 14.51 m from the footprint; wall heights [13.24] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at 0.3 m; scale x 1.301 z 1.073, corners 1.301, roof line 1.073); heights as fractions of 13.24 m; image scale differs by axis: corners 1.301 along the frontage, roof line 1.073 up; each axis converted by its own cue"
+   ],
+   "panels": [
+    {
+     "rect": [
+      0.018,
+      0.0,
+      0.897,
+      0.39203134814992074
+     ],
+     "material": "charcoal"
+    }
+   ],
+   "bands": [
+    {
+     "height": 0.9797343782716641,
+     "thicknessM": 0.5,
+     "depthM": 0.3,
+     "projectionM": 0.12,
+     "material": "charcoal"
+    }
+   ],
+   "heightRefM": 13.24
+  },
+  {
+   "id": "sf_201006_0006267-f0",
+   "match": {
+    "osmWayId": null,
+    "featureId": "sf_201006_0006267"
+   },
+   "normal": [
+    0.714,
+    -0.7
+   ],
+   "sourceIds": [
+    "mapillary:1307934004407564",
+    "mapillary:1324172332613036"
+   ],
+   "materialEvidence": {
+    "family": "brick",
+    "finish": "default",
+    "colorRgb": [
+     150,
+     75,
+     55
+    ],
+    "sourceIds": [
+     "mapillary:1307934004407564",
+     "mapillary:1324172332613036"
+    ]
+   },
+   "groups": [
+    {
+     "region": [
+      0.03696098562628336,
+      0.24793388429752067,
+      0.28336755646817247,
+      0.7933884297520661
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.97,
+      "openingHeightRatio": 0.97,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.25,
+       0.5,
+       0.75
+      ],
+      "transomFractions": [
+       0.35,
+       0.7
+      ]
+     }
+    },
+    {
+     "region": [
+      0.3203285420944559,
+      0.24793388429752067,
+      0.5831622176591376,
+      0.7933884297520661
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.97,
+      "openingHeightRatio": 0.97,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.2,
+       0.4,
+       0.6,
+       0.8
+      ],
+      "transomFractions": [
+       0.35,
+       0.7
+      ]
+     }
+    },
+    {
+     "region": [
+      0.6365503080082136,
+      0.0,
+      0.7392197125256673,
+      0.6776859504132231
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "shopfront",
+      "openingRatio": 0.95,
+      "openingHeightRatio": 0.97,
+      "frameMaterial": "white",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.7
+      ]
+     }
+    },
+    {
+     "region": [
+      0.7392197125256673,
+      0.0,
+      0.7885010266940451,
+      0.49586776859504134
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.97,
+      "frameMaterial": "white",
+      "glassMaterial": "glass_dark",
+      "mullionFractions": [],
+      "transomFractions": [
+       0.8
+      ]
+     }
+    },
+    {
+     "region": [
+      0.8213552361396304,
+      0.09917355371900828,
+      0.9158110882956879,
+      0.6611570247933884
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.95,
+      "openingHeightRatio": 0.95,
+      "recessM": 0.3,
+      "glassMaterial": "charcoal",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    }
+   ],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "Brick left part with two industrial window bands; dark teal painted right part as a colour variant of the gray render recipe; the folding gate over the left door is not modelled.",
+    "Frame: frontage width 24.35 m from the footprint; wall heights [4.0, 5.28, 6.05] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at 2.0 m; scale x 1.000 z 1.000); heights as fractions of 6.05 m"
+   ],
+   "panels": [
+    {
+     "rect": [
+      0.624229979466119,
+      0.0,
+      1.0,
+      1.0
+     ],
+     "material": "render_gray#2d4b55"
+    }
+   ],
+   "bands": [
+    {
+     "height": 0.8512396694214877,
+     "thicknessM": 0.3,
+     "depthM": 0.45,
+     "projectionM": 0.4,
+     "material": "terracotta",
+     "xRange": [
+      0.624229979466119,
+      1.0
+     ]
+    }
+   ],
+   "signs": [
+    {
+     "rect": [
+      0.6406570841889118,
+      0.8264462809917356,
+      0.7802874743326488,
+      0.9421487603305786
+     ],
+     "text": "mestiza",
+     "textMaterial": "copper"
+    }
+   ],
+   "heightRefM": 6.05
+  },
+  {
+   "id": "sf_201006_0000645-f0",
+   "match": {
+    "osmWayId": "149167950",
+    "featureId": "sf_201006_0000645"
+   },
+   "normal": [
+    -0.713,
+    0.702
+   ],
+   "sourceIds": [
+    "mapillary:753688944087228",
+    "mapillary:1934852830636676",
+    "mapillary:1317673733162120"
+   ],
+   "materialEvidence": {
+    "family": "brick",
+    "finish": "default",
+    "colorRgb": [
+     170,
+     72,
+     56
+    ],
+    "sourceIds": [
+     "mapillary:753688944087228",
+     "mapillary:1934852830636676",
+     "mapillary:1317673733162120"
+    ]
+   },
+   "groups": [
+    {
+     "region": [
+      0.3346485013623979,
+      0.015440056570931244,
+      0.6114550408719346,
+      0.1511477371627502
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "rollup",
+      "openingRatio": 0.97,
+      "openingHeightRatio": 0.97,
+      "material": "render_white",
+      "slatMaterial": "silver"
+     }
+    },
+    {
+     "region": [
+      0.6114550408719346,
+      0.0,
+      0.7917602179836513,
+      0.1511477371627502
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.95,
+      "openingHeightRatio": 0.98,
+      "recessM": 0.6,
+      "frameMaterial": "charcoal",
+      "glassMaterial": "glass_light",
+      "mullionFractions": [
+       0.33,
+       0.66
+      ],
+      "transomFractions": [
+       0.8
+      ]
+     }
+    },
+    {
+     "region": [
+      0.07815803814713897,
+      0.025369886858137514,
+      0.3321089918256131,
+      0.1312880765883377
+     ],
+     "rows": 1,
+     "style": {
+      "kind": "shopfront",
+      "openingRatio": 0.85,
+      "openingHeightRatio": 0.95,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.7
+      ]
+     },
+     "xCenters": [
+      0.20000000000000004,
+      0.6700000000000002
+     ],
+     "columns": 2
+    },
+    {
+     "region": [
+      0.8273133514986377,
+      0.025369886858137514,
+      0.9949209809264306,
+      0.1312880765883377
+     ],
+     "rows": 1,
+     "style": {
+      "kind": "shopfront",
+      "openingRatio": 0.85,
+      "openingHeightRatio": 0.95,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.7
+      ]
+     },
+     "xCenters": [
+      0.2424242424242428,
+      0.7575757575757586
+     ],
+     "columns": 2
+    },
+    {
+     "region": [
+      0.19243596730245235,
+      0.20741677545691906,
+      0.9974604904632155,
+      0.329884682332463
+     ],
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.8,
+      "openingHeightRatio": 0.95,
+      "head": "segmental",
+      "riseRatio": 0.18,
+      "frameMaterial": "white",
+      "mullionFractions": [
+       0.33,
+       0.66
+      ],
+      "transomFractions": [
+       0.3
+      ]
+     },
+     "xCenters": [
+      0.0772870662460568,
+      0.222397476340694,
+      0.3690851735015772,
+      0.5126182965299684,
+      0.6561514195583595,
+      0.7981072555205045,
+      0.9384858044164036
+     ],
+     "columns": 7
+    },
+    {
+     "region": [
+      0.19243596730245235,
+      0.38615372062663184,
+      0.9974604904632155,
+      0.627779590948651
+     ],
+     "spandrelMaterial": "brick_modular#8e3c2c",
+     "spandrelRecessM": 0.05,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.8,
+      "openingHeightRatio": 0.72,
+      "frameMaterial": "white",
+      "mullionFractions": [
+       0.33,
+       0.66
+      ],
+      "transomFractions": [
+       0.35
+      ]
+     },
+     "xCenters": [
+      0.0772870662460568,
+      0.222397476340694,
+      0.3690851735015772,
+      0.5126182965299684,
+      0.6561514195583595,
+      0.7981072555205045,
+      0.9384858044164036
+     ],
+     "columns": 7,
+     "yCenters": [
+      0.2191780821917808,
+      0.7534246575342465
+     ],
+     "rows": 2
+    },
+    {
+     "region": [
+      0.19243596730245235,
+      0.6575690818102697,
+      0.9974604904632155,
+      0.7568673846823324
+     ],
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.8,
+      "openingHeightRatio": 0.9,
+      "head": "segmental",
+      "riseRatio": 0.18,
+      "frameMaterial": "white",
+      "mullionFractions": [
+       0.33,
+       0.66
+      ],
+      "transomFractions": [
+       0.35
+      ]
+     },
+     "xCenters": [
+      0.0772870662460568,
+      0.222397476340694,
+      0.3690851735015772,
+      0.5126182965299684,
+      0.6561514195583595,
+      0.7981072555205045,
+      0.9384858044164036
+     ],
+     "columns": 7
+    },
+    {
+     "region": [
+      0.19243596730245235,
+      0.7800369886858138,
+      0.9974604904632155,
+      0.8594756309834639
+     ],
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.6,
+      "openingHeightRatio": 0.75,
+      "frameMaterial": "white",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": []
+     },
+     "xCenters": [
+      0.0772870662460568,
+      0.222397476340694,
+      0.3690851735015772,
+      0.5126182965299684,
+      0.6561514195583595,
+      0.7981072555205045,
+      0.9384858044164036
+     ],
+     "columns": 7
+    }
+   ],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "Both corners visible and the roof line agree on the scale; the perforated garage door is a light roll-up; the roof-top arch is read as an arched band, the glazed penthouse behind it comes from LiDAR tiers.",
+    "Frame: frontage width 36.66 m from the footprint; wall heights [26.74, 30.64] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at -3.9 m; scale x 0.931 z 1.014, corners 0.931, roof line 1.014); heights as fractions of 30.64 m; LiDAR wall pieces along this frontage differ in height by 3.9 m: the footprint frontage holds more than one wall level and height-limited banks follow each piece"
+   ],
+   "bands": [
+    {
+     "height": 0.36298411662315055,
+     "thicknessM": 0.35,
+     "depthM": 0.3,
+     "projectionM": 0.15,
+     "material": "stone"
+    },
+    {
+     "height": 0.8727154046997389,
+     "material": "stone",
+     "section": [
+      [
+       0,
+       0.25,
+       0.15
+      ],
+      [
+       0.25,
+       0.2,
+       0.3
+      ]
+     ]
+    }
+   ],
+   "parapets": [
+    {
+     "top": [
+      [
+       0.3702016348773842,
+       0.8859551784160139
+      ],
+      [
+       0.4209918256130791,
+       0.912434725848564
+      ],
+      [
+       0.49717711171662127,
+       0.9356043298520452
+      ],
+      [
+       0.598757493188011,
+       0.9455341601392516
+      ],
+      [
+       0.7003378746594006,
+       0.9356043298520452
+      ],
+      [
+       0.7765231607629429,
+       0.912434725848564
+      ],
+      [
+       0.8273133514986377,
+       0.8859551784160139
+      ]
+     ],
+     "bandM": 0.5,
+     "material": "brick_modular#aa4838"
+    }
+   ],
+   "heightRefM": 30.64
+  },
+  {
+   "id": "sf_201006_0001103-f0",
+   "match": {
+    "osmWayId": "129176911",
+    "featureId": "sf_201006_0001103"
+   },
+   "normal": [
+    -0.722,
+    0.692
+   ],
+   "sourceIds": [
+    "mapillary:794306886410093",
+    "mapillary:1337674954440267"
+   ],
+   "materialEvidence": {
+    "family": "brick",
+    "finish": "default",
+    "colorRgb": [
+     188,
+     108,
+     78
+    ],
+    "sourceIds": [
+     "mapillary:794306886410093",
+     "mapillary:1337674954440267"
+    ]
+   },
+   "groups": [
+    {
+     "region": [
+      0.025125628140703526,
+      0.0,
+      0.21608040201005024,
+      0.13302847939719448
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "rollup",
+      "openingRatio": 0.95,
+      "openingHeightRatio": 0.95,
+      "material": "greenpaint",
+      "slatMaterial": "charcoal"
+     }
+    },
+    {
+     "region": [
+      0.4924623115577889,
+      0.0,
+      0.6884422110552765,
+      0.13302847939719448
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "rollup",
+      "openingRatio": 0.95,
+      "openingHeightRatio": 0.95,
+      "material": "greenpaint",
+      "slatMaterial": "charcoal"
+     }
+    },
+    {
+     "region": [
+      0.6984924623115578,
+      0.0,
+      0.8994974874371859,
+      0.13302847939719448
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "rollup",
+      "openingRatio": 0.95,
+      "openingHeightRatio": 0.95,
+      "material": "greenpaint",
+      "slatMaterial": "charcoal"
+     }
+    },
+    {
+     "region": [
+      0.35678391959799,
+      0.0,
+      0.4422110552763819,
+      0.13302847939719448
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "entry",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.97,
+      "frameMaterial": "charcoal",
+      "glassMaterial": "glass_light",
+      "mullionFractions": [],
+      "transomFractions": [
+       0.8
+      ]
+     }
+    },
+    {
+     "region": [
+      0.08040201005025124,
+      0.20318802441707473,
+      0.7989949748743719,
+      0.8045555531589049
+     ],
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.28,
+      "openingHeightRatio": 0.55,
+      "head": "segmental",
+      "riseRatio": 0.12,
+      "frameMaterial": "charcoal",
+      "glassMaterial": "glass_dark",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.5
+      ]
+     },
+     "xCenters": [
+      0.031468531468531485,
+      0.35314685314685307,
+      0.6538461538461539,
+      0.965034965034965
+     ],
+     "columns": 4,
+     "yCenters": [
+      0.14583333333333334,
+      0.4083333333333335,
+      0.666666666666667,
+      0.925
+     ],
+     "rows": 4
+    },
+    {
+     "region": [
+      0.26130653266331655,
+      0.8646923060330881,
+      0.39195979899497485,
+      0.9198176628344226
+     ],
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.7,
+      "openingHeightRatio": 0.9,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": []
+     },
+     "xCenters": [
+      0.17307692307692296,
+      0.826923076923077
+     ],
+     "columns": 2
+    },
+    {
+     "region": [
+      0.748743718592965,
+      0.8145783453046022,
+      0.7989949748743719,
+      0.9097948706887254
+     ],
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.95,
+      "openingHeightRatio": 0.95,
+      "head": "segmental",
+      "riseRatio": 0.12,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.5
+      ]
+     }
+    }
+   ],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "The corners and the roof line agree the image is about 1.2 times smaller than the wall (camera pose too far); the curved parapet is read as an outline; the painted roof-line text is placed as lettering; the fire escapes in the image belong to the neighbours.",
+    "Frame: frontage width 23.85 m from the footprint; wall heights [16.99, 22.07, 23.31] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at 1.7 m; scale x 1.198 z 1.168, corners 1.198, roof line 1.168); heights as fractions of 23.31 m; LiDAR wall pieces along this frontage differ in height by 6.3 m: the footprint frontage holds more than one wall level and height-limited banks follow each piece"
+   ],
+   "panels": [
+    {
+     "rect": [
+      0.0,
+      0.0,
+      1.0,
+      0.1530740636885888
+     ],
+     "material": "greenpaint"
+    },
+    {
+     "rect": [
+      0.06532663316582914,
+      0.9097948706887254,
+      0.7788944723618091,
+      1.0
+     ],
+     "material": "charcoal"
+    }
+   ],
+   "bands": [
+    {
+     "height": 0.8997720785430282,
+     "thicknessM": 0.3,
+     "depthM": 0.12,
+     "projectionM": 0.1,
+     "material": "brick_modular#a85a3c"
+    }
+   ],
+   "parapets": [
+    {
+     "top": [
+      [
+       0.0,
+       0.9949886039271513
+      ],
+      [
+       0.09045226130653267,
+       1.0025056980364242
+      ],
+      [
+       0.19095477386934673,
+       1.0150341882185459
+      ],
+      [
+       0.2663316582914573,
+       1.0400911685827887
+      ],
+      [
+       0.3316582914572865,
+       1.0701595450198802
+      ],
+      [
+       0.3869346733668342,
+       1.085193733238426
+      ],
+      [
+       0.4422110552763819,
+       1.0751709410927288
+      ],
+      [
+       0.5175879396984925,
+       1.0451025646556371
+      ],
+      [
+       0.592964824120603,
+       1.0150341882185459
+      ],
+      [
+       0.6934673366834171,
+       1.0
+      ],
+      [
+       0.7889447236180904,
+       0.9974943019635757
+      ],
+      [
+       0.7989949748743719,
+       0.9599088314172112
+      ],
+      [
+       1.0,
+       0.9548974353443627
+      ]
+     ],
+     "material": "brick_modular#bc6c4e"
+    }
+   ],
+   "signs": [
+    {
+     "rect": [
+      0.08040201005025124,
+      0.9198176628344226,
+      0.7638190954773869,
+      0.9949886039271513
+     ],
+     "text": "TOWNSEND BLDG.",
+     "textMaterial": "stone"
+    }
+   ],
+   "heightRefM": 23.31
+  },
+  {
+   "id": "osm_149253145-f0",
+   "match": {
+    "osmWayId": "149253145",
+    "featureId": "osm_149253145"
+   },
+   "normal": [
+    0.681,
+    -0.732
+   ],
+   "sourceIds": [
+    "mapillary:1666987637270881",
+    "mapillary:2746898365507499"
+   ],
+   "materialEvidence": {
+    "family": "brick",
+    "finish": "dark",
+    "colorRgb": [
+     160,
+     92,
+     72
+    ],
+    "sourceIds": [
+     "mapillary:1666987637270881",
+     "mapillary:2746898365507499"
+    ]
+   },
+   "groups": [],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "The frontage is a low brick planter wall with a dentil course under a red tile cap; its left part is a fenced yard behind a dark mesh fence. The curved office block rises behind the wall and comes from LiDAR tiers; its rounded corners and the glass entry vault are not modelled.",
+    "Frame: frontage width 17.45 m from the footprint; wall heights [4.0, 21.39] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at 0.2 m; scale x 1.020 z 1.000, corners 1.020, roof line 1.000); heights as fractions of 21.39 m; LiDAR wall pieces along this frontage differ in height by 17.4 m: the footprint frontage holds more than one wall level and height-limited banks follow each piece"
+   ],
+   "panels": [
+    {
+     "rect": [
+      0.0,
+      0.0,
+      0.5146198830409356,
+      0.11687704534829359
+     ],
+     "material": "panel_dark#3a3d40"
+    }
+   ],
+   "bands": [
+    {
+     "height": 0.16596540439457688,
+     "thicknessM": 0.4,
+     "depthM": 0.35,
+     "projectionM": 0.14,
+     "material": "redpaint",
+     "xRange": [
+      0.5146198830409356,
+      1.0
+     ]
+    },
+    {
+     "height": 0.11921458625525945,
+     "thicknessM": 0.16,
+     "depthM": 0.2,
+     "projectionM": 0.06,
+     "material": "render_white#d9d3c9",
+     "xRange": [
+      0.5263157894736842,
+      1.0
+     ]
+    }
+   ],
+   "ornaments": [
+    {
+     "kind": "dentil",
+     "z": 0.12856474988312294,
+     "pitchM": 0.34,
+     "sizeM": 0.16,
+     "heightM": 0.24,
+     "material": "render_white#d9d3c9",
+     "xRange": [
+      0.5321637426900585,
+      0.9941520467836257
+     ]
+    }
+   ],
+   "heightRefM": 21.39
+  },
+  {
+   "id": "osm_149167937-f0",
+   "match": {
+    "osmWayId": "149167937",
+    "featureId": "osm_149167937"
+   },
+   "normal": [
+    -0.722,
+    0.692
+   ],
+   "sourceIds": [
+    "mapillary:4047190205531944",
+    "mapillary:1148745777138459",
+    "mapillary:743561541725632"
+   ],
+   "materialEvidence": {
+    "family": "render",
+    "finish": "white",
+    "colorRgb": [
+     206,
+     198,
+     186
+    ],
+    "sourceIds": [
+     "mapillary:4047190205531944",
+     "mapillary:1148745777138459",
+     "mapillary:743561541725632"
+    ]
+   },
+   "groups": [
+    {
+     "region": [
+      0.06208695652173914,
+      0.0,
+      0.6152252964426879,
+      0.19419520547945204
+     ],
+     "columnPitchM": 4.923,
+     "rows": 1,
+     "style": {
+      "kind": "shopfront",
+      "openingRatio": 0.86,
+      "openingHeightRatio": 0.95,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.78
+      ]
+     }
+    },
+    {
+     "region": [
+      0.013169960474308299,
+      0.23339041095890412,
+      0.6152252964426879,
+      0.3727511415525114
+     ],
+     "columnPitchM": 3.516,
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.66,
+      "openingHeightRatio": 0.78,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.6208695652173913,
+      0.0,
+      0.709296442687747,
+      0.9998744292237443
+     ],
+     "columns": 1,
+     "rowPitchM": 3.154,
+     "minHeightM": 18.0,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.55,
+      "openingHeightRatio": 0.6,
+      "frameMaterial": "charcoal",
+      "glassMaterial": "glass_dark",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.7205849802371542,
+      0.0,
+      0.9463557312252965,
+      0.19419520547945204
+     ],
+     "columnPitchM": 4.019,
+     "rows": 1,
+     "style": {
+      "kind": "shopfront",
+      "openingRatio": 0.84,
+      "openingHeightRatio": 0.92,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.75
+      ]
+     }
+    },
+    {
+     "region": [
+      0.7205849802371542,
+      0.22903538812785387,
+      0.9463557312252965,
+      0.38146118721461186
+     ],
+     "columnPitchM": 3.215,
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.55,
+      "openingHeightRatio": 0.8,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.009407114624505929,
+      0.4598515981735159,
+      0.6114624505928853,
+      0.9998744292237443
+     ],
+     "rowPitchM": 3.052,
+     "columnPitchM": 3.014,
+     "minHeightM": 12.0,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.62,
+      "openingHeightRatio": 0.62,
+      "frameMaterial": "white",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.7243478260869565,
+      0.4598515981735159,
+      0.9463557312252965,
+      0.9998744292237443
+     ],
+     "rowPitchM": 3.052,
+     "columnPitchM": 3.215,
+     "minHeightM": 12.0,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.58,
+      "openingHeightRatio": 0.62,
+      "frameMaterial": "white",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": []
+     }
+    }
+   ],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "The frontage is a two-storey podium under a continuous cornice; the tower faces seen above it in the rectified image (brick at the left, white at the right) are described across the image and stand only where the LiDAR wall level rises to them, elsewhere they come from LiDAR tiers behind the podium. One full-height brick pier and a glazed tower base stand at the plane; louvred vents on the towers are not modelled.",
+    "Frame: frontage width 53.4 m from the footprint; wall heights [10.03, 12.34, 23.36] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at 0.3 m; scale x 1.005 z 1.017, corners 1.005, roof line 1.017); heights as fractions of 23.36 m; LiDAR wall pieces along this frontage differ in height by 13.3 m: the footprint frontage holds more than one wall level and height-limited banks follow each piece"
+   ],
+   "panels": [
+    {
+     "rect": [
+      0.0,
+      0.19855022831050226,
+      0.6189881422924902,
+      0.22903538812785387
+     ],
+     "material": "charcoal"
+    },
+    {
+     "rect": [
+      0.0,
+      0.4511415525114155,
+      0.37064031620553356,
+      1.0
+     ],
+     "material": "brick_dark#8a4a3a"
+    }
+   ],
+   "bands": [
+    {
+     "height": 0.4097688356164383,
+     "material": "render_white#e6e1d8",
+     "section": [
+      [
+       0,
+       0.25,
+       0.1
+      ],
+      [
+       0.25,
+       0.3,
+       0.22
+      ]
+     ]
+    }
+   ],
+   "piers": [
+    {
+     "x": 0.6453280632411067,
+     "widthM": 1.2,
+     "projectionM": 0.1,
+     "material": "brick_dark#8a4a3a",
+     "y": [
+      0.0,
+      0.9998744292237443
+     ]
+    }
+   ],
+   "heightRefM": 23.36
+  },
+  {
+   "id": "sf_201006_0000213-f0",
+   "match": {
+    "osmWayId": null,
+    "featureId": "sf_201006_0000213"
+   },
+   "normal": [
+    -0.707,
+    0.707
+   ],
+   "sourceIds": [
+    "mapillary:1348507013561281",
+    "mapillary:1855680055330144",
+    "mapillary:1803933466888508",
+    "mapillary:1313205307182366",
+    "mapillary:703061736068691",
+    "mapillary:1515197226517069",
+    "mapillary:1305504364466919",
+    "mapillary:795857919689937"
+   ],
+   "materialEvidence": {
+    "family": "render",
+    "finish": "white",
+    "colorRgb": [
+     205,
+     205,
+     200
+    ],
+    "sourceIds": [
+     "mapillary:1348507013561281",
+     "mapillary:1855680055330144",
+     "mapillary:1803933466888508",
+     "mapillary:1313205307182366",
+     "mapillary:703061736068691",
+     "mapillary:1515197226517069",
+     "mapillary:1305504364466919",
+     "mapillary:795857919689937"
+    ]
+   },
+   "groups": [
+    {
+     "region": [
+      0.000898472596585804,
+      0.001429042541497195,
+      0.07008086253369272,
+      0.33391044666739955
+     ],
+     "maxHeightM": 20.0,
+     "rowPitchM": 3.397,
+     "columnPitchM": 2.609,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.9,
+      "openingHeightRatio": 0.78,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "white",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.07906558849955078,
+      0.09530614488292843,
+      0.42946990116801437,
+      0.4277875490088308
+     ],
+     "minHeightM": 20.0,
+     "maxHeightM": 30.0,
+     "rowPitchM": 3.3,
+     "columnPitchM": 3.512,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.45,
+      "openingHeightRatio": 0.55,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.08805031446540881,
+      0.001429042541497195,
+      0.42946990116801437,
+      0.08748305302114252
+     ],
+     "minHeightM": 20.0,
+     "maxHeightM": 30.0,
+     "columnPitchM": 4.215,
+     "rows": 1,
+     "style": {
+      "kind": "shopfront",
+      "openingRatio": 0.85,
+      "openingHeightRatio": 0.94,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.8
+      ]
+     }
+    },
+    {
+     "region": [
+      0.4788858939802336,
+      0.001429042541497195,
+      0.573225516621743,
+      0.9656251145066139
+     ],
+     "minHeightM": 40.0,
+     "rowPitchM": 3.008,
+     "columns": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.96,
+      "openingHeightRatio": 0.8,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "white",
+      "mullionFractions": [
+       0.25,
+       0.5,
+       0.75
+      ],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.577717879604672,
+      0.20678520391337807,
+      0.9991015274034143,
+      0.9656251145066139
+     ],
+     "minHeightM": 40.0,
+     "rowPitchM": 3.008,
+     "columnPitchM": 7.426,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.8,
+      "openingHeightRatio": 0.5,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.33,
+       0.66
+      ],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.6271338724168912,
+      0.001429042541497195,
+      0.77088948787062,
+      0.09139459895203547
+     ],
+     "minHeightM": 40.0,
+     "columnPitchM": 4.014,
+     "rows": 1,
+     "style": {
+      "kind": "shopfront",
+      "openingRatio": 0.86,
+      "openingHeightRatio": 0.95,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.8
+      ]
+     }
+    }
+   ],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "White precast towers over a podium of dark metal screens; the glass curtain-wall tower is a full-height glazed bank with white floor fins; the lower block carries five rows of punched windows under a red parapet cap; roof terraces are not a facade feature.",
+    "Frame: frontage width 111.69 m from the footprint; wall heights [8.19, 17.03, 23.75, 49.21, 49.5, 49.59, 49.62] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at 0.2 m; scale x 1.004 z 0.970, corners 1.004, roof line 0.970); heights as fractions of 49.62 m; LiDAR wall pieces along this frontage differ in height by 41.4 m: the footprint frontage holds more than one wall level and height-limited banks follow each piece"
+   ],
+   "panels": [
+    {
+     "rect": [
+      0.07906558849955078,
+      0.001429042541497195,
+      0.43396226415094336,
+      0.09139459895203547
+     ],
+     "material": "charcoal"
+    },
+    {
+     "rect": [
+      0.577717879604672,
+      0.001429042541497195,
+      0.9991015274034143,
+      0.20091788501703858
+     ],
+     "material": "panel_dark#4a4e52"
+    }
+   ],
+   "bands": [
+    {
+     "height": 0.4532125975596351,
+     "thicknessM": 1.3,
+     "depthM": 0.25,
+     "projectionM": 0.05,
+     "material": "redpaint",
+     "xRange": [
+      0.08805031446540881,
+      0.43306379155435754
+     ]
+    }
+   ],
+   "parapets": [
+    {
+     "top": [
+      [
+       0.08805031446540881,
+       0.47668187314499294
+      ],
+      [
+       0.43306379155435754,
+       0.47668187314499294
+      ]
+     ],
+     "material": "redpaint"
+    }
+   ],
+   "heightRefM": 49.62
+  },
+  {
+   "id": "sf_201006_0000227-f0",
+   "match": {
+    "osmWayId": null,
+    "featureId": "sf_201006_0000227"
+   },
+   "normal": [
+    -0.706,
+    0.708
+   ],
+   "sourceIds": [
+    "mapillary:1666987637270881",
+    "mapillary:741612348844109",
+    "mapillary:2820288604822601",
+    "mapillary:1473024280580179",
+    "mapillary:1236233868254431",
+    "mapillary:740074475582829",
+    "mapillary:2746898365507499"
+   ],
+   "materialEvidence": {
+    "family": "render",
+    "finish": "white",
+    "colorRgb": [
+     205,
+     205,
+     200
+    ],
+    "sourceIds": [
+     "mapillary:1666987637270881",
+     "mapillary:741612348844109",
+     "mapillary:2820288604822601",
+     "mapillary:1473024280580179",
+     "mapillary:1236233868254431",
+     "mapillary:740074475582829",
+     "mapillary:2746898365507499"
+    ]
+   },
+   "groups": [
+    {
+     "region": [
+      0.0,
+      0.29219586344021725,
+      0.4766697163769442,
+      1.0
+     ],
+     "minHeightM": 40.0,
+     "rowPitchM": 3.119,
+     "columnPitchM": 6.539,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.8,
+      "openingHeightRatio": 0.52,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.33,
+       0.66
+      ],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.0,
+      0.24954129660529012,
+      0.4766697163769442,
+      0.2881335237416528
+     ],
+     "minHeightM": 40.0,
+     "columns": 1,
+     "rows": 1,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.99,
+      "openingHeightRatio": 0.9,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    },
+    {
+     "region": [
+      0.14821591948764867,
+      0.0,
+      0.27172918572735594,
+      0.09314121821055708
+     ],
+     "minHeightM": 40.0,
+     "columnPitchM": 4.527,
+     "rows": 1,
+     "style": {
+      "kind": "shopfront",
+      "openingRatio": 0.88,
+      "openingHeightRatio": 0.95,
+      "glassMaterial": "glass_dark",
+      "frameMaterial": "charcoal",
+      "mullionFractions": [
+       0.5
+      ],
+      "transomFractions": [
+       0.8
+      ]
+     }
+    },
+    {
+     "region": [
+      0.29917657822506866,
+      0.0,
+      0.4730100640439159,
+      0.09314121821055708
+     ],
+     "minHeightM": 40.0,
+     "columns": 3,
+     "rows": 1,
+     "style": {
+      "kind": "rollup",
+      "openingRatio": 0.7,
+      "openingHeightRatio": 0.9,
+      "material": "charcoal",
+      "slatMaterial": "zinc"
+     }
+    },
+    {
+     "region": [
+      0.5224153705397988,
+      0.2881335237416528,
+      1.0,
+      0.4729699800263373
+     ],
+     "minHeightM": 12.0,
+     "maxHeightM": 30.0,
+     "rowPitchM": 3.521,
+     "columnPitchM": 3.521,
+     "style": {
+      "kind": "window",
+      "openingRatio": 0.45,
+      "openingHeightRatio": 0.55,
+      "frameMaterial": "charcoal",
+      "mullionFractions": [],
+      "transomFractions": []
+     }
+    }
+   ],
+   "unresolved": [
+    "Each frontage was measured on its rectified wall image (facade-priority-v15/crops/rectified: pixel columns are metres along the frontage, rows metres above the base, 1 m grid). The image scale is recovered from two cues, the building's visible corners against the frontage's LiDAR wall pieces and the wall top against the LiDAR wall height; a disagreement means the footprint runs over a neighbour, and the reading then describes the image across the whole footprint frontage. Head shapes, relief arches, piers, spandrels, parapet outlines, cornice profiles, ornaments, literal sign text and wall colours were read from the same images. Everything is a visual measurement from one or two dated street panoramas; nothing is surveyed.",
+    "White precast tower with ribbon windows between white piers, a glazed band above a dark podium with a glazed lobby and three roll-up loading bays; the lower wing carries three rows of punched windows under a red parapet cap. The wing continues in the image beyond the footprint's frontage; the roof line was not used for the scale because the wing stands in another plane.",
+    "Frame: frontage width 109.96 m from the footprint; wall heights [15.03, 23.6, 49.15, 49.36, 49.53] m from LiDAR.",
+    "positions measured on the rectified frontage image (left corner at 0.3 m; scale x 1.006 z 1.006, corners 1.006); heights as fractions of 49.53 m; LiDAR wall pieces along this frontage differ in height by 34.5 m: the footprint frontage holds more than one wall level and height-limited banks follow each piece"
+   ],
+   "panels": [
+    {
+     "rect": [
+      0.0,
+      0.09314121821055708,
+      0.4766697163769442,
+      0.24954129660529012
+     ],
+     "material": "panel_dark#4a4e52"
+    }
+   ],
+   "parapets": [
+    {
+     "top": [
+      [
+       0.5544373284537969,
+       0.5074998674641354
+      ],
+      [
+       0.6193961573650505,
+       0.5074998674641354
+      ]
+     ],
+     "material": "redpaint"
+    }
+   ],
+   "heightRefM": 49.53
+  }
+ ]
+}

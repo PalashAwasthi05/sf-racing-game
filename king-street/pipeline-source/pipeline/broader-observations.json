@@ -1,0 +1,708 @@
+{
+  "schemaVersion": 1,
+  "createdDate": "2026-09-08",
+  "purpose": "Research-only factual facade observations, visually inspected photographs. No geographic geometry overrides.",
+  "sourcePixelPolicy": "All downloaded source photographs remain only in this work/facade-references/v7 research directory. Do not copy photographs, screenshot pixels, page HTML, or photo texture crops into GLB, Site public files, or deliverable bundles. Only factual observations and source metadata may be fused.",
+  "geometryPolicy": "Rows and counts are wall-region constraints, not blanket building templates. Do not infer physical signs from page/map/directory names. No metric depth or world coordinates measured in this packet.",
+  "sources": {
+    "128-king-google-2025": {
+      "url": "https://www.google.com/maps/@37.7793599,-122.3904598,6a,75y,315.04h,90t/data=!3m7!1e1!3m5!1sYUo9WVYcHfh8a7_sknvWRw!2e0!6shttps:%2F%2Fstreetviewpixels-pa.googleapis.com%2Fv1%2Fthumbnail%3Fcb_client%3Dmaps_sv.tactile%26w%3D900%26h%3D600%26pitch%3D0%26panoid%3DYUo9WVYcHfh8a7_sknvWRw%26yaw%3D315.03754!7i16384!8i8192",
+      "captureDate": "2025-01",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Street View screenshot, ground view then zoomed out and tilted up; upper-left edge partly cropped"
+    },
+    "128-king-noehill-2004": {
+      "url": "https://noehill.com/sf/landmarks/sf229.asp",
+      "imageUrl": "https://noehill.com/sf/landmarks/soma/garcia_and_maggini_warehouse.jpg",
+      "captureDate": "2004-03-27",
+      "captureDateBasis": "Photo caption",
+      "limitation": "Archival oblique photograph; tenant details outdated"
+    },
+    "200-townsend-google-2025": {
+      "url": "https://www.google.com/maps/@37.7786884,-122.3930088,3a,95y,315h,108t/data=!3m1!1e1",
+      "panoId": "PHPlqCRQ3qu2IwEMPkM1dQ",
+      "captureDate": "2025-05",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Full front photographed from opposite sidewalk. Initial Maps photo shortcut faced the other side of street; corrected heading and visually verified address 200."
+    },
+    "224-townsend-google-2025": {
+      "url": "https://www.google.com/maps/@37.7782849,-122.3934633,8a,75y,329.94h,90t/data=!3m7!1e1!3m5!1sB0MYq1LOg-to0s4kCfJA6w!2e0!6shttps:%2F%2Fstreetviewpixels-pa.googleapis.com%2Fv1%2Fthumbnail%3Fcb_client%3Dmaps_sv.tactile%26w%3D900%26h%3D600%26pitch%3D0%26panoid%3DB0MYq1LOg-to0s4kCfJA6w%26yaw%3D329.9408!7i16384!8i8192",
+      "captureDate": "2025-05",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Whole five-bay front visible; parked pickup obscures lower part of one right-hand bay"
+    },
+    "224-townsend-pq-2020": {
+      "url": "https://poetsandquants.com/2020/02/27/first-peek-inseads-new-san-francisco-campus/2/",
+      "imageUrl": "https://poetsandquants.com/wp-content/uploads/sites/5/2020/02/INSEADbuilding.jpg",
+      "captureDate": null,
+      "publishedDate": "2020-02-27",
+      "limitation": "Publication date, not shutter date. Actual completed exterior photograph."
+    },
+    "139-townsend-sks": {
+      "url": "https://sksre.com/project/139-townsend/",
+      "imageUrl": "https://sksre.com/wp-content/uploads/2017/11/02_139Townsend_SKS-1600x1067.jpg",
+      "captureDate": null,
+      "limitation": "Image URL has 2017/11 upload path; capture date is not established. Completed building, full frontal photo."
+    },
+    "139-townsend-transwestern": {
+      "url": "https://transwestern.com/property/139-townsend-st",
+      "imageUrl": "https://s3.amazonaws.com/transwestern-property/Images/63133540-343e-ea11-80f5-caa232701e1a_t.jpg",
+      "captureDate": null,
+      "limitation": "Undated listing photograph. Shows front and west alley wall obliquely."
+    },
+    "135-townsend-google-2025": {
+      "url": "https://www.google.com/maps/@37.7800453,-122.3912162,9a,85.2y,135.22h,116.61t/data=!3m7!1e1!3m5!1sfBYARMHKHcVPLJZjHiHNtg!2e0!6shttps:%2F%2Fstreetviewpixels-pa.googleapis.com%2Fv1%2Fthumbnail%3Fcb_client%3Dmaps_sv.tactile%26w%3D900%26h%3D600%26pitch%3D-26.613347295165767%26panoid%3DfBYARMHKHcVPLJZjHiHNtg%26yaw%3D135.21666!7i16384!8i8192",
+      "captureDate": "2025-05",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Street camera UI says 130 Townsend; camera faces 133/135 across street. Address 133 is visible vertically on left door. Rightmost upper pair partly cropped."
+    },
+    "101-townsend-google-2025": {
+      "url": "https://www.google.com/maps/@37.7804515,-122.3907693,3a,95y,137.21h,108t/data=!3m1!1e1",
+      "panoId": "yRzdEUo66i-HJ98vT4_mfg",
+      "captureDate": "2025-05",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Ground detail plus upper facade. Left end not fully covered; at least four broad window groups per upper row visible."
+    },
+    "101-townsend-dahlin": {
+      "url": "https://www.dahlingroup.com/projects/101-Townsend",
+      "captureDate": null,
+      "imageUrl": "https://d3e83vdvp96zm2.cloudfront.net/images/project/525/08_img_101townsend.jpg",
+      "limitation": "Undated alley photograph only. Architecture text identifies painted stucco/concrete and 9 by 15 inch pane replication; do not treat as exact scene-wide window size."
+    },
+    "china-basin-mccarthy-1": {
+      "url": "https://www.mccarthycook.com/portfolio-item/china-basin/",
+      "imageUrl": "https://www.mccarthycook.com/wp-content/uploads/1-01-2.jpg",
+      "captureDate": null,
+      "limitation": "Undated owner/developer exterior photograph at dusk. Berry building left/end and courtyard steps; not a current capture guarantee."
+    },
+    "china-basin-mccarthy-2": {
+      "url": "https://www.mccarthycook.com/portfolio-item/china-basin/",
+      "imageUrl": "https://www.mccarthycook.com/wp-content/uploads/1-02-2.jpg",
+      "captureDate": null,
+      "limitation": "Undated owner/developer daytime exterior. Shows Berry corner/end and adjacent Wharfside end. Long frontage recedes; cannot count all bays."
+    },
+    "china-wharfside-mhp": {
+      "url": "https://www.mhpse.com/portfolio-items/china-basin-wharfside-building/",
+      "imageUrl": "https://www.mhpse.com/wp-content/uploads/2023/01/Website-1-4.jpg",
+      "captureDate": null,
+      "publishedDate": "2023-05-30",
+      "limitation": "Page/update and upload dates are 2023; photograph itself is undated. Waterfront side is mostly outside immediate road-visible area."
+    },
+    "25-lusk-psd": {
+      "url": "https://psdnyc.com/work/25-lusk/",
+      "imageUrl": "https://psdnyc.com/wp-content/uploads/2018/09/25-Lusk-Signage-Design-Branding-PSD-NYC-01-1-1580x1598.jpg",
+      "captureDate": null,
+      "limitation": "2018/09 upload path, capture date unknown. Close photograph covers two upper windows and main entrance, not full six-bay building."
+    },
+    "45-lusk-google-2023": {
+      "url": "https://www.google.com/maps/@37.7782909,-122.3942944,3a,95y,46h,99t/data=!3m1!1e1",
+      "panoId": "FGiJW1tc9S1nbhtkoumi-Q",
+      "captureDate": "2023-01",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Camera UI label 47 Lusk. Corrected view faces 45 left and 47 right, with 25 Lusk sign fragment at far left."
+    },
+    "third-king-google-2025": {
+      "url": "https://www.google.com/maps/@37.7782801,-122.3920846,3a,95y,10h,98t/data=!3m1!1e1",
+      "panoId": "i13sPEyEorELNUJQjjuQXQ",
+      "captureDate": "2025-03",
+      "captureDateBasis": "Visible Google image-capture label",
+      "inspection": "Corner and adjacent single-storey shops, and separate taller background walls. Closer view was at 42.38 degrees heading."
+    },
+    "761-third-chronicle-2026": {
+      "url": "https://www.sfchronicle.com/realestate/article/sf-tom-brady-sports-card-21282250.php",
+      "publishedDate": "2026-01-07",
+      "captureDate": null,
+      "evidenceKind": "Text-only continuity and tenant-change evidence; not used to read sign pixels",
+      "finding": "Reports CardVault leasing the existing one-storey 2400-sq-ft commercial building at 761 Third, formerly Baseballism."
+    },
+    "761-third-kron-2026": {
+      "url": "https://sports.yahoo.com/articles/nfl-great-tom-brady-channels-190359663.html",
+      "publishedDate": "2026-02",
+      "captureDate": null,
+      "evidenceKind": "Text-only opening report",
+      "finding": "KRON report syndicated by Yahoo describes CardVault store opening at Third and King ahead of Super Bowl LX."
+    },
+    "180-townsend-google-2025": {
+      "url": "https://www.google.com/maps/@37.779073,-122.39217,3a,95y,290h,105t/data=!3m1!1e1",
+      "captureDate": "2025-05",
+      "captureDateBasis": "Visible Street View label; camera 177 Townsend",
+      "inspection": "Five arched bays on each of three storeys. Dark ground, brick upper two, pale belts/dentils, observed 180 and andreessen horowitz."
+    }
+  },
+  "observations": [
+    {
+      "id": "128-king-front",
+      "buildingId": "sf_201006_0001817",
+      "frontage": "King Street",
+      "sources": [
+        "128-king-google-2025",
+        "128-king-noehill-2004"
+      ],
+      "visibleStoreys": 3,
+      "materialZones": [
+        {
+          "region": "upper wall and tall ground piers",
+          "appearance": "red-orange brick, recessed dark charcoal metal-framed openings; thin stepped brick cornice"
+        },
+        {
+          "region": "base below tall ground glazing",
+          "appearance": "muted terracotta painted plinth, with dark charcoal base by right-hand doors"
+        }
+      ],
+      "windowRegions": [
+        {
+          "region": "two upper floors between brick piers and cornice",
+          "rows": 2,
+          "columns": null,
+          "countLimit": "At least seven visible in tilted current view; left end partially cropped. Do not apply a guessed full-frontage count.",
+          "pattern": "Broad rectangular openings with two/three principal vertical sash divisions; openings bounded by brick, separate from tall ground voids."
+        }
+      ],
+      "ground": "Tall recessed entrance and storefront voids between thick brick piers; a deeper wide portal at left; narrower right doors. Separate address entry has brass-toned double glass doors and 128 above. No uniform small ground-window row.",
+      "signs": [
+        {
+          "text": "DRIED FRUITS",
+          "surface": "painted horizontal brick belt above tall ground openings"
+        },
+        {
+          "text": "GARCIA & MAGGINI CO",
+          "surface": "same painted belt; CO has raised small O"
+        },
+        {
+          "text": "NUTS HONEY",
+          "surface": "same belt, star separators visible"
+        },
+        {
+          "text": "128",
+          "surface": "belt right end and separate entrance transom"
+        }
+      ],
+      "signLimits": "The band starts 136 in archival photo and current cropped left edge; do not read lamp-post banners or beer window stickers as building names. A partly cropped COOPERSTOWN sign is not sufficiently complete for full text.",
+      "blankWalls": "Keep brick spandrels and parapet solid; no windows above cornice."
+    },
+    {
+      "id": "200-townsend-front",
+      "buildingId": "sf_201006_0002210",
+      "frontage": "Townsend Street and Third Street corner",
+      "sources": [
+        "200-townsend-google-2025"
+      ],
+      "visibleStoreys": "Ground plus three tall loft opening rows; not five evenly spaced facade rows.",
+      "materialZones": [
+        {
+          "region": "main upper Townsend wall",
+          "appearance": "warm muted salmon/orange smooth cladding"
+        },
+        {
+          "region": "corner strip at right",
+          "appearance": "light silver rectangular metal panels, one broad tall window per loft row"
+        },
+        {
+          "region": "projecting window bays",
+          "appearance": "dark charcoal frames and shallow black balcony rails"
+        },
+        {
+          "region": "ground",
+          "appearance": "pale silver/gray entry and shopfront zones, dark gray grille garage at left"
+        }
+      ],
+      "windowRegions": [
+        {
+          "region": "salmon Townsend upper wall",
+          "rows": 3,
+          "principalColumns": 3,
+          "pattern": "Two dark projecting outer broad bays; central broad flat opening; thin adjacent openings and small metal balconies. Blank salmon strip between center and right groups must remain."
+        },
+        {
+          "region": "silver corner strip",
+          "rows": 3,
+          "principalColumns": 1,
+          "pattern": "Large rectangular glazing with asymmetric horizontal/vertical mullion subdivisions; independent from salmon-grid bounds."
+        }
+      ],
+      "ground": "Address entrance near center beneath tall narrow glazing; wide dark vertical-grille garage to left. Glazed bank shopfront at right.",
+      "overhangs": "Thin large dark roof slab projects over silver corner strip; small projecting balconies and window boxes on salmon wall.",
+      "signs": [
+        {
+          "text": "200",
+          "surface": "pale ground pier beside entry"
+        },
+        {
+          "text": "FIRST REPUBLIC BANK",
+          "surface": "ground-level fascia above right shopfront",
+          "dateCaveat": "Visible in May 2025, even though company-directory branding may differ."
+        }
+      ],
+      "blankWalls": "Broad salmon rear/side mass rises behind lower left neighbor; do not extend facade windows over this blank area. Neighbor mestiza frontage is a separate building."
+    },
+    {
+      "id": "224-townsend-front",
+      "buildingId": "sf_201006_0002834",
+      "frontage": "Townsend Street",
+      "sources": [
+        "224-townsend-google-2025",
+        "224-townsend-pq-2020"
+      ],
+      "visibleStoreys": 2,
+      "materialZones": [
+        {
+          "region": "five-bay main face",
+          "appearance": "light warm gray painted concrete/stucco"
+        },
+        {
+          "region": "six dividing piers and central crown",
+          "appearance": "projecting fluted pilasters with bright/dark green edges and stepped pointed tops"
+        },
+        {
+          "region": "window/ground infill",
+          "appearance": "dark green/black metal frames; solid deep green panels under outer ground glazing"
+        }
+      ],
+      "windowRegions": [
+        {
+          "region": "between each pilaster pair",
+          "rows": 2,
+          "principalColumns": 5,
+          "pattern": "Each bay has upper broad horizontal glazing. Four outer bays also have tall ground glazing separated by pale horizontal spandrel with green decorative lines; middle bay substitutes a recessed main entry below."
+        }
+      ],
+      "ground": "Central recessed dark glazed double-door entrance; shallow projecting central belt above door. Outer bays are display/classroom glazing rather than repeating small windows.",
+      "overhangs": "Central stepped triangular crown rises above lower side parapets. Pilasters extend above parapet.",
+      "signs": [
+        {
+          "text": "INSEAD",
+          "surface": "round green medallion centered high above entry"
+        },
+        {
+          "text": "INSEAD",
+          "surface": "small projecting square flag sign at right end"
+        }
+      ],
+      "blankWalls": "Solid pale parapet and central medallion field; no roof-level window row."
+    },
+    {
+      "id": "139-townsend-front-and-alley",
+      "buildingId": "sf_201006_0002604",
+      "frontage": "Townsend Street plus west alley",
+      "sources": [
+        "139-townsend-sks",
+        "139-townsend-transwestern"
+      ],
+      "visibleStoreys": 5,
+      "materialZones": [
+        {
+          "region": "front upper four levels and alley",
+          "appearance": "red-brown brick"
+        },
+        {
+          "region": "front ground framing/belt",
+          "appearance": "green-gray painted horizontal projecting moldings with brick piers and frosted/dark glass"
+        },
+        {
+          "region": "upper lowest row",
+          "appearance": "small beige projecting balcony/sill slabs with dark thin rails"
+        }
+      ],
+      "windowRegions": [
+        {
+          "region": "Townsend brick rectangle above ground cornice",
+          "rows": 4,
+          "columns": 6,
+          "pattern": "Separate nearly square/tall openings, large top pane with narrow lower pane pair. Four upper rows are aligned; lowest of these four has small projecting balcony slabs."
+        },
+        {
+          "region": "alley wall above ground",
+          "rows": 4,
+          "columns": null,
+          "pattern": "Narrower vertically proportioned openings with shallow arched brick heads. Their grid belongs to alley, not front. Full count uncertain because oblique view recedes."
+        }
+      ],
+      "ground": "Broad central glazed entry group under widest segmented shallow curved canopy; two smaller matching curved canopies over neighboring openings. Three canopies total. Outer ground bays have horizontal decorative bars and opaque pale glass below.",
+      "overhangs": "Front parapet steps up around a central shallow curved peak; ground belt wraps corner. Alley ground is a recessed dark colonnaded strip.",
+      "signs": [],
+      "signLimits": "No reliably readable building name on 139 itself. UNDER ARMOUR / 135 and the Bagel Bakery visible on neighboring buildings in 2017 image must not be assigned to 139.",
+      "captureLimitation": "Two actual photos with independent viewpoints but unknown dates. Shape strongly documented; current tenant words not established."
+    },
+    {
+      "id": "133-135-townsend-front",
+      "buildingId": "sf_201006_0002920",
+      "frontage": "Townsend Street",
+      "sources": [
+        "135-townsend-google-2025"
+      ],
+      "visibleStoreys": 5,
+      "materialZones": [
+        {
+          "region": "upper four rows",
+          "appearance": "pale gray-white painted concrete/stucco with rectangular scored/jointed courses"
+        },
+        {
+          "region": "ground band and piers",
+          "appearance": "slightly darker gray solid surround, black glazing and louvered transoms"
+        },
+        {
+          "region": "fire escapes",
+          "appearance": "black open metal stairs/platforms on both outer paired-window bays"
+        }
+      ],
+      "windowRegions": [
+        {
+          "region": "main upper pale rectangle",
+          "rows": 4,
+          "pairedBays": 5,
+          "windowsPerBay": 2,
+          "countLimit": "Four complete paired bays and cropped portion of fifth in wider current screenshot; five-bay structure corroborated by planning case 2014.1315COA.",
+          "pattern": "Tall dark industrial multipane sash; fine rectangular grids within each opening. Outer pairs partially covered by fire-escape platforms. Top-row openings shallower than lowest upper row in photograph; do not force equal image heights."
+        }
+      ],
+      "ground": "Five larger shop/entry bays with separate solid pier boundaries. Leftmost glazed entry bears vertical 133; next bay a large storefront; two left bays have upper small glazing between dark louvers. Broad right glazing and entry are different ground exceptions.",
+      "overhangs": "Horizontal projecting belt above ground with SAP sign; simple projecting roof cornice. Fire escapes form real open platforms, not wall textures.",
+      "signs": [
+        {
+          "text": "SAP",
+          "surface": "blue trapezoid logo on belt above ground"
+        },
+        {
+          "text": "133",
+          "surface": "white vertical digits on left glass entrance"
+        }
+      ],
+      "notObserved": "Do not assign Domino Data Lab from Maps directory. 135 appears in older neighboring-owner photograph, but not legible in this current cropped right edge."
+    },
+    {
+      "id": "101-townsend-front",
+      "buildingId": "sf_201006_0002572",
+      "frontage": "Townsend Street",
+      "sources": [
+        "101-townsend-google-2025",
+        "101-townsend-dahlin"
+      ],
+      "visibleStoreys": 3,
+      "materialZones": [
+        {
+          "region": "upper two floors",
+          "appearance": "medium-light gray painted concrete/stucco, broad solid piers and thin roof cornice"
+        },
+        {
+          "region": "left ground frontage",
+          "appearance": "very dark charcoal painted solid wall around tall storefront windows"
+        },
+        {
+          "region": "entry/right ground",
+          "appearance": "medium gray solid surround and glass, silver side-door frame"
+        }
+      ],
+      "windowRegions": [
+        {
+          "region": "upper gray wall rectangle",
+          "rows": 2,
+          "minimumVisibleColumns": 4,
+          "columns": null,
+          "pattern": "Very broad industrial windows, dense small rectangular black muntin grid. Each opening has one or more small outward-opening casements within grid. Left end not fully imaged, so total column count remains unknown."
+        }
+      ],
+      "ground": "Irregular tall storefront glazing, broad blank charcoal pier, narrow silver-framed service door, adjoining glass panel, and separate main entrance at right. Main entry framed in dark glass and carries thin horizontal canopy with diagonal supports.",
+      "signs": [
+        {
+          "text": "CLOUDFLARE",
+          "surface": "raised dark letters and orange cloud icon on pale belt above main entry"
+        },
+        {
+          "text": "101 TOWNSEND",
+          "surface": "white lettering immediately below logo, above canopy"
+        }
+      ],
+      "blankWalls": "Preserve broad charcoal ground panels and solid gray piers. No uniform ground grid."
+    },
+    {
+      "id": "china-basin-berry",
+      "buildingId": "sf_201006_0000115",
+      "frontage": "Berry Street and Third Street/courtyard end",
+      "sources": [
+        "china-basin-mccarthy-1",
+        "china-basin-mccarthy-2"
+      ],
+      "visibleStoreys": "Five occupied facade levels: three lower levels plus two glass upper levels; dark louver band between systems.",
+      "materialZones": [
+        {
+          "region": "lower three floors",
+          "appearance": "pale gray solid frame with broad rectangular dark glazed strips and vertical silver mullions"
+        },
+        {
+          "region": "upper two floors",
+          "appearance": "reflective blue-gray curtainwall, continuous pale spandrel bands, dark continuous horizontal fins, strong silver vertical posts"
+        },
+        {
+          "region": "end/portal",
+          "appearance": "pale scored wall forming a tall round-headed opening; dark horizontal spandrel across arch glazing"
+        }
+      ],
+      "windowRegions": [
+        {
+          "region": "lower pale frame",
+          "rows": 3,
+          "columns": null,
+          "pattern": "Multi-bay rectangular glazing bounded by heavy pale piers/floor bands; do not propagate into end arch or central broad solid pier."
+        },
+        {
+          "region": "upper glass box",
+          "rows": 2,
+          "columns": null,
+          "pattern": "Continuous glass/spandrel system, three visible principal bays on near end in dusk view; full long-front bay count not measurable from receding photo."
+        }
+      ],
+      "ground": "Raised courtyard reached by broad stairs; adjacent recessed parking ramp with dark portal. Glazed lower facade and multi-level arch portal at end.",
+      "overhangs": "Upper glass addition set as separate volume over darker louver belt; thin projecting roof edges and pale lower cornice.",
+      "signs": [
+        {
+          "text": "CHINA BASIN",
+          "surface": "large freestanding white letters on low gray retaining wall by courtyard steps"
+        },
+        {
+          "text": "PARKING",
+          "surface": "parking wayfinding sign and garage ramp header"
+        }
+      ],
+      "signLimits": "Letters on retaining wall are site signage, not letters pasted high on building facade. Leasing banner should not be transcribed as permanent facade name.",
+      "dateLimitation": "Undated owner photographs; no current tenant-text guarantee."
+    },
+    {
+      "id": "china-basin-wharfside",
+      "buildingId": "osm_46264108",
+      "frontage": "Third Street end and waterfront side",
+      "sources": [
+        "china-basin-mccarthy-2",
+        "china-wharfside-mhp"
+      ],
+      "visibleStoreys": 6,
+      "materialZones": [
+        {
+          "region": "five upper levels",
+          "appearance": "off-white concrete grid with light gray recessed spandrels around dark broad windows"
+        },
+        {
+          "region": "lowest promenade level",
+          "appearance": "taupe/gray painted solid base with separate broad glazed openings"
+        },
+        {
+          "region": "mid-front vertical strip",
+          "appearance": "occasional narrow grouped slit windows instead of broad repeated bays"
+        }
+      ],
+      "windowRegions": [
+        {
+          "region": "upper white frame",
+          "rows": 5,
+          "columns": null,
+          "pattern": "Broad horizontal openings with narrow transom row and few large panes below. Repetitive across long wall but interrupted by solid vertical strips and occasional narrower windows. Full long-wall count not observed."
+        },
+        {
+          "region": "lowest taupe band",
+          "rows": 1,
+          "columns": null,
+          "pattern": "Larger irregular ground openings tied to promenade entries, not mechanically identical to upper grid."
+        }
+      ],
+      "ground": "Elevated waterfront promenade with white railing and pilings beneath; occasional wider entry doors; curved translucent small entry canopy visible on long wall.",
+      "overhangs": "Shallow continuous flat cornice. Promenade/entry canopy is separate from wall/window grid.",
+      "signs": [],
+      "signLimits": "No readable permanent Wharfside building name on photographed facade. Do not assign CHINA BASIN from owner page title to an arbitrary high wall.",
+      "dateLimitation": "Photo upload/page dates 2023 do not establish capture. 2021 courtyard seismic buttress retrofit supported by MHP text, but buttresses not visible in chosen waterfront photograph."
+    },
+    {
+      "id": "25-lusk-entry",
+      "buildingId": "sf_201006_0006801",
+      "frontage": "Lusk Street",
+      "sources": [
+        "25-lusk-psd",
+        "45-lusk-google-2023"
+      ],
+      "visibleStoreys": 2,
+      "materialZones": [
+        {
+          "region": "upper wall",
+          "appearance": "red-orange exposed brick, corbelled band and shallow projecting roof cornice"
+        },
+        {
+          "region": "entry",
+          "appearance": "dark metal framed large glass doors beside opaque white woodgrain-pattern sign panel"
+        },
+        {
+          "region": "canopy",
+          "appearance": "broad thin white slab with recessed circular lights"
+        }
+      ],
+      "windowRegions": [
+        {
+          "region": "upper brick above main entry",
+          "rows": 1,
+          "visibleColumns": 2,
+          "pattern": "Two wide recessed industrial windows visible in crop; each has three larger divisions with fine black grid. Full six-bay historic facade not imaged."
+        }
+      ],
+      "ground": "Main glazed doorway on left beneath white projecting canopy, with stairs visible inside; opaque white sign panel at right. Do not fill sign panel with windows.",
+      "signs": [
+        {
+          "text": "25 LUSK",
+          "surface": "large black text on opaque white street-level panel"
+        },
+        {
+          "text": "KITCHEN",
+          "surface": "small white door lettering with upward arrow"
+        },
+        {
+          "text": "SOCIAL",
+          "surface": "small white door lettering with downward arrow"
+        },
+        {
+          "text": "OGDEN PACKING & PROVISION C",
+          "surface": "partial faded white painted brick band just above canopy",
+          "partial": true
+        }
+      ],
+      "signLimits": "Do not complete final historic CO from regulatory description; source crop only visibly reaches C. Jan2023 panorama corroborates part of big 25 LUSK panel, not the entire older entrance image."
+    },
+    {
+      "id": "45-lusk-front",
+      "buildingId": "sf_201006_0005190",
+      "frontage": "Lusk Street",
+      "sources": [
+        "45-lusk-google-2023"
+      ],
+      "visibleStoreys": 1,
+      "materialZones": [
+        {
+          "region": "45 left-hand frontage",
+          "appearance": "charcoal blue-gray horizontal timber siding; flat parapet with restrained upper trim"
+        },
+        {
+          "region": "windows",
+          "appearance": "tall fine-grid industrial-style glazed panes in heavy dark trim"
+        },
+        {
+          "region": "entry base",
+          "appearance": "solid painted siding and raised narrow door, exterior steps/railings"
+        }
+      ],
+      "windowRegions": [
+        {
+          "region": "45 frontage bounded by left brick neighbor and vertical pipe/joint at right",
+          "rows": 1,
+          "columns": 3,
+          "pattern": "Tall glazed left/right panels with central shorter window above a recessed door. Main panel grids have slender rectangular subdivisions. Do not turn door into full-height window."
+        }
+      ],
+      "ground": "Entry is above sidewalk grade, reached by short stair flight with dark side rails; small raised landing and adjacent planter. Solid lower facade except doorway.",
+      "signs": [
+        {
+          "text": "45",
+          "surface": "small dark digits on siding beside door and larger pale digits on right glass"
+        }
+      ],
+      "ownershipLimit": "Right-hand 47 frontage has a separate richly bracketed cornice, five-ish tall window panels, its own raised door, 47 and deepsource plaque. Do not attach that tenant plaque to 45 without footprint/parcel correspondence. Existing world may aggregate the two; keep photo regions separate."
+    },
+    {
+      "id": "third-king-low-shops",
+      "buildingId": "sf_201006_0007874",
+      "frontage": "Third Street with King corner return",
+      "sources": [
+        "third-king-google-2025",
+        "761-third-chronicle-2026",
+        "761-third-kron-2026"
+      ],
+      "visibleStoreys": 1,
+      "materialZones": [
+        {
+          "region": "761 corner shop, March2025",
+          "appearance": "tan vertically ribbed/wood-look high sign fascia, charcoal framing below, full-height ground storefront glass"
+        },
+        {
+          "region": "adjacent sports bar",
+          "appearance": "pale gray-white wall with dark pilasters/base; darker gray parapet and thin ornamental cornice"
+        },
+        {
+          "region": "northern small shops",
+          "appearance": "separate pale storefront faces partly occluded and distant"
+        }
+      ],
+      "windowRegions": [
+        {
+          "region": "761 corner shop",
+          "rows": 1,
+          "columns": null,
+          "pattern": "Wide large display windows and inset door beneath blank high fascia; no upper windows."
+        },
+        {
+          "region": "sports bar",
+          "rows": 1,
+          "columns": null,
+          "pattern": "Smaller horizontal ground windows and several door openings separated by dark vertical piers. Does not share corner-shop grid."
+        }
+      ],
+      "ground": "Individual flush/recessed shop doors and large glazing along sidewalk. Continuous low roofline steps slightly at tenant-zone boundaries.",
+      "signs": [
+        {
+          "text": "BASEBALLISM",
+          "surface": "corner tan fascia",
+          "status": "Observed March2025; superseded by CardVault tenant-change/opening news in 2026, so unsuitable as unqualified current sign."
+        },
+        {
+          "text": "CANDLESTICK PARK",
+          "surface": "dark narrow sports-bar fascia in gold lettering"
+        },
+        {
+          "text": "SPORTS BAR",
+          "surface": "same fascia"
+        },
+        {
+          "text": "Welcome to the Stick",
+          "surface": "sports-bar upper banner",
+          "temporary": true
+        }
+      ],
+      "ownershipLimit": "Huge pale solid background wall with COME, TAKE A SEAT is on separate taller rear building, not an upper storey of this shop row. Hyatt visible farther north also has separate blank flank. Keep rows and background volumes distinct.",
+      "continuityConclusion": "Actual March2025 photos confirm legacy low storefront building persists. January2026 report explicitly describes new lease of existing one-storey 761 Third space; February2026 opening report further supports persistence. No evidence supports deleting this municipal footprint simply because adjacent OSM footprints are newer.",
+      "unresolved": "2026 CardVault exterior sign pixels were not inspected; do not substitute directory/permit wording as observed facade text."
+    }
+  ],
+  "rejectedSources": [
+    {
+      "path": "/Users/palash/Documents/Codex/2026-09-08/i-want-to-create-a-heuristic/work/facade-references/v7/200-townsend-exterior.jpg",
+      "reason": "Generic website hero photo is a detached suburban house, not 200 Townsend. Never use."
+    },
+    {
+      "path": "/Users/palash/Documents/Codex/2026-09-08/i-want-to-create-a-heuristic/work/facade-references/v7/200-townsend-mls-2026.jpg",
+      "reason": "Interior photograph; only corroborates tall loft windows, not exterior frontage."
+    },
+    {
+      "paths": [
+        "101-townsend-1.jpg",
+        "101-townsend-2.jpg",
+        "101-townsend-3.jpg",
+        "101-townsend-7.jpg",
+        "china-basin-3.jpg",
+        "china-basin-4.jpg",
+        "china-basin-5.jpg",
+        "china-basin-6.jpg"
+      ],
+      "reason": "Interiors; excluded from facade geometry."
+    }
+  ],
+  "structuralContinuityEvidence": [
+    {
+      "buildingId": "sf_201006_0007874",
+      "status": "persisting low building in March2025 imagery and 2026 lease/opening reporting",
+      "ruleImplication": "An overlapping or adjacent newer OSM record is not demolition evidence. Resolve footprint ownership and contemporary image support first."
+    },
+    {
+      "buildingId": "sf_201006_0005190",
+      "status": "45 and 47 Lusk visibly remain timber-faced low frontages in January2023",
+      "ruleImplication": "Preserve separate wall regions even when one footprint aggregates addresses; modern tall building behind/opposite is not replacement evidence."
+    }
+  ],
+  "unresolved": [
+    "Google panorama screenshots were reviewed in the browser but not exported as local pixel files; exact source URLs, pano IDs and visible capture labels recorded.",
+    "No source in this bounded pass independently validates metric depths or full long-wall bay counts.",
+    "Current building/tenant data can change faster than photo capture dates. All rendered signage should carry source-date logic."
+  ]
+}

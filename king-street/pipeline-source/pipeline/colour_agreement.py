@@ -1,0 +1,35 @@
+"""Whether two photographed colours are one material under different light.
+
+A wall photographed in sun and in shade, or by cameras with different exposure and white balance, keeps its hue and
+roughly its chroma while its lightness moves a long way: a brick wall read L* 67 in sun and L* 38 in shade (dE 15 with
+lightness at half weight called them different, and 18 facings had no two photographs agreeing). Shade is not simply
+bluer either: the darker photographs of that wall were redder, which is exposure and white balance, not skylight.
+So the test is on hue and chroma, with lightness free within the range sun and shade span:
+- lightness within 35 L*;
+- two near-neutral colours (chroma under 10) are one material (grey render, concrete, white paint);
+- a near-neutral colour and a faint tint (chroma under 16) are one material; a neutral and a clear colour are not;
+- two clear colours are one material when their hues are within 20 degrees and their chromas within a factor 1.8.
+A neighbour of another material (grey render against red brick, tan against brick) differs in hue or chroma and stays
+apart."""
+import math
+import numpy as np
+
+MAX_DL, GREY_C, TINT_C, MAX_DH, MAX_C_RATIO = 35., 10., 16., 20., 1.8
+
+
+def lab(rgb):
+    c = np.asarray(rgb, float) / 255.; c = np.where(c <= .04045, c / 12.92, ((c + .055) / 1.055) ** 2.4)
+    X = c @ np.array([[.4124, .2126, .0193], [.3576, .7152, .1192], [.1805, .0722, .9505]]) / np.array([.9505, 1., 1.089])
+    f = np.where(X > .008856, np.cbrt(X), 7.787 * X + 16 / 116)
+    return np.array([116 * f[1] - 16, 500 * (f[0] - f[1]), 200 * (f[1] - f[2])])
+
+
+def same_material(a, b):
+    """True when RGB colours a and b can be one material seen under different light."""
+    la, lb = lab(a), lab(b)
+    if abs(la[0] - lb[0]) > MAX_DL: return False
+    ca, cb = math.hypot(la[1], la[2]), math.hypot(lb[1], lb[2]); lo, hi = min(ca, cb), max(ca, cb)
+    if hi < GREY_C: return True
+    if lo < GREY_C: return hi < TINT_C
+    dh = abs(math.degrees(math.atan2(la[2], la[1]) - math.atan2(lb[2], lb[1]))) % 360.
+    return min(dh, 360. - dh) <= MAX_DH and hi / lo <= MAX_C_RATIO
