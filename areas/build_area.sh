@@ -10,7 +10,8 @@ export PYTHONPATH=work PYTHONUNBUFFERED=1
 py=work/geoenv/bin/python
 rm -rf $D
 P=(); if [[ -n $3 ]]; then P=(--regen-profiles $3); fi   # an array: zsh does not split a plain expansion into words
-caffeinate -i -s $py work/watch_mem.py 20 $LOG $py work/generate_detailed_v14.py --output $D --area $A $P
+M=(); if [[ -f work/areas/ring/massing-overrides.json ]]; then M=(--massing work/areas/ring/massing-overrides.json); fi   # outlines the photographs and LiDAR contradict
+caffeinate -i -s $py work/watch_mem.py 20 $LOG $py work/generate_detailed_v14.py --output $D --area $A $P $M
 caffeinate -i -s $py work/watch_mem.py 20 $LOG $py work/apply_textures_v10.py --scene $D/king-street-pilot.glb --output $D/textures
 caffeinate -i -s $py work/watch_mem.py 20 $LOG $py work/areas/slim_textures.py $D/textures/candidate.glb $D/textures/candidate-slim.glb
 caffeinate -i -s $py work/watch_mem.py 20 $LOG $py work/apply_materials_v13.py --scene $D/textures/candidate-slim.glb --observations work/regen/v1/no-material-observations.json --output $D/materials

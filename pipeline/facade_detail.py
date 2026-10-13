@@ -11,7 +11,8 @@ Profile keys (rectangles as fractions of the frame, like the grammar's openings)
     door {kind 'panel' | 'glazed' | 'double', material}, transomM, steps {count, widthM, material}
   rustication [{rect, courseM, material}], quoins [{x, y, widthM, courseM, material}],
   fireEscapes [{x, levels, depthM, material}], balconies [{x, z, depthM, railing, railingHeightM, material}],
-  hedges [{x, heightM, depthM, offsetM, material}],
+  hedges [{x, heightM, depthM, offsetM, material}], roofs [{x, z, kind, projectionM, riseM, overhangM, material}],
+  planting [{x, kind, heightM, depthM, offsetM, planter, material}],
   reliefs [{rect, projectionM, material}]"""
 import math
 import numpy as np
@@ -19,6 +20,7 @@ from shapely.geometry import Polygon, box
 from shapely.ops import unary_union
 
 SASH_M, MUNTIN_M = .045, .022
+_DRAWN = set()          # (detail key, list, index) of the items in front of a wall already drawn in this run
 
 
 def opening(ctx, op):
@@ -151,7 +153,7 @@ def wall(ctx, profile, ops):
             B(cx, z, L, .05, d, m, d / 2)                                                       # the grating
             for zz in (z + .5, z + .98):
                 beam((x0, zz, d), (x1, zz, d), .03, m); beam((x0, zz, .02), (x0, zz, d), .03, m); beam((x1, zz, .02), (x1, zz, d), .03, m)
-            for x in np.arange(x0, x1 + .01, max(.25, L / round(L / .3))): beam((x, z, d), (x, z + .98, d), .018, m)
+            for x in np.arange(x0, x1 + .01, max(.25, L / max(1, round(L / .3)))): beam((x, z, d), (x, z + .98, d), .018, m)
             for x in (x0 + .25, x1 - .25): beam((x, z - .7, .02), (x, z - .03, d * .85), .04, m)   # brackets to the wall
         for k, (za, zb) in enumerate(zip(levels, levels[1:])):
             # a steep stair between the platforms, running along the wall, turning each level
@@ -182,16 +184,255 @@ def wall(ctx, profile, ops):
             for x in np.arange(x0 + .05, x1, pitch): B(x, z + rh / 2, size, rh, size, m, d - .03)
             for dd in np.arange(.1, d - .05, pitch):
                 for x in (x0 + .03, x1 - .03): B(x, z + rh / 2, size, rh, size, m, dd)
+    for rf in profile.get('roofs', []):
+        # a roof seen from the street: a tiled eave or pent roof running along the wall's top (or over a bay or a door),
+        # sloping down and out from the wall; barrel tiles as ridges down the slope, a fascia at its edge
+        oh = min(.3, float(rf.get('overhangM', .2)))
+        x0, x1 = max(low - oh, rf['x'][0] * W - oh), min(high + oh, rf['x'][1] * W + oh)
+        if x1 - x0 < .3: continue
+        z = rf['z'] * Hs; p = float(rf.get('projectionM', .6)); r = float(rf.get('riseM', p * .45)); m = rf.get('material', '#9a4a32')
+        # a mansard or gable read on the wall's top stood in for a roof the massing now builds (a given or fitted pitched
+        # roof): drawn twice it stands as a wall above the eaves and hides the real roof
+        # (anywhere in the wall's upper part: a gable end wall rises to its ridge, so its read gable sits metres under H)
+        if ctx.get('pitchedRoof') and rf.get('kind') in ('mansard', 'gable') and z >= .6 * H: continue
+        # an eave read at or above the top of the wall as built sits on that top (the photograph's frame and the LiDAR wall
+        # can disagree by a metre on a sloping street): it never floats over the wall it belongs to
+        if z > H - .3: z = H - .02
+        if rf.get('kind') == 'mansard':
+            # a mansard: a steep roof face rising from the wall's top and leaning back over it, capped along its upper edge
+            back = r / math.tan(math.radians(float(np.clip(rf.get('pitchDeg', 72.), 45., 85.))))
+            quad(ctx, [(x0, z, .14), (x1, z, .14), (x1, z + r, -back), (x0, z + r, -back)], .14, m)
+            B((x0 + x1) / 2, z + r + .04, x1 - x0, .08, .3, rf.get('fasciaMaterial', m), -back + .1)
+            continue
+        if rf.get('kind') == 'gable':
+            # a gable end: the triangular face up to the ridge (unless the reading's parapet outline draws it), the roof's
+            # overhang following both slopes out over it, bargeboards along its edges
+            ax = float(rf.get('apexX', (rf['x'][0] + rf['x'][1]) / 2 * W)); apex = z + r; wm = ctx['wall_mat']((x0 + x1) / 2, z)
+            if not profile.get('parapets'): P(Polygon([(x0 + oh, z), (ax, apex - .05), (x1 - oh, z)]), 0., .3, wm)
+            for (xa, za, xb, zb) in ((x0, z - .1, ax, apex), (ax, apex, x1, z - .1)):
+                quad(ctx, [(xa, za + .1, -.05), (xb, zb + .1, -.05), (xb, zb + .1, p), (xa, za + .1, p)], .1, m)
+                beam((xa, za, p), (xb, zb, p), .16, rf.get('fasciaMaterial', ctx['wall_mat'](ax, z)))
+            continue
+        quad(ctx, [(x0, z + r, -.02), (x1, z + r, -.02), (x1, z, p), (x0, z, p)], .07, m)
+        if rf.get('kind', 'tile-eave') in ('tile-eave', 'pent', 'tile-roof'):
+            for xx in np.arange(x0 + .12, x1 - .05, .24): beam((xx, z + r + .045, -.02), (xx, z + .045, p), .085, m)
+        B((x0 + x1) / 2, z - .02, x1 - x0, .12, .06, rf.get('fasciaMaterial', m), p - .03)
+        if r > .25: B((x0 + x1) / 2, z + r - .05, x1 - x0, .1, .2, m, .08)                        # the ridge against the wall
+    # Everything in front of the wall stands on the ground where it is (ctx['ground']: the terrain under a point of the
+    # wall frame, in metres above the wall's foot), not on the wall's foot: on a hillside a garden wall at the sidewalk
+    # stands metres below or above the house. Long pieces step with the slope.
+    G = ctx.get('ground') or (lambda x, depth=0.: 0.)
+
+    def mine(kind, i):
+        """Each item is drawn once per building and reading, by the first of its wall pieces to be drawn: every piece
+        shares the reading's frame, and an item may stand in front of no piece at all (a garden wall either side of a
+        drive, beside a garage narrower than the lot)."""
+        key = (ctx['detail'], kind, i)
+        if key in _DRAWN: return False
+        _DRAWN.add(key); return True
+
+    def runs(x0, x1, step=1.5):
+        k = max(1, int(math.ceil((x1 - x0) / step))); e = np.linspace(x0, x1, k + 1); return list(zip(e[:-1], e[1:]))
+
+    def clipped(x0, x1, h, d, off, m, base=0.):
+        """A clipped hedge: one crinkled mass following the ground (pipeline/facade_detail.hedge)."""
+        hedge(ctx, x0, x1, off, off + d, h, m, base)
+
+    def shrubs(x0, x1, base, h, d, off, m, sparse=False):
+        """Foliage over [x0, x1] standing `h` over the ground in front of the wall, from `base` up (on a planter). Planting
+        as tall as a small tree (2.5 m or more) is one: trunk, limbs and leaf cards as the LiDAR's trees are drawn
+        (canopy.draw_tree, after the walls, the crown kept off this wall), a tree per run as wide as it is tall; a lumpy
+        mass that tall read as a boulder. Lower planting is clumps of foliage."""
+        tall = h >= 2.5 and not sparse and ctx.get('trees') is not None
+        for xa, xb in runs(x0, x1, max(3., h) if tall else 3.):
+            zg = G((xa + xb) / 2, off + d / 2)
+            if not tall: blob(ctx, xa, xb, zg + base, zg + h, d, off, m, sparse=sparse); continue
+            oc = off + d / 2
+            ctx['trees'].append((*(float(v) for v in ctx['point']((xa + xb) / 2, zg + base, oc)), h - base, float(np.clip(min(max(xb - xa, d) / 2, oc - .3), .6, 4.))))
+    for i, pl in enumerate(profile.get('planting', [])):
+        # planting the photograph shows against the wall: shrubs and planters as clumps of foliage, a trellis as a lattice
+        # with a climber on it, a hedge as a clipped mass; in front of the wall (offsetM)
+        x0, x1 = pl['x'][0] * W, pl['x'][1] * W; h = float(pl['heightM']); d = float(pl.get('depthM', .8)); off = float(pl.get('offsetM', .3)); m = pl.get('material', '#46612f')
+        kind = pl.get('kind', 'shrub')
+        if x1 - x0 < .15 or not mine('planting', i): continue
+        if kind == 'hedge': clipped(x0, x1, h, d, off, m); continue
+        # a climber is one leafy mass growing up the wall from the ground (a thin crinkled hedge against it), never a few
+        # leaf clumps hung in mid-air: scattered small blobs read as stray decals
+        if kind == 'climber': clipped(x0, x1, h, float(np.clip(d, .15, .35)), float(np.clip(off, .02, .3)), m); continue
+        if kind == 'trellis':
+            zg = G((x0 + x1) / 2, off); tm = pl.get('frameMaterial', '#5b4a3a')
+            for xx in np.arange(x0, x1 + .01, .3): beam((xx, zg, off), (xx, zg + h, off), .03, tm)
+            for zz in np.arange(.3, h, .3): beam((x0, zg + zz, off), (x1, zg + zz, off), .025, tm)
+            if not pl.get('bare'): clipped(x0, x1, h * .85, .2, off + .05, m)
+            continue
+        if pl.get('planter'):
+            for xa, xb in runs(x0, x1, 3.): B((xa + xb) / 2, G((xa + xb) / 2, off + d / 2) + .2, xb - xa, .8, d, pl.get('planterMaterial', '#9a9286'), off + d / 2)
+        if not pl.get('bare'): shrubs(x0, x1, .6 if pl.get('planter') else 0., h, d, off, m, sparse=kind in ('trellis', 'climber'))
+    for i, se in enumerate(profile.get('streetEdge', [])):
+        # what stands at the street line in front of a set-back building: garden walls, iron fences and gates, hedges and
+        # shrubs, and the paving of a driveway or path running from the wall out to the street
+        x0, x1 = se['x'][0] * W, se['x'][1] * W; h = float(se['heightM']); off = float(se.get('offsetM', 0.)); m = se.get('material', '#d8d2c4'); kind = se.get('kind', 'wall')
+        if x1 - x0 < .15 or not mine('streetEdge', i): continue
+        if kind in ('driveway', 'path'):
+            ds = np.linspace(0., max(off, .5), max(2, int(math.ceil(max(off, .5))) + 1))
+            for da, db in zip(ds[:-1], ds[1:]):
+                quad(ctx, [(x0, G(x0, da) + .07, da), (x1, G(x1, da) + .07, da), (x1, G(x1, db) + .07, db), (x0, G(x0, db) + .07, db)], .14, m)
+            continue
+        if kind == 'hedge': clipped(x0, x1, h, float(se.get('depthM', 1.)), off, m, float(se.get('baseM', 0.))); continue   # baseM: on a wall's top
+        if kind == 'shrub':
+            d = float(se.get('depthM', 1.))
+            shrubs(x0, x1, 0., h, d, off, m)
+            continue
+        for xa, xb in runs(x0, x1):
+            zg = G((xa + xb) / 2, off + .15)
+            if kind == 'wall':
+                B((xa + xb) / 2, zg + (h - .5) / 2, xb - xa + .02, h + .5, .3, m, off + .15); B((xa + xb) / 2, zg + h + .03, xb - xa + .06, .06, .36, m, off + .15)
+            elif kind in ('fence', 'gate'):
+                base = zg + float(se.get('baseM', 0.))
+                for zz in (base + .08, base + h - .05): beam((xa, zz, off), (xb, zz, off), .035, m)
+                for xx in np.arange(xa + .06, xb, .13): beam((xx, base - .1, off), (xx, base + h, off), .018, m)
+        if kind == 'wall':
+            # square piers standing a little proud of a garden wall, at its ends and at the pitch the photograph shows
+            pw, ph = float(se.get('pierWidthM', 0.)), float(se.get('pierHeightM', h + .25))
+            if pw > .1:
+                xs = [f * W for f in se.get('piers') or []] or ([x0 + pw / 2, x1 - pw / 2] if not se.get('pierPitchM') else list(np.arange(x0 + pw / 2, x1 - pw / 2 + .01, float(se['pierPitchM']))))
+                for xp in xs:
+                    zg = G(xp, off + .15); B(xp, zg + (ph - .5) / 2, pw, ph + .5, .42, m, off + .15); B(xp, zg + ph + .04, pw + .08, .08, .5, m, off + .15)
+    for i, cn in enumerate(profile.get('canopies', [])):
+        # a canopy over no opening's head (a porte-cochere, an awning over a lobby set back behind it): a slab with a fascia
+        x0, x1 = cn['x'][0] * W, cn['x'][1] * W; z = cn['z'] * Hs; d = float(cn.get('depthM', 1.5)); m = cn.get('material', '#e6e3da')
+        if x1 - x0 < .3 or not mine('canopies', i): continue
+        B((x0 + x1) / 2, z, x1 - x0, .2, d, m, d / 2); B((x0 + x1) / 2, z - .14, x1 - x0, .12, .07, m, d - .035)
+    for i, pc in enumerate(profile.get('porches', [])):
+        # a porch or portico before the wall: columns with a base and a capital carrying a beam (entablature) and a roof,
+        # its floor a deck at floorM with steps down to the ground in front of it; drawn from the measured extent alone
+        x0, x1 = max(low, pc['x'][0] * W), min(high, pc['x'][1] * W)
+        if x1 - x0 < .8 or not mine('porches', i): continue
+        z0 = float(pc.get('floorM', 0.)); zt = float(pc['topM']); d = float(pc['depthM']); cx = (x0 + x1) / 2
+        m = pc.get('material', ctx['wall_mat'](cx, zt)); cm = pc.get('columnMaterial', m); zg = G(cx, d + .5)
+        if z0 > .15: B(cx, (z0 + zg) / 2, x1 - x0, max(.2, z0 - zg), d, m, d / 2)          # the deck, on its foundation
+        n = int(pc.get('columns', 2)); r = float(np.clip((x1 - x0) / (n * 9.), .09, .2))
+        for x in np.linspace(x0 + r + .08, x1 - r - .08, n):
+            beam((x, z0 + .15, d - r - .08), (x, zt - .45, d - r - .08), 2 * r, cm)
+            B(x, z0 + .08, 2.6 * r, .16, 2.6 * r, cm, d - r - .08); B(x, zt - .38, 2.4 * r, .16, 2.4 * r, cm, d - r - .08)   # base, capital
+        B(cx, zt - .15, x1 - x0, .3, d, m, d / 2)                                             # the beam over the columns
+        roof = pc.get('roof', 'flat')
+        if roof == 'gable':
+            peak = min(1.6, (x1 - x0) * .28)
+            P(Polygon([(x0, zt), (cx, zt + peak), (x1, zt)]), d - .05, .1, m)                # the pediment's face
+            for (xa, xb) in ((x0 - .1, cx), (cx, x1 + .1)):
+                za, zb = (zt - .02, zt + peak) if xa < cx else (zt + peak, zt - .02)
+                quad(ctx, [(xa, za + .1, 0.), (xb, zb + .1, 0.), (xb, zb + .1, d + .15), (xa, za + .1, d + .15)], .08, 'roof')
+        elif roof == 'shed':
+            quad(ctx, [(x0 - .1, zt + .45, 0.), (x1 + .1, zt + .45, 0.), (x1 + .1, zt + .05, d + .15), (x0 - .1, zt + .05, d + .15)], .08, 'roof')
+        else:
+            B(cx, zt + .05, x1 - x0 + .2, .1, d + .15, m, (d + .15) / 2)                    # a flat roof slab
+            if roof == 'balcony':
+                for x in np.arange(x0 + .1, x1, .14): beam((x, zt + .1, d), (x, zt + 1., d), .018, cm)
+                B(cx, zt + 1.02, x1 - x0, .06, .12, cm, d)                                    # its handrail
+        if pc.get('steps') and z0 - zg > .25:
+            k = int(round((z0 - zg) / .18)); rise = (z0 - zg) / k; ws = min(2.2, x1 - x0 - .4)
+            for j in range(1, k + 1):                                                         # each tread a step lower, a step further out
+                top = z0 - (j - 1) * rise
+                B(cx, (top + zg) / 2, ws, max(.05, top - zg), .3, m, d + (j - .5) * .3)
     for hg in profile.get('hedges', []):
-        # a clipped hedge standing in front of the wall (on its ground line), as the photograph shows it hiding the wall
+        # a clipped hedge standing in front of the wall, as the photograph shows it hiding the wall
         x0, x1 = max(low, hg['x'][0] * W), min(high, hg['x'][1] * W)
         if x1 - x0 < .3: continue
-        h, d, off, m = hg['heightM'], hg.get('depthM', 1.2), hg.get('offsetM', .5), hg.get('material', '#3f5a2c')
-        B((x0 + x1) / 2, h * .46, x1 - x0, h * .92, d, m, off + d / 2)
-        B((x0 + x1) / 2, h * .96, x1 - x0 - .2, h * .08, d - .25, m, off + d / 2)          # a softened top
+        clipped(x0, x1, hg['heightM'], hg.get('depthM', 1.2), hg.get('offsetM', .5), hg.get('material', '#3f5a2c'))
+    for tf in profile.get('timbering', []):
+        # a timber frame (half-timbering): its posts where they were measured and rails along their foot and head, all
+        # on the wall (cut by its outline, a gable's rake included) and stopping at every opening
+        x0, z0, x1, z1 = tf['rect']; m = tf.get('material') or ctx['mat']; pr = float(np.clip(tf.get('projectionM', .05), .02, .15))
+        w = float(np.clip(tf.get('widthM', .18), .1, .35)); ZT = min(H, z1 * Hs)
+        holes = unary_union([box(o['rect'][0] * W - .03, o['rect'][1] * Hs - .03, o['rect'][2] * W + .03, o['rect'][3] * Hs + .03) for o in profile.get('openings', []) if o.get('rect')] or [Polygon()])
+        members = [box(a * W, z0 * Hs, e * W, ZT) for a, e in tf.get('posts', [])]
+        members += [box(x0 * W, z0 * Hs, x1 * W, z0 * Hs + w), box(x0 * W, ZT - w, x1 * W, ZT)]
+        members += [box(x0 * W, zr * Hs - w / 2, x1 * W, zr * Hs + w / 2) for zr in tf.get('rails', []) if z0 * Hs + w < zr * Hs < ZT - w]
+        for mb in members:
+            poly = mb.intersection(clip).difference(holes)
+            if not poly.is_empty: P(poly, pr, pr + .04, m)
     for rf in profile.get('reliefs', []):
         x0, z0, x1, z1 = rf['rect']; poly = box(x0 * W, z0 * Hs, x1 * W, min(H, z1 * Hs)).intersection(clip)
         if poly.is_empty: continue
         pr = float(np.clip(rf.get('projectionM', .04), .01, .3))
         P(poly, pr, pr + .04, rf.get('material', ctx['mat']))
         P(poly.buffer(-.06, join_style=2), pr + .025, .05, rf.get('material', ctx['mat']))
+
+
+def quad(ctx, corners, t, material):
+    """A slab of thickness t under four (x, z, depth) corners in the wall frame (a sloped roof plane)."""
+    import trimesh
+    top = np.array([ctx['point'](*c) for c in corners]); bot = top - np.array([0, 0, t])
+    v = np.vstack([top, bot]); f = np.array([[0, 1, 2], [0, 2, 3], [4, 6, 5], [4, 7, 6], [0, 4, 5], [0, 5, 1], [1, 5, 6], [1, 6, 2], [2, 6, 7], [2, 7, 3], [3, 7, 4], [3, 4, 0]])
+    mesh = trimesh.Trimesh(v, f, process=False); mesh.fix_normals(); ctx['put'](mesh, ctx['detail'], material)
+
+
+def shade(m, k):
+    """A hex colour lighter or darker by factor k (other materials as they are)."""
+    if not (isinstance(m, str) and len(m) == 7 and m[0] == '#'): return m
+    c = [min(255, max(0, round(int(m[i:i + 2], 16) * k))) for i in (1, 3, 5)]; return '#%02x%02x%02x' % tuple(c)
+
+
+def _noise(v, seed=0.):
+    """A smooth-ish deterministic noise in [-1, 1] for points v (n, 3): sums of sines at leaf-cluster scale."""
+    x, y, z = v[:, 0], v[:, 1], v[:, 2]
+    return (np.sin(x * 7.3 + y * 3.1 + z * 5.7 + seed) * .45 + np.sin(x * 13.7 - y * 11.3 + z * 9.1 + 1.7 + seed) * .35
+            + np.sin(-x * 23.1 + y * 19.7 - z * 17.3 + 4.1 + seed) * .2)
+
+
+def _grid_box(L, D, H, step):
+    """A closed box L x D x H about the origin whose faces are an even grid of about `step`: subdividing a box's
+    triangles until every edge is that short quartered all of them each round, 40 times the faces on a long hedge."""
+    import trimesh
+    xs, ys, zs = (np.linspace(-s / 2, s / 2, max(1, int(math.ceil(s / step))) + 1) for s in (L, D, H))
+    V, F = [], []
+    def face(P):
+        n = sum(len(v) for v in V); idx = np.arange(P.shape[0] * P.shape[1]).reshape(P.shape[:2]) + n; V.append(P.reshape(-1, 3))
+        a, b, c, d = idx[:-1, :-1].ravel(), idx[1:, :-1].ravel(), idx[1:, 1:].ravel(), idx[:-1, 1:].ravel()
+        F.extend([np.c_[a, b, c], np.c_[a, c, d]])
+    for z in (zs[0], zs[-1]): X, Y = np.meshgrid(xs, ys, indexing='ij'); face(np.dstack([X, Y, np.full_like(X, z)]))
+    for y in (ys[0], ys[-1]): X, Z = np.meshgrid(xs, zs, indexing='ij'); face(np.dstack([X, np.full_like(X, y), Z]))
+    for x in (xs[0], xs[-1]): Y, Z = np.meshgrid(ys, zs, indexing='ij'); face(np.dstack([np.full_like(Y, x), Y, Z]))
+    mesh = trimesh.Trimesh(np.vstack(V), np.vstack(F), process=False); mesh.merge_vertices(); mesh.fix_normals()
+    return mesh
+
+
+def hedge(ctx, x0, x1, d0, d1, h, m, base=0.):
+    """A clipped hedge spanning [x0, x1] along the wall and [d0, d1] out from it, h tall: one box subdivided to about
+    0.3 m and crinkled along its normals (leaf clusters, not a green wall), its top edges rounded in, every vertex
+    standing on the ground under it (plus `base`, a wall it grows on) so the hedge follows a slope, its foot sunk 0.25 m;
+    mottled in two shades."""
+    import trimesh
+    L, D = max(.2, x1 - x0), max(.2, d1 - d0)
+    mesh = _grid_box(L, D, h, .3)
+    v = mesh.vertices.copy(); nrm = mesh.vertex_normals.copy()
+    up = (v[:, 2] + h / 2) / h                                              # 0 at the foot, 1 at the top
+    v += nrm * (.055 * _noise(v + [x0, d0, 0.]) * (up > .03))[:, None]
+    r = np.clip((up - .82) / .18, 0, 1) * .16                               # the top edges rounded in
+    for k, half in ((0, L / 2), (1, D / 2)):
+        near = np.abs(v[:, k]) > half - .25; v[near, k] -= np.sign(v[near, k]) * r[near]
+    xf, df = x0 + L / 2 + v[:, 0], d0 + D / 2 + v[:, 1]
+    gv = ctx['ground_v'](xf, df) if ctx.get('ground_v') else np.array([ctx.get('ground', lambda a, b: 0.)(a, b) for a, b in zip(xf, df)])
+    zf = gv + base + (v[:, 2] + h / 2) - .25 * (up < .01)
+    mesh.vertices = ctx['points'](xf, zf, df) if ctx.get('points') else np.array([ctx['point'](a, c, b) for a, b, c in zip(xf, df, zf)])
+    mesh.fix_normals()
+    pick = _noise(mesh.triangles_center, 2.3) > .15
+    for sel, mat in ((pick, shade(m, 1.07)), (~pick, m)):
+        if sel.any(): ctx['put'](mesh.submesh([np.nonzero(sel)[0]], append=True, repair=False), ctx['detail'], mat)
+
+
+def blob(ctx, x0, x1, z0, h, d, off, material, sparse=False):
+    """Foliage along [x0, x1]: overlapping rounded clumps, sized and placed by a hash of their position (no randomness:
+    the same reading builds the same planting)."""
+    import trimesh
+    n = max(1, int(round((x1 - x0) / (.9 if not sparse else 1.3))))
+    for i in range(n):
+        u = (i + .5) / n; seed = (np.sin((x0 + u * (x1 - x0)) * 12.9898 + h * 78.233) * 43758.5453) % 1.
+        w = (x1 - x0) / n * (1.15 + .3 * seed); hh = (h - z0) * (.75 + .25 * seed) * (.6 if sparse else 1.)
+        c = (x0 + u * (x1 - x0), z0 + hh / 2 + (h - z0 - hh) * (.5 if sparse else 0.), off + d / 2)
+        mesh = trimesh.creation.icosphere(subdivisions=2, radius=1.)
+        mesh.vertices *= (1 + .16 * _noise(mesh.vertices * 2.2, seed * 9.))[:, None]   # lumpy, like a shrub's leaf clusters
+        mesh.vertices *= [w / 2, hh / 2, d / 2 * (.9 + .2 * seed)]          # (along, up, out) before mapping
+        mesh.vertices = np.array([ctx['point'](c[0] + a, c[1] + b, c[2] + e) for a, b, e in mesh.vertices]); mesh.fix_normals()
+        ctx['put'](mesh, ctx['detail'], material)

@@ -3,7 +3,7 @@ side by side, and a summary with the photograph's own colour in each material zo
 Usage: check.py <side id> <reading.json> <out.jpg>
        check.py grid <side id> <view 0|1> <x0> <z0> <x1> <z1> <out.jpg>   (a zoomed crop with a 0.5 m grid)
        (run from work/)"""
-import glob, json, math, sys
+import os, glob, json, math, sys
 from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -16,7 +16,7 @@ FONT = ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', 13)
 
 def piece_of(side):
     best = None
-    for f in sorted(glob.glob(str(AREA / 'regen/sides/sides-*.json'))):
+    for f in sorted(glob.glob(str(AREA / os.environ.get('SIDES_DIR', 'regen/sides') / 'sides*.json'))):
         for p in json.load(open(f))['pieces']:
             if p['id'] == side and p['views'] and (best is None or len(p['views']) > len(best['views'])): best = p
     if best is None: sys.exit(f'no photographed side {side}')
@@ -24,7 +24,7 @@ def piece_of(side):
 
 
 def draw(r, piece, v):
-    im = Image.open(AREA / 'regen/sides/img' / v['rect']).convert('RGB'); photo = np.asarray(im).copy(); d = ImageDraw.Draw(im)
+    im = Image.open(AREA / os.environ.get('SIDES_DIR', 'regen/sides') / 'img' / v['rect']).convert('RGB'); photo = np.asarray(im).copy(); d = ImageDraw.Draw(im)
     pad, ppm, H, L = v['rectPad'], v['ppm'], float(piece['heightM']), float(piece['lengthM'])
     P = lambda x, z: (pad + x * ppm, pad + (H - z) * ppm)
     def rect(x0, z0, x1, z1, col, w=2):
@@ -85,6 +85,11 @@ def draw(r, piece, v):
         d.line([P(b['x0'], b['zM']), P(b['x1'], b['zM'])], fill=(255, 80, 200), width=4); rect(b['x0'], b['zM'], b['x1'], b['zM'] + b.get('railingHeightM', 1.), (255, 80, 200), 1)
     for k, o in enumerate(r.get('ornaments') or []):
         rect(o['x0'], o['z0'], o['x1'], o['z1'], (255, 150, 220), 1)
+    for k, q in enumerate(r.get('roofs') or []):
+        d.line([P(q['x0'], q['zM']), P(q['x1'], q['zM'])], fill=(230, 90, 40), width=4); d.line([P(q['x0'], q['zM'] + q.get('riseM', .3)), P(q['x1'], q['zM'] + q.get('riseM', .3))], fill=(230, 90, 40), width=1)
+        text(q['x0'] + .2, q['zM'] + q.get('riseM', .3) + .5, f"RF{k} {q.get('kind', 'tile-eave')} p{q.get('projectionM', '')}", (240, 110, 60))
+    for k, q in enumerate(r.get('planting') or []):
+        rect(q['x0'], 0, q['x1'], q['heightM'], (60, 200, 60), 2); text(q['x0'] + .1, q['heightM'] + .4, f"P{k} {q.get('kind', 'shrub')}", (80, 220, 80))
     for k, h in enumerate(r.get('hedges') or []):
         rect(h['x0'], 0, h['x1'], h['heightM'], (40, 200, 40), 3); text(h['x0'] + .2, h['heightM'] - .3, f"H{k} hedge {h.get('offsetM', .5)} m out", (60, 230, 60))
     if r.get('wallTopM'): d.line([P(0, r['wallTopM']), P(L, r['wallTopM'])], fill=(255, 255, 255), width=2)
@@ -111,7 +116,7 @@ def zone_colours(r, photo, frame):
 
 def grid(side, view, x0, z0, x1, z1, out, scale=3.):
     """A zoomed crop of one rectified view with a labelled half-metre grid, for measuring positions to about 0.1 m."""
-    piece = piece_of(side); v = piece['views'][view]; im = Image.open(AREA / 'regen/sides/img' / v['rect']).convert('RGB')
+    piece = piece_of(side); v = piece['views'][view]; im = Image.open(AREA / os.environ.get('SIDES_DIR', 'regen/sides') / 'img' / v['rect']).convert('RGB')
     pad, ppm, H = v['rectPad'], v['ppm'], float(piece['heightM'])
     box = (int(pad + x0 * ppm), int(pad + (H - z1) * ppm), int(pad + x1 * ppm), int(pad + (H - z0) * ppm))
     crop = im.crop(box); s = min(scale, 1400 / max(1, crop.width), 1400 / max(1, crop.height)); crop = crop.resize((int(crop.width * s), int(crop.height * s)), Image.LANCZOS)
@@ -140,11 +145,25 @@ def main():
     for i in ims: sheet.paste(i, (x, 0)); x += i.width + 10
     sheet.save(out, quality=88)
     cells = sum(len(specs.bank_cells(b)) for b in r.get('banks') or [])
+    warn = []
+    st = [z for z in (r.get('storeys') or []) if isinstance(z, (int, float))]
+    for a_, b_ in zip(st[1:], st[2:]):
+        if not 2.6 <= b_ - a_ <= 4.6: warn.append(f'storey {a_:g}-{b_:g} is {b_ - a_:.2f} m (city storeys are 2.6-4.6 m): a squashed or stretched frame, or a missed storey')
+    for o in r.get('openings') or []:
+        h_ = o['z1'] - o['z0']
+        if o.get('kind') == 'garage' and h_ < 2.0: warn.append(f"garage door {o['x0']:g}-{o['x1']:g} is {h_:.2f} m tall (real ones are 2.0-2.6 m): ground line or scale off?")
+        if o.get('kind') == 'entry' and h_ < 1.9 and not o.get('bayWindow'): warn.append(f"entry {o['x0']:g}-{o['x1']:g} is {h_:.2f} m tall: too low for a door")
+        if o.get('kind') == 'window' and o['z0'] > 3 and h_ > 2.6 and not o.get('railing'): warn.append(f"upper window {o['x0']:g}-{o['x1']:g} is {h_:.2f} m tall: a French window (give its railing) or a scale error?")
+    for b in r.get('banks') or []:
+        if b.get('kind', 'window') == 'window' and b['z0'] > 3 and (b.get('openingHeightM') or 0) > 2.6 and not b.get('railing'): warn.append(f"bank at x {b['x0']:g}-{b['x1']:g}: windows {b['openingHeightM']:.2f} m tall")
+    if r.get('thisBuilding') is not False and not r.get('wallTopM') and not r.get('parapetTop'): warn.append('no wallTopM: look higher (views.py rect --top) and give the wall top and roofline')
+    if r.get('thisBuilding') is not False and not r.get('roofs') and not any(b.get('kind') == 'cornice' for b in r.get('bands') or []): warn.append('no roof or cornice given: what does the top of this wall look like?')
+    if 'unmodelled' not in r: warn.append('no unmodelled list: list what you saw and could not express ([] if nothing)')
     print(json.dumps({'side': side, 'lengthM': piece['lengthM'], 'frameHeightM': piece['heightM'], 'storeys': r.get('storeys'), 'wallTopM': r.get('wallTopM'),
                       'bankWindows': cells, 'openings': len(r.get('openings') or []), 'bays': len(r.get('bays') or []), 'bands': len(r.get('bands') or []),
                       'fireEscapes': len(r.get('fireEscapes') or []), 'balconies': len(r.get('balconies') or []),
                       'zones': [{'zone': f"M{k}", 'read': m.get('hex'), 'photoMedianByView': [c[k] for c in colours]} for k, m in enumerate(r.get('materials') or [])],
-                      'image': out}))
+                      'warnings': warn, 'unmodelled': r.get('unmodelled'), 'image': out}))
 
 
 if __name__ == '__main__':

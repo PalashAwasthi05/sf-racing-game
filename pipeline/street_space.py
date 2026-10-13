@@ -92,15 +92,54 @@ def prepare(ctx):
             edge=edge.difference(crossing.buffer(1.2)).intersection(boundary)
             separators.append({'geometry':edge,'sourceId':record.get('objectid'),'wayId':w['id']})
     separator_area=unary_union([x['geometry'].buffer(.28,cap_style=2) for x in separators])
+    road,sidewalk,curb_evidence=curb_from_trees(ctx,road,sidewalk,crossing)
     road=road.difference(separator_area)
     sidewalk = sidewalk.difference(buildings.buffer(.03)).difference(cycle).difference(road).difference(separator_area).intersection(boundary).buffer(0)
     curb = sidewalk.boundary.intersection(road.buffer(.15)).difference(crossing)
     rail_clearance=unary_union([w['g'].buffer(1.6) for w in ctx.get('rails',[])]).intersection(boundary)
     forbidden = road.union(cycle).union(crossing).union(buildings).union(rail_clearance)
-    return dict(road=road, cycle=cycle, sidewalk=sidewalk, paths=path,
+    return dict(road=road, cycle=cycle, sidewalk=sidewalk, paths=path, curbEvidence=curb_evidence,
                 crossings=crossing, curb=curb, forbidden=forbidden,
                 occupied=[], records=[], separators=separators, surfaceSource='city curb outlines + ROW remainder; historical geometry, not as-built verified' if not curb_blocks.is_empty else 'surveyed + ROW fallback' if observed else 'ROW remainder + mapped paths; inferred curb',
                 measuredSidewalkAreaM2=round(measured.area, 2))
+
+
+def curb_from_trees(ctx, road, sidewalk, crossing, reach_m=3., clear_m=.7, run_m=25.):
+    """Street trees the inventory records in a curb-side sidewalk cutout stand on the sidewalk, a trunk's width from the
+    curb. Where two or more of them, within 25 m of each other along a line, lie up to 3 m inside the modelled road, the
+    modelled curb there is that far wrong (historical curb outlines and right-of-way remainders run 1-2 m inside the
+    real curb on some streets: a row of palms lay 1.3-1.7 m inside the road and all were rejected). The sidewalk is
+    widened to 0.7 m beyond each tree, the strip joined along the run, never into a crossing."""
+    tf = ctx['DATA'] / 'trees.json'
+    if not tf.exists(): return road, sidewalk, []
+    pts = []
+    for t in ctx['json'].load(open(tf)):
+        if 'curb side' not in str(t.get('qsiteinfo', '')).lower(): continue
+        if any(s in str(t.get('qspecies', '')).lower() for s in ['vacant', 'stump', 'removed', 'planting site']): continue
+        try: x, y = ctx['local'](float(t['longitude']), float(t['latitude']))
+        except (ValueError, KeyError, TypeError): continue
+        p = Point(x, y)
+        if not road.covers(p) or crossing.buffer(1.).covers(p): continue
+        q = nearest_points(p, sidewalk)[1] if not sidewalk.is_empty else None
+        if q is None or p.distance(q) > reach_m: continue
+        if all(p.distance(o) > .5 for o, _ in pts): pts.append((p, q))        # the inventory repeats trees
+    kept = [a for a in pts if sum(1 for b in pts if b is not a and a[0].distance(b[0]) <= run_m) >= 1]
+    if not kept: return road, sidewalk, []
+    pieces = [unary_union([p.buffer(clear_m), LineString([p, q]).buffer(clear_m, cap_style=2)]) for p, q in kept]
+    # join trees of one run so the curb stays one straight edge between them. A run is one curb: its trees step onto the
+    # sidewalk the same way and the join crosses no street centreline. A street is narrower than a run, and the nearest
+    # tree across it was joined too: the hull laid a raised sidewalk strip diagonally across the carriageway.
+    centres = unary_union([w['g'] for w, _, _ in ctx.get('roads', [])])
+    def same_curb(a, b):
+        (pa, qa), (pb, qb) = a, b
+        da = np.array([qa.x - pa.x, qa.y - pa.y]); db = np.array([qb.x - pb.x, qb.y - pb.y])
+        if float(da @ db) <= 0: return False
+        return centres.is_empty or not LineString([pa, pb]).intersects(centres)
+    for i, a in enumerate(kept):
+        b = min((k for k in kept if k is not a and k[0].distance(a[0]) <= run_m and same_curb(a, k)), key=lambda k: k[0].distance(a[0]), default=None)
+        if b is not None: pieces.append(unary_union([pieces[i], pieces[kept.index(b)]]).convex_hull)
+    strip = unary_union(pieces).difference(crossing).intersection(road.buffer(.05))
+    return road.difference(strip), sidewalk.union(strip), [{'tree': [round(p.x, 2), round(p.y, 2)], 'curbShiftM': round(p.distance(q) + clear_m, 2)} for p, q in kept]
 
 
 def place(plan, point, radius, boundary, *, kind, source_id, max_shift=0., require_walk=False):
@@ -154,7 +193,7 @@ def place(plan, point, radius, boundary, *, kind, source_id, max_shift=0., requi
 
 
 def tree_candidates(ctx):
-    result=[]; plan=ctx['street_plan']
+    result=[]; plan=ctx['street_plan']; seen=[]
     for t in ctx['json'].load(open(ctx['DATA']/'trees.json')):
         species=t.get('qspecies','').lower()
         if any(s in species for s in ['vacant','stump','removed','dead tree','planting site']):
@@ -162,6 +201,10 @@ def tree_candidates(ctx):
         try:x,y=ctx['local'](float(t['longitude']),float(t['latitude']))
         except (ValueError,KeyError,TypeError):continue
         if not ctx['boundary'].buffer(-1).covers(Point(x,y)):continue
+        # the inventory repeats a tree under several records (one plane tree 8 times): each copy was placed, shifted
+        # into a cluster of trunks round the one tree
+        if any(math.hypot(x-sx,y-sy)<.5 for sx,sy in seen):continue
+        seen.append((x,y))
         # Inventory diameter is inches, not metres. Unmeasured trees keep a
         # modest default trunk; never scale the road exclusion to the canopy.
         radius=min(.65,max(.08,number(t.get('dbh'),12)*.0254/2))

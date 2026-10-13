@@ -23,9 +23,12 @@ def compile(ctx):
   # Short terrain-conforming strips avoid metre-long floating curb slabs.
   for ss in np.arange(0,line.length,.65):
    seg=LineString([line.interpolate(ss),line.interpolate(min(ss+.65,line.length))])
+   if seg.length<.01:continue   # a sliver at the end of a run has no offset curve
    surface(seg.buffer(.09,cap_style=2),'sidewalks','concrete',.26)
    for side in [-1,1]:
-    ln=seg.offset_curve(side*.09);a,b=np.array(ln.coords[0]),np.array(ln.coords[-1]);za,zb=float(elev(*a)),float(elev(*b))
+    ln=seg.offset_curve(side*.09)
+    if ln.is_empty:continue   # a degenerate piece offsets to nothing
+    a,b=np.array(ln.coords[0]),np.array(ln.coords[-1]);za,zb=float(elev(*a)),float(elev(*b))
     vv=[[a[0],a[1],za+.09],[b[0],b[1],zb+.09],[b[0],b[1],zb+.26],[a[0],a[1],za+.26]]
     ctx['put'](trimesh.Trimesh(vv,[[0,1,2],[0,2,3]],process=False),'sidewalks','concrete')
  # Score joints in the paving; geometry stays local and follows each street orientation.

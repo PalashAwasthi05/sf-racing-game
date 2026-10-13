@@ -4,6 +4,9 @@ A side is the run of one building's wall pieces that face the same way in one pl
 where the roof steps; a facade reads across those cuts). Long sides are cut into pieces of about 25 m, each seen from
 its own best camera. For every piece: a square-on rectified photograph (fractions across it are the spec's frame),
 annotated with a metre scale on its edges, and the ordinary perspective view for context. Geometric rules only.
+Cameras are the area's registered ones (regen/register_cameras.py: each panorama placed against the LiDAR's skyline)
+when the area has them: a provider pose metres off cut crops shifted along the wall or at the wrong scale, and the
+readings measured on them landed beside their windows (--nominal uses the provider poses).
 """
 import argparse, json, math, pathlib, sys, time
 import numpy as np
@@ -32,6 +35,8 @@ def sides_of(walls):
 ap = argparse.ArgumentParser(); ap.add_argument('--evidence', required=True); ap.add_argument('--out', required=True)
 ap.add_argument('--shard', default=None, help='k/n: only the buildings of shard k of n (zlib.crc32 of the id), written to sides-k.json')
 ap.add_argument('--keep', default=None, help='an existing sides file: its pieces that have photographs are left as they are (no images rewritten); the rest are redone (more panoramas fetched)')
+ap.add_argument('--nominal', action='store_true', help='the provider camera poses, not the registered ones')
+ap.add_argument('--only', default=None, help='a JSON list of building ids: only their sides')
 a = ap.parse_args()
 OLD = {p['id']: p for p in json.load(open(a.keep))['pieces']} if a.keep else {}
 KEEP = {i for i, p in OLD.items() if p['views']}
@@ -40,6 +45,12 @@ world, frame = fc.load_world(); buildings = {b['id']: b for b in world['building
 # set-back tier walls (standing on a lower roof) are framed from their own foot by tier_sides.py, not from the street
 walls = [w for w in json.load(open(a.evidence))['facadeWalls'] if w['buildingId'] in buildings and (w.get('zBaseM') or 0) <= .5]
 occ = fc.Occluders(fc.load_footprints(frame)); trees = fc.load_trees(frame); cams = {k: c for k, c in fc.load_cameras(frame).items() if c['exists']}
+import os
+_reg = pathlib.Path(os.environ['SFW_AREA']) / 'imagery/registered-cameras.json' if os.environ.get('SFW_AREA') else None
+if not a.nominal and _reg is not None and _reg.exists():
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent)); from register_cameras import apply_registration
+    cams = apply_registration(cams, _reg); print('registered cameras:', sum(c.get('registered') == 'skyline' for c in cams.values()), 'of', len(cams), flush=True)
+ONLY = set(json.load(open(a.only))) if a.only else None
 by_b = {}
 for w in walls: by_b.setdefault(w['buildingId'], []).append(w)
 records, pano_cache = [], {}
@@ -47,6 +58,7 @@ import zlib
 _sk, _sn = (int(x) for x in a.shard.split('/')) if a.shard else (0, 1)
 for bid, ws in by_b.items():
     if zlib.crc32(bid.encode()) % _sn != _sk: continue
+    if ONLY is not None and bid not in ONLY and bid.split('_p')[0] not in ONLY: continue
     z0 = buildings[bid]['center'][2]
     for si, s in enumerate(sides_of(ws)):
         L = s['u1'] - s['u0']
@@ -76,7 +88,8 @@ for bid, ws in by_b.items():
                 pano = pano_cache[c['image']]
                 ppm = min(PPM_MAX, MAX_PX / max(piece['lengthM'], 1e-3), MAX_PX / max(piece['heightM'], 1e-3))
                 ar.PPM = ppm
-                gz = fc.ground_at(cam['xy']); img, H, Lp = rectify(piece, {**cam, 'groundZ': gz}, z0, pano)
+                gz = fc.ground_at(cam['xy']); gz = None if gz is None else gz + cam.get('heightOffsetM', 0.)   # a registered camera's own height
+                img, H, Lp = rectify(piece, {**cam, 'groundZ': gz}, z0, pano)
                 im = Image.fromarray((np.clip(img, 0, 1) * 255).astype(np.uint8)); W, Hh = im.size
                 # a metre scale on the edges: a tick every metre, longer every 5 m, labelled every 5 m from the left and the ground
                 pad = 26; can = Image.new('RGB', (W + 2 * pad, Hh + 2 * pad), (255, 255, 255)); can.paste(im, (pad, pad)); d = ImageDraw.Draw(can)
@@ -92,7 +105,7 @@ for bid, ws in by_b.items():
                 vp = fc.view_parameters(cam['xy'], piece, z0)
                 pimg, vfov = fc.render_perspective(pano, cam['R'], vp['forward'], min(100, vp['hfovDeg'] * 1.25), min(100, vp['vfovDeg'] * 1.15), width=1000, max_height=1000)
                 pname = f"{rec['id']}__v{vi}_persp.jpg"; Image.fromarray(pimg).save(out / 'img' / pname, quality=82)
-                rec['views'].append({'image': c['image'], 'captureDate': cam['captureDate'], 'distanceM': c['distanceM'], 'incidence': c['incidence'],
+                rec['views'].append({'image': c['image'], 'registered': cam.get('registered', False), 'captureDate': cam['captureDate'], 'distanceM': c['distanceM'], 'incidence': c['incidence'],
                                      'visibleFraction': c['visibleFraction'], 'treesNearSightLine': c['treesNearSightLine'], 'ppm': round(ppm, 2),
                                      'rect': rname, 'persp': pname, 'rectPad': pad, 'cameraGroundZ': None if gz is None else round(gz, 2)})
             records.append(rec)

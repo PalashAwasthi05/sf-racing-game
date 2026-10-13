@@ -409,6 +409,108 @@
    "samples": 1916,
    "overlay": "/private/tmp/claude-501/-Users-palash-Documents-reflex-code/b4c6e246-5bce-4a48-9d2c-ac4ac32303e3/scratchpad/corner/reg/1423584595534293.jpg"
   },
+  "1436585101000710": {
+   "build": "work/clean-v99/materials/candidate.glb",
+   "xy": [
+    22.283,
+    -20.792
+   ],
+   "z": 2.806,
+   "rotationAngleAxis": [
+    0.7228975575477071,
+    1.7591132247726255,
+    -1.7599271390039561
+   ],
+   "shiftM": [
+    -0.43,
+    -0.07,
+    0.08
+   ],
+   "rotationDeg": [
+    0.13,
+    0.26,
+    -1.89
+   ],
+   "groundZ": 0.12,
+   "skylineBefore": {
+    "medianAbsDeg": 2.09,
+    "inlierShare": 0.367
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 1.58,
+    "inlierShare": 0.357
+   },
+   "samples": 1920,
+   "overlay": "/private/tmp/claude-501/-Users-palash-Documents-reflex-code/b4c6e246-5bce-4a48-9d2c-ac4ac32303e3/scratchpad/row/reg/1436585101000710.jpg"
+  },
+  "1549138326047738": {
+   "build": "work/clean-v99/materials/candidate.glb",
+   "xy": [
+    42.269,
+    2.319
+   ],
+   "z": 2.724,
+   "rotationAngleAxis": [
+    0.704521542389822,
+    1.7735426620172208,
+    -1.7593167295363286
+   ],
+   "shiftM": [
+    -2.69,
+    -0.0,
+    0.0
+   ],
+   "rotationDeg": [
+    -0.09,
+    0.14,
+    0.23
+   ],
+   "groundZ": 0.12,
+   "skylineBefore": {
+    "medianAbsDeg": 3.97,
+    "inlierShare": 0.143
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 2.1,
+    "inlierShare": 0.398
+   },
+   "samples": 1920,
+   "overlay": "/private/tmp/claude-501/-Users-palash-Documents-reflex-code/b4c6e246-5bce-4a48-9d2c-ac4ac32303e3/scratchpad/row/reg/1549138326047738.jpg"
+  },
+  "1487096206051873": {
+   "build": "work/clean-v99/materials/candidate.glb",
+   "xy": [
+    66.168,
+    30.034
+   ],
+   "z": 3.784,
+   "rotationAngleAxis": [
+    0.7601888498174263,
+    1.7420465000702279,
+    -1.734285187108276
+   ],
+   "shiftM": [
+    -1.11,
+    -0.02,
+    -0.22
+   ],
+   "rotationDeg": [
+    -0.11,
+    -0.19,
+    1.93
+   ],
+   "groundZ": 1.4,
+   "skylineBefore": {
+    "medianAbsDeg": 2.05,
+    "inlierShare": 0.139
+   },
+   "skylineAfter": {
+    "medianAbsDeg": 0.86,
+    "inlierShare": 0.532
+   },
+   "samples": 1920,
+   "overlay": "/private/tmp/claude-501/-Users-palash-Documents-reflex-code/b4c6e246-5bce-4a48-9d2c-ac4ac32303e3/scratchpad/row/reg/1487096206051873.jpg"
+  },
   "2065550060641831": {
    "build": "work/clean-v99/final/candidate.glb",
    "xy": [

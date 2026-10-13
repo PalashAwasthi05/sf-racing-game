@@ -1,11 +1,16 @@
 """Photograph | before | after, per ring building, from the viewer renders saved for two builds at the poses of
 poses.py, plus contact sheets of them all.
-Usage: before_after.py <poses.json> <before prefix> <after prefix> <out dir> [--views 0]   (run from work/)"""
+Usage: before_after.py <poses.json> <before prefix> <after prefix> <out dir> [--views 0] [--labels 'before,after']   (run from work/)"""
 import argparse, json, os
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
-ap = argparse.ArgumentParser(); ap.add_argument('poses'); ap.add_argument('before'); ap.add_argument('after'); ap.add_argument('out'); ap.add_argument('--views', default='0'); a = ap.parse_args()
+ap = argparse.ArgumentParser(); ap.add_argument('poses'); ap.add_argument('before'); ap.add_argument('after'); ap.add_argument('out'); ap.add_argument('--views', default='0'); ap.add_argument('--labels', default='before (v7),after (ring rebuild)'); a = ap.parse_args()
 P = [p for p in json.load(open(a.poses))['poses'] if str(p['view']) in a.views.split(',')]
+# one side a building: the one facing the park (else the first listed, the longest street side)
+first = {}
+for p in P: first.setdefault(p['building'], p['side'])
+park = {p['building']: p['side'] for p in reversed(P) if p.get('facesPark')}
+P = [p for p in P if p['side'] == park.get(p['building'], first[p['building']])]
 out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
 font = ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', 22); small = ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', 16)
 H = 640; made = []
@@ -15,7 +20,7 @@ for p in P:
     tiles = [Image.open(x).convert('RGB') for x in (p['persp'], b, f)]
     tiles = [t.resize((round(t.width * H / t.height), H), Image.LANCZOS) for t in tiles]
     W = sum(t.width for t in tiles) + 24; im = Image.new('RGB', (W, H + 40), (20, 22, 24)); d = ImageDraw.Draw(im); x = 0
-    for t, label in zip(tiles, ('photograph', 'before (v7)', 'after (ring rebuild)')):
+    for t, label in zip(tiles, ['photograph'] + a.labels.split(',')):
         im.paste(t, (x, 40)); d.text((x + 8, 9), label, font=font, fill=(236, 236, 236)); x += t.width + 12
     d.text((W - 360, 12), p['building'], font=small, fill=(150, 154, 158))
     im.save(out / f"{p['building']}.jpg", quality=86); made.append(out / f"{p['building']}.jpg")

@@ -52,6 +52,9 @@ def measure(r, piece, img_dir, street_m=2.6):
         c = med(m['x0'], m['z0'], m['x1'], m['z1'])
         if c: m['hexMeasured'] = c
     if mats:
+        # the wall's own material (the one covering most of it, specs.to_profile) leads, whatever order it was read in
+        k = max(range(len(mats)), key=lambda i: max(0., mats[i]['x1'] - mats[i]['x0']) * max(0., mats[i]['z1'] - mats[i]['z0']))
+        mats = [mats[k]] + mats[:k] + mats[k + 1:]
         mh = lambda m: m.get('hexMeasured') or specs.hexok(m.get('hex'))
         main = _lab([int(mh(mats[0])[i:i + 2], 16) for i in (1, 3, 5)])
         mats = [mats[0]] + [m for m in mats[1:] if not (m.get('family') == mats[0].get('family') and

@@ -9,7 +9,8 @@ A=work/areas/$1; B=$A/$2; R=$A/$3-raw; D=$A/$3; LOG=$A/ring.log
 export PYTHONPATH=work PYTHONUNBUFFERED=1
 py=work/geoenv/bin/python
 rm -rf $R $D
-caffeinate -i -s $py work/watch_mem.py 20 $LOG $py work/generate_detailed_v14.py --output $R --area $A --regen-profiles $5 --only $4
+M=(); if [[ -f work/areas/ring/massing-overrides.json ]]; then M=(--massing work/areas/ring/massing-overrides.json); fi   # outlines the photographs and LiDAR contradict
+caffeinate -i -s $py work/watch_mem.py 20 $LOG $py work/generate_detailed_v14.py --output $R --area $A --regen-profiles $5 --only $4 $M
 caffeinate -i -s $py work/watch_mem.py 20 $LOG $py work/apply_textures_v10.py --scene $R/king-street-pilot.glb --output $R/textures
 caffeinate -i -s $py work/watch_mem.py 20 $LOG $py work/areas/slim_textures.py $R/textures/candidate.glb $R/textures/candidate-slim.glb
 caffeinate -i -s $py work/watch_mem.py 20 $LOG $py work/apply_materials_v13.py --scene $R/textures/candidate-slim.glb --observations work/regen/v1/no-material-observations.json --output $R/materials

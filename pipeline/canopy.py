@@ -12,6 +12,7 @@ import numpy as np
 import trimesh
 from scipy.ndimage import gaussian_filter, maximum_filter
 from shapely import contains_xy
+from shapely.geometry import Point
 from shapely.ops import unary_union
 
 OPEN_GROUND = {'leisure': {'park', 'garden', 'dog_park', 'common', 'nature_reserve'},
@@ -68,38 +69,49 @@ def crowns(pts, elev, area, buildings, placed, cell=1., min_height=4., min_sep=4
     out = []
     for i, (x, y, t) in enumerate(kept):
         r = min(8., max(1.5, math.sqrt(counts[i] * cell * cell / math.pi)))
+        # a crown never reaches through a wall: it is held 0.3 m short of the nearest building (its returns over the roof
+        # were never this tree's, and leaves drawn through the wall read as decals stuck on it)
+        if buildings is not None and not buildings.is_empty: r = min(r, max(1., float(buildings.distance(Point(x, y))) - .3))
         out.append((x, y, float(elev(x, y)), t, r))
     return out
+
+def draw_tree(put, cyl, x, y, z, height, radius):
+    """One broadleaf tree as the inventory's are drawn (bark trunk and limbs, leaf cards the viewer grows on the 'leaf'
+    quads), standing on the ground at (x, y, z) with its crown top `height` above it and `radius` wide. The same position
+    draws the same tree."""
+    def blade(a, b, width, key):
+        a, b = np.array(a), np.array(b); v = b - a; n = np.cross(v, [0, 0, 1]); n = n / max(.001, np.linalg.norm(n)); mid = a + v * .55
+        vv = np.array([a, mid + n * width, b, mid - n * width, mid + [0, 0, width * .2]])
+        put(trimesh.Trimesh(vv, [[0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]], process=False), 'vegetation', key)
+    rng = np.random.default_rng(int(abs(x) * 1000 + abs(y) * 7) % (2 ** 32))
+    vr = min(.42 * height, max(1.6, radius * 1.05))          # the crown's vertical half-depth
+    centre = np.array([x, y, z + height - vr]); trunk_top = z + max(1.8, height - 1.6 * vr)
+    cyl([x, y, z + .06], [x, y, trunk_top], min(.45, .06 + .018 * height), 'vegetation', 'bark', 12)
+    for k in range(7):
+        ang = k * math.tau / 7; dirn = np.array([math.cos(ang), math.sin(ang), 0])
+        tip = np.array([x, y, trunk_top]) + dirn * rng.uniform(.45, .8) * radius + [0, 0, rng.uniform(.4, .9) * vr]
+        cyl([x, y, trunk_top], tip, min(.12, .03 + .006 * height), 'vegetation', 'bark', 6)
+    n = int(min(520, max(180, 270 * (radius / 2.4) ** 2 * (vr / 2.8))))
+    for k in range(n):
+        dvec = rng.normal(size=3); dvec /= np.linalg.norm(dvec); r = rng.random() ** .3
+        pos = centre + dvec * r * np.array([radius, radius, vr]); ang = rng.uniform(0, math.tau)
+        end = pos + np.array([math.cos(ang), math.sin(ang), rng.uniform(-.4, .4)]) * .42
+        blade(pos, end, .15, 'leaf' + str(1 + k % 3))
+
 
 def compile(ctx):
     """Draw the measured crowns of the open ground and the yards; returns their records. A yard keeps its crowns of 5 m
     or more, at most 1,500, the tallest first (a block's gardens hold many small shrubs the LiDAR also peaks on)."""
     park = open_ground(ctx['ways'], ctx['boundary']); yard = yards(ctx)
-    placed = [item['position'] for item in ctx.get('tree_placements', [])]
+    # a peak at a tree the facade readings already placed in front of a wall (facade_detail) is that tree
+    placed = [item['position'] for item in ctx.get('tree_placements', [])] + [t[:2] for t in ctx.get('front_trees') or []]
     found = crowns(ctx['pts'], ctx['elev'], park, ctx.get('all_buildings'), placed)
     in_park = [(x, y) for x, y, *_ in found]
     extra = [c for c in crowns(ctx['pts'], ctx['elev'], yard, ctx.get('all_buildings'), placed + in_park) if c[3] >= 5.]
     extra.sort(key=lambda c: -c[3]); found = [(*c, 'park') for c in found] + [(*c, 'yard') for c in extra[:1500]]
     put, cyl = ctx['put'], ctx['cylinder']; records = []
-    def blade(a, b, width, key):
-        a, b = np.array(a), np.array(b); v = b - a; n = np.cross(v, [0, 0, 1]); n = n / max(.001, np.linalg.norm(n)); mid = a + v * .55
-        vv = np.array([a, mid + n * width, b, mid - n * width, mid + [0, 0, width * .2]])
-        put(trimesh.Trimesh(vv, [[0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]], process=False), 'vegetation', key)
     for x, y, z, height, radius, where in found:
-        rng = np.random.default_rng(int(abs(x) * 1000 + abs(y) * 7) % (2 ** 32))
-        vr = min(.42 * height, max(1.6, radius * 1.05))          # the crown's vertical half-depth
-        centre = np.array([x, y, z + height - vr]); trunk_top = z + max(1.8, height - 1.6 * vr)
-        cyl([x, y, z + .06], [x, y, trunk_top], min(.45, .06 + .018 * height), 'vegetation', 'bark', 12)
-        for k in range(7):
-            ang = k * math.tau / 7; dirn = np.array([math.cos(ang), math.sin(ang), 0])
-            tip = np.array([x, y, trunk_top]) + dirn * rng.uniform(.45, .8) * radius + [0, 0, rng.uniform(.4, .9) * vr]
-            cyl([x, y, trunk_top], tip, min(.12, .03 + .006 * height), 'vegetation', 'bark', 6)
-        n = int(min(520, max(180, 270 * (radius / 2.4) ** 2 * (vr / 2.8))))
-        for k in range(n):
-            dvec = rng.normal(size=3); dvec /= np.linalg.norm(dvec); r = rng.random() ** .3
-            pos = centre + dvec * r * np.array([radius, radius, vr]); ang = rng.uniform(0, math.tau)
-            end = pos + np.array([math.cos(ang), math.sin(ang), rng.uniform(-.4, .4)]) * .42
-            blade(pos, end, .15, 'leaf' + str(1 + k % 3))
+        draw_tree(put, cyl, x, y, z, height, radius)
         records.append({'position': [round(x, 2), round(y, 2)], 'heightM': round(height, 1), 'crownRadiusM': round(radius, 1),
                         'source': 'LiDAR canopy peak in ' + ('mapped open ground' if where == 'park' else 'unbuilt land off the streets'), 'status': 'measured-crown, species unknown'})
     ctx['counts']['lidarCanopyTrees'] = len(records); ctx['counts']['lidarYardTrees'] = sum(r['source'].endswith('streets') for r in records)

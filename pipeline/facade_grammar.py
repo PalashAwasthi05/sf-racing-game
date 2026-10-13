@@ -166,6 +166,20 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
   if min(w,h,d)<=.002:return
   p=u*(left+x)+n*(plane+depth);cube([*p,z0+z],[w,d,h],key,material,angle)
  def point(x,z,depth=0):return np.r_[u*(left+x)+n*(plane+depth),z0+z]
+ elev=ctx.get('elev')
+ def ground(x,depth=0.):
+  """The terrain under a point of this wall's frame, in metres above the wall's foot (what stands in front of a wall on a
+  hillside stands on its own ground)."""
+  if elev is None:return 0.
+  p=point(x,0.,depth);return float(elev(p[0],p[1]))-z0
+ def points(x,z,depth):
+  """point() for arrays of wall-frame coordinates: (n, 3) world points."""
+  x,z,d=(np.asarray(v,float) for v in (x,z,depth));return np.c_[np.outer(left+x,u)+np.outer(plane+d,n),z0+z]
+ def ground_v(x,depth):
+  """ground() for arrays."""
+  x=np.asarray(x,float)
+  if elev is None:return np.zeros(len(x))
+  p=points(x,np.zeros(len(x)),depth);return np.asarray(elev(p[:,0],p[:,1]),float)-z0
  def prism(poly,depth,thickness,material,key=layer):
   """A wall piece of any outline in the facade plane (x right, z up), `thickness` deep behind `depth`."""
   import trimesh
@@ -180,7 +194,14 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
   if length<.002:return
   mesh=trimesh.creation.box([thickness,thickness,length]);T=trimesh.geometry.align_vectors([0,0,1],(bb-aa)/length);T[:3,3]=(aa+bb)/2;mesh.apply_transform(T);ctx['put'](mesh,key,material)
  ops=[]
- clip_box=box(low,0,high,H)
+ # A facade read below its wall's foot (negative z): the street in front lies lower than the building's ground (a garage
+ # door on a hill). The wall runs down to the lowest opening read, at most 30 % of the frame below the foot, standing
+ # just proud of the foundation there.
+ # The facade also runs down to the ground in front of it where that lies below the wall's foot (the downhill end of a
+ # hillside wall), in its lowest colour zone, instead of leaving the foundation's plinth showing under it.
+ foot=min([0.]+[ground(x,.3) for x in np.linspace(low,high,max(2,int((high-low)/1.5)+1))])-.05
+ zlo=max(-max(4.,.4*Hs),min([0.,foot]+[float(o['rect'][1])*Hs for o in openings(profile,fits,W,Hs,H)]))
+ clip_box=box(low,zlo,high,H)
  for op in openings(profile,fits,W,Hs,H):
   # Build the complete observed outline first.  Recomputing an arch from a
   # segment-clipped bounding box moves its centre and changes the head shape.
@@ -197,6 +218,7 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
                '_contoured':op.get('polygon') is not None or head_shape(op.get('style',{})) is not None or not original.equals(piece)})
  panels=profile.get('panels',[])
  def wall_mat(x,z):
+  z=max(z,.05)    # a wall below its foot (a street lower than the building's ground) continues the lowest zone read
   found=[p for p in panels if p.get('rect') and p['rect'][0]*W<=x<=p['rect'][2]*W and p['rect'][1]*Hs<=z<=p['rect'][3]*Hs]
   return _component_material(found[-1],mat) if found else mat
  # Bays (pipeline/bays.py): a photographed bay is one volume standing out from the wall. The openings inside it leave
@@ -220,9 +242,9 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
    if not low<=(b['x0']+b['x1'])/2<high:continue
    mine=[op for op in whole if in_bay(op['rect'],b)]
    trim=b.get('trim') or next((op['style'].get('frameMaterial') for op in mine if op.get('style',{}).get('frameMaterial')),'#ece9e2')
-   bay_windows+=bays.draw(point,ctx['put'],layer,detail,b,mine,wall_mat((b['x0']+b['x1'])/2,(b['z0']+b['z1'])/2),trim)
+   bay_windows+=bays.draw(point,ctx['put'],layer,detail,b,mine,b.get('cladding') or wall_mat((b['x0']+b['x1'])/2,(b['z0']+b['z1'])/2),trim)
  # Partition each horizontal slice around its openings and material boundaries.
- zs=sorted(set([0,H]+[v for op in ops for v in [op['rect'][1],op['rect'][3]]]+[min(H,p['rect'][k]*Hs) for p in panels for k in [1,3]]))
+ zs=sorted(set([zlo,0.,H]+[v for op in ops for v in [op['rect'][1],op['rect'][3]]]+[min(H,p['rect'][k]*Hs) for p in panels for k in [1,3]]))
  for bottom,top in zip(zs,zs[1:]):
   if top-bottom<.003:continue
   cy=(bottom+top)/2;active=[o['rect'] for o in ops if o['rect'][1]<cy<o['rect'][3]]
@@ -230,7 +252,7 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
   for x1,x2 in zip(xs,xs[1:]):
    cx=(x1+x2)/2
    if any(r[0]<cx<r[2] for r in active):continue
-   block(cx,cy,x2-x1,top-bottom,.3,wall_mat(cx,cy),-.15,layer)
+   block(cx,cy,x2-x1,top-bottom,.3,wall_mat(cx,cy),-.15+(.012 if top<=0 else 0.),layer)
  # Vertical articulation: piers at the bay boundaries of a bank, and explicit pilasters. Both project from the
  # wall and are clipped to this wall segment.
  for gi,g in enumerate(profile.get('groups',[])):
@@ -278,8 +300,29 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
    for x in [x1+fw/2,x2-fw/2]:block(x,cy,fw,h,.1,frame,-.05)
    continue
   if kind=='rollup':
-   block(cx,cy,w,h,.08,s.get('material','zinc'),-.25)
-   for zz in np.arange(y1,y2,s.get('slatPitchM',.13)):block(cx,zz,w,.017,.035,s.get('slatMaterial','charcoal'),-.19)
+   # a vehicle door set back in its opening: the reveal's sides and soffit run back to it (a deep garage recess reads
+   # as a cavity in the wall, not a door painted on its face)
+   r=max(.25,float(s.get('recessM',.25)))
+   if s.get('grille'):
+    # an open iron gate across the opening: bars and rails at the reveal's front, the dark garage seen behind them
+    block(cx,cy,w,h,.05,'charcoal',-r-2.5)
+    for zz in (y1+.1,y2-.08):block(cx,zz,w,.05,.05,s.get('material','charcoal'),-r)
+    for xx in np.arange(x1+.06,x2,.12):block(xx,cy,.025,h,.025,s.get('material','charcoal'),-r)
+   else:block(cx,cy,w,h,.08,s.get('material','zinc'),-r)
+   if s.get('grille'):pass
+   elif s.get('glazed'):
+    # a glazed vehicle door: panes of glass in its frame, in the rows and columns read (`lites`, across and down)
+    nc,nr=(s.get('lites') or [4,4])[:2];fw=.07
+    for i in range(int(nc)):
+     for j in range(int(nr)):
+      ga,gb=x1+w*i/nc+fw/2,x1+w*(i+1)/nc-fw/2;ha,hb=y1+h*j/nr+fw/2,y1+h*(j+1)/nr-fw/2
+      if gb-ga>.05 and hb-ha>.05:block((ga+gb)/2,(ha+hb)/2,gb-ga,hb-ha,.02,'glass',-r+.05)
+   else:
+    for zz in np.arange(y1,y2,s.get('slatPitchM',.13)):block(cx,zz,w,.017,.035,s.get('slatMaterial','charcoal'),-r+.06)
+   if r>.35:
+    rm=wall_mat(cx,cy)
+    for x in (x1+.04,x2-.04):block(x,cy,.08,h,r,rm,-r/2)
+    block(cx,y2-.04,w,.08,r,rm,-r/2)
    continue
   # Polygon and arch openings retain the clipped observed contour for every
   # layer.  A negative buffer gives glazing the same shape and the difference
@@ -383,11 +426,27 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
     if (j+k)%5 in [1,3]:ch=h*(.22 if (j+k)%5==1 else .47);block(x1+w*(fa+fb)/2,y2-ch/2-fw,w*(fb-fa)-fw*2,ch,.02,'curtain',-recess-.07)
  # Details read from the photograph that the lines above do not draw (pipeline/facade_detail.py): sashes, surrounds,
  # hoods, doors and steps of the openings; rustication, quoins, fire escapes, balconies and relief panels of the wall.
- dctx=dict(block=block,prism=prism,beam=beam,point=point,wall_mat=wall_mat,clip=clip_box,low=low,high=high,W=W,H=H,Hs=Hs,mat=mat)
+ # A door or garage reaching below the wall's foot (a street lower than the building's ground) opens into the foundation
+ # the building stands on: the generator leaves a pocket behind it out of that foundation (ctx['pockets']).
+ if ctx.get('pockets') is not None:
+  for op in ops:
+   x1,y1,x2,_=op['rect']
+   if y1<-.05:
+    rec=float((op.get('style') or {}).get('recessM',.2))+.3
+    ctx['pockets'].append(Polygon([point(x1-.04,0,.03)[:2],point(x2+.04,0,.03)[:2],point(x2+.04,0,-rec)[:2],point(x1-.04,0,-rec)[:2]]))
+ dctx=dict(block=block,prism=prism,beam=beam,point=point,wall_mat=wall_mat,clip=clip_box,low=low,high=high,W=W,H=H,Hs=Hs,mat=mat,put=ctx['put'],detail=detail,ground=ground,points=points,ground_v=ground_v,pitchedRoof=ctx.get('pitchedRoof') is not None,trees=ctx.get('front_trees'))
  for op in ops:facade_detail.opening(dctx,op)
  facade_detail.wall(dctx,profile,ops)
- for band in profile.get('bands',[]):
+ # The topmost band read within a metre of the wall's top or above it (a photograph's frame a little taller than the wall
+ # as built) is its cornice: it sits on the wall's top, and the dentils and brackets read with it move with it. Skipped
+ # instead, its dentils stood alone over the roofline as a row of spikes.
+ _bands=profile.get('bands',[]);_snap=None
+ if _bands:
+  _ti=max(range(len(_bands)),key=lambda i:_bands[i]['height']);_zt=_bands[_ti]['height']*Hs
+  if H-1.2<=_zt<=H+2.5:_snap=(_zt,(H-_bands[_ti].get('thicknessM',.16)/2)-_zt,_ti)
+ for _bi,band in enumerate(_bands):
   z=band['height']*Hs
+  if _snap is not None and _bi==_snap[2]:z+=_snap[1]
   if z>H+.5:continue
   bx0,bx1=band.get('xRange',[0,1]);bx0=max(low,bx0*W);bx1=min(high,bx1*W)
   if bx1-bx0<.05:continue
@@ -413,11 +472,12 @@ def compile_wall(ctx,c,a,b,z0,H,profile,fits):
  # Ornaments: small repeated reliefs (diamonds, dentils, lamps) read from the photograph.
  for orn in profile.get('ornaments',[]):
   kind=orn.get('kind','diamond');z=orn['z']*Hs;size=orn.get('sizeM',.5);material=orn.get('material',mat);proj=orn.get('projectionM',.03)
+  if _snap is not None and abs(z-_snap[0])<.6:z+=_snap[1]   # read with the cornice: moves with it
   if 'xs' in orn:xs_=[x*W for x in orn['xs']]
   else:
    a0,a1=orn.get('xRange',[0,1]);a0*=W;a1*=W;pitch=orn.get('pitchM',.6);count=max(1,int((a1-a0)/pitch));xs_=[a0+(i+.5)*(a1-a0)/count for i in range(count)]
   for x in xs_:
-   if x<low or x>high or z>H+.6:continue
+   if x<low or x>high or z>H+.5:continue
    if kind=='diamond':
     d=size/2;prism(Polygon([(x,z-d),(x+d,z),(x,z+d),(x-d,z)]),proj,.04,material,detail)
    elif kind=='dentil':block(x,z,size,orn.get('heightM',size),proj+.02,material,proj/2)

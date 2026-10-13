@@ -98,7 +98,14 @@ for mesh in scene.geometry.values():
    aid=d['asset_id'];source=load_any(aid,d['tile_size_m'])
    # A shallow copy of a trimesh material shares its property store: every variant of one asset then carries
    # the last name and recolour assigned. Each material name gets its own deep copy.
+   # The images are lifted off before the copy and shared after it: a deep copy duplicated every map per colour variant,
+   # and an area read in hundreds of colours outgrew the machine's memory.
+   maps={k:getattr(source,k,None) for k in ('baseColorTexture','normalTexture','metallicRoughnessTexture','occlusionTexture','emissiveTexture')}
+   for k,v in maps.items():
+    if v is not None:setattr(source,k,None)
    mat=copy.deepcopy(source);mat.name='auto_'+name+'_'+aid
+   for k,v in maps.items():
+    if v is not None:setattr(source,k,v);setattr(mat,k,v)
    if d['action']=='recolor':mat.baseColorTexture=recolor(source.baseColorTexture,color,catalog[aid]['pattern']=='brick_running')
    # Source normal and roughness maps are shared unchanged across color variants.
    cache[name]=mat
