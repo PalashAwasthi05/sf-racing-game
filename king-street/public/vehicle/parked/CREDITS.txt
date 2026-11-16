@@ -15,6 +15,6 @@ cars.bin.gz, atlas-colour.webp, atlas-surface.webp
   Changes made here (work/viewer-bench/bake/bake.ts): each car taken out of the pack, turned to face
   +x and set on the ground, scaled by 1.08; the sports car left out; textures packed into one colour
   atlas whose paint is turned neutral grey under a paint mask, and one surface atlas (paint mask,
-  roughness, metalness); two simplified levels of detail added per car (meshoptimizer); geometry
-  quantised into a custom binary file. The viewer repaints each car in the colour its parking record
-  gives.
+  roughness, metalness); three simplified body levels of detail added per car (meshoptimizer); referenced
+  vertices compacted and geometry quantised into a custom binary file. The viewer repaints each car in
+  the colour its parking record gives.

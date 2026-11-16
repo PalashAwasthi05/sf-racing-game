@@ -44,3 +44,26 @@ def test_gap_lines_are_signed_and_bounded():
     xs = np.full(200, 1.6); zs = np.zeros(200); ys = np.linspace(.6, .9, 200)
     v = near(xs, ys, zs)
     assert np.abs(np.diff(v)).max() < .01
+
+
+def test_registration_mount_sits_just_in_front_of_the_stamped_floor():
+    from mesher import ray_hit
+    mount = R.plate_mount()
+    y = mount['position'][1]
+    points = np.array([[-2.4, y + dy, z] for dy in [-.07, .07] for z in [-.14, .14]])
+    hits = ray_hit(R.body, points, [1., 0., 0.], far=.6)
+    np.testing.assert_allclose(hits[:, 0], R.plate_floor_x(points[:, 1]), atol=.001)
+    assert .002 < R.plate_floor_x(y) - mount['position'][0] < .005
+    surround = ray_hit(R.body, np.array([[-2.4, y, .31]]), [1., 0., 0.], far=.6)
+    assert surround[0, 0] < mount['position'][0] - .015
+
+
+def test_rear_valance_wraps_the_two_exhaust_ports():
+    from mesher import ray_hit
+    for side in [-1, 1]:
+        z = R.TIP_Z * side
+        starts = np.array([[-2.4, R.TIP_Y + R.TIP_R + .012, z],
+                           [-2.4, R.TIP_Y, z + .10*side], [-2.4, R.TIP_Y, z]])
+        surfaces = ray_hit(R.body, starts, [1., 0., 0.], far=.7)
+        assert np.all(R._lower(*surfaces[:2].T) < 0)
+        assert surfaces[2, 0] > np.max(surfaces[:2, 0]) + .10

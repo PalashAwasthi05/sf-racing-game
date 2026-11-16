@@ -1,0 +1,69 @@
+{
+  "atlas-colour": {
+    "file": "atlas-colour-96befc199d7751a9.bc7",
+    "quality": [
+      {
+        "rmsByte": 0.59346,
+        "p99Byte": 3.0,
+        "maxByte": 19
+      },
+      {
+        "rmsByte": 0.73211,
+        "p99Byte": 3.0,
+        "maxByte": 22
+      },
+      {
+        "rmsByte": 0.90605,
+        "p99Byte": 4.0,
+        "maxByte": 16
+      },
+      {
+        "rmsByte": 1.16373,
+        "p99Byte": 5.0,
+        "maxByte": 23
+      },
+      {
+        "rmsByte": 1.42293,
+        "p99Byte": 5.0,
+        "maxByte": 24
+      },
+      {
+        "rmsByte": 1.74046,
+        "p99Byte": 6.0,
+        "maxByte": 16
+      },
+      {
+        "rmsByte": 2.28211,
+        "p99Byte": 8.0,
+        "maxByte": 25
+      },
+      {
+        "rmsByte": 2.41172,
+        "p99Byte": 10.0,
+        "maxByte": 15
+      },
+      {
+        "rmsByte": 2.09662,
+        "p99Byte": 8.09,
+        "maxByte": 10
+      },
+      {
+        "rmsByte": 2.57795,
+        "p99Byte": 8.65,
+        "maxByte": 11
+      },
+      {
+        "rmsByte": 0.28868,
+        "p99Byte": 0.89,
+        "maxByte": 1
+      },
+      {
+        "rmsByte": 0.0,
+        "p99Byte": 0.0,
+        "maxByte": 0
+      }
+    ],
+    "alphaPolicy": "unused-opaque-parked-material",
+    "sourceSha256": "6fff1034dcbb6af007f5015f93c10494462ec193dd43161580ee2de34dcda0ae"
+  }
+}

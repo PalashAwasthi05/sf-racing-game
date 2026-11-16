@@ -193,7 +193,7 @@ def place(plan, point, radius, boundary, *, kind, source_id, max_shift=0., requi
 
 
 def tree_candidates(ctx):
-    result=[]; plan=ctx['street_plan']; seen=[]
+    result=[]; plan=ctx['street_plan']; candidates=[]
     for t in ctx['json'].load(open(ctx['DATA']/'trees.json')):
         species=t.get('qspecies','').lower()
         if any(s in species for s in ['vacant','stump','removed','dead tree','planting site']):
@@ -201,13 +201,18 @@ def tree_candidates(ctx):
         try:x,y=ctx['local'](float(t['longitude']),float(t['latitude']))
         except (ValueError,KeyError,TypeError):continue
         if not ctx['boundary'].buffer(-1).covers(Point(x,y)):continue
-        # the inventory repeats a tree under several records (one plane tree 8 times): each copy was placed, shifted
-        # into a cluster of trunks round the one tree
-        if any(math.hypot(x-sx,y-sy)<.5 for sx,sy in seen):continue
-        seen.append((x,y))
-        # Inventory diameter is inches, not metres. Unmeasured trees keep a
-        # modest default trunk; never scale the road exclusion to the canopy.
-        radius=min(.65,max(.08,number(t.get('dbh'),12)*.0254/2))
+        # A source row's address/tree label, species, and site identify a
+        # repeated asset. Coordinate proximity alone never collapses trees.
+        candidates.append(dict(record=t,position=[x,y],radiusM=.2))
+    from pipeline.tree_sizing import deduplicate_inventory_records, trunk_radius
+    rows=[dict(item['record'],position=item['position'],radiusM=item['radiusM']) for item in candidates]
+    unique, _audit = deduplicate_inventory_records(rows, max_distance_m=1.5)
+    for item in unique:
+        t=item; x,y=item['position']
+        # Keep the established clearance radius unless measured DBH has an
+        # explicit unit attached to its source record.
+        dbh_radius=trunk_radius(t,dbh_unit=t.get('dbhUnit') or t.get('dbh_unit'))['radiusM']
+        radius=min(.65,max(.08,dbh_radius if dbh_radius is not None else .1524))
         pos=place(plan,(x,y),radius,ctx['boundary'],kind='tree',source_id=t.get('treeid',''),max_shift=1.5)
         if pos is not None:result.append(dict(record=t,position=pos,radius=radius))
     return result

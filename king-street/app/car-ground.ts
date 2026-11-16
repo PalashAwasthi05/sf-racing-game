@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import {classOf} from './finish';
+import {classOf} from './finish.ts';
+import {collisionOnly} from './collision-only.ts';
 
 // What the car stands on and runs into besides buildings, read at load from whatever world is loaded. Nothing here
 // refers to a place; layers are the pipeline's own join keys.
@@ -22,24 +23,30 @@ const OBJECTS = new Set(['street_objects', 'signs', 'vegetation']);
 const RISE_M = .3;                          // a steep face rising more than this is a wall
 const BAND_LOW = .05, BAND_HIGH = 1.2;      // the bumper band above the terrain grid under an object
 const OBJECT_CELL = .1, COVER_M = .25;      // object raster; spacing of the circles that cover a long blob
-const TILE = 64;                            // cells per tile side
+// The wall probes sample a narrow strip along the kerb. Four-metre tiles avoid
+// rasterising the whole street on either side of that strip at startup.
+const TILE = 16;
 const BUCKET_M = 2;
 
 type Mesh = THREE.Mesh;
 
-function worldPositions(o: Mesh) {
-  o.updateWorldMatrix(true, false);
-  const pos = o.geometry.getAttribute('position'), e = o.matrixWorld.elements, out = new Float32Array(pos.count * 3);
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
-    out[i * 3] = e[0] * x + e[4] * y + e[8] * z + e[12]; out[i * 3 + 1] = e[1] * x + e[5] * y + e[9] * z + e[13]; out[i * 3 + 2] = e[2] * x + e[6] * y + e[10] * z + e[14];
-  }
-  return out;
-}
 /** Calls `f` with the offsets (into `p`) of each triangle's corners in world space. */
 function eachTriangle(o: Mesh, f: (p: Float32Array, a: number, b: number, c: number) => void) {
-  const p = worldPositions(o), idx = o.geometry.getIndex(), n = idx ? idx.count : p.length / 3;
-  for (let t = 0; t + 2 < n; t += 3) f(p, (idx ? idx.getX(t) : t) * 3, (idx ? idx.getX(t + 1) : t + 1) * 3, (idx ? idx.getX(t + 2) : t + 2) * 3);
+  o.updateWorldMatrix(true, false);
+  const pos=o.geometry.getAttribute('position'),idx=o.geometry.getIndex(),e=o.matrixWorld.elements,n=idx?idx.count:pos.count;
+  // Only this triangle is needed by the rasterizers. A whole transformed copy
+  // of a large support mesh cost 12 bytes per source vertex at startup.
+  // Float32 assignment preserves the former worldPositions rounding exactly.
+  const p=new Float32Array(9);
+  for(let t=0;t+2<n;t+=3){
+    for(let corner=0;corner<3;corner++){
+      const i=idx?idx.getX(t+corner):t+corner,k=corner*3,x=pos.getX(i),y=pos.getY(i),z=pos.getZ(i);
+      p[k]=e[0]*x+e[4]*y+e[8]*z+e[12];
+      p[k+1]=e[1]*x+e[5]*y+e[9]*z+e[13];
+      p[k+2]=e[2]*x+e[6]*y+e[10]*z+e[14];
+    }
+    f(p,0,3,6);
+  }
 }
 const normalY = (p: Float32Array, a: number, b: number, c: number) => {
   const ux = p[b] - p[a], uy = p[b + 1] - p[a + 1], uz = p[b + 2] - p[a + 2], vx = p[c] - p[a], vy = p[c + 1] - p[a + 1], vz = p[c + 2] - p[a + 2];
@@ -49,7 +56,8 @@ const normalY = (p: Float32Array, a: number, b: number, c: number) => {
 /** A square raster over [-extent, extent] in x and z; cell (i, j) is the square whose centre is origin + (i + .5) cell. */
 export class Grid {
   readonly n: number; readonly origin: number;
-  constructor(extentM: number, readonly cell: number) { this.n = Math.ceil(extentM * 2 / cell) + 1; this.origin = -extentM; }
+  readonly cell: number;
+  constructor(extentM: number, cell: number) { this.cell = cell; this.n = Math.ceil(extentM * 2 / cell) + 1; this.origin = -extentM; }
   index(x: number, z: number) { const i = Math.floor((x - this.origin) / this.cell), j = Math.floor((z - this.origin) / this.cell); return i < 0 || j < 0 || i >= this.n || j >= this.n ? -1 : j * this.n + i; }
   centre(k: number): [number, number] { return [this.origin + (k % this.n + .5) * this.cell, this.origin + (Math.floor(k / this.n) + .5) * this.cell]; }
   /** Every cell in [i0, i1] x [j0, j1] whose centre lies inside the triangle's plan, and the cells along its edges (so a
@@ -82,7 +90,9 @@ export class Surface {
   private readonly tiles = new Map<number, Float32Array>();
   // triangles (9 floats each) and, per tile, the triangles that reach it
   private readonly tris: Float32Array; private readonly start: Int32Array; private readonly list: Int32Array;
-  constructor(extentM: number, cellM: number, tris: Float32Array, private readonly fallback: (x: number, z: number) => number) {
+  private readonly fallback: (x: number, z: number) => number;
+  constructor(extentM: number, cellM: number, tris: Float32Array, fallback: (x: number, z: number) => number) {
+    this.fallback = fallback;
     this.grid = new Grid(extentM, cellM); this.tris = tris;
     const g = this.grid, per = this.tilesPerRow = Math.ceil(g.n / TILE), count = new Int32Array(per * per + 1);
     const range = (t: number, f: (k: number) => void) => {
@@ -107,6 +117,9 @@ export class Surface {
       const q = this.list[s] * 9;
       g.triangle(t[q], t[q + 1], t[q + 2], t[q + 3], t[q + 4], t[q + 5], t[q + 6], t[q + 7], t[q + 8], put, i0, i0 + TILE - 1, j0, j0 + TILE - 1);
     }
+    // Nearby wheels and kerb probes need only a small working set. Heights
+    // regenerate exactly from the indexed source triangles after eviction.
+    if(this.tiles.size>=1024)this.tiles.delete(this.tiles.keys().next().value!);
     this.tiles.set(key, h); return h;
   }
   private value(i: number, j: number) {
@@ -156,22 +169,38 @@ export type CarGround = {
 
 export function buildCarGround(objects: THREE.Object3D[], layerOf: (o: THREE.Object3D) => string, groundAt: (x: number, z: number) => number, extentM = 275, cellM = .25): CarGround {
   const t0 = performance.now();
-  const meshes = objects.filter((o): o is Mesh => o instanceof THREE.Mesh);
+  // Distant tree and building cards include transparent pixels between the real
+  // surfaces. The permanent trunk and wall colliders already describe those sites.
+  const meshes = [...new Set(objects.filter((o): o is Mesh =>
+    o instanceof THREE.Mesh && o.userData.class !== 'distant_exterior'))];
+  const collisionLayer = (o: Mesh) => collisionOnly(o) ? 'street_objects' : layerOf(o);
   const grid = new Grid(extentM, cellM);
   // Tops of the ground layers (faces that look up, near the terrain grid: not a canopy, not a pit) for the surface;
   // their steep faces that rise more than RISE_M, steps and water above the ground for the walls.
-  const tops: number[] = [], wallPts: number[] = [], wallLines: number[] = [], water: number[] = [], steep: number[] = [];
+  let maxCorners = 0;
+  for (const mesh of meshes) {
+    if (SURFACE.has(collisionLayer(mesh))) maxCorners += mesh.geometry.index?.count ?? mesh.geometry.attributes.position.count;
+  }
+  const tops = new Float32Array(maxCorners * 3);
+  let topLength = 0;
+  const wallPts: number[] = [], wallLines: number[] = [], water: number[] = [], steep: number[] = [];
   for (const o of meshes) {
-    const layer = layerOf(o);
+    const layer = collisionLayer(o);
     if (SURFACE.has(layer)) eachTriangle(o, (p, a, b, c) => {
       const up = normalY(p, a, b, c);
-      if (up > .5) { const x = (p[a] + p[b] + p[c]) / 3, y = (p[a + 1] + p[b + 1] + p[c + 1]) / 3, z = (p[a + 2] + p[b + 2] + p[c + 2]) / 3, g = groundAt(x, z); if (y > g - 1.5 && y < g + 1.2) tops.push(p[a], p[a + 1], p[a + 2], p[b], p[b + 1], p[b + 2], p[c], p[c + 1], p[c + 2]); }
+      if (up > .5) { const x = (p[a] + p[b] + p[c]) / 3, y = (p[a + 1] + p[b + 1] + p[c + 1]) / 3, z = (p[a + 2] + p[b + 2] + p[c + 2]) / 3, g = groundAt(x, z); if (y > g - 1.5 && y < g + 1.2) {
+        tops[topLength++] = p[a]; tops[topLength++] = p[a + 1]; tops[topLength++] = p[a + 2];
+        tops[topLength++] = p[b]; tops[topLength++] = p[b + 1]; tops[topLength++] = p[b + 2];
+        tops[topLength++] = p[c]; tops[topLength++] = p[c + 1]; tops[topLength++] = p[c + 2];
+      } }
       else if (up < .7 && Math.max(p[a + 1], p[b + 1], p[c + 1]) - Math.min(p[a + 1], p[b + 1], p[c + 1]) > RISE_M) steep.push(p[a], p[a + 1], p[a + 2], p[b], p[b + 1], p[b + 2], p[c], p[c + 1], p[c + 2]);
     });
     else if (STEPS.has(layer)) eachTriangle(o, (p, a, b, c) => { wallLines.push(p[a], p[a + 2], p[b], p[b + 2], p[b], p[b + 2], p[c], p[c + 2], p[c], p[c + 2], p[a], p[a + 2]); grid.triangle(p[a], 0, p[a + 2], p[b], 0, p[b + 2], p[c], 0, p[c + 2], (i, j) => { wallPts.push(grid.origin + (i + .5) * cellM, grid.origin + (j + .5) * cellM); }); });
     else if (WATER.has(layer)) eachTriangle(o, (p, a, b, c) => { if (normalY(p, a, b, c) > .5) water.push(p[a], p[a + 1], p[a + 2], p[b], p[b + 1], p[b + 2], p[c], p[c + 1], p[c + 2]); });
   }
-  const surface = new Surface(extentM, cellM, new Float32Array(tops), groundAt);
+  // A view would pin the upper bound for every input face, including rejected
+  // steep faces and surfaces far above/below the drivable ground.
+  const surface = new Surface(extentM, cellM, topLength < tops.length * .75 ? tops.slice(0, topLength) : tops.subarray(0, topLength), groundAt);
   // A steep face is a wall where its top stands more than RISE_M over the surface beside it, judged every half metre
   // along it. Its own height says nothing: a pavement's edge face runs down past the road it meets (its skirt), and
   // one face can run the length of a sloping block, so a 0.2 m kerb became a wall wherever its face was 0.3 m tall.
@@ -203,7 +232,7 @@ export function buildCarGround(objects: THREE.Object3D[], layerOf: (o: THREE.Obj
   // street objects in the bumper band
   const og = new Grid(extentM, OBJECT_CELL), occupied = new Set<number>(), M = og.n;
   for (const o of meshes) {
-    const layer = layerOf(o);
+    const layer = collisionLayer(o);
     if (!OBJECTS.has(layer) || (layer === 'vegetation' && classOf(o.name).startsWith('leaf'))) continue;   // crowns stand above the car
     eachTriangle(o, (p, a, b, c) => {
       const g = groundAt((p[a] + p[b] + p[c]) / 3, (p[a + 2] + p[b + 2] + p[c + 2]) / 3), lo = g + BAND_LOW, hi = g + BAND_HIGH;
@@ -219,15 +248,17 @@ export function buildCarGround(objects: THREE.Object3D[], layerOf: (o: THREE.Obj
     });
   }
   // blobs of touching cells, each covered by circles
-  const flat: number[] = [], seen = new Set<number>(), pad = OBJECT_CELL * .75;
+  const flat: number[] = [], pad = OBJECT_CELL * .75;
+  const objectCells = occupied.size;
   for (const first of occupied) {
-    if (seen.has(first)) continue;
-    const blob: number[] = [first]; seen.add(first);
+    const blob: number[] = [first];
+    occupied.delete(first);
     for (let q = 0; q < blob.length; q++) {
       const k = blob[q], i = k % M, j = Math.floor(k / M);
       for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
         const ni = i + di, nj = j + dj; if (ni < 0 || nj < 0 || ni >= M || nj >= M) continue;
-        const nk = nj * M + ni; if (occupied.has(nk) && !seen.has(nk)) { seen.add(nk); blob.push(nk); }
+        const nk = nj * M + ni;
+        if (occupied.delete(nk)) blob.push(nk);
       }
     }
     const pts = blob.map(k => og.centre(k)); let mx = 0, mz = 0; for (const [x, z] of pts) { mx += x; mz += z; } mx /= pts.length; mz /= pts.length;
@@ -246,6 +277,6 @@ export function buildCarGround(objects: THREE.Object3D[], layerOf: (o: THREE.Obj
   return {
     surface, obstacles,
     blocked: (mark, line) => { for (let q = 0; q < wallPts.length; q += 2) mark(wallPts[q], wallPts[q + 1]); for (let q = 0; q < wallLines.length; q += 4) line(wallLines[q], wallLines[q + 1], wallLines[q + 2], wallLines[q + 3]); },
-    stats: {ms: Math.round(performance.now() - t0), surfaceTriangles: tops.length / 9, walls: wallLines.length / 4 + wallPts.length / 2, obstacles: obstacles.count, objectCells: occupied.size},
+    stats: {ms: Math.round(performance.now() - t0), surfaceTriangles: topLength / 9, walls: wallLines.length / 4 + wallPts.length / 2, obstacles: obstacles.count, objectCells},
   };
 }

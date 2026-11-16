@@ -76,10 +76,20 @@ def _candidates(points, policy):
             inliers=remaining[np.abs(design[remaining]@c-points[remaining,2])<=policy.residual_m]
             if len(inliers)<=best_count:continue
             region=_largest_region(inliers,keys,shape)
-            if len(region)>best_count:best=region;best_count=len(region)
+            if len(region)>best_count:
+                # A connected strip can have many cells but no 2D extent.
+                # It cannot define a roof plane or displace a valid candidate.
+                if _plane(points[region]) is None:continue
+                best=region;best_count=len(region)
         if best is None or best_count<minimum:break
-        c=_plane(points[best]); inliers=remaining[np.abs(design[remaining]@c-points[remaining,2])<=policy.residual_m]
-        region=_largest_region(inliers,keys,shape);c=_plane(points[region]);result.append(c);remaining=np.setdiff1d(remaining,region)
+        c=_plane(points[best])
+        if c is None:
+            remaining=np.setdiff1d(remaining,best)
+            continue
+        inliers=remaining[np.abs(design[remaining]@c-points[remaining,2])<=policy.residual_m]
+        region=_largest_region(inliers,keys,shape);c=_plane(points[region])
+        if c is not None:result.append(c)
+        remaining=np.setdiff1d(remaining,region)
     return result
 
 def evaluate(model,xy):
@@ -125,7 +135,12 @@ def roof_solid(footprint, model, bottom):
     top=float(np.max(np.c_[corners,np.ones(4)]@np.asarray(model['planes']).T))+1
     from .geometry import polygons
     boundary=np.concatenate([np.asarray(p.exterior.coords) for p in polygons(footprint)])
-    if bottom>=float(evaluate(model,boundary).min())-.01:raise ValueError('Roof base intersects the roof envelope')
+    # A roof may legitimately meet its wall/eave datum exactly along the
+    # footprint boundary.  Reject only a true positive-height intersection;
+    # the former 1 cm clearance requirement incorrectly discarded such hosts.
+    envelope_min = float(evaluate(model, boundary).min())
+    if bottom > envelope_min + 1e-8:
+        raise ValueError('Roof base intersects the roof envelope')
     def clipped(planes):
         parts=[]
         for mesh in extruded(footprint,bottom,top):

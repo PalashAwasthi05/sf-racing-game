@@ -12,7 +12,12 @@ export type RoadSpots = Points & {centre: Points};
 const key = (i: number, j: number) => (i + 4096) * 8192 + j + 4096;
 
 function points(objects: THREE.Object3D[], keep: (o: THREE.Mesh) => boolean): Points {
-  const xs: number[] = [], zs: number[] = [], seen = new Set<number>();
+  // Typed chunks avoid two growing boxed-number arrays coexisting with the
+  // final float buffers over a whole neighborhood. Coordinates are rounded to
+  // Float32 exactly as before; bucket/dedup keys still use the original doubles.
+  const chunkSize=16384,xs:Float32Array[]=[],zs:Float32Array[]=[],seen = new Set<number>();
+  const buckets = new Map<number, number[]>();
+  let count=0;
   for (const o of objects) {
     if (!(o instanceof THREE.Mesh) || !keep(o)) continue;
     o.updateWorldMatrix(true, false);
@@ -20,12 +25,50 @@ function points(objects: THREE.Object3D[], keep: (o: THREE.Mesh) => boolean): Po
     for (let i = 0; i < pos.count; i++) {
       v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld);
       const k = key(Math.round(v.x * 2), Math.round(v.z * 2)); if (seen.has(k)) continue;   // one point per half metre
-      seen.add(k); xs.push(v.x); zs.push(v.z);
+      seen.add(k);
+      const chunk=Math.floor(count/chunkSize),offset=count%chunkSize;
+      if(!offset){xs.push(new Float32Array(chunkSize));zs.push(new Float32Array(chunkSize));}
+      xs[chunk][offset]=v.x;zs[chunk][offset]=v.z;
+      const bucketKey=key(Math.floor(v.x/BUCKET_M),Math.floor(v.z/BUCKET_M)),bucket=buckets.get(bucketKey);
+      if(bucket)bucket.push(count);else buckets.set(bucketKey,[count]);
+      count++;
     }
   }
-  const buckets = new Map<number, number[]>();
-  xs.forEach((x, n) => { const k = key(Math.floor(x / BUCKET_M), Math.floor(zs[n] / BUCKET_M)); const b = buckets.get(k); if (b) b.push(n); else buckets.set(k, [n]); });
-  return {x: new Float32Array(xs), z: new Float32Array(zs), buckets};
+  seen.clear();
+  const x=new Float32Array(count),z=new Float32Array(count);
+  for(let c=0;c<xs.length;c++){
+    const offset=c*chunkSize,length=Math.min(chunkSize,count-offset);
+    x.set(xs[c].subarray(0,length),offset);z.set(zs[c].subarray(0,length),offset);
+  }
+  return {x,z,buckets};
+}
+
+/** Exactly the stable distance-sorted prefix, using O(limit) scratch instead of
+ * a boxed index and sort workspace for every road point in the neighborhood. */
+export function nearestRoadPointIndices(p:Pick<Points,'x'|'z'>,x:number,z:number,limit:number):number[] {
+  const capacity=Math.min(p.x.length,Math.max(0,Math.floor(limit)));
+  if(!capacity)return [];
+  const heap=new Int32Array(capacity),distances=new Float64Array(capacity);
+  let size=0;
+  const worse=(distance:number,index:number,otherDistance:number,otherIndex:number)=>
+    distance>otherDistance||(distance===otherDistance&&index>otherIndex);
+  for(let index=0;index<p.x.length;index++){
+    const distance=Math.hypot(p.x[index]-x,p.z[index]-z);
+    if(size<capacity){
+      let at=size++;
+      while(at){const parent=(at-1)>>>1;if(!worse(distance,index,distances[parent],heap[parent]))break;
+        heap[at]=heap[parent];distances[at]=distances[parent];at=parent;}
+      heap[at]=index;distances[at]=distance;
+    }else if(worse(distances[0],heap[0],distance,index)){
+      let at=0;
+      for(;;){let child=at*2+1;if(child>=size)break;
+        if(child+1<size&&worse(distances[child+1],heap[child+1],distances[child],heap[child]))child++;
+        if(!worse(distances[child],heap[child],distance,index))break;
+        heap[at]=heap[child];distances[at]=distances[child];at=child;}
+      heap[at]=index;distances[at]=distance;
+    }
+  }
+  return Array.from(heap).sort((a,b)=>Math.hypot(p.x[a]-x,p.z[a]-z)-Math.hypot(p.x[b]-x,p.z[b]-z)||a-b);
 }
 
 /** A yellow marking: the centre line of a two-way street. */
@@ -93,7 +136,7 @@ function surfaceLine(s: Points, cx: number, cz: number, near: number[]) {
 export function spawnOnRoad(s: RoadSpots, x: number, z: number, clear: (x: number, z: number) => boolean = () => true, preferYaw?: number): [number, number, number] | null {
   const near: number[] = [];
   const face = (ux: number, uz: number) => { let yaw = Math.atan2(-ux, -uz); if (preferYaw !== undefined && Math.cos(yaw - preferYaw) < 0) yaw += Math.PI; return yaw; };
-  const nearest = (p: Points, limit: number) => Array.from({length: p.x.length}, (_, i) => i).sort((a, b) => Math.hypot(p.x[a] - x, p.z[a] - z) - Math.hypot(p.x[b] - x, p.z[b] - z)).slice(0, limit);
+  const nearest = (p: Points, limit: number) => nearestRoadPointIndices(p,x,z,limit);
   const c = s.centre;
   for (const i of nearest(c, 6000)) {
     const line = centreLine(c, c.x[i], c.z[i], near); if (!line) continue;

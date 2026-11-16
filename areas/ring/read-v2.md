@@ -1,4 +1,4 @@
-# Reading a building's sides from street photographs (reading v2, the Lafayette Park ring)
+# Reading a building's sides from street photographs (reading v2)
 
 Reading v2.1: every part of the wall seen (more cameras, frames raised to the roof), an inventory before any
 numbers, `unmodelled` for anything without a field, roofs, planting and garage depth.
@@ -6,13 +6,18 @@ numbers, `unmodelled` for anything without a field, roofs, planting and garage d
 You are rebuilding one building as accurately as it can be built from street photographs. You measure each of its
 photographed sides and write what you see as JSON, which a generator turns into 3D (walls, windows set into the wall
 with real depth, bays, cornices, rustication, fire escapes...). Accuracy is the whole point: every window, every storey,
-the right sizes, the right colours. Do not guess what you cannot see, and say so in `notes`. Do not transcribe any text,
-names, logos or house numbers you see.
+the right sizes, the right colours. Do not guess what you cannot see, and say so in `notes`. Record clearly readable
+signage text with its image source and location; do not invent blurred text. Wall-mounted signs use `signs`:
+`x0,x1,z0,z1`, `mount:"wall"`, and inspected `sourceImages`. A physical board needs `board:{family,hex,thicknessM}`;
+omit it for painted letters. Literal text needs `textLegible:true`, `text`, and `textHex`. Optional `offsetM` and
+`letterDepthM` carry measured projection/thickness. Fonts remain approximate unless independently identified.
+Unread lettering and unsupported projecting/rooftop/freestanding supports remain in `unmodelled`.
 
-Work from `/Users/palash/Documents/Codex/2026-09-08/i-want-to-create-a-heuristic/work` (paths below are relative to it).
+Work from the supplied project directory; resolve source paths from the area's input manifest. The rules below do
+not depend on an area name, street name or building identity.
 
 ## What you have, per side
-- `areas/pacific-heights/regen/sides/img/<side>__v0_rect.jpg` and `__v1_rect.jpg`: the side rectified square-on from
+- `<area>/regen/sides/img/<side>__v0_rect.jpg` and `__v1_rect.jpg`: the side rectified square-on from
   two camera positions. Red ticks along the top and bottom edges mark metres along the wall (labelled every 5 m, 0 at
   the left edge); blue ticks on the left and right mark metres above the ground (labelled every 5 m, 0 at the bottom).
   The white margin is not part of the wall. All your numbers are in these metres. A view may be missing.
@@ -73,8 +78,8 @@ Everything from reading v1, and more. Example (a 7-storey apartment block, abrid
  "bays": [
    {"x0": 1.2, "x1": 4.6, "z0": 5.1, "z1": 20.1, "projectionM": 0.75, "shape": "angled", "sideAngleDeg": 45,
     "rows": [[5.7, 7.45], [8.9, 10.55], [12.0, 13.65], [14.85, 16.45], [17.6, 19.1]],
-    "front": {"count": 1, "widthM": 1.15}, "side": {"widthM": 0.6},
-    "sash": "double-hung", "meetingRail": 0.66, "lites": [1, 1], "frame": "#ece8de", "trimHex": "#e8e1d1",
+    "front": {"count": 1, "widthM": 1.15, "lites": [1, 1]}, "side": {"widthM": 0.6, "lites": [1, 1]},
+    "sash": "double-hung", "meetingRail": 0.66, "lites": [1, 1], "mullions": 0, "transoms": 0, "frame": "#ece8de", "trimHex": "#e8e1d1",
     "storeyTrim": true, "corbel": false, "cap": "cornice"}],
  "bands": [
    {"zM": 4.95, "thicknessM": 0.35, "projectionM": 0.25, "hex": "#d9d0bd", "kind": "string", "profile": "moulded"},
@@ -82,7 +87,11 @@ Everything from reading v1, and more. Example (a 7-storey apartment block, abrid
  "piers": [{"xM": 11.1, "widthM": 0.5, "projectionM": 0.1, "hex": "#d8d6cf"}],
  "fireEscapes": [{"x0": 12.7, "x1": 18.0, "levels": [5.15, 8.2, 11.3, 14.4, 17.45], "depthM": 1.2, "hex": "#d8d2c4"}],
  "balconies": [{"x0": 3.0, "x1": 6.5, "zM": 12.1, "depthM": 0.9, "railing": "metal", "railingHeightM": 1.0, "hex": "#26282a"}],
- "ornaments": [{"x0": 5.75, "x1": 6.6, "z0": 19.5, "z1": 19.95, "hex": "#d9d0bd", "projectionM": 0.03}],
+ "recesses": [{"x0": 1.0, "x1": 4.2, "z0": 5.0, "z1": 8.1, "depthM": 1.8, "kind": "loggia",
+               "frontRailing": {"kind": "metal", "heightM": 0.95, "horizontalRails": 2, "postPitchM": 0.8, "material": "#e4e2da"},
+               "backOpenings": [{"x0": 1.5, "x1": 3.8, "z0": 5.2, "z1": 7.8, "kind": "glazed_door", "lites": [2, 1]}]}],
+ "ornaments": [{"x0": 5.75, "x1": 6.6, "z0": 19.5, "z1": 19.95, "hex": "#d9d0bd", "projectionM": 0.03,
+                "shape": "roundel", "outerOutline": "circle", "motif": "radial", "cardinalFlourishes": false}],
  "timbering": [{"x0": 0.4, "x1": 9.0, "z0": 9.3, "z1": 13.4, "postPitchM": 1.2, "widthM": 0.18, "rails": [10.6], "hex": "#2e2320"}],
  "porches": [{"x0": 1.2, "x1": 4.6, "floorM": 1.1, "topM": 3.9, "depthM": 2.2, "columns": 2, "columnHex": "#f1eee6", "hex": "#e9e4d8", "roof": "gable", "steps": true}],
  "canopies": [{"x0": 11.0, "x1": 14.0, "zM": 3.3, "depthM": 1.5}],
@@ -101,8 +110,10 @@ Everything from reading v1, and more. Example (a 7-storey apartment block, abrid
   yellow, or a deeper accent; old brick is red, brown or a buff/cream.
 - Windows (`banks` and `openings` of kind window):
   - `kind`: window, shopfront, entry (a door), garage (a vehicle door), rollup, louvre, curtain.
-  - `head`: flat, arch (half-round top; `springRatio` = where the curve starts, as a fraction of the opening's height
-    from the bottom, default 0.68), segmental (shallow curve).
+  - `head`: flat, arch (round top), pointed (two curves meeting at a Gothic peak), or segmental (shallow curve). This
+    describes the actual aperture edge, not its casing, hood, or lintel. For arch/pointed, `springRatio` is the
+    jamb-to-curve springline as a fraction of the aperture height from its bottom (default 0.68); for segmental,
+    `riseRatio` is the curve rise as a fraction of aperture height when it can be read.
   - `sash`: double-hung (two sashes, one above the other: `meetingRail` is where they meet, a fraction of the height
     from the bottom; often 0.5, higher when the upper sash is a short transom), casement (side-hung leaves), fixed,
     sliding. `lites`: panes per sash [across, down] ([1,1] one pane, [3,2] six panes). Use `mullions`/`transoms` only
@@ -116,15 +127,31 @@ Everything from reading v1, and more. Example (a 7-storey apartment block, abrid
   - a bank's columns x rows openings are centred on `xCentersM` x `zCentersM` (give them: measured centres beat even
     spacing); `omit` lists [column, row] cells (0,0 = bottom left) that are wall. Use several banks when size, spacing,
     sash or trim change (ground floor, top floor, a wing).
-- Entries: `door` {kind: panel, glazed, double, none; hex}, `transomM` (height of a glazed transom above the door),
+- Entries: `door` {kind: panel, glazed, double, grille, none; hex}, `transomM` (height of a glazed transom above the door),
   `steps` {count, widthM}: the steps up to a door whose sill is above the ground (count the risers you can see).
+  A `grille` is an open-bar gate, not a solid leaf. An opaque door may supply `panels` as leaf-relative rectangles
+  `[left,bottom,right,top]` in 0..1. Use `panels: []` when a leaf is seen but its panel boundaries are not readable;
+  do not invent a stock panel layout. For mixed doors, `cells` is a list of observed leaf-relative cells
+  `{rect:[left,bottom,right,top], kind:"panel"|"glass"}`; only explicitly glass cells become apertures.
+- Vehicle doors: `door` {kind: panel, glazed, grille, open; hex, construction}. `construction` is `sectional` or `roller`
+  only when that construction is visible. `cells` records measured panel or glass regions on the leaf; omitted or
+  unresolved cells stay an opaque, undivided panel rather than becoming an assumed glass grid. `lites` is only for a
+  visibly glazed leaf whose pane count can be measured. Use `kind:"grille"` for an open-bar gate and `kind:"open"`
+  for a genuinely unobstructed opening with no leaf. Give `recessM` for a leaf set inside a deep passage; the passage
+  and its actual rear leaf are separate observations.
 - `bays`: parts of the wall that project as bay windows. Give `x0`/`x1` where the bay meets the wall (those points are
   on the wall's plane, so the rectified image shows them where they are), `z0`/`z1` its bottom and top, `projectionM`
   (how far its front stands out: judge from the perspective view; 0.6-0.9 m is usual), `shape` (angled: front and two
   45-degree sides; square; curved: a round bay), and its windows PER STOREY, not as image positions: `rows` (sill and
   head heights of the bay's window on each storey: the same storeys as the wall windows beside it), `front` (how many
   windows across the front face and each one's width), `side` (each side face's window width as built, or null for a
-  blank side). Do not also cover the bay with a bank. Give a bay's own `hex` (and `family`: painted wood, sheet metal,
+  blank side). Use the bay windows' own sash and pane fields as for other windows; optional `mullions` and `transoms`
+  are explicit extra divisions and default to none. Shared bay pane fields apply to both faces; optional pane fields
+  nested under `front` or `side` override them only for that face, which can represent a divided front sash with single-pane
+  angled side sashes. Put actual aperture `head` (`flat`, `arch`, `pointed`, or `segmental`) and its ratio on the shared
+  bay or the face-specific `front`/`side` object; read an arched casing separately under `surround`/`hood`. These are
+  copied to each laid opening; `lites` describes panes within each sash. Do not also cover
+  the bay with a bank. Give a bay's own `hex` (and `family`: painted wood, sheet metal,
   render, brick) whenever its body differs from the wall's: many brick and render fronts carry bays of painted wood or
   metal, white or cream, that read as the building's most visible feature.
 - `bands`: horizontal projecting courses (give `x0`/`x1` when one runs along only part of the wall, a tower's
@@ -138,13 +165,32 @@ Everything from reading v1, and more. Example (a 7-storey apartment block, abrid
   Many cornices are a frieze band plus a cornice band: give both.
 - `rustication`: zones of banded masonry (horizontal channels every `courseM`). `quoins`: corner blocks alternating
   long/short up a corner (`xM` the corner's x).
-- `piers`: pilasters / vertical strips standing out of the wall. `ornaments`: low relief panels, plaques, cartouches.
+- `piers`: pilasters / vertical strips standing out of the wall. `ornaments`: low relief panels, plaques, cartouches,
+  roundels, or garlands. Give measured bounds and projection. The legacy `shape` describes the broad relief kind
+  (`panel`, `roundel`, `cartouche`, or `garland`); for roundels/cartouches, the optional `outerOutline` independently
+  records `circle`, `oval`, or `pointed`, `motif` records `radial`, `rosette`, or `unknown`, and
+  `cardinalFlourishes` records whether side/top/bottom flourishes are visibly present. These fields are independent:
+  a circular outline can carry a radial motif and cardinal flourishes. Use only what the photo supports; omit uncertain
+  fields instead of inheriting a shape guess from the outline or motif. `repeatCount` and `ringCount` are explicit
+  observed counts, not guesses from a bounding rectangle. Existing readings without these optional fields retain the
+  legacy relief behavior.
 - `porches`: a porch or portico standing in front of the wall: posts or columns carrying a beam (entablature) and a
   roof over an entry. Its extent along the wall, `floorM` (the porch floor above the ground at the wall: 0 at grade, the
   top of its steps otherwise), `topM` (the top of its beam, where its roof starts), `depthM` (how far it stands out: from
   the perspective view), the number of `columns` across its front and their colour, its body colour, its `roof` (flat,
   gable: a pediment facing the street, shed, balcony: a flat roof with a railing round it) and whether `steps` rise to
   it from the street. A recessed entry with no columns is not a porch: give it as an opening with `recessM`.
+- `accessRoutes`: use this only when exterior stairs visibly turn, pass through a terrace, or connect more than one
+  measured landing. Every route names its source owner with `serves: {collection: 'porches'|'openings', index: n}`;
+  an unresolved route suppresses only that owner’s legacy stair guess. Store route segments in travel order. A `flight`
+  has `from` and `to` coordinates `[xM, zM, depthM]`
+  in the facade frame, a counted `steps`, and measured `widthM`; a `landing` has its measured x/depth `outline`, `zM`,
+  and `thicknessM`. `depthM` is outward from the facade; route x may extend past either wall edge. Record only complete,
+  observed segment geometry. If a continuation is hidden, set `continuation: "occluded"` and include only fully measured
+  visible segments; if their endpoints or heights are not measurable, set `status: "unresolved"` with a note and no
+  segments. Closed or waist flights use a connected supporting core; `open_risers` requires measured `treadThicknessM`.
+  Never extend a flight to terrain or across a road based on a typical riser or unseen endpoint. Ordinary
+  single flights that already belong to an entry or porch stay in that field.
 - `timbering`: half-timbering (Tudor, Arts and Crafts): a region of the wall framed in exposed timber (often a gable or an
   upper storey). Give the region (x0-x1, z0-z1; a gable's region runs to its apex: the wall's outline cuts it), the
   spacing of its upright studs (`postPitchM`, centre to centre), their width, the heights of horizontal rails inside the
@@ -152,6 +198,15 @@ Everything from reading v1, and more. Example (a 7-storey apartment block, abrid
 - `fireEscapes`: platform `levels` (z of each platform), its x extent, depth, colour (painted or black).
 - `balconies`: a slab at `zM` with a railing (metal, balustrade, solid); `hex` is the railing's colour, `slabHex` the
   slab's (white concrete slabs on a mid-century block).
+- `recesses`: only for an observed negative volume in the facade (an open loggia, inset terrace, or recessed entry),
+  not for an ordinary balcony. Give the measured facade bounds `x0`/`x1`/`z0`/`z1` and `depthM` from the outer wall
+  plane to the visible back wall, using both rectified and perspective views. The builder removes the host wall there and
+  draws the back, side returns, soffit and floor. When visible and measurable, list openings on the back wall in
+  `backOpenings` with their own metric bounds, kind (`window`, `glazed_door`, `door`), material/frame colour and pane
+  count (`lites`). A visible front rail can be recorded as `frontRailing` with its kind, height, measured horizontal-rail
+  count and optional post pitch. Do not infer a door or window in a dark or occluded recess. Use `backMaterial`, `returnMaterial`,
+  `soffitMaterial`, or `floorMaterial` only when the observed finish differs from the wall material. A normal balcony
+  remains in `balconies` and leaves the host wall intact.
 - `canopies`: {x0, x1, zM, depthM, hex}: a canopy or porte-cochere roof standing out from the wall (one over a door's
   head is drawn with that door; one over nothing is drawn on its own).
 - `hedges`: a clipped hedge or tall planting standing in front of the wall and hiding it: {x0, x1, heightM, depthM,
@@ -202,6 +257,31 @@ Everything from reading v1, and more. Example (a 7-storey apartment block, abrid
   (door and how deep it sits), recesses, materials and their colours, trim and ornament, and what stands in front of
   the wall (planting, shrubs, trellis, hedge, fence, gate, wall, driveway).
 - Every item of the inventory goes into a field of the JSON, or into `unmodelled` (below). Nothing is left out silently.
+
+### Machine-readable feature accounting
+
+Store this inventory in `inventory`, not only prose. Cover `roofline`, `surface_zones`, `windows`, `entrance`, `garage`,
+`projections`, `trim`, `access`, and `signage`. Each item has `category`, `visibility` (`visible`, `absent`, `occluded`,
+`out_of_frame`), `sourceImages` (actual image IDs inspected), a short `description`, and `targets` identifying the
+records that represent it: `[{"collection":"openings","index":0}]`. A visible feature without a supported
+representation instead names its `unmodelled` list index. Multiple items may share a category. An occluded item needs
+a `reason`. Account separately for the porch, doorway behind it, stair and stair rails; a porch alone is not an entry.
+An entry frame is not a door leaf. Never fill a missing doorway from a porch template.
+
+Every visible material change needs its own zone and a typed surface structure when distinguishable. Wood siding,
+straight shingles and scalloped shingles are different structures, even with the same paint. Distinguish a gable end
+wall's cladding from the roof covering. Unmeasured repeats stay unmeasured. Never use a guessed value merely to fill a
+field. The material observation contract lists supported patterns.
+
+When a material visibly continues to the wall outline but that outline is cropped, set `toWallTop: true` on its
+material zone. Its `z1` remains the observed frame extent, not a fabricated apex measurement. The validated wall
+outline supplies its final clipping. A bay may carry its own `pattern`, `finish` and `moduleM`; these are separate
+observations and are preserved with its own body color rather than discarded during compilation.
+
+`regen/audit_readings.py INPUT_DIR OUTPUT.json` creates a repeatable queue of missing observations across the entire
+input directory; `check.py` and profile compilation retain the accounting report. A clean accounting report means
+only that the claims have destinations. It is never proof that those claims match the photographs. Unsupported
+details survive compilation in `unresolved` and must be resolved or explicitly retained in the review result.
 
 ## How to work, per side
 1. Read both rectified views and both perspective views. Decide which view is clearer (`use`), which parts each hides.

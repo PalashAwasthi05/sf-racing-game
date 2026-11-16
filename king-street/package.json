@@ -7,6 +7,8 @@
   },
   "scripts": {
     "dev": "vinext dev",
+    "build:local": "vite build --config local-viewer/vite.config.mjs",
+    "play": "python3 local-viewer/play.py",
     "build": "vinext build",
     "start": "wrangler dev --config dist/server/wrangler.json",
     "lint": "oxlint",

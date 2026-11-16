@@ -23,7 +23,7 @@ const FINISH:Record<string,Finish>={
  steel:METAL,aluminum:METAL,silver:{roughness:.45,metalness:.45,probe:true,env:.6},zinc:{roughness:.42,metalness:.8,probe:true,env:.9},copper:{roughness:.4,metalness:.75,probe:true,env:.9},
  charcoal:{roughness:.7,metalness:.05},verdigris:{roughness:.7,metalness:.15},lamp:{roughness:.3,metalness:.5},
  white:PAINT,redpaint:PAINT,greenpaint:PAINT,yellow:PAINT,
- panel_dark:{roughness:.66,normal:1.2},panel_silver:{roughness:.3,probe:true,env:1,normal:1.2},
+ panel_coated:PAINT,panel_dark:{roughness:.66,normal:1.2},panel_silver:{roughness:.3,probe:true,env:1,normal:1.2},
  asphalt:{roughness:.9,normal:1.3},
  concrete:{normal:1.3},stone:{normal:1.5},limestone:{normal:1.4},cast_stone:{normal:1.4},brick:{normal:1.5},brick_modular:{normal:1.6},brick_dark:{normal:1.6},
  stucco:{normal:1.3},stucco_red:{normal:1.3},render_white:RENDER,render_gray:RENDER,render_salmon:RENDER,
@@ -40,19 +40,33 @@ const FINISH:Record<string,Finish>={
 // The asphalt scan is yellow-brown (0.09/0.085/0.06); weathered road asphalt is a neutral grey near 0.12.
 const GROUND=new Set(['terrain','sidewalks','cycleways','paths','steps','landscape','roads']);
 const GROUND_FINISH:Record<string,Finish>={concrete:{tint:[.66,.63,.57]},stone:{tint:[.72,.69,.64]},venue_concrete:{tint:[.72,.7,.66]},asphalt:{tint:[1.3,1.35,1.55]}};
-export function classOf(meshName:string){return meshName.split('___').pop()!.split('#')[0].split('__')[0];}
+export function classOf(meshName:string){return meshName.split('___').pop()!.split('#')[0].split('~obs1')[0].split('__')[0];}
+function hasObservedMaterialKey(meshName:string){
+ const token=meshName.split('___').pop()!,hash=token.lastIndexOf('#');
+ if(hash<0||! /^[0-9a-f]{6}$/i.test(token.slice(hash+1)))return false;
+ const fields=token.slice(0,hash).split('~');
+ if(!fields[0]||fields[1]!=='obs1'||fields.length<3)return false;
+ const seen=new Set<string>();
+ for(const entry of fields.slice(2)){
+  const split=entry.indexOf('='),key=entry.slice(0,split),value=entry.slice(split+1);
+  if(split<1||!value||!['fam','pat','fin','mx','mz'].includes(key)||seen.has(key))return false;
+  seen.add(key);
+  if(key==='mx'||key==='mz'){const dimension=Number(value);if(!Number.isFinite(dimension)||dimension<=0)return false;}
+ }
+ return true;
+}
 /** Applies the finish of each mesh's class to its materials (once per material) and returns the materials that
  *  should reflect a local probe of their surroundings, each carrying the reflection strength in userData. */
 export function finishMaterials(meshes:THREE.Mesh[]){
  const done=new Set<THREE.Material>();const probe:THREE.MeshStandardMaterial[]=[];
  for(const mesh of meshes){
-  const cls=classOf(mesh.name);const ground=GROUND.has(mesh.name.split('___')[0].split('__')[0]);
+  const cls=classOf(mesh.name),observed=hasObservedMaterialKey(mesh.name);const ground=GROUND.has(mesh.name.split('___')[0].split('__')[0]);
   const f=ground&&GROUND_FINISH[cls]?{...FINISH[cls],...GROUND_FINISH[cls]}:FINISH[cls];if(!f)continue;
   for(const m of Array.isArray(mesh.material)?mesh.material:[mesh.material]){
    if(done.has(m)||!(m instanceof THREE.MeshStandardMaterial))continue;done.add(m);
-   if(f.roughness!==undefined)m.roughness=f.roughness;             // a factor on the roughness map where one exists
-   if(f.metalness!==undefined&&!m.metalnessMap)m.metalness=f.metalness;
-   if(f.normal&&m.normalMap)m.normalScale.setScalar(f.normal);
+   if(!observed&&f.roughness!==undefined&&!m.roughnessMap)m.roughness=f.roughness;   // a map already carries its authored finish
+   if(!observed&&f.metalness!==undefined&&!m.metalnessMap)m.metalness=f.metalness;
+   if(!observed&&f.normal&&m.normalMap&&Math.abs(m.normalScale.x-1)<1e-6&&Math.abs(m.normalScale.y-1)<1e-6)m.normalScale.setScalar(f.normal);
    if(f.tint)m.color.setRGB(f.tint[0],f.tint[1],f.tint[2]);
    if(f.probe){m.userData.envIntensity=f.env??.8;probe.push(m);}
    m.needsUpdate=true;

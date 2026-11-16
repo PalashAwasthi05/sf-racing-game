@@ -1,0 +1,4 @@
+day-clouds.webp derives from Kloofendal 48d Partly Cloudy (Pure Sky)
+by Greg Zaal and Jarod Guest, distributed by Poly Haven under CC0.
+https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky
+Upper hemisphere, sun disc removed, log-encoded linear RGB.

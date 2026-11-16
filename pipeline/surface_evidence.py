@@ -9,6 +9,7 @@ AUDIT=[]
 
 def resolve_material(surface):
  """Select a recipe from observed family/finish, never geographic identity."""
+ from . import material_recipes
  before=surface.get('material','stucco');ev=surface.get('materialEvidence')
  if not ev:return before
  if not ev.get('sourceIds'):raise ValueError('Material evidence needs a source')
@@ -19,11 +20,22 @@ def resolve_material(surface):
            'pale-trim':{'default':'stone'},
            'metal-panel':{'default':'panel_silver','dark':'panel_dark'}}
  if ev['family'] not in families:raise ValueError('Unresolved material family: '+ev['family'])
- options=families[ev['family']];after=options.get(ev.get('finish','default'),options['default'])
+ options=families[ev['family']];finish=ev.get('finish','default');after=options.get(finish,options['default'])
+ # The profile recipe key carries optional pattern/module observations through
+ # facade transfer; legacy family/finish resolution below remains unchanged.
+ if any(k in ev for k in ('pattern','moduleM')) or finish in ('matte','satin','glossy','polished','rough','weathered'):
+  rgb=ev.get('colorRgb')
+  if not rgb or len(rgb)!=3:raise ValueError('typed material evidence needs a measured colorRgb')
+  hx='#'+''.join(f'{int(max(0,min(255,round(float(v))))):02x}' for v in rgb)
+  base=options.get(finish,options['default'])
+  typed_finish=finish if finish in ('matte','satin','glossy','polished','rough','weathered') else None
+  after=material_recipes.make_observed_key(base,hx,family=ev['family'],pattern=ev.get('pattern'),
+                                           finish=typed_finish,moduleM=ev.get('moduleM'))
+  AUDIT.append({'rule':'material-family','surfaceId':surface.get('id'),'before':before,'after':after,'changed':before!=after,'sourceIds':ev['sourceIds']})
+  return after
  if ev.get('colorRgb'):
   # The photograph shows the wall's colour; the recipe keeps its structure (joints, relief, roughness) and takes
   # the observed colour as a named variant, so the material vocabulary is not a fixed palette.
-  from . import material_recipes
   rgb=[int(max(0,min(255,round(v)))) for v in ev['colorRgb']];variant=f"{after}#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
   if after in material_recipes.RECIPES:
    material_recipes.RECIPES.setdefault(variant,{**material_recipes.RECIPES[after],'color':rgb});after=variant

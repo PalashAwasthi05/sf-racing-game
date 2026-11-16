@@ -52,3 +52,11 @@ __pycache__/
 
 # Generated A/B preview manifests (publish/preview scripts rewrite them)
 /public/compare/*.json
+
+# Prebuilt local client (world assets are served in place).
+/.local-viewer/
+
+# Generated per world build (package_neighborhood.py / promote): facade cells, startup indexes, GPU stream cache.
+/public/compare/*.gz
+/public/startup-*.json
+/public/.drive-stream-gpu-*/

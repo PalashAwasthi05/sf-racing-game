@@ -21,3 +21,9 @@ Treat color maps as sRGB and normal/roughness maps as non-color data. These are 
 All assets are CC0 1.0 Universal under ambientCG's official declaration: https://docs.ambientcg.com/license/. Reuse, modification, and redistribution, including commercial use, are permitted without attribution. Optional credit: “Textures from ambientCG, CC0.”
 
 CC0-1.0.txt contains the official license text, and ambientCG-license-source.html preserves the provider's declaration. Each material folder contains source-metadata.json copied from the official ambientCG API. manifest.json records exact paths, sizes, map hashes, official dimensions, and source/download URLs.
+
+## Added 2026-11-12: detail sets for the viewer's surface finish
+
+Six more ambientCG CC0 materials, 2K JPG, colour, OpenGL normal and roughness maps only, source maps unchanged (the user approved the download): PaintedPlaster017, Plaster001, WoodSiding008, Bark016 (0.8 m tile), Grass004 (1.4 m), Ground110 (2.1 m). `source-metadata.json` in each folder is the ambientCG API record.
+
+`pack_detail.py` packs each into one texture for the viewer (`king-street/public/materials/<id>.png`: normal in RG, roughness in B, tone relative to the scan's mean in A). `king-street/app/surface-finish.ts` projects them in world space onto plain-coloured walls and roofs (Plaster001, Ground110), bark and lawns, multiplying the surface's own colour by the scan's relative tone, so the scan's hue is never used. WoodSiding008 and PaintedPlaster017 are packed but not assigned: siding needs a wall class from the pipeline.

@@ -8,6 +8,10 @@ from . import facade_grammar
 from .surface_evidence import resolve_material
 
 PART_HEIGHT_SHARE=.3
+# The supported-plane experiment is exercised by focused tests but remains
+# off in production until whole-profile bay ownership and face subtraction
+# are handled independently of the current wall-edge partition.
+EXPERIMENTAL_PROFILE_HOST_BINDING=False
 import os as _os
 _TRACE=[] if _os.environ.get('FACADE_TRACE') else None   # debug: why each wall took (or did not take) a reading
 if _TRACE is not None:
@@ -57,6 +61,78 @@ def frame_cover(g,p):
    total+=(cur[1]-cur[0]) if cur else 0.;cur=[lo,hi]
   else:cur[1]=max(cur[1],hi)
  return total+((cur[1]-cur[0]) if cur else 0.)
+
+def profile_plane_binding(p,g,a,b):
+ """Return whether a framed reading owns this wall edge in its measured plane.
+
+ A photograph's plane is a host-wall reference, not a permission to copy its
+ openings to every parallel edge within a broad tolerance. Pick one sufficiently
+ supported plane over the reading's frame; measured bays are emitted as volumes
+ from that host and do not make their front edge a second host for the reading.
+ """
+ if not p.get('frameU') or p.get('planeV') is None or p.get('normal') is None:
+  return True,'unframed'
+ if g is None or not hasattr(g,'geom_type'):
+  return False,'no-host-outline'
+ pn=np.asarray(p['normal'],float)[:2];norm=float(np.linalg.norm(pn))
+ if norm<1e-9:return False,'invalid-profile-normal'
+ pn/=norm;pu=np.array([-pn[1],pn[0]])
+ f0,f1=sorted(map(float,p['frameU']));width=f1-f0
+ if width<=0:return False,'invalid-frame'
+ # A wall inside an explicitly measured bay's horizontal bounds belongs to the
+ # bay assembly when it stands away from the measured host plane.
+ s=float(((np.asarray(a,float)+np.asarray(b,float))/2)@pu)
+ for bay in p.get('bays') or []:
+  rect=bay.get('rect')
+  if isinstance(rect,(list,tuple)) and len(rect)==4:
+   lo=f0+float(rect[0])*width;hi=f0+float(rect[2])*width
+   if min(lo,hi)-.1<=s<=max(lo,hi)+.1:
+    signed=float(((np.asarray(a,float)+np.asarray(b,float))/2)@pn)-float(p['planeV'])
+    projection=float(bay.get('projectionM') or 0.)
+    bay_tol=max(.25,.4*projection)
+    if projection>.05 and signed>0 and abs(signed-projection)<=bay_tol:
+     return False,'bay-volume-owned'
+ # Candidate host edges must run along the observed frontage and overlap its
+ # frame. Group coplanar pieces so segmentation does not change ownership.
+ def polys(q):
+  if q.geom_type=='Polygon':return [q]
+  return [z for part in getattr(q,'geoms',[]) for z in polys(part)]
+ edges=[]
+ for poly in polys(g):
+  ring=np.asarray(poly.exterior.coords,float)
+  for pa,pb in zip(ring,ring[1:]):
+   v=pb-pa;L=float(np.linalg.norm(v))
+   if L<.3 or abs(float(np.dot(v/L,pu)))<.96:continue
+   sa,sb=sorted((float(pa@pu),float(pb@pu)));lo=max(sa,f0);hi=min(sb,f1)
+   if hi-lo<.05:continue
+   edges.append((float(((pa+pb)/2)@pn),lo,hi))
+ if not edges:return False,'no-parallel-host-support'
+ groups=[]
+ for plane,lo,hi in sorted(edges,key=lambda q:q[0]):
+  grp=next((q for q in groups if abs(plane-q['anchor'])<=.25),None)
+  if grp is None:
+   grp={'anchor':plane,'plane':plane,'planes':[plane],'spans':[(lo,hi)]};groups.append(grp)
+  else:
+   grp['planes'].append(plane);grp['spans'].append((lo,hi));grp['plane']=float(np.median(grp['planes']))
+ def covered(spans):
+  total=0.;end=None
+  for lo,hi in sorted(spans):
+   if end is None or lo>end:total+=hi-lo;end=hi
+   elif hi>end:total+=hi-end;end=hi
+  return total
+ for q in groups:q['support']=covered(q['spans'])
+ # Ignore tiny incidental edges; the host must cover a meaningful part of the
+ # recorded frontage. Other planes may be longer because they include deep
+ # returns or a footprint's rear wall.
+ min_support=max(3.,.25*width)
+ supported=[q for q in groups if q['support']>=min_support]
+ if not supported:return False,'insufficient-host-support'
+ ranked=sorted(supported,key=lambda q:abs(q['plane']-float(p['planeV'])))
+ if len(ranked)>1 and abs(abs(ranked[1]['plane']-float(p['planeV']))-abs(ranked[0]['plane']-float(p['planeV'])))<=.1:
+  return False,'ambiguous-host-plane'
+ chosen=ranked[0]
+ current=float(((np.asarray(a,float)+np.asarray(b,float))/2)@pn)
+ return (abs(current-chosen['plane'])<=.25),('host-plane' if abs(current-chosen['plane'])<=.25 else 'competing-host-plane')
 
 def frame_on_part(p,c,share=.5):
  """Whether a reading filed under this part still lies on it. The reader names the part it read a wall against; when
@@ -324,6 +400,27 @@ def lend(style,donor):
 BIN_M=2.5   # along-wall roof reading resolution
 STEP_M=1.5  # a roof height change larger than this between neighbouring bins is a step in the frontage
 
+def inferred_storeys(height, floor_pitch, ground_pitch, at_ground):
+ """Fit whole storeys into an unobserved volume. Never squeeze a ground and
+ upper floor into a single-storey shell just to satisfy a mandatory upper row."""
+ pitch=max(2.4,float(floor_pitch));base_pitch=max(2.4,float(ground_pitch))
+ if not at_ground:
+  n=max(1,round(height/pitch));return 0.,n,height/n
+ # Maximise agreement with the known pitch of the main and ground floors
+ # while retaining at least standing clearance for each inferred storey.
+ n=max(0,min(round((height-base_pitch)/pitch),int(height//2.4)-1))
+ if not n:return height,0,0.
+ s=height/(base_pitch+n*pitch);gh=np.clip(base_pitch*s,2.4,height-2.4*n)
+ return float(gh),n,(height-gh)/n
+
+def inferred_shopfront(tags, observation, own_reading, style):
+ """Building use can justify a retail ground floor; another building's
+ display windows cannot justify a storefront or indicate where its door is."""
+ if style.get('curtain'):return False
+ if observation:return style.get('ground') in ('shopfront','canopy_entry','entry')
+ retail=tags.get('building')=='retail' or tags.get('shop') not in (None,'','no','vacant')
+ return bool(retail or (own_reading or {}).get('reading',{}).get('shopfront'))
+
 def wall_profile(along,z,length,bin_m=BIN_M):
  """Roof top (96th percentile) per bin along a wall, despiked; NaN where a bin has too few returns."""
  bins=max(2,int(round(length/bin_m)));index=np.clip((along/length*bins).astype(int),0,bins-1);tops=np.full(bins,np.nan)
@@ -424,6 +521,40 @@ def frame_overlap(p,a,b):
  """Metres of the segment a-b inside a photographed profile's wall frame (its `frameU` along its own tangent)."""
  pn=np.asarray(p['normal'],float);pn/=np.linalg.norm(pn);pu=np.array([-pn[1],pn[0]]);f0,f1=map(float,p['frameU'])
  s0,s1=sorted([float(np.asarray(a)@pu),float(np.asarray(b)@pu)]);return max(0.,min(s1,f1)-max(s0,f0))
+
+def choose_profile_for_edge(candidates,a,b,wall_normal):
+ """Choose a framed reading by source-plane agreement, then frame coverage.
+
+ Unframed readings retain their historical precedence. For framed readings,
+ profiles must align with the current wall and cover at least half of this
+ edge; among those, the reading whose metric plane best matches the edge wins.
+ """
+ unframed=[p for p in candidates if not p.get('frameU')]
+ if unframed:return unframed[0]
+ edge=np.asarray(b,float)-np.asarray(a,float);length=float(np.linalg.norm(edge))
+ if length<1e-8:return None
+ n=np.asarray(wall_normal,float)[:2];nn=float(np.linalg.norm(n))
+ if nn<1e-8:return None
+ n/=nn;mid=(np.asarray(a,float)+np.asarray(b,float))/2
+ eligible=[]
+ for p in candidates:
+  pn=np.asarray(p.get('normal',()),float)[:2];pnorm=float(np.linalg.norm(pn))
+  if pnorm<1e-8 or float(np.dot(n,pn/pnorm))<=.95:continue
+  coverage=frame_overlap(p,a,b)
+  if coverage+1e-9<.5*length:continue
+  gap=None
+  if isinstance(p.get('planeV'),(int,float)):
+   gap=abs(float(mid@(pn/pnorm))-float(p['planeV']))
+  confidence={'high':3,'medium':2,'low':1}.get((p.get('reading') or {}).get('confidence'),0)
+  eligible.append((gap,coverage,confidence,str(p.get('id') or ''),p))
+ if not eligible:return None
+ if any(item[0] is not None for item in eligible):
+  # Known metric source planes provide stronger host evidence than mere frame
+  # overlap. Missing planes remain available only if no measured plane exists.
+  eligible.sort(key=lambda q:(q[0] is None,float('inf') if q[0] is None else round(q[0],6),-q[1],-q[2],q[3]))
+ else:
+  eligible.sort(key=lambda q:(-q[1],-q[2],q[3]))
+ return eligible[0][4]
 
 def split_at_frames(segments,frames):
  """Segments cut where a photographed frame begins or ends, so the photographed stretch and the rest of a long wall
@@ -527,7 +658,7 @@ def cap_rounded_spans(segments,levels,gables,rounded,parents=None):
  return segments,levels,gables,parents
 
 def compile(ctx,c,z0,main_height,height,tags,observations):
- default_height=main_height;g=c['g'].simplify(.18,preserve_topology=True);fid=c['id'];cube=ctx['cube'];cylinder=ctx['cylinder'];records=[];components=0
+ default_height=main_height;g=c['g'].simplify(.18,preserve_topology=True);fid=c['id'];cylinder=ctx['cylinder'];records=[];components=0
  # A hand reading's frame is compared with the part's main roof level, not its tallest point (a tower corner made a
  # 36 m part of a 22 m frontage and its own hand reading stopped counting) and not a tier's short wall.
  mass=c.get('massHeightM',height)
@@ -535,6 +666,47 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
  matches=[o for o in observations if str(o['match'].get('osmWayId'))==str(c['osm']['id'] if c['osm'] else '')]
  spans=ctx.get('envelopeSpans') or []
  own=[p for p in profiles if belongs(p,c,main_height,mass)]
+ # A validated observed bay replaces protruding structural wall pieces across
+ # the building, including short return faces. Defer only this building's
+ # structural meshes until the facade pass has either staged a sound bay or
+ # established that no replacement is safe.
+ original_put,original_cube=ctx.get('put'),ctx['cube'];original_set_clip=ctx.get('set_clip')
+ defer_bay_walls=any(p.get('bays') for p in own)
+ staged_walls=[];staged_bays=[];bay_replacements=[];active_clip=[None]
+ if defer_bay_walls:
+  if original_put is None:raise KeyError('facade context needs put() when it contains measured bays')
+  structural_prefix='buildings__'+fid
+  def is_structural_key(key):
+   text=str(key)
+   return text==structural_prefix or text.startswith(structural_prefix+'__')
+  def deferred_put(mesh,key,material,uv=None):
+   if is_structural_key(key):staged_walls.append((mesh,key,material,uv,active_clip[0]))
+   elif uv is None:original_put(mesh,key,material)
+   else:original_put(mesh,key,material,uv=uv)
+  def deferred_cube(center,size,key,color,angle=0):
+   if not is_structural_key(key):return original_cube(center,size,key,color,angle)
+   import trimesh
+   sx,sy,sz=map(float,size)
+   if min(sx,sy,sz)<=0:return
+   vertices=np.array([[-.5,-.5,-.5],[.5,-.5,-.5],[.5,.5,-.5],[-.5,.5,-.5],
+                      [-.5,-.5,.5],[.5,-.5,.5],[.5,.5,.5],[-.5,.5,.5]])*np.array([sx,sy,sz])
+   if angle:
+    cosine,sine=math.cos(angle),math.sin(angle)
+    vertices[:,:2]=vertices[:,:2]@np.array([[cosine,sine],[-sine,cosine]])
+   vertices+=np.asarray(center,float)
+   faces=np.array([[0,2,1],[0,3,2],[4,5,6],[4,6,7],[0,1,5],[0,5,4],
+                   [1,2,6],[1,6,5],[2,3,7],[2,7,6],[3,0,4],[3,4,7]])
+   staged_walls.append((trimesh.Trimesh(vertices,faces,process=False),key,color,None,active_clip[0]))
+  if original_set_clip is not None:
+   def deferred_set_clip(value):
+    active_clip[0]=value
+    return original_set_clip(value)
+   ctx['set_clip']=deferred_set_clip
+  ctx['put']=deferred_put;ctx['cube']=deferred_cube
+  ctx['_deferObservedBayAssembly']=True
+  ctx['_stagedObservedBayMeshes']=staged_bays
+  ctx['_observedBayReplacements']=bay_replacements
+ cube=ctx['cube']
  donor=None if own or tags.get('leisure')=='stadium' or c['full_area']>18000 else donor_for(profiles,fid,c.get('sourceId',c['id']),height)
  # A building photographed on one side lends what was measured there to its unseen walls: one building, one character.
  own_measured=next((p for p in own if measured_grid(p) and not p.get('materialOnly') and not (p.get('reading',{}).get('consensus') or {}).get('unsupported')),None)
@@ -744,18 +916,23 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
     # A reading measured on one plane draws only walls standing in it (the grammar's own 2.5 m frontage tolerance): the
     # face of a block set back behind its podium is read on its own plane and must not land on the podium wall below,
     # nor the podium's reading on the block.
-    matching=[p for p in profiles if not p.get('materialOnly') and (belongs(p,c,main_height,mass)) and np.dot(n,p['normal'])>.95
-              and (p.get('planeV') is None or plane_gap(p)<=2.5)]
-    # A hand reading (no frame) covers its whole facing and takes precedence. Otherwise a photographed reading draws
-    # the wall it covers: of several, the one covering most of this piece, and only if it covers at least half of it.
-    framed=[(frame_overlap(p,a,b),p) for p in matching if p.get('frameU')]
-    unframed=[p for p in matching if not p.get('frameU')]
-    best=max(framed,key=lambda x:x[0],default=(0.,None))
-    profile=unframed[0] if unframed else (best[1] if best[1] is not None and best[0]>=.5*length else None)
+    candidates=[p for p in profiles if not p.get('materialOnly') and (belongs(p,c,main_height,mass)) and np.dot(n,p['normal'])>.95
+                and (p.get('planeV') is None or plane_gap(p)<=2.5)]
+    plane_decisions={id(p):(profile_plane_binding(p,c.get('g'),a,b)
+                            if EXPERIMENTAL_PROFILE_HOST_BINDING else (True,'experimental-disabled'))
+                     for p in candidates}
+    matching=[p for p in candidates if plane_decisions[id(p)][0]]
+    rejected_plane_profiles=([p for p in candidates if not plane_decisions[id(p)][0]
+                              and p.get('frameU') and frame_overlap(p,a,b)>=.5*length]
+                             if EXPERIMENTAL_PROFILE_HOST_BINDING else [])
+    # A hand reading (no frame) keeps its historical precedence. Framed
+    # readings must cover this edge and are prioritized by measured host-plane
+    # agreement before equal-length overlap or input ordering.
+    profile=choose_profile_for_edge(matching,a,b,n)
     if _TRACE is not None:
      cand=[q for q in profiles if not q.get('materialOnly') and q.get('frameU') and np.dot(n,q['normal'])>.95 and str(q['match'].get('featureId'))==str(c.get('sourceId',c['id']))]
      _TRACE.append({'building':c['id'],'length':round(length,2),'mid':mid.tolist(),'mainHeight':round(float(main_height),2),'mass':mass,'elevationOffset':c.get('elevationOffset',0),'roofBand':bool(c.get('roofBand')),
-      'chosen':profile['id'] if profile else None,'cands':[{'id':q['id'],'belongs':bool(belongs(q,c,main_height,mass)),'planeGap':round(plane_gap(q),2) if q.get('planeV') is not None else None,'overlap':round(frame_overlap(q,a,b),2),'ref':q.get('heightRefM')} for q in cand]})
+      'chosen':profile['id'] if profile else None,'cands':[{'id':q['id'],'belongs':bool(belongs(q,c,main_height,mass)),'planeGap':round(plane_gap(q),2) if q.get('planeV') is not None else None,'overlap':round(frame_overlap(q,a,b),2),'planeBinding':profile_plane_binding(q,c.get('g'),a,b)[1],'ref':q.get('heightRefM')} for q in cand]})
     # A set-back tier wall takes a reading only when that reading was measured on this very plane from this wall's base
     # (the reader rectifies tier walls from their own foot, zBaseM); a ground-level reading never climbs onto a tier.
     tier_reading=bool(profile and c.get('roofBand') and profile.get('planeV') is not None and profile.get('zBaseM') is not None
@@ -779,7 +956,7 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
         if len(cluster):frame=min(float(height),float(np.quantile(cluster[:,2],.85)-z0+.12))
      wall_top=float(main_height)
      # a gable end stops at its eaves whatever the photograph's frame: the triangle above is the roof's end
-     if profile.get('observedWallTopM') and not (gables is not None and gables[edge]):
+     if profile.get('observedWallTopM') and not ctx.get('roofShell') and not (gables is not None and gables[edge]):
       # A parapet is a thin wall the roof-return statistics do not see; a photograph shows where the frontage
       # ends. The observed top may raise the wall above the LiDAR level, by at most 3 m; it never lowers it.
       wall_top=min(max(wall_top,float(profile['observedWallTopM'])),wall_top+3.)
@@ -811,6 +988,17 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
     def block(s,z,w,h,d,material,depth=0,key=detail):
      if w<=.001 or h<=.001:return
      pos=a+u*s+n*depth;cube([pos[0],pos[1],zs+z],[w,d,h],key,material,angle)
+    if not profile and rejected_plane_profiles:
+     # A profile that loses host-plane ownership must not be replaced by a
+     # synthetic window grid on the same overlapping face. Keep the structural
+     # wall closed and expose the appearance as unresolved for review.
+     block(length/2,main_height/2,length,main_height,.38,mat,-.19,layer)
+     records.append({'buildingId':fid,'edge':edge,'midpoint':mid.tolist(),'normal':n.tolist(),
+      'lengthM':round(length,2),'heightM':round(main_height,2),'floors':0,'columns':0,
+      'archetype':style['archetype'],'material':mat,'sourceIds':[], 'status':'unresolved',
+      'exposure':exposure,'unresolved':['overlapping source reading has no unique supported host plane; wall appearance is unknown'],
+      'planeOwnership':[{'profileId':p['id'],'reason':plane_decisions[id(p)][1]} for p in rejected_plane_profiles]})
+     continue
     if ring_blank is not None and not c.get('roofBand') and main_height<=ring_blank+1.0:
      # The photographed frontage at this height is a blank wall: so is this unobserved piece of the same height, and
      # the photographed wall's trims (a dentil course, a cap) run round it at the heights they were photographed at.
@@ -835,17 +1023,17 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
      block(length/2,main_height/2,length,main_height,.38,mat,-.19,layer)
      records.append({'buildingId':fid,'edge':edge,'midpoint':mid.tolist(),'normal':n.tolist(),'lengthM':round(length,2),'heightM':round(main_height,2),'floors':0,'columns':0,'archetype':style['archetype'],'material':mat,**({'donorId':style['donorId']} if style.get('donorId') else {}),'sourceIds':[],'status':'blank','exposure':exposure,'unresolved':[],**({'zBaseM':round(zs-(z0-c.get('elevationOffset',0.)),2)} if c.get('roofBand') else {})})
      continue
-    cols=1 if edge in arc_ids else max(1,round(length/style['bayWidthM']));bay=length/cols;ground_level=c.get('elevationOffset',0)<.5;gh=min(style['groundHeightM'],main_height*.42) if ground_level else 0
-    rows=max(1,round((main_height-gh)/style['floorHeightM']));fh=(main_height-gh)/rows
+    cols=1 if edge in arc_ids else max(1,round(length/style['bayWidthM']));bay=length/cols;ground_level=c.get('elevationOffset',0)<.5
+    gh,rows,fh=inferred_storeys(main_height,style['floorHeightM'],style['groundHeightM'],ground_level)
     wid=bay*style['openingRatio'];opening_h=fh*style['openingHeightRatio'];fw=style['frameWidthM'];projection=style['frameProjectionM'];recess=.18
-    records.append({'buildingId':fid,'edge':edge,'midpoint':mid.tolist(),'normal':n.tolist(),'lengthM':round(length,2),'heightM':round(main_height,2),'floors':rows+1,'columns':cols,'archetype':style['archetype'],'material':mat,**({'donorId':style['donorId']} if style.get('donorId') and not obs else {}),'sourceIds':obs.get('sourceIds',[]) if obs else [],'exposure':exposure,'status':'visual-fit' if obs else 'inferred','unresolved':obs.get('unresolved',[]) if obs else ['complete facade has no direct image fit; material and openings remain unverified priors'],**({'zBaseM':round(zs-(z0-c.get('elevationOffset',0.)),2)} if c.get('roofBand') else {})})
+    records.append({'buildingId':fid,'edge':edge,'midpoint':mid.tolist(),'normal':n.tolist(),'lengthM':round(length,2),'heightM':round(main_height,2),'floors':rows+int(ground_level),'columns':cols,'archetype':style['archetype'],'material':mat,**({'donorId':style['donorId']} if style.get('donorId') and not obs else {}),'sourceIds':obs.get('sourceIds',[]) if obs else [],'exposure':exposure,'status':'visual-fit' if obs else 'inferred','unresolved':obs.get('unresolved',[]) if obs else ['complete facade has no direct image fit; material and openings remain unverified priors'],**({'zBaseM':round(zs-(z0-c.get('elevationOffset',0.)),2)} if c.get('roofBand') else {})})
     for row in range(0 if ground_level else 1,rows+1):
      low=0 if row==0 else gh+(row-1)*fh;rh=gh if row==0 else fh
      if row==0 and exposure=='secondary':
       # A lesser facade has no shopfront: its ground storey is wall (service doors are not invented).
       block(length/2,rh/2,length,rh,.38,mat,-.19,layer);continue
-     shop=row==0 and not style.get('curtain')          # a curtain wall is glazed down to its base
-     ow=bay*(.74 if shop else style['openingRatio']);oh=rh*(.77 if shop else style['openingHeightRatio']);bottom=low+(.15 if row==0 else (rh-oh)*.48);top=bottom+oh
+     shop=row==0 and inferred_shopfront(tags,obs,own_measured,style)
+     ow=bay*(.74 if shop else style['openingRatio']);oh=rh*(.77 if shop else style['openingHeightRatio']);bottom=low+(.15 if row==0 and (shop or style.get('curtain')) else (rh-oh)*.48);top=bottom+oh
      if (row>0 or style.get('curtain')) and style.get('ribbon'):
       # Ribbon glazing: one band of glass along the storey between solid spandrels, its lights divided by mullions at
       # the bay joints; wall only at the band's ends. The spandrel's lip is the sill, in the wall's own material.
@@ -884,7 +1072,7 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
       if row>0 and variant in [1,3,5]:
        ch=oh*(.18+.08*(variant%3));block(s,top-ch/2-fw,ow-fw*2,ch,.02,'curtain',-.16)
        for zz in np.arange(top-ch,top-.05,.07):block(s,zz,ow-fw*2,.016,.022,'recess',-.139)
-      if row==0:
+      if row==0 and obs:
        if col==cols//2:
         block(s,bottom+.015,ow,.03,1.,'concrete',.1)
         for dx in [-.16,.16]:block(s+dx,bottom+oh*.43,.024,.45,.05,'steel',-.07)
@@ -904,5 +1092,24 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
      for zz,hh,dd in ([(0.22,.44,.10)] if gable_planes is not None else [(0.22,.44,.10),(main_height-.22,.15,.15),(main_height+.10,.18,.48)]):block(length/2,zz,length,hh,dd,mat if style.get('curtain') else 'concrete',.05)
     if style.get('stoneBands'):
      for zz in [gh-.1,gh+fh*1.2]:block(length/2,zz,length,.32,.20,'concrete',.12)
-   if gable_mark is not None:end_gable();gable_mark=None
+ if gable_mark is not None:end_gable();gable_mark=None
+ if defer_bay_walls:
+  from .bay_replacement import clip_structural_mesh
+  for mesh,key,material,uv,clip in staged_walls:
+   # Explicit per-vertex UV arrays cannot be interpolated by the boolean
+   # backend; structural facades normally use automatic UVs, while this rare
+   # authored-UV piece keeps its exact mesh until an interpolating clipper is
+   # available.
+   clipped=clip_structural_mesh(mesh,bay_replacements) if bay_replacements and uv is None else mesh
+   if clipped is None or not len(clipped.faces):continue
+   if original_set_clip is not None and clip is not None:original_set_clip(clip)
+   if uv is None:original_put(clipped,key,material)
+   else:original_put(clipped,key,material,uv=uv)
+  if original_set_clip is not None:original_set_clip(None)
+  for mesh,key,material in staged_bays:original_put(mesh,key,material)
+  ctx['put'],ctx['cube']=original_put,original_cube
+  if original_set_clip is not None:ctx['set_clip']=original_set_clip
+  ctx.pop('_deferObservedBayAssembly',None)
+  ctx.pop('_stagedObservedBayMeshes',None)
+  ctx.pop('_observedBayReplacements',None)
  return records,components

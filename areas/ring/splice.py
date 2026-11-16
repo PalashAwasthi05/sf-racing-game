@@ -6,7 +6,7 @@ come out of the same materials step: one buffer each, every node a root node. Th
 are merged the same way.
 Usage: splice.py <base candidate dir> <rebuilt candidate dir> <ids.json> <out candidate dir>
        (a candidate dir holds materials/candidate.glb and public/world.json)"""
-import json, shutil, struct, sys
+import hashlib, json, shutil, struct, sys
 from pathlib import Path
 
 
@@ -30,10 +30,47 @@ def source(name):
     return parts[1].split('_p')[0] if len(parts) > 1 else None
 
 
+def material_signature(document, binary, index):
+    """Compare actual appearances, including embedded maps, not display names.
+
+    A revised texture recipe can keep its material name. Reusing that name from
+    an older world silently discards the new maps when reviewing a rebuilt part.
+    Buffer offsets and texture indices are packing details, not appearance.
+    """
+    def image_value(i):
+        im = dict(document['images'][i])
+        if 'bufferView' in im:
+            v = document['bufferViews'][im.pop('bufferView')]
+            if v.get('buffer', 0) != 0:
+                raise ValueError('splicing requires embedded single-buffer maps')
+            start = v.get('byteOffset', 0)
+            im['contentSha256'] = hashlib.sha256(binary[start:start + v['byteLength']]).hexdigest()
+        return im
+
+    def texture_value(i):
+        tx = dict(document['textures'][i])
+        if 'source' in tx: tx['source'] = image_value(tx['source'])
+        if 'sampler' in tx: tx['sampler'] = document['samplers'][tx['sampler']]
+        return tx
+
+    def resolve(o):
+        if isinstance(o, dict):
+            result = {}
+            for k, v in o.items():
+                if k.endswith('Texture') and isinstance(v, dict) and 'index' in v:
+                    v = {**v, 'index': texture_value(v['index'])}
+                result[k] = resolve(v)
+            return result
+        if isinstance(o, list): return [resolve(v) for v in o]
+        return o
+    return hashlib.sha256(json.dumps(resolve(document['materials'][index]), sort_keys=True,
+                                    separators=(',', ':')).encode()).hexdigest()
+
+
 def splice(base, bbin, add, abin, ids):
     out = bytearray(bbin); out += b'\0' * (-len(out) % 4)
     for k in ('meshes', 'accessors', 'bufferViews', 'materials', 'textures', 'images', 'samplers', 'nodes'): base.setdefault(k, [])
-    by_name = {m.get('name'): i for i, m in enumerate(base['materials']) if m.get('name')}
+    by_appearance = {material_signature(base, bbin, i): i for i in range(len(base['materials']))}
     memo = {k: {} for k in ('bufferViews', 'accessors', 'images', 'samplers', 'textures', 'materials', 'meshes')}
 
     def view(i):
@@ -76,9 +113,9 @@ def splice(base, bbin, add, abin, ids):
         return o
 
     def material(i):
-        name = add['materials'][i].get('name')
-        if name in by_name: return by_name[name]
-        k = copy('materials', i, textures_in); by_name[name] = k; return k
+        signature = material_signature(add, abin, i)
+        if signature in by_appearance: return by_appearance[signature]
+        k = copy('materials', i, textures_in); by_appearance[signature] = k; return k
 
     def mesh(i):
         def fix(m):
@@ -103,6 +140,8 @@ def splice(base, bbin, add, abin, ids):
         base['nodes'].append(n); scene['nodes'].append(len(base['nodes']) - 1); added += 1
     used = set(base.get('extensionsUsed', [])) | set(add.get('extensionsUsed', []))
     if used: base['extensionsUsed'] = sorted(used)
+    required = set(base.get('extensionsRequired', [])) | set(add.get('extensionsRequired', []))
+    if required: base['extensionsRequired'] = sorted(required)
     return out, {'droppedNodes': len(dropped), 'addedNodes': added, 'newMaterials': len(memo['materials']), 'newImages': len(memo['images'])}
 
 

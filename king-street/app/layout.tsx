@@ -13,7 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: '188 King Street — World Pilot',
+  icons: {icon:'/favicon.svg'},
+  title: 'San Francisco — World Pilot',
   description: 'A geographic reconstruction pilot using DataSF, OpenStreetMap and USGS LiDAR.',
 };
 

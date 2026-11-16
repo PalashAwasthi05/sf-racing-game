@@ -53,6 +53,8 @@ if (cand/'public/facade-evidence.json').exists():shutil.copy2(cand/'public/facad
 put(public/'world.json',world)
 put(public/'generation.json',{'pipelineVersion':'0.24','fullRegeneration':True,'layersCarriedOver':[],'outputSha256':sha,'candidate':str(final/'candidate.glb'),'independentRealismGate':'NOT PASSED'})
 put(public/'model.json',dict(compression='gzip',contentHash=sha[:12],chunks=chunks,compressedBytes=len(packed),uncompressedBytes=len(raw)))
+del raw, packed
+subprocess.run([_sys.executable, str(Path(__file__).resolve().parent / 'king-street/pipeline-source/package_startup.py'), str(public / 'model.json')], check=True)
 res={'sha256':sha,'localPreview':'http://127.0.0.1:3001/?revision='+sha[:12],'flaggedViews':str(_idx) if not a.flagged_views_waived else {'waived':a.flagged_views_waived},'knownColourMismatches':a.known_mismatch,'colourWaivers':[{'camera':w,'reason':a.waiver_reason} for w in a.waive_colour],
      'inferredChanges':{'byCause':_inferred['byCause'],'unexplained':_inferred['unexplained'],'accepted':a.accept_inferred_changes}};(cand/'release.json').write_text(json.dumps(res));print(json.dumps(res))
 # The buildings drawn from an area donor keep this release's donor, material and grid in later builds (pipeline/facades.donor_for).

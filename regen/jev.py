@@ -6,10 +6,14 @@ URL = 'https://api.typesafe.ai/v1/systemone'
 LOG = pathlib.Path(__file__).resolve().parent / 'v1' / 'jev-usage.jsonl'
 PRICE_PER_MTOK = .042          # input only; output is free (docs.typesafe.ai/models)
 
-def ask(state, questions, tag='', model='jev-latest', retries=4):
-    body = json.dumps({'model': model, 'state': state, 'questions': questions}).encode()
+def ask(state, questions, tag='', model='jev-latest', retries=4, assets=None):
+    payload = {'model': model, 'state': state, 'questions': questions}
+    if assets: payload['assets'] = assets
+    body = json.dumps(payload).encode()
     for k in range(retries):
-        req = urllib.request.Request(URL, data=body, headers={'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json'})
+        headers = {'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json'}
+        if assets: headers['TypeSafe-Danger-Zone-Images'] = 'true'
+        req = urllib.request.Request(URL, data=body, headers=headers)
         try:
             with urllib.request.urlopen(req, timeout=60) as r: res = json.loads(r.read())
             u = res.get('usage', {})

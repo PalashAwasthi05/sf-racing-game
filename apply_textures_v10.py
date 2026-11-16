@@ -9,6 +9,7 @@ import trimesh
 from general_world.scanned_materials import inventory,load_asset,ROOT
 from general_world.texture_selection import select_texture,recolor
 from general_world.material_periodicity import measure_masonry_module,measure_board_pitch
+from pipeline import material_recipes
 root=Path(__file__).resolve().parents[1];work=root/'work';out=root/'outputs'
 parser=argparse.ArgumentParser()
 parser.add_argument('--scene',type=Path,required=True)
@@ -75,14 +76,23 @@ for name in ('timber_dark','timber_tan'):
 for name in ('terracotta_panel','terracotta_ribbed','panel_dark','panel_silver','roofing'):
  profiles[name]=dict(substrate_family='ceramic' if name.startswith('terracotta') else 'metal' if name.startswith('panel') else 'bitumen',pattern=name,finish_class='matte')
 
+# Painted surfaces keep the generator's own painted material (uniform paint; siding's board lines) in the observed colour:
+# a recoloured scan of raw decking (knots, grain, short butted boards) or of blotchy plaster read as bare planks, stone
+# blocks or patchy concrete on the area's painted stucco and clapboard houses. Scans stay for brick, stone and concrete.
+for name in ('render_white','render_gray','render_salmon','stucco','stucco_red','timber_dark','timber_tan'):profiles.pop(name,None)
 cache={};decisions={};counts=collections.Counter();updated=0;requests={};swatches=[]
+
 for mesh in scene.geometry.values():
  old=mesh.visual.material;name=old.name;base=name.split('#')[0]   # 'recipe#rrggbb' is a colour variant of a recipe
- if base not in profiles:counts['protected_or_unclassified']+=1;continue
+ typed=material_recipes.selector_target(name)
+ if typed is not None and typed.get('incomplete'):
+  counts['protected_incomplete_descriptor']+=1;continue
+ if base not in profiles and typed is None:counts['protected_or_unclassified']+=1;continue
  if name not in decisions:
-  t=copy.deepcopy(profiles[base]);img=old.baseColorTexture
+  t=copy.deepcopy(typed if typed is not None else profiles[base]);img=old.baseColorTexture
   factor=np.array(old.baseColorFactor[:3])/255 if old.baseColorFactor is not None else np.ones(3)
-  if img is not None:
+  if typed is not None:color=np.asarray(typed['color_rgb'],float)
+  elif img is not None:
    px=np.asarray(img.convert('RGB').resize((128,128)),float);color=px.mean((0,1))
    # For masonry the colour to match is the brick's, not the mean of brick and mortar: the same chroma mask the
    # recolour uses on the scan is used on the source.
@@ -91,7 +101,7 @@ for mesh in scene.geometry.values():
     if mask.mean()>=.2:color=px[mask].mean(0)
   else:color=np.where(factor<=.0031308,12.92*factor,1.055*factor**(1/2.4)-.055)*255
   t['color_rgb']=color.tolist()
-  d=select_texture(t,catalog);d['observation_provenance']='inherited material intent; not image verified';d['target']=t
+  d=select_texture(t,catalog);d['observation_provenance']='typed per-surface observation' if typed is not None else 'inherited material intent; not image verified';d['target']=t
   decisions[name]=d
   if d['action']=='request_new':requests[d['request_key']]=d['requirements']
   if d['action'] in ('reuse','recolor'):

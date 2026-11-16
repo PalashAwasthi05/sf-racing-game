@@ -15,10 +15,17 @@ class Materials:
   aliases={'brick2':'brick','sidewalk':'concrete','frame':'aluminum','rail':'steel','metal':'steel','dark':'recess','paint':'white','roof':'roofing'}
   key=aliases.get(key,key)
   if key in self.cache:return self.cache[key],self.scales.get(key,(2.,2.))
+  if key.startswith('groundcover#'):
+   from .groundcover import material
+   m,scale=material(key);self.cache[key]=m;self.scales[key]=scale;return m,scale
   if '#' in key and key not in material_recipes.RECIPES:
-   # 'recipe#rrggbb': the recipe's structure (joints, relief, roughness) with an observed colour.
-   base,hexcol=key.split('#',1)
-   if base in material_recipes.RECIPES and len(hexcol)==6:material_recipes.RECIPES[key]={**material_recipes.RECIPES[base],'color':[int(hexcol[i:i+2],16) for i in (0,2,4)]}
+   # Legacy recipe#rrggbb remains unchanged. Typed variants carry their module,
+   # pattern and finish in a stable, versioned name that survives scene export.
+   observed=material_recipes.observed_recipe(key)
+   if observed is not None:material_recipes.RECIPES[key]=observed
+   else:
+    base,hexcol=key.split('#',1)
+    if base in material_recipes.RECIPES and len(hexcol)==6:material_recipes.RECIPES[key]={**material_recipes.RECIPES[base],'color':[int(hexcol[i:i+2],16) for i in (0,2,4)]}
   if key in material_recipes.RECIPES:
    m,scale=material_recipes.create(key);self.scales[key]=scale
   elif key in self.scans:

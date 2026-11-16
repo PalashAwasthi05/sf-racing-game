@@ -48,9 +48,6 @@ export default defineConfig(async () => {
     css: { postcss: { plugins: [tailwindcss()] } },
     server: {
       strictPort: true,
-      // Preview HTML and browser modules must come from the same live revision.
-      // Reusing an older document after a UI edit can fail React hydration.
-      headers: { 'Cache-Control': 'no-store' },
       ...(isCodexSeatbeltSandbox
         ? { watch: { useFsEvents: false, usePolling: true } }
         : {}),
@@ -59,9 +56,11 @@ export default defineConfig(async () => {
       {
         name: 'local-preview-no-store',
         configureServer(server: ViteDevServer) {
-          // Worker-rendered HTML bypasses Vite's static response headers.
-          server.middlewares.use((_req, res, next) => {
-            res.setHeader('Cache-Control', 'no-store');
+          // The package writer hashes the GLB into each chunk's filename.
+          // Preview HTML, modules and mutable manifest aliases still revalidate on every visit.
+          server.middlewares.use((req, res, next) => {
+            const chunk = /^\/world-[0-9a-f]{12}-\d+\.bin$/.test((req.url ?? '').split('?')[0]);
+            res.setHeader('Cache-Control', chunk ? 'private, max-age=31536000, immutable' : 'no-store');
             next();
           });
         },

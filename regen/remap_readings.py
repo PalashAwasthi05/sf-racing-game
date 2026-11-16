@@ -13,7 +13,7 @@ Usage: from remap_readings import WallMap, remap"""
 import copy
 import numpy as np
 
-BOX = ('materials', 'banks', 'openings', 'bays', 'ornaments', 'rustication', 'timbering', 'parapets')   # x0, x1, z0, z1
+BOX = ('materials', 'banks', 'openings', 'bays', 'ornaments', 'rustication', 'timbering', 'parapets', 'recesses', 'signs')   # x0, x1, z0, z1
 RUN = ('bands', 'balconies', 'canopies', 'roofs')                         # x0, x1 at zM (a band may span the whole frame)
 GROUND = ('planting', 'streetEdge', 'hedges')                            # x0, x1 at the foot of the wall
 
@@ -57,7 +57,64 @@ def remap(reading, wm):
         o['x0'], o['x1'] = float(min(xs)), float(max(xs)); o['z0'], o['z1'] = float(min(zs)), float(max(zs))
     for sec in BOX:
         for o in r.get(sec) or []:
-            if isinstance(o, dict) and all(_num(o.get(k)) for k in ('x0', 'x1', 'z0', 'z1')): box(o)
+            if not isinstance(o, dict): continue
+            if sec == 'recesses':
+                # A recess is measured in the crop's wall frame. Remap every
+                # back-wall opening once with its parent feature; preserve
+                # cavity depth, which is measured in perspective, and scale
+                # only the front-rail dimensions tied to the rectified axes.
+                cx, cz = (o.get('x0', 0.) + o.get('x1', 0.)) / 2, (o.get('z0', 0.) + o.get('z1', 0.)) / 2
+                kx, kz = wm.stretch(cx, cz)
+                for op in o.get('backOpenings') or []:
+                    if isinstance(op, dict) and all(_num(op.get(k)) for k in ('x0', 'x1', 'z0', 'z1')):
+                        box(op)
+                rail = o.get('frontRailing')
+                if isinstance(rail, dict):
+                    if _num(rail.get('heightM')): rail['heightM'] *= kz
+                    if _num(rail.get('postPitchM')): rail['postPitchM'] *= kx
+            if sec == 'bays':
+                parent_bounds = {k: o[k] for k in ('x0', 'x1', 'z0', 'z1') if _num(o.get(k))}
+                if len(parent_bounds) == 4:
+                    cx = (o['x0'] + o['x1']) / 2
+                    cz = (o['z0'] + o['z1']) / 2
+                    kx, _ = wm.stretch(cx, cz)
+                    # Rows and nested face widths belong to the original bay
+                    # frame too; moving only its outer box leaves windows behind.
+                    if isinstance(o.get('rows'), list):
+                        o['rows'] = [[float(v) for v in wm(cx, row)[1]]
+                                     for row in o['rows'] if isinstance(row, (list, tuple))
+                                     and len(row) == 2 and all(_num(v) for v in row)]
+                    for face in ('front', 'side'):
+                        if isinstance(o.get(face), dict) and _num(o[face].get('widthM')):
+                            o[face]['widthM'] *= kx
+                for zone in o.get('materialZones') or []:
+                    if not isinstance(zone, dict): continue
+                    # Zones inherit only the parent bay's omitted horizontal
+                    # limits. Capture those original values before remapping
+                    # either the zone or its parent.
+                    for key in ('x0', 'x1'):
+                        if key not in zone and key in parent_bounds:
+                            zone[key] = parent_bounds[key]
+                    if not all(_num(zone.get(k)) for k in ('x0', 'x1', 'z0', 'z1')):
+                        continue
+
+                    center_x = (zone['x0'] + zone['x1']) / 2
+                    center_z = (zone['z0'] + zone['z1']) / 2
+                    kx, kz = wm.stretch(center_x, center_z)
+                    module = zone.get('moduleM')
+                    if isinstance(module, dict):
+                        if _num(module.get('x')): module['x'] *= kx
+                        if _num(module.get('z')): module['z'] *= kz
+                    unit_axis = {
+                        'horizontal_courses': 'z',
+                        'straight_shingles': 'z',
+                        'scalloped_shingles': 'z',
+                        'vertical_boards': 'x',
+                    }.get(zone.get('pattern'))
+                    if unit_axis and _num(zone.get('unitSizeM')):
+                        zone['unitSizeM'] *= kx if unit_axis == 'x' else kz
+                    box(zone)
+            if all(_num(o.get(k)) for k in ('x0', 'x1', 'z0', 'z1')): box(o)
     for sec in RUN:
         for o in r.get(sec) or []:
             if not isinstance(o, dict) or not _num(o.get('zM')): continue
@@ -74,23 +131,32 @@ def remap(reading, wm):
             if isinstance(o.get('piersM'), list): o['piersM'] = [float(q) for q in wm([c for c in o['piersM'] if _num(c)], .5)[0]]
     for o in r.get('porches') or []:
         if isinstance(o, dict) and _num(o.get('x0')) and _num(o.get('x1')):
+            cx = (o['x0'] + o['x1']) / 2
             zc = float(o.get('topM') or 3.) - .5; xs, _ = wm([o['x0'], o['x1']], [zc, zc]); o['x0'], o['x1'] = float(min(xs)), float(max(xs))
             for k in ('floorM', 'topM'):
-                if _num(o.get(k)): o[k] = float(wm((o['x0'] + o['x1']) / 2, o[k])[1])
+                if _num(o.get(k)): o[k] = float(wm(cx, o[k])[1])
     for o in r.get('fireEscapes') or []:
         if isinstance(o, dict) and _num(o.get('x0')) and _num(o.get('x1')):
+            cx = (o['x0'] + o['x1']) / 2
             cz = float(np.mean([v for v in (o.get('levels') or [3.]) if _num(v)] or [3.]))
             xs, _ = wm([o['x0'], o['x1']], [cz, cz]); o['x0'], o['x1'] = float(min(xs)), float(max(xs))
-            if isinstance(o.get('levels'), list): o['levels'] = [float(q) for q in wm((o['x0'] + o['x1']) / 2, [v for v in o['levels'] if _num(v)])[1]]
+            if isinstance(o.get('levels'), list): o['levels'] = [float(q) for q in wm(cx, [v for v in o['levels'] if _num(v)])[1]]
     for o in r.get('piers') or []:
         if isinstance(o, dict) and _num(o.get('xM')):
+            cx = o['xM']
             zc = (o['z0'] + o['z1']) / 2 if _num(o.get('z0')) and _num(o.get('z1')) else 3.
             xm, _ = wm(o['xM'], zc); kx, _ = wm.stretch(o['xM'], zc); o['xM'] = float(xm)
             if _num(o.get('widthM')): o['widthM'] = o['widthM'] * kx
-            if _num(o.get('z0')) and _num(o.get('z1')): _, zz = wm(o['xM'], [o['z0'], o['z1']]); o['z0'], o['z1'] = float(min(zz)), float(max(zz))
+            if _num(o.get('z0')) and _num(o.get('z1')): _, zz = wm(cx, [o['z0'], o['z1']]); o['z0'], o['z1'] = float(min(zz)), float(max(zz))
     if _num(r.get('wallTopM')): r['wallTopM'] = float(wm(L / 2, r['wallTopM'])[1])
     if isinstance(r.get('storeys'), list): r['storeys'] = [float(q) for q in wm(L / 2, [v for v in r['storeys'] if _num(v)])[1]]
     if isinstance(r.get('parapetTop'), list):
         pts = [q for q in r['parapetTop'] if isinstance(q, (list, tuple)) and len(q) == 2 and _num(q[0]) and _num(q[1])]
         if pts: xs, zs = wm([q[0] for q in pts], [q[1] for q in pts]); r['parapetTop'] = [[float(a), float(b)] for a, b in zip(xs, zs)]
+    # Route endpoints include facade depth, so the plane-only WallMap cannot
+    # move them safely. Keep their source data for review and prevent stale
+    # geometry from being emitted until it is re-read in the registered frame.
+    for route in r.get('accessRoutes') or []:
+        if isinstance(route, dict) and route.get('segments'):
+            route['needsFreshSourceCoordinates'] = True
     return r

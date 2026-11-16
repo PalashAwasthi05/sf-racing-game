@@ -15,11 +15,11 @@ type Source = {geometry: THREE.BufferGeometry; matrix: THREE.Matrix4 | null};
 
 /** Clusters the vertices of the given parts (placed by their matrices) on a grid of `cell` metres and keeps every
  *  triangle whose corners land in three different cells. Normals are the mean of the merged vertices' normals. */
-function cluster(sources: Source[], cell: number): THREE.BufferGeometry | null {
+function cluster(sources: Source[], cell: number, withNormals = true): THREE.BufferGeometry | null {
   let total = 0;
   for (const s of sources) total += s.geometry.attributes.position.count;
   if (!total) return null;
-  const P = new Float32Array(total * 3), N = new Float32Array(total * 3), starts: number[] = [];
+  const P = new Float32Array(total * 3), N = withNormals ? new Float32Array(total * 3) : null, starts: number[] = [];
   const v = new THREE.Vector3(), normalMatrix = new THREE.Matrix3();
   let o = 0;
   for (const s of sources) {
@@ -28,25 +28,29 @@ function cluster(sources: Source[], cell: number): THREE.BufferGeometry | null {
     if (s.matrix) normalMatrix.getNormalMatrix(s.matrix);
     for (let i = 0; i < pos.count; i++, o++) {
       v.fromBufferAttribute(pos, i); if (s.matrix) v.applyMatrix4(s.matrix); v.toArray(P, o * 3);
-      if (nor) { v.fromBufferAttribute(nor, i); if (s.matrix) v.applyNormalMatrix(normalMatrix); v.toArray(N, o * 3); }
+      if (N && nor) { v.fromBufferAttribute(nor, i); if (s.matrix) v.applyNormalMatrix(normalMatrix); v.toArray(N, o * 3); }
     }
   }
   let x0 = Infinity, y0 = Infinity, z0 = Infinity, x1 = -Infinity, y1 = -Infinity;
   for (let i = 0; i < total; i++) { x0 = Math.min(x0, P[i * 3]); y0 = Math.min(y0, P[i * 3 + 1]); z0 = Math.min(z0, P[i * 3 + 2]); x1 = Math.max(x1, P[i * 3]); y1 = Math.max(y1, P[i * 3 + 1]); }
   const nx = Math.floor((x1 - x0) / cell) + 2, ny = Math.floor((y1 - y0) / cell) + 2;
   const ids = new Int32Array(total), map = new Map<number, number>();
-  const sumP = new Float64Array(total * 3), sumN = new Float64Array(total * 3), count = new Uint32Array(total);
   let clusters = 0;
   for (let i = 0; i < total; i++) {
     const key = Math.floor((P[i * 3] - x0) / cell) + nx * (Math.floor((P[i * 3 + 1] - y0) / cell) + ny * Math.floor((P[i * 3 + 2] - z0) / cell));
     let c = map.get(key);
     if (c === undefined) { c = clusters++; map.set(key, c); }
-    ids[i] = c; count[c]++;
-    for (let k = 0; k < 3; k++) { sumP[c * 3 + k] += P[i * 3 + k]; sumN[c * 3 + k] += N[i * 3 + k]; }
+    ids[i] = c;
+  }
+  const sumP = new Float64Array(clusters * 3), sumN = withNormals ? new Float64Array(clusters * 3) : null;
+  const count = new Uint32Array(clusters);
+  for (let i = 0; i < total; i++) {
+    const c=ids[i];count[c]++;
+    for (let k = 0; k < 3; k++) { sumP[c * 3 + k] += P[i * 3 + k]; if (sumN && N) sumN[c * 3 + k] += N[i * 3 + k]; }
   }
   let tris = 0;
   for (const s of sources) tris += (s.geometry.index ? s.geometry.index.count : s.geometry.attributes.position.count) / 3;
-  const index = new Uint32Array(tris * 3);
+  const index = clusters > 65535 ? new Uint32Array(tris * 3) : new Uint16Array(tris * 3);
   let io = 0;
   sources.forEach((s, si) => {
     const base = starts[si], idx = s.geometry.index, n = idx ? idx.count : s.geometry.attributes.position.count;
@@ -61,16 +65,17 @@ function cluster(sources: Source[], cell: number): THREE.BufferGeometry | null {
     }
   });
   if (!io) return null;
-  const pos = new Float32Array(clusters * 3), nor = new Float32Array(clusters * 3);
+  const pos = new Float32Array(clusters * 3), nor = withNormals ? new Float32Array(clusters * 3) : null;
   for (let c = 0; c < clusters; c++) {
     for (let k = 0; k < 3; k++) pos[c * 3 + k] = sumP[c * 3 + k] / count[c];
+    if (!sumN || !nor) continue;
     const l = Math.hypot(sumN[c * 3], sumN[c * 3 + 1], sumN[c * 3 + 2]) || 1;
     nor[c * 3] = sumN[c * 3] / l; nor[c * 3 + 1] = sumN[c * 3 + 1] / l; nor[c * 3 + 2] = sumN[c * 3 + 2] / l;
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
-  g.setIndex(new THREE.BufferAttribute(clusters > 65535 ? index.slice(0, io) : Uint16Array.from(index.subarray(0, io)), 1));
+  if (nor) g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  g.setIndex(new THREE.BufferAttribute(io === index.length ? index : index.slice(0, io), 1));
   g.computeBoundingSphere(); g.computeBoundingBox();
   return g;
 }
@@ -89,7 +94,7 @@ export function attachCarLod(group: THREE.Object3D, o: {enabled: () => boolean; 
   const groups = new Map<string, {parent: THREE.Object3D; cast: boolean; side: THREE.Side; parts: THREE.Mesh[]}>();
   const parentIds = new Map<THREE.Object3D, number>();
   for (const m of meshes) {
-    if (Array.isArray(m.material) || !m.parent) continue;
+    if (Array.isArray(m.material) || !m.parent || !m.castShadow) continue;
     const pid = parentIds.get(m.parent) ?? parentIds.set(m.parent, parentIds.size).get(m.parent)!;
     const key = `${pid}|${m.castShadow ? 1 : 0}|${m.material.side}`;
     let g = groups.get(key);
@@ -99,7 +104,7 @@ export function attachCarLod(group: THREE.Object3D, o: {enabled: () => boolean; 
   const depthMaterials = new Map<THREE.Side, THREE.MeshBasicMaterial>();
   const depth: THREE.Mesh[] = [];
   for (const g of groups.values()) {
-    const geometry = cluster(g.parts.map(m => ({geometry: m.geometry, matrix: m.matrix})), depthCell);
+    const geometry = cluster(g.parts.map(m => ({geometry: m.geometry, matrix: m.matrix})), depthCell, false);
     if (!geometry) continue;
     let material = depthMaterials.get(g.side);
     // never drawn in colour; its side decides which faces the shadow pass draws, as the parts' own sides did
@@ -109,30 +114,43 @@ export function attachCarLod(group: THREE.Object3D, o: {enabled: () => boolean; 
     g.parent.add(d); depth.push(d);
   }
 
-  // far stand-ins: each part simplified on its own (shared geometry simplified once), same material and placement
-  const simplified = new Map<THREE.BufferGeometry, THREE.BufferGeometry | null>();
+  // The chase camera never needs the distant car. Build those meshes on the
+  // first far view; returning to the street then reuses the same stand-ins.
   const far: {mesh: THREE.Mesh; lod: THREE.Mesh}[] = [];
-  for (const m of meshes) {
-    if (Array.isArray(m.material) || hasTexture(m.material) || !m.parent) continue; // no UVs on a stand-in
-    let geometry = simplified.get(m.geometry);
-    if (geometry === undefined) { geometry = cluster([{geometry: m.geometry, matrix: null}], farCell); simplified.set(m.geometry, geometry); }
-    if (!geometry) continue;
-    const lod = new THREE.Mesh(geometry, m.material);
-    lod.name = m.name + '__far'; lod.position.copy(m.position); lod.quaternion.copy(m.quaternion); lod.scale.copy(m.scale);
-    lod.castShadow = m.castShadow; lod.receiveShadow = m.receiveShadow; lod.renderOrder = m.renderOrder; lod.visible = false; lod.userData.carLod = true;
-    m.parent.add(lod); far.push({mesh: m, lod});
+  let farReady = false, farOn = false, inDepth = false;
+  const shown = [...meshes], at = new THREE.Vector3();
+  let saved = new Uint8Array(shown.length);
+  function prepareFar() {
+    if (farReady) return;
+    const simplified = new Map<THREE.BufferGeometry, THREE.BufferGeometry | null>();
+    for (const m of meshes) {
+      if (Array.isArray(m.material) || hasTexture(m.material) || !m.parent) continue;
+      let geometry = simplified.get(m.geometry);
+      if (geometry === undefined) {
+        geometry = cluster([{geometry:m.geometry,matrix:null}],farCell);
+        simplified.set(m.geometry,geometry);
+      }
+      if (!geometry) continue;
+      const lod = new THREE.Mesh(geometry,m.material);
+      lod.name = m.name + '__far'; lod.position.copy(m.position); lod.quaternion.copy(m.quaternion); lod.scale.copy(m.scale);
+      lod.castShadow=m.castShadow; lod.receiveShadow=m.receiveShadow; lod.renderOrder=m.renderOrder; lod.visible=false; lod.userData.carLod=true;
+      m.parent.add(lod); far.push({mesh:m,lod}); shown.push(lod);
+    }
+    saved = new Uint8Array(shown.length);
+    stats.farMeshes=far.length;
+    stats.trianglesFar=far.reduce((n,f)=>n+trianglesOf(f.lod.geometry),0);
+    farReady=true;
   }
-
-  let farOn = false, inDepth = false;
-  const shown = [...meshes, ...far.map(f => f.lod)], saved = new Uint8Array(shown.length), at = new THREE.Vector3();
   function setFar(on: boolean) {
-    if (on === farOn) return; farOn = on;
+    if (on === farOn) return;
+    if (on) prepareFar();
+    farOn = on;
     for (const {mesh, lod} of far) { if (on) { lod.visible = mesh.visible; mesh.visible = false; } else { mesh.visible = lod.visible; lod.visible = false; } }
   }
   const stats = {
     parts: meshes.length, trianglesFull: meshes.reduce((n, m) => n + trianglesOf(m.geometry), 0),
     depthMeshes: depth.length, trianglesDepth: depth.reduce((n, m) => n + trianglesOf(m.geometry), 0),
-    farMeshes: far.length, trianglesFar: far.reduce((n, f) => n + trianglesOf(f.lod.geometry), 0), far: false,
+    farMeshes: 0, trianglesFar: 0, far: false,
   };
   return {
     stats,

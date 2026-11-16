@@ -1,6 +1,8 @@
-@import 'tailwindcss';
+@import 'tailwindcss' source(none);
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+@source './';
+@source '../components';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -143,8 +145,11 @@ html,body{margin:0;height:100%;overflow:hidden}.world-app{position:relative;widt
 @media(max-width:640px){.inspect-toggle{top:auto;bottom:48px;left:15px;height:34px}.next-street{left:auto;right:15px;bottom:48px;height:34px}.inspector.is-open{top:135px;bottom:100px;max-height:calc(100dvh - 250px)}.viewbar button{padding-inline:9px}.controls-help{display:none}}
 
 .preview-status{position:absolute;top:158px;left:24px;width:300px;max-width:calc(100vw - 48px);padding:16px 18px;border-radius:12px;background:#f7f9faf2;box-shadow:0 8px 32px #20323b14;font-size:14px;line-height:1.5}.preview-status strong{display:block;font-weight:600}.preview-status p{margin-top:8px;color:#526974}.preview-status a{display:inline-block;margin-top:10px;text-decoration:underline}.preview-comparison{position:fixed;bottom:126px;left:26px;z-index:4;max-width:calc(100vw - 52px);padding:10px 14px;border-radius:8px;background:#f8f1dcec;color:#533e0c;font-size:14px}@media(max-width:640px){.preview-status{top:150px;font-size:13px;padding:12px;width:270px}.topbar .download{font-size:12px;padding:8px}.preview-comparison{bottom:100px}}
-.car-hud{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:flex;align-items:flex-end;gap:14px;padding:10px 14px 8px;background:#0f151ae6;border:1px solid #ffffff14;border-radius:18px;box-shadow:0 10px 30px #0a121a55;pointer-events:none;color:#e9eef2}
-.car-tach{width:210px;height:auto;display:block}
+.car-hud{contain:layout paint;position:absolute;right:22px;bottom:36px;width:clamp(172px,15vw,210px);display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 12px;background:#0f151ad9;border:1px solid #ffffff14;border-radius:14px;box-shadow:0 6px 18px #0a121a33;pointer-events:none;color:#e9eef2}
+.drive-frame-meter{position:absolute;bottom:82px;left:24px;color:white;background:#10171de6;border-radius:6px;padding:5px 8px;font:12px/1.4 ui-monospace,monospace;pointer-events:none}
+.car-tach{width:100%;height:auto;display:block}
+.car-hud[hidden]{display:none}
+.world-app:has(.car-hud:not([hidden])) .north{bottom:auto;top:152px}
 .car-tach .tach-track{fill:none;stroke:#222b33;stroke-width:9;stroke-linecap:round}
 .car-tach .tach-red{fill:none;stroke:#7d1a22;stroke-width:9}
 .car-tach .tach-fill{fill:none;stroke:#f2f5f7;stroke-width:9;stroke-linecap:round}
@@ -156,9 +161,14 @@ html,body{margin:0;height:100%;overflow:hidden}.world-app{position:relative;widt
 .car-tach .tach-speed{fill:#fff;font:600 32px/1 ui-sans-serif,system-ui,sans-serif;text-anchor:middle;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
 .car-tach .tach-unit{fill:#9fb0ba;font:500 9px/1 ui-sans-serif,system-ui,sans-serif;text-anchor:middle;letter-spacing:.1em;text-transform:uppercase}
 .car-tach .tach-gear{fill:#fff;font:700 16px/1 ui-sans-serif,system-ui,sans-serif;text-anchor:middle}
-.car-help{font-size:11px;color:#9fb0ba;max-width:230px;line-height:1.4;padding-bottom:6px}
-@media(max-width:640px){.car-hud{bottom:96px;gap:12px;padding:8px 10px}.car-help{display:none}.car-tach{width:150px}}
+.car-help{font-size:11px;color:#bdc9d0;line-height:1.4}
+@media(max-width:640px){.car-hud{right:10px;bottom:96px;width:clamp(80px,24vw,140px);padding:5px}.car-help{display:none}}
 .area-trigger{display:inline-flex;align-items:center;gap:6px;padding:0;margin:0;border:0;background:none;color:inherit;font:inherit;letter-spacing:inherit;cursor:pointer;border-radius:6px}
 .area-trigger svg{color:#61747d;transition:transform .15s}.area-trigger[data-popup-open] svg{transform:rotate(180deg)}
 .area-trigger:focus-visible{outline:2px solid #16495c;outline-offset:3px}
 .area-item span{display:flex;flex-direction:column;gap:1px;padding:3px 0}.area-item b{font-weight:500;color:#20323b}.area-item small{font-size:12px;color:#61747d}
+
+/* Driving: the study chrome steps back so the view is the road. Each piece returns under the pointer or keyboard focus. */
+.world-app[data-mode="car"] .topbar{background:none}
+.world-app[data-mode="car"] :is(.identity,.top-actions,.viewbar,.inspect-toggle,.north,.extent){opacity:0;transition:opacity .25s}
+.world-app[data-mode="car"] :is(.identity,.top-actions,.viewbar,.inspect-toggle,.north,.extent):is(:hover,:focus-within){opacity:1}

@@ -1,0 +1,311 @@
+{
+  "imageryProvider": "Mapillary",
+  "imageSources": [
+    {
+      "imageId": "1685953545438729",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1685953545438729"
+    },
+    {
+      "imageId": "1311658453895108",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1311658453895108"
+    },
+    {
+      "imageId": "735824206101525",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=735824206101525"
+    },
+    {
+      "imageId": "1310055237377010",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1310055237377010"
+    },
+    {
+      "imageId": "1524303125591446",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1524303125591446"
+    },
+    {
+      "imageId": "1410238603378129",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1410238603378129"
+    },
+    {
+      "imageId": "1240291211205879",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1240291211205879"
+    },
+    {
+      "imageId": "945023037801196",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=945023037801196"
+    },
+    {
+      "imageId": "1435725857660340",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1435725857660340"
+    },
+    {
+      "imageId": "1477846353458969",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1477846353458969"
+    },
+    {
+      "imageId": "1136294458390988",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1136294458390988"
+    },
+    {
+      "imageId": "1113685236822517",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1113685236822517"
+    },
+    {
+      "imageId": "1462359535009016",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1462359535009016"
+    },
+    {
+      "imageId": "1429238708303714",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1429238708303714"
+    },
+    {
+      "imageId": "791720389958940",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=791720389958940"
+    },
+    {
+      "imageId": "24538154049137068",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=24538154049137068"
+    },
+    {
+      "imageId": "2928394017353503",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=2928394017353503"
+    },
+    {
+      "imageId": "1255175385936464",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1255175385936464"
+    },
+    {
+      "imageId": "1462973504897590",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1462973504897590"
+    },
+    {
+      "imageId": "755020550624090",
+      "provider": "Mapillary",
+      "contributorId": 713819173436997,
+      "captureDate": "2025-08-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=755020550624090"
+    },
+    {
+      "imageId": "1386998245200617",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1386998245200617"
+    },
+    {
+      "imageId": "943566986975544",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=943566986975544"
+    },
+    {
+      "imageId": "1231798371033406",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1231798371033406"
+    },
+    {
+      "imageId": "798980351406953",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=798980351406953"
+    },
+    {
+      "imageId": "258673490034545",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=258673490034545"
+    },
+    {
+      "imageId": "2340628522771062",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=2340628522771062"
+    },
+    {
+      "imageId": "138709965871916",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=138709965871916"
+    },
+    {
+      "imageId": "1315288892403685",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1315288892403685"
+    },
+    {
+      "imageId": "1381633895962908",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1381633895962908"
+    },
+    {
+      "imageId": "931365601455273",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=931365601455273"
+    },
+    {
+      "imageId": "761301439113827",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=761301439113827"
+    },
+    {
+      "imageId": "140780595659869",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=140780595659869"
+    },
+    {
+      "imageId": "262829602924709",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=262829602924709"
+    },
+    {
+      "imageId": "1667662337014607",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1667662337014607"
+    },
+    {
+      "imageId": "1632497180558062",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1632497180558062"
+    },
+    {
+      "imageId": "198400486429391",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=198400486429391"
+    },
+    {
+      "imageId": "276472988115941",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=276472988115941"
+    },
+    {
+      "imageId": "932734991381245",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=932734991381245"
+    },
+    {
+      "imageId": "549161187417201",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=549161187417201"
+    },
+    {
+      "imageId": "268163915682207",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=268163915682207"
+    },
+    {
+      "imageId": "635669231422520",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=635669231422520"
+    },
+    {
+      "imageId": "959379458760036",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=959379458760036"
+    },
+    {
+      "imageId": "1239749133340635",
+      "provider": "Mapillary",
+      "contributorId": 110838417809130,
+      "captureDate": "2023-05-21",
+      "publicSourceUrl": "https://www.mapillary.com/app/?pKey=1239749133340635"
+    }
+  ],
+  "mapGeometry": {
+    "attribution": "\u00a9 OpenStreetMap contributors",
+    "url": "https://www.openstreetmap.org/copyright"
+  },
+  "note": "Contributor IDs are from cached public coverage metadata; contributor display names and provider license terms were not cached."
+}

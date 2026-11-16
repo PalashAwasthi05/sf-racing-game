@@ -76,7 +76,7 @@ vec2 hzWaveSlope(vec2 p){
 }
 `;
 
-function polar(meta: Meta, height: (i: number, j: number) => number, attrs: Record<string, ArrayLike<number>>, step = 1) {
+export function polar(meta: Meta, height: (i: number, j: number) => number, attrs: Record<string, ArrayLike<number>>, step = 1) {
   // every `step`-th ring and angle of the grid (the water is flat but for the earth's curve: a coarse grid does)
   const A0 = meta.angles, radii0 = attrs.radii as Float32Array, rings: number[] = [];
   for (let i = 0; i < meta.rings; i += step) rings.push(i); if (rings[rings.length - 1] !== meta.rings - 1) rings.push(meta.rings - 1);
@@ -95,7 +95,160 @@ function polar(meta: Meta, height: (i: number, j: number) => number, attrs: Reco
   }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setIndex(new THREE.BufferAttribute(idx, 1));
   for (const [k, v] of Object.entries(extra)) g.setAttribute(k, new THREE.BufferAttribute(v, 1));
-  g.computeVertexNormals(); g.computeBoundingSphere(); return g;
+  g.computeVertexNormals(); g.computeBoundingSphere();
+  g.userData.polarAngles = A; g.userData.polarRings = Rn;
+  return g;
+}
+
+/** Keep byte-valued fields in their source precision. Decoded values round to
+ * the exact float32 the shader previously read; arbitrary inputs stay floats. */
+export function compactHorizonAttributes(geometry: THREE.BufferGeometry) {
+  for (const name of ['hzWater', 'hzSlope', 'hzNorth']) {
+    const source = geometry.getAttribute(name);
+    if (!source) continue;
+    const signed = name === 'hzNorth', scale = signed ? 127 : 1;
+    const values = signed ? new Int8Array(source.count) : new Uint8Array(source.count);
+    let exact = true;
+    for (let i = 0; i < source.count; i++) {
+      const value = source.getX(i), encoded = Math.round(value * scale);
+      if (encoded < (signed ? -127 : 0) || encoded > (signed ? 127 : 255) ||
+          Math.fround(encoded / scale) !== Math.fround(value)) { exact = false; break; }
+      values[i] = encoded;
+    }
+    if (exact) geometry.setAttribute(name, new THREE.BufferAttribute(values, 1, signed));
+  }
+  return geometry;
+}
+
+/** Conservative support test for a polar tile, including all elevations and
+ * the inward chord between adjacent angular samples. Unlike its sphere, this
+ * bound has no empty corners beyond the curved wedge. Zero geometric error. */
+export function horizonTileIntersectsFrustum(geometry: THREE.BufferGeometry, frustum: THREE.Frustum) {
+  const wedge = geometry.userData.horizonWedge as number[] | undefined;
+  if (!wedge) return true;
+  const [inner, outer, start, end, low, high, startCos, startSin, endCos, endSin] = wedge;
+  for (const plane of frustum.planes) {
+    const {x, y, z} = plane.normal;
+    let dot = Math.max(x * startCos - z * startSin, x * endCos - z * endSin);
+    const length = Math.hypot(x, z), epsilon = length * 1e-12;
+    const afterStart = -startCos * z - startSin * x >= -epsilon;
+    const beforeEnd = x * endSin + z * endCos >= -epsilon;
+    if (end - start >= Math.PI * 2 || (end - start <= Math.PI ? afterStart && beforeEnd : afterStart || beforeEnd)) dot = length;
+    const support = dot * (dot >= 0 ? outer : inner) + y * (y >= 0 ? high : low) + plane.constant;
+    // Positions were rounded into float32 after trigonometry.
+    if (support < -outer * 1e-6 - 1e-5) return false;
+  }
+  return true;
+}
+
+/** Shared by all tiles, independently cached for each main/reflection camera.
+ * Snapshot matrix values rather than identities: temporal jitter mutates the
+ * projection in place, and a camera may render again with a restored matrix. */
+export function createHorizonFrustumCache() {
+  type Entry = {projection: THREE.Matrix4; inverse: THREE.Matrix4; model: THREE.Matrix4; frustum: THREE.Frustum};
+  const cameras = new WeakMap<THREE.Camera, Entry>(), clip = new THREE.Matrix4();
+  let computations = 0;
+  return {
+    get computations() { return computations; },
+    get(camera: THREE.Camera, model: THREE.Matrix4) {
+      let entry = cameras.get(camera);
+      if (!entry) {
+        entry = {projection: new THREE.Matrix4(), inverse: new THREE.Matrix4(), model: new THREE.Matrix4(), frustum: new THREE.Frustum()};
+        cameras.set(camera, entry);
+        // The first projection can itself be identity (an orthographic test camera).
+        entry.projection.elements[0] = NaN;
+      }
+      if (!entry.projection.equals(camera.projectionMatrix) || !entry.inverse.equals(camera.matrixWorldInverse) || !entry.model.equals(model)) {
+        entry.projection.copy(camera.projectionMatrix); entry.inverse.copy(camera.matrixWorldInverse); entry.model.copy(model);
+        entry.frustum.setFromProjectionMatrix(clip.multiplyMatrices(entry.projection, entry.inverse).multiply(entry.model));
+        computations++;
+      }
+      return entry.frustum;
+    },
+  };
+}
+
+/** Tile the existing polar grid without resampling terrain or its skyline.
+ * All tiles share the source attributes; only index ranges and conservative
+ * bounds differ. Narrower wedges and radial bands keep their spheres from
+ * overlapping large areas outside a street camera's field of view. The same
+ * conservative bounds work for aerial views and every reflection cube face.
+ */
+export function tileHorizonGeometry(source: THREE.BufferGeometry, sectors = 16, radialRatio = 1.5) {
+  if (!Number.isInteger(sectors) || sectors < 1 || !Number.isFinite(radialRatio) || radialRatio <= 1) throw new Error('Invalid horizon tile dimensions');
+  const angles = source.userData.polarAngles as number, rings = source.userData.polarRings as number;
+  const position = source.attributes.position, original = source.index!;
+  const boundaries = [0];
+  let radialLimit = Math.hypot(position.getX(0), position.getZ(0)) * radialRatio;
+  for (let i = 1; i < rings - 1; i++) {
+    const radius = Math.hypot(position.getX(i * angles), position.getZ(i * angles));
+    if (radius >= radialLimit) { boundaries.push(i); radialLimit = radius * radialRatio; }
+  }
+  boundaries.push(rings - 1);
+  const packed = new Uint32Array(original.count), tiles: THREE.BufferGeometry[] = [];
+  const surface=source.getAttribute('hzWater');
+  const point = new THREE.Vector3(); let cursor = 0;
+  for (let band = 0; band + 1 < boundaries.length; band++) {
+    const startRing = boundaries[band], endRing = boundaries[band + 1];
+    for (let sector = 0; sector < sectors; sector++) {
+      const startAngle = Math.floor(sector * angles / sectors), endAngle = Math.floor((sector + 1) * angles / sectors);
+      if (startAngle === endAngle) continue;
+      const begin = cursor, box = new THREE.Box3();
+      for (let ring = startRing; ring < endRing; ring++) {
+        const from = (ring * angles + startAngle) * 6, end = (ring * angles + endAngle) * 6;
+        if(!surface){
+          packed.set(original.array.subarray(from,end),cursor);cursor+=end-from;
+        }else for(let j=from;j<end;j+=3){
+          const a=original.getX(j),b=original.getX(j+1),c=original.getX(j+2);
+          // hzHidden discards above 1.5. If all vertices exceed it, every
+          // interpolated fragment does too. Preserve mixed shoreline triangles.
+          if(surface.getX(a)>1.5 && surface.getX(b)>1.5 && surface.getX(c)>1.5)continue;
+          packed[cursor++]=a;packed[cursor++]=b;packed[cursor++]=c;
+        }
+      }
+      if(cursor===begin)continue;
+      for (let ring = startRing; ring <= endRing; ring++) for (let angle = startAngle; angle <= endAngle; angle++) {
+        point.fromBufferAttribute(position, ring * angles + angle % angles); box.expandByPoint(point);
+      }
+      const tile = new THREE.BufferGeometry();
+      for (const [name, attribute] of Object.entries(source.attributes)) tile.setAttribute(name, attribute);
+      tile.setIndex(new THREE.BufferAttribute(packed.subarray(begin, cursor), 1));
+      tile.boundingBox = box; tile.boundingSphere = box.getBoundingSphere(new THREE.Sphere());
+      // A box sphere encloses empty corners on both sides of the curved wedge.
+      // Place a candidate on its bisector, then measure every source vertex:
+      // the resulting sphere remains conservative for arbitrary elevations.
+      const halfAngle = (endAngle - startAngle) / angles * Math.PI, cosine = Math.cos(halfAngle);
+      if (cosine > 0) {
+        const inner = Math.hypot(position.getX(startRing * angles), position.getZ(startRing * angles));
+        const outer = Math.hypot(position.getX(endRing * angles), position.getZ(endRing * angles));
+        const distance = Math.min((inner + outer) / (2 * cosine), outer * cosine), middle = (startAngle + endAngle) / angles * Math.PI;
+        const center = new THREE.Vector3(distance * Math.cos(middle), (box.min.y + box.max.y) / 2, -distance * Math.sin(middle));
+        let radiusSq = 0;
+        for (let ring = startRing; ring <= endRing; ring++) for (let angle = startAngle; angle <= endAngle; angle++) {
+          point.fromBufferAttribute(position, ring * angles + angle % angles); radiusSq = Math.max(radiusSq, point.distanceToSquared(center));
+        }
+        const radius = Math.sqrt(radiusSq) + 1e-7;
+        if (radius < tile.boundingSphere.radius) tile.boundingSphere.set(center, radius);
+      }
+      tile.userData.horizonWedge = [
+        Math.hypot(position.getX(startRing * angles), position.getZ(startRing * angles)) * Math.cos(Math.PI / angles),
+        Math.hypot(position.getX(endRing * angles), position.getZ(endRing * angles)),
+        startAngle / angles * Math.PI * 2, endAngle / angles * Math.PI * 2, box.min.y, box.max.y,
+        Math.cos(startAngle / angles * Math.PI * 2), Math.sin(startAngle / angles * Math.PI * 2),
+        Math.cos(endAngle / angles * Math.PI * 2), Math.sin(endAngle / angles * Math.PI * 2),
+      ];
+      tiles.push(tile);
+    }
+  }
+  // All tiles retain one shared index allocation, without discarded capacity.
+  if (cursor < packed.length) {
+    const retained = packed.slice(0, cursor);
+    for (const tile of tiles) {
+      const index = tile.index!, offset = index.array.byteOffset / packed.BYTES_PER_ELEMENT;
+      tile.setIndex(new THREE.BufferAttribute(retained.subarray(offset, offset + index.count), 1));
+    }
+  }
+  return tiles;
 }
 
 function patch(mat: THREE.MeshStandardMaterial, uniforms: Record<string, THREE.IUniform>, frag: string, edits: [string, string][], key: string) {
@@ -143,13 +296,32 @@ export async function loadHorizon(center: { lat: number; lon: number }, setup: (
   sea.polygonOffset = true; sea.polygonOffsetFactor = 2; sea.polygonOffsetUnits = 8;
   setup(sea);
   patch(sea, uniforms, WATER, [['#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n{vec2 ws=hzWaveSlope(vHzPos.xz);normal=normalize((viewMatrix*vec4(normalize(vec3(-ws.x,1.,-ws.y)),0.)).xyz);}']], 'horizon-water');
-  const ground = new THREE.Mesh(tg, land); ground.name = 'horizon___ground';
-  const waterMesh = new THREE.Mesh(wg, sea); waterMesh.name = 'horizon___water';
-  for (const m of [ground, waterMesh]) { m.receiveShadow = false; m.castShadow = false; m.frustumCulled = false; group.add(m); }
+  // Cull both discs: even the coarse water otherwise submits the opposite bay
+  // in every view. Its smaller grid uses fewer angular wedges to bound draws.
+  compactHorizonAttributes(tg); compactHorizonAttributes(wg);
+  const tiles = [...tileHorizonGeometry(tg).map(geometry => ({geometry, material: land, name: 'horizon___ground'})),
+    ...tileHorizonGeometry(wg, 8, 2).map(geometry => ({geometry, material: sea, name: 'horizon___water'}))];
+  // The tiles now own the packed index storage; the temporary source indices
+  // are unnecessary. Vertex attributes remain shared across their tiles.
+  tg.setIndex(null); wg.setIndex(null);
+  const frusta = createHorizonFrustumCache();
+  for (const {geometry, material, name} of tiles) {
+    const mesh = new THREE.Mesh(geometry, material); mesh.name = name;
+    mesh.receiveShadow = false; mesh.castShadow = false;
+    let savedCount = geometry.drawRange.count;
+    // Per draw, so reflection cube faces and the main camera get independent
+    // conservative tests. An empty draw range submits no vertices or triangles.
+    mesh.onBeforeRender = (_renderer, _scene, camera) => {
+      savedCount = geometry.drawRange.count;
+      if (!horizonTileIntersectsFrustum(geometry, frusta.get(camera, mesh.matrixWorld))) geometry.drawRange.count = 0;
+    };
+    mesh.onAfterRender = () => { geometry.drawRange.count = savedCount; };
+    group.add(mesh);
+  }
   group.traverse(o => { o.userData.layer = 'horizon'; });
   return {
     group, materials: [land, sea],
     update(now: number) { uniforms.uHzTime.value = now / 1000; const env = skyEnvironment(); if (env && sea.envMap !== env) { sea.envMap = env; sea.envMapIntensity = 1; sea.needsUpdate = true; } },
-    dispose() { tg.dispose(); wg.dispose(); land.dispose(); sea.dispose(); maskTex.dispose(); },
+    dispose() { for (const tile of tiles) tile.geometry.dispose(); tg.dispose(); wg.dispose(); land.dispose(); sea.dispose(); maskTex.dispose(); },
   };
 }

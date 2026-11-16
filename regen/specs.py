@@ -18,11 +18,16 @@ def hexok(h, default='#8a8d8f'):
 def clean(r, piece):
     """Tolerate small format slips in a model's reading: a missing view index, malformed outlines, empty rectangles."""
     r = dict(r)
+    from regen.reading_coverage import audit_reading
+    r['_sourceCoverage'] = audit_reading(r)
     if not isinstance(r.get('use'), int) or not (0 <= r['use'] < len(piece['views'])): r['use'] = 0
     pt = r.get('parapetTop')
     if pt is not None and not (isinstance(pt, list) and len(pt) >= 2 and all(isinstance(q, (list, tuple)) and len(q) == 2 for q in pt)): r['parapetTop'] = None
     ok = lambda o: all(isinstance(o.get(k), (int, float)) for k in ('x0', 'x1', 'z0', 'z1')) and o['x1'] > o['x0'] and o['z1'] > o['z0']
-    for k in ('materials', 'banks', 'openings', 'bays'): r[k] = [o for o in (r.get(k) or []) if isinstance(o, dict) and ok(o)]
+    for k in ('materials', 'banks', 'bays'):
+        r[k] = [o for o in (r.get(k) or []) if isinstance(o, dict) and ok(o)]
+    r['openings'] = [{**o, '_sourceIndex': i} for i, o in enumerate(r.get('openings') or [])
+                     if isinstance(o, dict) and ok(o)]
     r['bands'] = [b for b in (r.get('bands') or []) if isinstance(b, dict) and isinstance(b.get('zM'), (int, float))]
     r['piers'] = [b for b in (r.get('piers') or []) if isinstance(b, dict) and isinstance(b.get('xM'), (int, float))]
     num = lambda v: isinstance(v, (int, float))
@@ -40,7 +45,127 @@ def clean(r, piece):
 
 def material(m):
     base = FAMILY_RECIPE.get(m.get('family'), 'stucco')
-    return base + hexok(m.get('hex')).lower()
+    if base == 'panel_silver':
+        from pipeline.panel_finish import panel_recipe
+        base = panel_recipe(m.get('hex'), m.get('finish'), m.get('coating'))
+    # Optional typed observations alter only the selected surface recipe. Legacy
+    # readings with no descriptors keep their byte-for-byte historical key.
+    from pipeline import material_recipes
+    return material_recipes.make_observed_key(
+        base, hexok(m.get('hex')).lower(), family=m.get('family'),
+        pattern=m.get('pattern'), finish=m.get('finish'), moduleM=m.get('moduleM'))
+
+
+def _ornament_count(value, default, low, high):
+    """Normalize explicitly typed ornament counts; never derive them from prose."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not np.isfinite(value):
+        return default
+    return int(np.clip(round(float(value)), low, high))
+
+
+def porch_access_profile(raw, fx):
+    """Normalize explicitly observed porch access; return no geometry for unread access."""
+    access = raw.get('access')
+    if access is None: return None, None
+    if not isinstance(access, dict): return None, 'access evidence must be an object'
+    status = access.get('status')
+    if status == 'occluded': return {'status': 'unresolved'}, 'porch access is occluded'
+    if status != 'observed': return {'status': 'unresolved'}, 'access status must be observed or occluded'
+    steps = access.get('steps')
+    if not isinstance(steps, dict) or not isinstance(steps.get('present'), bool):
+        return {'status': 'unresolved'}, 'observed access requires an explicit steps.present decision'
+    result = {'status': 'observed', 'steps': {'present': steps['present']}, 'rails': None, 'posts': []}
+    if steps['present']:
+        count, width, run, center = (steps.get(k) for k in ('count', 'widthM', 'runM', 'centerOffsetM'))
+        if (isinstance(count, bool) or not isinstance(count, int) or not 1 <= count <= 40
+                or not isinstance(width, (int, float)) or not .4 <= width <= 10
+                or not isinstance(run, (int, float)) or not .1 <= run <= 10
+                or not isinstance(center, (int, float)) or not -5 <= center <= 5):
+            return {'status': 'unresolved'}, 'observed stairs require count, widthM, runM, and centerOffsetM'
+        result['steps'].update({'count': count, 'widthM': float(width), 'runM': float(run),
+                                'centerOffsetM': float(center),
+                                'material': hexok(steps.get('hex'), '#817d76')})
+    rails = access.get('rails')
+    if rails is not None:
+        sides = rails.get('sides') if isinstance(rails, dict) else None
+        if not isinstance(sides, list) or any(s not in ('left', 'right') for s in sides) or len(set(sides)) != len(sides):
+            return {'status': 'unresolved'}, 'rails require unique left/right sides'
+        if sides:
+            height = rails.get('heightM')
+            if not isinstance(height, (int, float)) or not .4 <= height <= 1.6:
+                return {'status': 'unresolved'}, 'side rails require measured heightM'
+        result['rails'] = {'sides': list(sides), 'heightM': float(rails.get('heightM', .9)) if sides else None,
+                           'material': hexok(rails.get('hex'), '#5b5a55')}
+    posts = access.get('posts', [])
+    if not isinstance(posts, list): return {'status': 'unresolved'}, 'posts must be a list'
+    for post in posts:
+        if not isinstance(post, dict): return {'status': 'unresolved'}, 'each post requires typed placement'
+        side, position = post.get('side'), post.get('position')
+        height, width = post.get('heightM'), post.get('widthM')
+        kind = post.get('kind', 'post')
+        if (side not in ('left', 'right') or not isinstance(position, (int, float)) or not 0 <= position <= 1
+                or not isinstance(height, (int, float)) or not .2 <= height <= 2.2
+                or not isinstance(width, (int, float)) or not .06 <= width <= .6
+                or kind not in ('post', 'newel')):
+            return {'status': 'unresolved'}, 'posts require side, position [0,1], heightM, widthM, and post/newel kind'
+        result['posts'].append({'side': side, 'position': float(position), 'heightM': float(height),
+                                'widthM': float(width), 'kind': kind,
+                                'finial': bool(post.get('finial', False)),
+                                'material': hexok(post.get('hex'), '#e8e4d6')})
+    return result, None
+
+
+def bay_material_zones(bay, fx, fz):
+    """Normalize optional, explicitly observed bay cladding bands; return zones and unresolved reasons."""
+    raw_zones = bay.get('materialZones')
+    if raw_zones is None: return [], []
+    if not isinstance(raw_zones, list): return [], ['materialZones must be a list']
+    numeric = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool) and np.isfinite(v)
+    zones, errors = [], []
+    for i, z in enumerate(raw_zones):
+        if not isinstance(z, dict):
+            errors.append(f'materialZones[{i}] must be an object'); continue
+        z0, z1 = z.get('z0'), z.get('z1')
+        x0, x1 = z.get('x0', bay['x0']), z.get('x1', bay['x1'])
+        if (not numeric(z0) or not numeric(z1) or not bay['z0'] <= z0 < z1 <= bay['z1']
+                or not numeric(x0) or not numeric(x1) or not bay['x0'] <= x0 < x1 <= bay['x1']):
+            errors.append(f'materialZones[{i}] needs ordered metric bounds inside its bay'); continue
+        family = z.get('family')
+        color = z.get('hex', z.get('color'))
+        if family not in FAMILY_RECIPE or not isinstance(color, str) or not re.fullmatch(r'#[0-9a-fA-F]{6}', color):
+            errors.append(f'materialZones[{i}] needs a supported family and six-digit hex color'); continue
+        pattern, finish, unit = z.get('pattern'), z.get('finish'), z.get('unitSizeM')
+        if unit is not None and (not numeric(unit) or unit <= 0 or unit > 10):
+            errors.append(f'materialZones[{i}].unitSizeM must be a positive finite metre value'); continue
+        if unit is not None and pattern is None:
+            errors.append(f'materialZones[{i}].unitSizeM requires an explicit pattern'); continue
+        module = z.get('moduleM')
+        if module is not None and (not isinstance(module, dict) or not module):
+            errors.append(f'materialZones[{i}].moduleM must contain measured x/z repeats'); continue
+        module = dict(module) if module is not None else None
+        # A measured course pitch identifies the vertical repeat, independently
+        # of shingle width. Never manufacture the unmeasured second axis.
+        if unit is not None:
+            axis = ('z' if pattern in ('horizontal_courses', 'straight_shingles', 'scalloped_shingles')
+                    else 'x' if pattern == 'vertical_boards' else None)
+            if axis is None:
+                errors.append(f'materialZones[{i}].unitSizeM has no defined repeat axis for this pattern'); continue
+            if module is not None and axis in module and (not numeric(module[axis]) or abs(module[axis]-unit) > 1e-6):
+                errors.append(f'materialZones[{i}] has contradictory repeat dimensions'); continue
+            module = {**(module or {}), axis: float(unit)}
+        try:
+            recipe = material({'family': family, 'hex': color, 'pattern': pattern,
+                               'finish': finish, **({'moduleM': module} if module else {})})
+        except (ValueError, TypeError):
+            errors.append(f'materialZones[{i}] has an unsupported pattern, finish, or unit-size combination'); continue
+        zone = {'rect': [fx(x0), fz(z0), fx(x1), fz(z1)], 'cladding': recipe,
+                'family': family, 'hex': color.lower()}
+        if pattern is not None: zone['pattern'] = pattern
+        if finish is not None: zone['finish'] = finish
+        if unit is not None: zone['unitSizeM'] = float(unit)
+        if module is not None: zone['moduleM'] = module
+        zones.append(zone)
+    return zones, errors
 
 
 def bank_cells(b):
@@ -61,18 +186,38 @@ def bank_cells(b):
 
 
 def _style(o, dx=None, dz=None):
+    from pipeline.door_leaves import validate_cells
     kind = KIND.get(o.get('kind', 'window'), 'window')
     st = {'kind': kind, 'frameMaterial': hexok(o.get('frame'), '#3a3d40')}
-    if o.get('head') in ('arch', 'segmental'): st['head'] = o['head']
-    if isinstance(o.get('springRatio'), (int, float)) and o.get('head') == 'arch': st['springRatio'] = float(np.clip(o['springRatio'], .2, .9))
-    if o.get('recessM') is not None: st['recessM'] = float(np.clip(o['recessM'], .02, 1.5))
+    if o.get('head') in ('arch', 'pointed', 'segmental'): st['head'] = o['head']
+    if isinstance(o.get('springRatio'), (int, float)) and o.get('head') in ('arch', 'pointed'): st['springRatio'] = float(np.clip(o['springRatio'], .2, .95))
+    if isinstance(o.get('riseRatio'), (int, float)) and o.get('head') == 'segmental': st['riseRatio'] = float(np.clip(o['riseRatio'], .02, .5))
+    if o.get('recessM') is not None:
+        recess = float(o['recessM'])
+        if not np.isfinite(recess) or recess < 0:
+            raise ValueError('opening recess must be a finite nonnegative measurement')
+        st['recessM'] = max(.02, recess)
     m, t = int(o.get('mullions') or 0), int(o.get('transoms') or 0)
     st['mullionFractions'] = [round((k + 1) / (m + 1), 4) for k in range(m)]
     st['transomFractions'] = [round((k + 1) / (t + 1), 4) for k in range(t)]
-    # a vehicle door is a panelled door in the colour read for it (its frame), not a zinc roller shutter (drawn black)
-    if o.get('kind') == 'garage': st.update(material=st['frameMaterial'], slatMaterial=st['frameMaterial'], slatPitchM=.5)
-    if o.get('kind') == 'garage' and (o.get('door') or {}).get('kind') == 'glazed': st['glazed'] = True     # glass panels in a frame
-    if o.get('kind') == 'garage' and (o.get('door') or {}).get('kind') == 'grille': st['grille'] = True     # an open iron gate
+    # The door leaf and the surrounding casing can have different finishes.
+    # In particular, a dark reveal does not colour every white garage panel.
+    if o.get('kind') == 'garage':
+        door = o.get('door') or {}
+        leaf = hexok(door.get('hex'), st['frameMaterial'])
+        st.update(material=leaf, slatMaterial=leaf)
+        door_kind = door.get('kind', 'panel')
+        if door_kind not in ('panel', 'glazed', 'grille', 'open'):
+            door_kind = 'panel'
+        construction = door.get('construction')
+        if construction not in ('sectional', 'roller'):
+            construction = None
+        st['doorKind'] = door_kind
+        if construction: st['doorConstruction'] = construction
+        if 'cells' in door: st['doorCells'] = validate_cells(door['cells'])
+        if door_kind == 'glazed': st['glazed'] = True
+        if door_kind == 'grille': st['grille'] = True
+        if door_kind == 'open': st['openLeaf'] = True
     if o.get('kind') == 'curtain': st.update(ribbon=True, mullionFractions=st['mullionFractions'] or [.5])
     elif o.get('ribbon') is not None: st['ribbon'] = bool(o['ribbon'])
     # reading v2 (areas/ring/read-v2.md): the window's sashes and panes, its trim, a door and the steps up to it
@@ -80,7 +225,9 @@ def _style(o, dx=None, dz=None):
     if isinstance(o.get('lites'), list) and len(o['lites']) == 2: st['lites'] = [int(np.clip(v, 1, 8)) for v in o['lites']]
     if isinstance(o.get('meetingRail'), (int, float)): st['meetingRail'] = float(np.clip(o['meetingRail'], .3, .75))
     if isinstance(o.get('frameWidthM'), (int, float)): st['frameWidthM'] = float(np.clip(o['frameWidthM'], .03, .2))
-    trim = hexok(o.get('trimHex'), st['frameMaterial'])
+    # the trim (hood, sill, keystone) takes the surround's colour when the reading gives no trimHex, as window banks never
+    # do: falling back to the sash colour put navy hoods over white-cased windows
+    trim = hexok(o.get('trimHex'), hexok((o.get('surround') or {}).get('hex') if isinstance(o.get('surround'), dict) else None, st['frameMaterial']))
     if isinstance(o.get('surround'), dict):
         st['surround'] = {'widthM': float(np.clip(o['surround'].get('widthM', .14), .04, .6)), 'projectionM': float(np.clip(o['surround'].get('projectionM', .04), .01, .2)),
                           'material': hexok(o['surround'].get('hex'), trim)}
@@ -90,11 +237,27 @@ def _style(o, dx=None, dz=None):
     if o.get('keystone'): st['keystone'] = True
     if isinstance(o.get('railing'), dict): st['railing'] = {'heightM': float(np.clip(o['railing'].get('heightM', .9), .3, 1.4)), 'material': hexok(o['railing'].get('hex'), '#2b2d2f')}
     if isinstance(o.get('door'), dict) and o.get('kind') == 'entry':
-        st['door'] = {'kind': o['door'].get('kind') if o['door'].get('kind') in ('panel', 'glazed', 'double', 'none') else 'panel', 'material': hexok(o['door'].get('hex'), st['frameMaterial'])}
+        st['door'] = {'kind': o['door'].get('kind') if o['door'].get('kind') in ('panel', 'glazed', 'double', 'grille', 'none') else 'panel', 'material': hexok(o['door'].get('hex'), st['frameMaterial'])}
+        if 'panels' in o['door']:
+            panels = o['door']['panels']
+            if not isinstance(panels, list) or any(not isinstance(p, (list, tuple)) or len(p) != 4 or
+                any(isinstance(v, bool) or not isinstance(v, (int, float)) or not np.isfinite(v) for v in p) or
+                not (0 <= p[0] < p[2] <= 1 and 0 <= p[1] < p[3] <= 1) for p in panels):
+                raise ValueError('door panels must be observed leaf-relative rectangles, or [] when unresolved')
+            st['door']['panels'] = [list(p) for p in panels]
+        if 'cells' in o['door']:
+            st['door']['cells'] = validate_cells(o['door']['cells'])
     if isinstance(o.get('transomM'), (int, float)) and o['transomM'] > 0: st['transomM'] = float(np.clip(o['transomM'], .1, 1.6))
     if isinstance(o.get('steps'), dict) and o.get('kind') == 'entry':
-        st['steps'] = {'count': int(np.clip(o['steps'].get('count', 0) or 0, 0, 40)) or None, 'widthM': float(np.clip(o['steps'].get('widthM', 1.6), .6, 8.)),
+        st['steps'] = {'count': int(np.clip(o['steps'].get('count', 0) or 0, 0, 40)), 'widthM': float(np.clip(o['steps'].get('widthM', 1.6), .6, 8.)),
                        'material': material({'family': o['steps'].get('family', 'stone'), 'hex': o['steps'].get('hex')})}
+        for field in ('runM', 'bottomM'):
+            value = o['steps'].get(field)
+            if isinstance(value, (int, float)) and not isinstance(value, bool) and np.isfinite(value):
+                if field == 'bottomM' or value > 0:
+                    st['steps'][field] = float(value)
+        if isinstance(o['steps'].get('rails'), dict):
+            st['steps']['rails'] = dict(o['steps']['rails'])
     if dx: st['openingRatio'] = round(float(np.clip((o.get('openingWidthM') or dx * .7) / dx, .1, .98)), 4)
     if dz: st['openingHeightRatio'] = round(float(np.clip((o.get('openingHeightM') or dz * .7) / dz, .1, .98)), 4)
     return st
@@ -112,18 +275,39 @@ def lay_bay_windows(r):
         p = float(np.clip(b.get('projectionM', .6), .2, 1.5)); x0, x1 = b['x0'], b['x1']; shape = b.get('shape')
         run = p / np.tan(np.radians(float(np.clip(b.get('sideAngleDeg') or 45., 20, 80))))
         if shape == 'square' or (shape != 'curved' and x1 - x0 < 2 * run + .4): run = 0.
-        fa, fb = (x0 + run, x1 - run) if shape != 'curved' else (x0 + .15 * (x1 - x0), x1 - .15 * (x1 - x0))
-        win = {k: b[k] for k in ('sash', 'lites', 'meetingRail', 'frame', 'head', 'springRatio') if k in b}; win.setdefault('frame', b.get('trimHex'))
-        front = b.get('front') or {'count': 1}; n = max(1, int(front.get('count', 1))); fw = float(front.get('widthM') or (fb - fa) * .7 / n)
+        # Curved bays are rendered as glazed facets across the whole projected span [x0, x1].
+        # Insetting this reading interval reduced pane widths while those facets kept their full measured footprint;
+        # the bay renderer then discarded the resulting short per-facet cuts.
+        fa, fb = (x0, x1) if shape == 'curved' else (x0 + run, x1 - run)
+        # Carry the bay's explicitly read pane divisions through to each laid
+        # opening.  Missing fields stay missing: ordinary sash windows must not
+        # acquire guessed mullions or transoms.
+        win = {k: b[k] for k in ('sash', 'lites', 'meetingRail', 'frame', 'head', 'springRatio', 'riseRatio', 'mullions', 'transoms') if k in b}; win.setdefault('frame', b.get('trimHex'))
+        front = b.get('front') or {'count': 1}; n = max(1, int(front.get('count', 1)))
         side = b.get('side'); sw = float(side.get('widthM', 0)) if isinstance(side, dict) else 0.
+        pane_fields = ('sash', 'lites', 'meetingRail', 'frame', 'head', 'springRatio', 'riseRatio', 'mullions', 'transoms')
+        front_win = {**win, **{k: front[k] for k in pane_fields if k in front}}
+        side_win = {**win, **{k: side[k] for k in pane_fields if k in side}} if isinstance(side, dict) else win
+        fw = float(front.get('widthM') or (fb - fa) * .7 / n)
+        if not np.isfinite(fw) or fw <= 0: fw = max(0., fb - fa) * .7 / n
         for z0, z1 in rows:
-            gap = (fb - fa - n * fw) / (n + 1)
-            for k in range(n):
-                xa = fa + gap + k * (fw + gap); r.setdefault('openings', []).append({**win, 'x0': xa, 'x1': xa + fw, 'z0': z0, 'z1': z1, 'kind': 'window', 'bayWindow': True})
+            front_width = fb - fa
+            if front_width > 0:
+                # Keep each pane on the front face, even when the measured widths cannot fit.
+                # Preserve the observed count and use a positive, modest gap in the constrained case.
+                gap = min(.05, front_width / (4 * (n + 1)))
+                fw_eff = min(fw, (front_width - (n + 1) * gap) / n)
+                if fw_eff > 0:
+                    gap = (front_width - n * fw_eff) / (n + 1)
+                    for k in range(n):
+                        xa = fa + gap + k * (fw_eff + gap)
+                        r.setdefault('openings', []).append({**front_win, 'x0': xa, 'x1': xa + fw_eff, 'z0': z0, 'z1': z1, 'kind': 'window', 'bayWindow': True, 'bayFace': 'front'})
             if sw > .2 and run > .2 and shape != 'curved':
-                half = sw * np.cos(np.arctan2(p, run)) / 2           # a side window's extent along the wall
-                for c in (x0 + run / 2, x1 - run / 2):
-                    r['openings'].append({**win, 'x0': c - half, 'x1': c + half, 'z0': z0, 'z1': z1, 'kind': 'window', 'bayWindow': True})
+                side_width = min(sw * np.cos(np.arctan2(p, run)), max(0., run - .02))
+                if side_width > 0:
+                    half = side_width / 2           # a side window's extent along the wall
+                    for c in (x0 + run / 2, x1 - run / 2):
+                        r['openings'].append({**side_win, 'x0': c - half, 'x1': c + half, 'z0': z0, 'z1': z1, 'kind': 'window', 'bayWindow': True, 'bayFace': 'side'})
         # the wall's bank cells inside the bay are the bay's windows read on the image: dropped for the laid ones
         for bk in r.get('banks') or []:
             nx, ny = max(1, int(bk.get('columns', 1))), max(1, int(bk.get('rows', 1)))
@@ -134,6 +318,8 @@ def lay_bay_windows(r):
 
 
 def to_profile(r, piece):
+    from regen.reading_coverage import audit_reading, merge_coverage
+    coverage = merge_coverage(r.get('_sourceCoverage'), audit_reading(r))
     r = lay_bay_windows(r)
     W, H = float(piece['lengthM']), float(piece['heightM'])
     num = lambda v: isinstance(v, (int, float))
@@ -151,25 +337,51 @@ def to_profile(r, piece):
             'match': {'featureId': re.sub(r'_p\d+$', '', bid), 'osmWayId': bid[4:] if bid.startswith('osm_') else None, 'partId': bid},
             'normal': piece['normal'], 'frameU': piece['frameU'], 'planeV': piece['planeV'], 'heightRefM': H, 'sourceIds': src,
             'material': material(main),
-            'materialEvidence': {'family': main.get('family', 'render'), 'colorRgb': [int(hexok(main.get('hex'))[i:i + 2], 16) for i in (1, 3, 5)], 'sourceIds': src},
-            'panels': [], 'groups': [], 'openings': [], 'bands': [], 'piers': [], 'parapets': [], 'unresolved': [],
+            'materialEvidence': {'family': main.get('family', 'render'), 'colorRgb': [int(hexok(main.get('hex'))[i:i + 2], 16) for i in (1, 3, 5)], 'sourceIds': src,
+                                 **{k: main[k] for k in ('pattern', 'finish', 'moduleM') if k in main}},
+            'panels': [], 'groups': [], 'openings': [], 'bands': [], 'piers': [], 'parapets': [],
+            'readingCoverage': coverage, 'unresolved': list(coverage['unresolved']) + [
+                {'kind': 'reading-gap', **item} for item in coverage['issues']],
             'reading': {'confidence': r.get('confidence'), 'notes': r.get('notes', ''), 'wallTopM': r.get('wallTopM'), 'storeys': r.get('storeys')}}
+    # Negative facade volumes are compiled only from explicit measured bounds;
+    # ordinary balconies remain separate projecting details.
+    from pipeline.facade_recesses import compile_reading as compile_recess_reading
+    prof['recesses'] = compile_recess_reading(r, fx, fz)
+    from pipeline.facade_signs import compile_reading as compile_sign_reading
+    prof['signs'], sign_gaps = compile_sign_reading(r, piece, material)
+    prof['unresolved'].extend(sign_gaps)
     if piece.get('baseM'): prof['zBaseM'] = float(piece['baseM'])   # a set-back tier, rectified from the roof it stands on
-    prof['materialEvidence'].pop('family') if prof['materialEvidence']['family'] not in ('brick', 'terracotta', 'render', 'timber', 'metal-panel') else None
+    _typed_surface = any(k in main for k in ('pattern', 'finish', 'moduleM'))
+    _family = prof['materialEvidence']['family']
+    if _typed_surface:
+        from pipeline.material_recipes import _OBSERVED_PATTERNS
+        if _family not in _OBSERVED_PATTERNS:
+            raise ValueError(f'unsupported observed material family {_family!r}')
+    elif _family not in ('brick', 'terracotta', 'render', 'timber', 'metal-panel'):
+        prof['materialEvidence'].pop('family')
     if 'family' not in prof['materialEvidence']: prof.pop('materialEvidence')
     floors = [z for z in (r.get('storeys') or []) if isinstance(z, (int, float))]
     for m in (m for m in mats if m is not main):
-        prof['panels'].append({'rect': [fx(m['x0']), fz(m['z0']), fx(m['x1']), fz(m['z1'])], 'material': material(m)})
+        prof['panels'].append({'rect': [fx(m['x0']), fz(m['z0']), fx(m['x1']), fz(m['z1'])], 'material': material(m),
+                               **({'toWallTop': True} if m.get('toWallTop') is True else {})})
     bays = r.get('bays') or []
     # a bay is drawn as one volume standing out from the wall, its windows set in its faces (pipeline/bays.py)
-    prof['bays'] = [{'rect': [fx(b['x0']), fz(b['z0']), fx(b['x1']), fz(b['z1'])], 'projectionM': float(np.clip(b.get('projectionM', .6), .2, 1.5)),
-                     **({'shape': b['shape']} if b.get('shape') in ('angled', 'square', 'curved') else {}),
-                     **({'sideAngleDeg': float(np.clip(b['sideAngleDeg'], 20, 80))} if isinstance(b.get('sideAngleDeg'), (int, float)) else {}),
-                     **({'trim': hexok(b['trimHex'])} if b.get('trimHex') else {}),
-                     **({'cladding': material({'family': b.get('family', main.get('family', 'render')), 'hex': b['hex']})} if b.get('hex') else {}),   # a bay's own body colour
-                     'storeys': [fz(z) for z in floors if b['z0'] + .4 < z < b['z1'] - .4] if b.get('storeyTrim', True) else [],
-                     'corbel': bool(b.get('corbel')), 'cap': b.get('cap') if b.get('cap') in ('cornice', 'flat') else 'cornice'}
-                    for b in bays if b['x1'] > b['x0'] and b['z1'] > b['z0']]
+    prof['bays'] = []
+    for bay_index, b in enumerate(bays):
+        if b['x1'] <= b['x0'] or b['z1'] <= b['z0']: continue
+        bay_profile = {'rect': [fx(b['x0']), fz(b['z0']), fx(b['x1']), fz(b['z1'])], 'projectionM': float(np.clip(b.get('projectionM', .6), .2, 1.5)),
+                       **({'shape': b['shape']} if b.get('shape') in ('angled', 'square', 'curved') else {}),
+                       **({'sideAngleDeg': float(np.clip(b['sideAngleDeg'], 20, 80))} if isinstance(b.get('sideAngleDeg'), (int, float)) else {}),
+                       **({'trim': hexok(b['trimHex'])} if b.get('trimHex') else {}),
+                       **({'cladding': material({'family': b.get('family', main.get('family', 'render')), 'hex': b['hex'],
+                                                **{k: b[k] for k in ('pattern', 'finish', 'moduleM') if k in b}})} if b.get('hex') else {}),
+                       'storeys': [fz(z) for z in floors if b['z0'] + .4 < z < b['z1'] - .4] if b.get('storeyTrim', True) else [],
+                       'corbel': bool(b.get('corbel')), 'cap': b.get('cap') if b.get('cap') in ('cornice', 'flat') else 'cornice'}
+        zones, zone_errors = bay_material_zones(b, fx, fz)
+        if zones: bay_profile['claddingZones'] = zones
+        for reason in zone_errors:
+            prof['unresolved'].append({'kind': 'bay_cladding_zone', 'bayIndex': bay_index, 'reason': reason})
+        prof['bays'].append(bay_profile)
     for b in r.get('banks') or []:
         nx, ny = max(1, int(b.get('columns', 1))), max(1, int(b.get('rows', 1)))
         dx, dz = (b['x1'] - b['x0']) / nx, (b['z1'] - b['z0']) / ny
@@ -180,9 +392,11 @@ def to_profile(r, piece):
         if b.get('xCentersM') and len(b['xCentersM']) == nx: g['xCenters'] = [round((x - b['x0']) / (b['x1'] - b['x0']), 5) for x in b['xCentersM']]
         if b.get('zCentersM') and len(b['zCentersM']) == ny: g['yCenters'] = [round((z - b['z0']) / (b['z1'] - b['z0']), 5) for z in b['zCentersM']]
         prof['groups'].append(g)
-    for o in r.get('openings') or []:
+    for opening_source_index, o in enumerate(r.get('openings') or []):
         if o['x1'] <= o['x0'] or o['z1'] <= o['z0']: continue
-        prof['openings'].append({'rect': [fx(o['x0']), fz(o['z0']), fx(o['x1']), fz(o['z1'])], 'style': _style(o), 'sourceIds': src})
+        prof['openings'].append({'rect': [fx(o['x0']), fz(o['z0']), fx(o['x1']), fz(o['z1'])],
+                                 'style': _style(o), 'sourceIds': src,
+                                 'sourceIndex': int(o.get('_sourceIndex', opening_source_index))})
     for c in r.get('canopies') or []:
         if not all(num(c.get(k)) for k in ('x0', 'x1', 'zM')) or c['x1'] <= c['x0']: continue
         # a canopy belongs to the opening or bank whose head it shelters; one over no head (a porte-cochere, an awning
@@ -220,9 +434,19 @@ def to_profile(r, piece):
         prof.setdefault('fireEscapes', []).append({'x': [fx(f['x0']), fx(f['x1'])], 'levels': [fz(z) for z in f['levels']], 'depthM': float(np.clip(f.get('depthM', .9), .5, 1.6)),
                                                    'material': hexok(f.get('hex'), '#2b2d2f')})
     for b in r.get('balconies') or []:
-        prof.setdefault('balconies', []).append({'x': [fx(b['x0']), fx(b['x1'])], 'z': fz(b['zM']), 'depthM': float(np.clip(b.get('depthM', .8), .3, 2.5)),
+        # Source measurements also describe Juliet guards and shallow pierced
+        # window panels. A balcony-sized minimum changes their geometry and
+        # invents a walkable slab. Keep finite positive dimensions as measured.
+        depth = b.get('depthM', .8)
+        rail_height = b.get('railingHeightM', 1.)
+        if not num(depth) or not np.isfinite(depth) or depth <= 0: continue
+        if not num(rail_height) or not np.isfinite(rail_height) or rail_height <= 0: continue
+        has_deck = b.get('hasDeck') if isinstance(b.get('hasDeck'), bool) else float(depth) >= .3
+        prof.setdefault('balconies', []).append({'x': [fx(b['x0']), fx(b['x1'])], 'z': fz(b['zM']), 'depthM': float(depth),
+                                                 'hasDeck': has_deck,
+                                                 **({'layoutEvidence': dict(b['layoutEvidence'])} if isinstance(b.get('layoutEvidence'),dict) else {}),
                                                  'railing': b.get('railing') if b.get('railing') in ('metal', 'balustrade', 'solid') else 'metal',
-                                                 'railingHeightM': float(np.clip(b.get('railingHeightM', 1.), .5, 1.4)), 'material': hexok(b.get('hex'), '#2b2d2f'),
+                                                 'railingHeightM': float(rail_height), 'material': hexok(b.get('hex'), '#2b2d2f'),
                                                  **({'slabMaterial': material({'family': b.get('slabFamily', 'render'), 'hex': b['slabHex']})} if b.get('slabHex') else {})})
     for q in r.get('roofs') or []:
         prof.setdefault('roofs', []).append({'x': [fx(q['x0']), fx(q['x1'])], 'z': fz(q['zM']), 'kind': q.get('kind') if q.get('kind') in ('tile-eave', 'pent', 'tile-roof', 'eave', 'mansard', 'gable') else 'tile-eave',
@@ -253,14 +477,45 @@ def to_profile(r, piece):
     for h in r.get('hedges') or []:
         prof.setdefault('hedges', []).append({'x': [fx(h['x0']), fx(h['x1'])], 'heightM': float(np.clip(h['heightM'], .4, 9.)), 'depthM': float(np.clip(h.get('depthM', 1.2), .4, 4.)),
                                               'offsetM': float(np.clip(h.get('offsetM', .5), 0., 25.)), 'material': hexok(h.get('hex'), '#3f5a2c')})
-    for q in r.get('porches') or []:
+    for porch_source_index, q in enumerate(r.get('porches') or []):
         # a porch or portico in front of the wall (pipeline/facade_detail.py): columns, beam, roof, steps
         if not (num(q.get('x0')) and num(q.get('x1')) and q['x1'] - q['x0'] >= .8 and num(q.get('topM'))): continue
-        prof.setdefault('porches', []).append({'x': [fx(q['x0']), fx(q['x1'])], 'floorM': float(np.clip(q.get('floorM') or 0., 0., 4.)),
-                                               'topM': float(np.clip(q['topM'], 2.2, 9.)), 'depthM': float(np.clip(q.get('depthM') or 1.8, .8, 4.)),
-                                               'columns': int(np.clip(q.get('columns') or 2, 2, 8)), 'columnMaterial': hexok(q.get('columnHex'), '#efece4'),
+        access, access_error = porch_access_profile(q, fx)
+        if access_error:
+            prof.setdefault('unresolved', []).append({'kind': 'porch_access', 'x': [fx(q['x0']), fx(q['x1'])], 'reason': access_error})
+        legacy_steps = bool(q.get('steps', (q.get('floorM') or 0.) > .3))
+        if access is not None:
+            legacy_steps = bool(access.get('status') == 'observed' and access.get('steps', {}).get('present'))
+        values = (q.get('floorM', 0.), q['topM'], q.get('depthM', 1.8))
+        if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not np.isfinite(v) for v in values):
+            prof.setdefault('unresolved', []).append({'kind': 'porch', 'reason': 'porch dimensions must be finite measurements'})
+            continue
+        floor, top, depth = map(float, values)
+        columns = q.get('columns', 2)
+        if (not all(np.isfinite(v) for v in (floor, top, depth)) or top <= floor or depth <= 0.
+                or isinstance(columns, bool) or not isinstance(columns, int) or columns < 0):
+            prof.setdefault('unresolved', []).append({'kind': 'porch', 'reason': 'invalid measured porch dimensions'})
+            continue
+        porch = {'sourceIndex': int(q.get('_sourceIndex', porch_source_index)),
+                                               'x': [fx(q['x0']), fx(q['x1'])], 'floorM': floor,
+                                               'topM': top, 'depthM': depth,
+                                               'columns': columns, 'columnMaterial': hexok(q.get('columnHex'), '#efece4'),
                                                'material': hexok(q.get('hex'), '#e8e4da'), 'roof': q.get('roof') if q.get('roof') in ('flat', 'gable', 'shed', 'balcony') else 'flat',
-                                               'steps': bool(q.get('steps', (q.get('floorM') or 0.) > .3))})
+                                               'steps': legacy_steps}
+        if access is not None: porch['access'] = access
+        prof.setdefault('porches', []).append(porch)
+    if r.get('accessRoutes') is not None:
+        from pipeline.access_routes import compile_access_routes
+        routes, route_errors = compile_access_routes(r.get('accessRoutes'))
+        if routes: prof['accessRoutes'] = routes
+        for route_index, route in enumerate(routes):
+            if route.get('status') == 'unresolved':
+                prof.setdefault('unresolved', []).append({'kind': 'access_route', 'index': route_index,
+                                                          'reason': route.get('reason', 'route measurements unresolved')})
+        for route_index, reason in route_errors:
+            if not any(item.get('kind') == 'access_route' and item.get('index') == route_index
+                       for item in prof.get('unresolved', [])):
+                prof.setdefault('unresolved', []).append({'kind': 'access_route', 'index': route_index, 'reason': reason})
     for o in r.get('timbering') or []:
         # half-timbering: studs at their read pitch across the region, rails at the read heights (the frame's foot and
         # head are drawn by pipeline/facade_detail.py), cut by the wall's outline there (a gable's rake)
@@ -270,8 +525,27 @@ def to_profile(r, piece):
                                                  'rails': [fz(z) for z in (o.get('rails') or []) if num(z) and o['z0'] < z < o['z1']], 'widthM': w,
                                                  'projectionM': .04, 'material': hexok(o.get('hex'), '#2e2320')})
     for o in r.get('ornaments') or []:
-        prof.setdefault('reliefs', []).append({'rect': [fx(o['x0']), fz(o['z0']), fx(o['x1']), fz(o['z1'])], 'projectionM': float(np.clip(o.get('projectionM', .04), .01, .3)),
-                                               'material': material({'family': o.get('family', 'stone'), 'hex': o.get('hex')})})
+        shape = o.get('shape') if o.get('shape') in ('roundel', 'cartouche', 'garland', 'panel') else 'panel'
+        relief = {'rect': [fx(o['x0']), fz(o['z0']), fx(o['x1']), fz(o['z1'])],
+                  'projectionM': float(np.clip(o.get('projectionM', .04), .01, .3)),
+                  'shape': shape,
+                  'repeatCount': _ornament_count(o.get('repeatCount'), 1, 1, 20),
+                  'material': material({'family': o.get('family', 'stone'), 'hex': o.get('hex')})}
+        # Explicit semantic details refine the broad legacy shape. They remain
+        # optional so existing readings keep their established rendering.
+        if o.get('outerOutline') in ('circle', 'oval', 'pointed'):
+            relief['outerOutline'] = o['outerOutline']
+        if o.get('motif') in ('radial', 'rosette', 'unknown'):
+            relief['motif'] = o['motif']
+        if isinstance(o.get('cardinalFlourishes'), bool):
+            relief['cardinalFlourishes'] = o['cardinalFlourishes']
+        ring_count = o.get('ringCount')
+        if ring_count is not None and not isinstance(ring_count, bool) and isinstance(ring_count, (int, float)) and np.isfinite(ring_count):
+            relief['ringCount'] = _ornament_count(ring_count, 1, 1, 4)
+        curve_depth = o.get('curveDepth')
+        if curve_depth is not None and not isinstance(curve_depth, bool) and isinstance(curve_depth, (int, float)) and np.isfinite(curve_depth):
+            relief['curveDepth'] = float(np.clip(curve_depth, 0., 1.))
+        prof.setdefault('reliefs', []).append(relief)
     top = r.get('wallTopM') or H
     for p in r.get('piers') or []:
         prof['piers'].append({'x': fx(p['xM']), 'widthM': float(np.clip(p.get('widthM', .5), .1, 3.)), 'projectionM': float(np.clip(p.get('projectionM', .1), .02, 1.)),

@@ -36,11 +36,11 @@ def build(out, h=.005, mirror_to=None):
         rest = merge([rest, beyond])
         parts.setdefault('gap', []).append(band)
     # normals: smooth from the field on curved surfaces, split along creases (lamp and intake rims, lips, recesses)
-    g.add('body__paint', autosmooth(rest, R.body), 'paint')
+    g.add('body__paint', autosmooth(rest, R.body), 'paint', extras={'rearPlateMount': R.plate_mount()})
     for finish, meshes in parts.items():
         g.add('body__' + finish, autosmooth(merge(meshes), R.body), finish)
     # lenses: the original skin inside each lamp outline
-    for name, box, outline, finish in (('headlamp', ((1.45, .45, .45), (2.2, .85, .9)), R.lamp_outline, 'lens'),
+    for name, box, outline, finish in (('headlamp', ((1.20, .45, .45), (2.2, .95, .9)), R.lamp_outline, 'lens'),
                                         ('taillamp', ((-2.2, .62, .4), (-1.4, .9, .95)), R.tail_outline, 'tail_lens')):
         for sgn in (1, -1):
             lo, hi = np.array(box[0]), np.array(box[1])

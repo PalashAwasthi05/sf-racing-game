@@ -147,7 +147,7 @@ _SEC = np.array([
 _sec = [CubicSpline(_SEC[:, 0], _SEC[:, k], bc_type='natural', extrapolate=True) for k in range(1, 8)]
 
 # the underside is not seen: a monotone interpolant (no overshoot across the long flat floor)
-_bottom = PchipInterpolator(*np.array([[-2.2, .27], [-2.05, .24], [-1.9, .205], [-1.6, .175], [-1.45, .135], [1.5, .135], [1.8, .142], [2.05, .152], [2.26, .17]]).T, extrapolate=True)
+_bottom = PchipInterpolator(*np.array([[-2.2, .176], [-2.05, .172], [-1.9, .167], [-1.6, .16], [-1.45, .135], [1.5, .135], [1.8, .142], [2.05, .152], [2.26, .17]]).T, extrapolate=True)
 
 # Nose and tail: forward (rearward) extent at the centre by height, set back in plan.
 _nose = pchip([[.10, 2.15], [.14, 2.19], [.18, 2.232], [.25, 2.245], [.35, 2.240], [.45, 2.22], [.52, 2.19], [.57, 2.15], [.62, 2.10], [.70, 2.0], [.80, 1.85]])
@@ -173,7 +173,7 @@ def deck_dome(x, z):
     half = .37 - .05 * smoothstep((-1.15 - x) / .8)
     across = smoothstep((half - z) / .085)
     along = smoothstep((x + 2.02) / .12) * smoothstep((-1.07 - x) / .06)
-    return .019 * across * along
+    return .009 * across * along
 
 
 def _section_fields(x, y, z):
@@ -259,24 +259,24 @@ def cockpit(x, y, z):
 # ---- features cut into the shell ------------------------------------------------------------------------------------
 from shapes import Outline, catmull   # noqa: E402
 
-# Side intake behind the door, in side view (x, y): a slot leaning back at about 48 degrees.
-SIDE_INTAKE = Outline(catmull([(-.368, .318), (-.392, .298), (-.44, .305), (-.515, .345), (-.60, .42), (-.668, .50), (-.708, .575),
-                               (-.716, .628), (-.698, .657), (-.655, .664), (-.595, .662), (-.556, .648), (-.528, .608), (-.49, .532),
-                               (-.445, .445), (-.405, .375)], 8), (-.8, .2), (-.3, .75))
+# Side intake: a narrow, nearly upright duct whose upper end leans slightly aft.
+SIDE_INTAKE = Outline(catmull([(-.548, .324), (-.506, .332), (-.505, .371), (-.529, .454), (-.556, .547),
+                               (-.585, .638), (-.606, .676), (-.641, .687), (-.687, .677), (-.706, .646),
+                               (-.679, .553), (-.643, .451), (-.601, .362)], 8), (-.8, .2), (-.3, .75))
 
 
 def side_scoop(x, y, z):
-    """The door's rear lower quarter falls in toward the intake: a smooth dent in the side, deepest at the intake."""
-    # along and across the intake axis
-    ax, ay = -.74, .67                       # unit-ish direction of the slot axis (back and up)
-    n = np.hypot(ax, ay)
-    ax, ay = ax / n, ay / n
-    dx, dy = x - (-.36), y - .40
-    along = dx * ax + dy * ay
-    across = -dx * ay + dy * ax
-    g = np.exp(-(along / .20) ** 2 - (across / .13) ** 2)
-    ramp = smoothstep((x - .05) / (-.42 - .05))   # grows from the middle of the door to the intake
-    return .030 * g * ramp
+    """Broad concave door feed, returning to the rear haunch behind the duct.
+
+    Both press views show the shadow extending well forward of the opening: the
+    intake is the end of a channel, rather than an isolated hole in a flat door.
+    Keep the upper belt full and let the lower surface roll out into the sill.
+    """
+    feed = smoothstep((.61 - x) / .99)
+    haunch = smoothstep((x + .84) / .22)
+    centre = .442 + .035 * smoothstep((x + .50) / .90)
+    vertical = np.exp(-((y - centre) / .178) ** 4)
+    return .052 * feed * haunch * vertical
 
 
 def side_intake(x, y, z):
@@ -301,23 +301,32 @@ def front_intakes(x, y, z):
     return np.minimum(sidei, centre)
 
 
-# Headlamps: the lens takes the top of each wing's front. It is the region above the lamp's lower edge in side view and
-# inside its outline in front view.
-LAMP_SIDE = Outline(np.array([(1.44, .95), (1.515, .80), (1.545, .762), (1.61, .71), (1.71, .648), (1.81, .598), (1.90, .560),
-                              (1.98, .540), (2.10, .525), (2.25, .515), (2.25, .95)]), (1.3, .4), (2.35, 1.0))
-LAMP_FRONT = Outline(catmull([(.60, .765), (.71, .758), (.84, .745), (.96, .74), (1.0, .66), (.96, .56), (.80, .556), (.70, .552),
-                              (.58, .545), (.515, .548), (.508, .58), (.54, .67)], 8), (.4, .45), (1.1, .85))
+# The headlamp cover follows the wing skin. These plan coordinates were obtained
+# by back-projecting the near lens edge in P19_0916 through the wheel-registered
+# camera onto the wing. The long rear shoulder matters: a superellipse in plan
+# projected into a flat-bottomed rectangle from this low three-quarter view.
+HEADLAMP_PLAN = catmull([(1.918, .558), (1.768, .533), (1.599, .566),
+                       (1.425, .611), (1.350, .684), (1.356, .753),
+                       (1.469, .814), (1.612, .828), (1.755, .781),
+                       (1.861, .686), (1.912, .604)], 8)
+_HEADLAMP = Outline(HEADLAMP_PLAN, (1.2, .45), (2.05, .9))
 
 
 def lamp_outline(x, y, z):
-    return np.maximum(LAMP_SIDE(x, y), LAMP_FRONT(np.abs(z), y))
+    return np.maximum(_HEADLAMP(x, np.abs(z)), .565 - y)
 
 
 # Tail lamps: on the rear corners, from the band out round the corner along the haunch.
 # the lamps' top edge stays under the spoiler lip, so the lip keeps its thickness
-TAIL_SIDE = Outline(catmull([(-1.49, .764), (-1.60, .787), (-1.75, .805), (-1.90, .812), (-2.05, .806), (-2.20, .80), (-2.20, .68),
-                             (-2.05, .688), (-1.90, .695), (-1.75, .72), (-1.60, .745)], 6), (-2.3, .6), (-1.4, .9))
-TAIL_REAR = Outline(np.array([(.49, .776), (.60, .792), (.75, .806), (.95, .815), (.95, .685), (.75, .69), (.60, .705), (.49, .731)]), (.3, .6), (1.05, .9))
+# 914 wheel-registered image rays put the forward tip at x=-1.594,
+# y=.785, the rounded upper shoulder at (-1.724,.837), and the inner
+# rear tip at |z|=.546,y=.753. Both profiles limit the same wrapped lens.
+TAIL_SIDE = Outline(catmull([(-1.594, .785), (-1.652, .825), (-1.724, .837),
+                             (-1.875, .823), (-2.20, .790), (-2.20, .680),
+                             (-1.922, .699), (-1.747, .705), (-1.649, .729)], 8), (-2.3, .6), (-1.4, .9))
+TAIL_REAR = Outline(catmull([(.546, .753), (.597, .791), (.701, .823),
+                             (.811, .837), (.95, .837), (.95, .685),
+                             (.830, .704), (.701, .699), (.585, .704)], 8), (.3, .6), (1.05, .9))
 
 
 def tail_outline(x, y, z):
@@ -328,6 +337,12 @@ def body_base(x, y, z):
     s = shell(x, y, z)
     za = np.abs(z)
     s = s + side_scoop(x, y, z) * smoothstep((za - .62) / .16)
+    # Substantial painted sill below the dished door. Its upper fold rises into
+    # the intake's lower lip; the rounded lower bead carries through to the arches.
+    rocker = smoothstep((x + .83) / .16) * smoothstep((.86 - x) / .16)
+    fold_y = .266 + .023 * smoothstep((.15 - x) / .72)
+    s += rocker * smoothstep((za - .65) / .13) * (.013 * np.exp(-((y - fold_y) / .030) ** 2)
+                                                - .024 * np.exp(-((y - .207) / .039) ** 2))
     s = smax(s, -wheel_well(x, y, z, ARCH_FRONT), .012)
     s = smax(s, -wheel_well(x, y, z, ARCH_REAR), .012)
     s = smax(s, -cockpit(x, y, z), .03)
@@ -336,19 +351,48 @@ def body_base(x, y, z):
 
 # Rear: the band between the tail lamps sits under the spoiler lip; the diffuser is recessed into the bumper's lower
 # edge with an opening for each tailpipe; the lid has an air grille at the front of its raised centre.
-DIFFUSER = Outline(catmull([(0, .338), (.30, .336), (.46, .33), (.60, .31), (.665, .27), (.67, .12), (-.67, .12), (-.665, .27),
-                            (-.60, .31), (-.46, .33), (-.30, .336)], 8), (-.8, 0.), (.8, .45))
-TIP_Z, TIP_Y, TIP_R = .30, .232, .058
+# The black insert reaches up into the bumper with rounded corners. Its bottom wraps under
+# the tail rather than stopping at the rear skim of the undertray.
+# In the fitted 914 view the upper centre is y=.365-.370 and the
+# near lower shoulder is |z|=.673,y=.226; the insert does not climb the flank.
+DIFFUSER = Outline(catmull([(-.38, .370), (0, .365), (.38, .370), (.590, .355),
+                            (.635, .300), (.680, .235), (.695, .167), (.685, .105),
+                            (-.685, .105), (-.695, .167), (-.680, .235),
+                            (-.635, .300), (-.590, .355)], 8), (-.82, .05), (.82, .45))
+TIP_Z, TIP_Y, TIP_R = .340, .222, .065
+PLATE_Y, PLATE_SLOPE = .515, .12
+
+
+def plate_floor_x(y):
+    return -2.09 + PLATE_SLOPE * (y - PLATE_Y)
+
+
+def plate_mount():
+    return {'position': [plate_floor_x(PLATE_Y) - .003, PLATE_Y, 0.],
+            'normal': [-1., PLATE_SLOPE, 0.]}
+
+
+def plate_recess(x, y, z):
+    # A planar mounting land inside a flared stamping. The same plane locates the plate
+    # in the viewer, including on models exported with a different bumper overhang.
+    depth = x - plate_floor_x(y)
+    width = .284 - .16 * (y - PLATE_Y)
+    opening = box2(z, y - PLATE_Y, width, .103, .032) + .46 * depth
+    return smax(opening, depth, .014)
 
 
 def rear_recesses(x, y, z, s):
-    """Band, diffuser and tailpipe openings. Recess floors follow the skin s at a fixed depth, so no floor plane grazes
-    the curved bumper (a grazing plane leaves a dotted trail of dents)."""
     za = np.abs(z)
     band = np.maximum(np.maximum(np.abs(y - .7545) - .0262, za - .495), np.maximum(-(s + .014), x + 1.97))
-    diffuser = np.maximum(DIFFUSER(z, y), np.maximum(-(s + .028), x + 1.90))
-    tips = np.maximum(np.hypot(za - TIP_Z, y - TIP_Y) - TIP_R, x + 1.90)
-    return np.minimum(np.minimum(band, diffuser), tips)
+    edge = DIFFUSER(z, y)
+    # Leave a rolled 12 mm shoulder at the top of the insert and dish its face.
+    dish = .010 + .024 * smoothstep((-edge - .004) / .025)
+    # Recess along the rear-facing direction. Using distance to the entire solid
+    # also hollows out the adjoining undertray and leaves painted triangles under the insert.
+    floor_x = _tail(y) + _TAIL_PLAN(za) + dish
+    diffuser = np.maximum(edge, x - floor_x)
+    tips = np.maximum(np.hypot(za - TIP_Z, y - TIP_Y) - TIP_R, x + 1.86)
+    return np.minimum(np.minimum(band, plate_recess(x, y, z)), np.minimum(diffuser, tips))
 
 
 def deck_grille(x, y, z):
@@ -375,8 +419,8 @@ def skin(x, y, z):
 
 def body(x, y, z):
     s = skin(x, y, z)
-    # lamp housings: the lens area is sunk 60 mm (the lens itself is a separate surface on the original skin)
-    lamp = np.maximum(lamp_outline(x, y, z), -(s + .045))
+    # Allow depth for the forward-facing projector under the raked front cover.
+    lamp = np.maximum(lamp_outline(x, y, z), -(s + .145))
     s = smax(s, -lamp, .008)
     tail = np.maximum(tail_outline(x, y, z), -(s + .025))
     return smax(s, -tail, .008)
@@ -407,9 +451,9 @@ def _cabin(x, y, z):
 
 def _lower(x, y, z):
     """Underside, front splitter and rear diffuser."""
-    under = y - .15
+    under = np.minimum(y - .15, np.maximum(y - _bottom(x) - .007, x + 1.65))
     lip = np.maximum(y - .205, 1.85 - x)
-    diff = np.maximum(DIFFUSER(z, y) - .004, x + 1.93)
+    diff = np.maximum(DIFFUSER(z, y) - .003, x - (_tail(y) + _TAIL_PLAN(np.abs(z)) + .047))
     return np.minimum(under, np.minimum(lip, diff))
 
 
@@ -425,7 +469,10 @@ def _cover(x, y, z):
 
 
 def _reflectors(x, y, z):
-    return np.maximum(np.maximum(np.abs(y - .413) - .0165, .60 - np.abs(z)), x + 1.72)
+    # A narrow tapered lens set into each rear corner, following the wrap of the bumper.
+    za = np.abs(z)
+    profile = ((za - .705) / .126) ** 2 + ((y - (.445 - .032*(za - .705))) / .012) ** 2 - 1
+    return np.maximum(profile * .006, x + 1.77)
 
 
 def _intake_frame(x, y, z):
@@ -445,8 +492,8 @@ def _grille(x, y, z):
 # a centre line; GAP_LINES lists the centre-line distance fields so the mesh can be refined along them before cutting.
 
 GAP = .0021
-_DOOR = catmull([(.618, .872), (.628, .70), (.636, .50), (.640, .36), (.622, .292), (.57, .268), (.30, .262), (-.05, .266), (-.18, .282),
-                 (-.28, .318), (-.345, .37), (-.395, .43), (-.44, .505), (-.475, .585), (-.495, .665), (-.500, .745), (-.492, .815), (-.475, .88)],
+_DOOR = catmull([(.618, .872), (.628, .70), (.636, .50), (.640, .36), (.622, .292), (.57, .268), (.30, .262), (-.05, .266), (-.25, .277),
+                 (-.38, .299), (-.425, .34), (-.445, .41), (-.475, .505), (-.505, .585), (-.530, .665), (-.530, .745), (-.510, .815), (-.475, .88)],
                 6, closed=False)
 _BONNET = catmull([(.865, .598), (1.00, .604), (1.20, .594), (1.40, .574), (1.55, .545), (1.70, .505), (1.85, .478), (1.98, .438), (2.065, .36),
                    (2.11, .20), (2.125, 0), (2.11, -.20), (2.065, -.36), (1.98, -.438), (1.85, -.478), (1.70, -.505), (1.55, -.545),

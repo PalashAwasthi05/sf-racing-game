@@ -163,7 +163,7 @@ def main():
                       'bankWindows': cells, 'openings': len(r.get('openings') or []), 'bays': len(r.get('bays') or []), 'bands': len(r.get('bands') or []),
                       'fireEscapes': len(r.get('fireEscapes') or []), 'balconies': len(r.get('balconies') or []),
                       'zones': [{'zone': f"M{k}", 'read': m.get('hex'), 'photoMedianByView': [c[k] for c in colours]} for k, m in enumerate(r.get('materials') or [])],
-                      'warnings': warn, 'unmodelled': r.get('unmodelled'), 'image': out}))
+                      'warnings': warn, 'unmodelled': r.get('unmodelled'), 'readingCoverage': r.get('_sourceCoverage'), 'image': out}))
 
 
 if __name__ == '__main__':

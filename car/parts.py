@@ -16,13 +16,15 @@ from roadster import smin, smax
 def screen_point(u, v, lift=0.):
     """Point on the windscreen: u across (-1 right .. 1 left), v up the glass (0 cowl .. 1 header)."""
     xb, yb, zb = .862 - .07 * u * u, .853 + .02 * u * u, .665 * u
-    xt, yt, zt = .232 + .06 * u * u, 1.198 - .03 * u * u, .548 * u
+    # Two wheel-registered front/rear three-quarter photographs place the upper
+    # pillar aft of the base-outline fit. Preserve the measured scuttle hardpoints.
+    xt, yt, zt = .103 + .046 * u * u, 1.218 - .029 * u * u, .54 * u
     x = xb + (xt - xb) * v
     y = yb + (yt - yb) * v
     z = zb + (zt - zb) * v
     # the glass bows outward across its height; normal of the mean plane is (sin a, cos a) with a = rake
     bow = .016 * np.sin(np.pi * v) * (1 - .35 * u * u) + lift
-    nx, ny = .49, .872
+    nx, ny = .43, .903
     return x + bow * nx, y + bow * ny, z
 
 
@@ -32,7 +34,12 @@ def windscreen():
     parts.append(('screen', 'glass', glass))
     # black ceramic border round the edge (four strips)
     for ur, vr in (((-1, 1), (0, .05)), ((-1, 1), (.95, 1)), ((-1, -.955), (.05, .95)), ((.955, 1), (.05, .95))):
-        parts.append(('screen', 'black_gloss', patch(lambda u, v: screen_point(u, v, -.0005), 30 if ur[1] - ur[0] > 1 else 4, 4 if vr[1] - vr[0] < .1 else 24, ur, vr)))
+        border = patch(lambda u, v: screen_point(u, v, -.0005), 30 if ur[1] - ur[0] > 1 else 4, 4 if vr[1] - vr[0] < .1 else 24, ur, vr)
+        # Increasing u points to the passenger side, so the patch winds inward.
+        # The ceramic band is read through the glass from outside.
+        border.T = border.T[:, ::-1]
+        border.N = -border.N
+        parts.append(('screen', 'black_gloss', border))
     # frame: body-coloured pillars and header swept along the glass edge, standing just outside and above it
     edge = []
     for v in np.linspace(-.04, .97, 30):
@@ -52,7 +59,7 @@ def windscreen():
     # push the centreline outward in the glass plane, away from the glass centre
     centre = np.array(screen_point(0, .5))
     out = C - centre
-    nrm = np.array([.49, .872, 0])
+    nrm = np.array([.43, .903, 0])
     out -= (out @ nrm)[:, None] * nrm
     out /= np.linalg.norm(out, axis=1)[:, None]
     C = C + out * .016
@@ -62,35 +69,38 @@ def windscreen():
     # inner trim of the frame (black) and the interior mirror
     inner = sweep(C - out * .012 - nrm * .012, rounded_rect(.04, .016, .006, 4), lambda i, p: nrm, caps=True)
     parts.append(('frame', 'black_satin', inner))
-    mirror = lambda x, y, z: smin(box3(x, y, z, (.19, 1.12, 0), (.012, .032, .115), .01),
-                                   capsule(x, y, z, (.215, 1.17, 0), (.20, 1.15, 0), .009), .01)
-    V, T = mesh_solid(mirror, (.15, 1.07, -.14), (.25, 1.2, .14), .004, tolerance=.0002)
+    anchor = np.array(screen_point(0, .92, -.005))
+    centre = anchor + [-.075, -.048, 0.]
+    mirror = lambda x, y, z: smin(box3(x, y, z, centre, (.012, .032, .115), .01),
+                                   capsule(x, y, z, anchor, centre, .008), .008)
+    V, T = mesh_solid(mirror, centre - [.03, .05, .13], anchor + [.02, .02, .13], .004, tolerance=.0002)
     parts.append(('screen', 'black_satin', Mesh(V, T).with_normals(mirror)))
     return parts
 
 
 # ---- roll hoops and the cover behind them ---------------------------------------------------------------------------------
 def hoops():
+    """Trimmed rollover arches and the permeable wind deflector behind the headrests."""
     parts = []
-    for zc in (.345, -.345):
-        # an inverted U in a plane leaning back 8 degrees, rising from the deck
-        pts = []
-        for a in np.linspace(0, np.pi, 40):
-            zz = zc + .135 * np.cos(a)
-            yy = .955 + .205 * np.sin(a) ** .55
-            pts.append((-.655 - (yy - .955) * .14, yy, zz))
-        C = np.array(pts)
-        C = np.concatenate([C[:1] + np.array([0, -.06, 0]), C, C[-1:] + np.array([0, -.06, 0])])
-        prof = rounded_rect(.060, .105, .022, 6)
-        hoop = sweep(C, prof, lambda i, p: np.array([1., 0, 0]), caps=True)
-        parts.append(('hoop', 'hoop', hoop))
-        # black mesh filling the arch, set back from the hoop's front face
-        def fill(u, v, zc=zc):
-            a = np.pi * (u + 1) / 2
-            zz = zc + .115 * np.cos(a) * v
-            yy = .96 + (.185 * np.sin(a) ** .55) * v
-            return -.668 - (yy - .955) * .14, yy, zz
-        parts.append(('hoop', 'black_matte', patch(fill, 24, 8, (-1, 1), (0, 1), both_sides=True)))
+    # The outboard leg flares at the bottom; the crown and upper corners are much
+    # flatter than a round tubular hoop.
+    outline = np.array([[-.137, .924], [-.132, 1.034], [-.100, 1.118], [-.077, 1.151],
+                        [-.025, 1.169], [.048, 1.169], [.081, 1.155], [.119, 1.107], [.162, .931]])
+    for side in (-1., 1.):
+        cy = catmull(outline, 6, closed=False)
+        curve = np.column_stack((-.655 - .21 * (cy[:, 1] - .955), cy[:, 1], side * (.345 + cy[:, 0])))
+        arch = sweep(curve, rounded_rect(.045, .074, .018, 5), lambda i, p: np.array([1., 0., 0.]))
+        parts.append(('hoop', 'hoop', arch))
+
+    # A single sheet keeps intersecting strands out of the transparent draw list.
+    # The viewer applies a mipmapped weave in model-space metres.
+    def screen(u, v):
+        z = .503*u
+        crown = np.interp(np.abs(z), [0, .174, .215, .265, .32, .4, .46, .503],
+                          [1.078, 1.076, 1.025, 1.115, 1.15, 1.15, 1.09, .953])
+        y = .950 + (crown - .950)*v
+        return -.675 - .21*(y-.955), y, z
+    parts.append(('wind-deflector', 'glass', patch(screen, 80, 10)))
     return parts
 
 
@@ -166,17 +176,18 @@ def seat_solid(zc):
         dz = z - zc
         cush = box3(x, y, z, (.0, .345, zc), (.235, .045, .19), .035)
         u, w = _seat_frame(x, y)
-        back = box3(u, w, z, (.04, .30, zc), (.045, .30, .19), .035)
-        # the head section: waisted at the neck
-        head = smin(box3(u, w, z, (.04, .695, zc), (.04, .06, .125), .035),
-                    box3(u, w, z, (.04, .60, zc), (.036, .07, .095), .03), .035)     # waisted at the neck
-        head = smax(head, -box3(u, w, z, (.05, .625, zc), (.06, .016, .05), .012), .006)   # the belt slot
+        # The sport seat in the interior reference has a continuous upholstered
+        # shell. Its shoulders taper into a rounded crown in one surface.
+        shoulder = .184 + .031 * np.exp(-((w-.425)/.105)**2)
+        width = shoulder - .082 * smoothstep_((w-.44)/.26)
+        crown = w + .028 * (dz / np.maximum(width, .09))**2
+        lumbar = .023 * np.exp(-((w-.24)/.15)**2)
+        back = box3(u, crown, z, (.035+lumbar, .378, zc), (.05,.378,width), .044)
         bol = np.minimum(capsule(x, y, z, (.20, .415, zc + .175), (-.21, .40, zc + .175), .05),
                          capsule(x, y, z, (.20, .415, zc - .175), (-.21, .40, zc - .175), .05))
         bb = np.minimum(capsule(u, w, z, (.075, .06, zc + .17), (.075, .52, zc + .15), .055),
                         capsule(u, w, z, (.075, .06, zc - .17), (.075, .52, zc - .15), .055))
         s = smin(cush, back, .04)
-        s = smin(s, head, .03)
         s = smin(s, bol, .035)
         return smin(s, bb, .04)
     return f
@@ -330,10 +341,11 @@ def exhaust():
     r = R.TIP_R - .006
     prof = [(r - .006, -.20), (r - .006, -.004), (r - .003, 0), (r + .002, -.002), (r + .004, -.012), (r + .004, -.20)]
     inner = [(r - .018, -.20), (r - .018, -.012), (r - .010, -.006), (r - .006, -.004)]
-    # mouths flush with the diffuser face
-    mouth = float(R._tail(R.TIP_Y)) + .004
+    # The visible rolled mouths project behind the insert. Joint fitting of the
+    # two 914 mouth centres gives x=-2.101,y=.217,|z|=.337 (2.6 px residual).
+    mouth = float(R._tail(R.TIP_Y) + R._TAIL_PLAN(R.TIP_Z)) - .040
     for zs in (R.TIP_Z, -R.TIP_Z):
-        for pr, fin in ((prof, 'steel'), (inner, 'black_matte')):
+        for pr, fin in ((prof, 'black_gloss'), (inner, 'black_matte')):
             m = lathe(pr[::-1] if fin == 'black_matte' else pr, segments=48)
             # lathe axis is z: turn it to point along -x and move it to the tip position
             V = m.V.copy()
@@ -365,7 +377,16 @@ def grille_slats():
             s = b if s is None else np.minimum(s, b)
         return s
     V, T = mesh_solid(f, (-1.18, .93, -.26), (-1.07, .98, .26), .003, tolerance=.0002)
-    return [('grille', 'black_satin', Mesh(V, T).with_normals(f))]
+    parts = [('grille', 'black_satin', Mesh(V, T).with_normals(f))]
+    # Two horizontal vanes give the deep corner ducts visible structure.
+    import roadster as R
+    for yy in (.265, .315):
+        zz = np.linspace(.565, .785, 22)
+        P = np.stack([np.full_like(zz, 2.5), np.full_like(zz, yy), zz], 1)
+        C = _onto(R.skin, P, -.014, (-1, 0, 0))
+        vane = sweep(C, rounded_rect(.012, .007, .002, 3), lambda i, p: np.array([0, 1., 0]), caps=True)
+        parts.append(('grille', 'black_satin', both_sides_z(vane)))
+    return parts
 
 
 def _onto(f, P, depth=0., direction=None):
@@ -385,58 +406,104 @@ def _onto(f, P, depth=0., direction=None):
 
 
 def tail_leds():
-    """Four stacked LED bars in each tail lamp, following the lamp's taper, 12 mm behind the smoked lens."""
+    """Four tapered LED guides in each tail lamp, carried continuously around the rear corners."""
     import roadster as R
+    from mesher import normals, project
     parts = []
     for k in range(4):
-        y0 = .709 + k * .0155
-        zs = np.linspace(.53 + .018 * k, .86, 26)
-        # the bars run across the rear face and turn forward round the corner with the lamp
-        P = np.stack([np.full_like(zs, -2.4), np.full_like(zs, y0 + .012 * (zs - .53)), zs], 1)
-        # across the rear face cast forward; round the corner cast inward, so each point lands on its own part of the lens
-        C = np.array([_onto(R.skin, p[None], .012, (1, 0, -.9 * max(0, (p[2] - .70) / .16)))[0] for p in P])
-        prof = rounded_rect(.0045, .0045, .0015, 2)
+        y0 = .716 + k * .010
+        # The rear face narrows quickly at the corner: stop the rear run at the
+        # measured overlap, then follow the actual flank surface longitudinally.
+        zr = np.linspace(.59 + .004 * k, .80, 24)
+        yr = y0 + .008 * (zr - .59) / .21
+        rear_src = np.stack([np.full_like(zr, -2.4), yr, zr], 1)
+        rear = _onto(R.skin, rear_src, .008, (1, 0, 0))
+        xs = np.linspace(-1.82, -1.68, 24)
+        ys = y0 + .012 + .014 * (xs + 1.82) / .14
+        flank_src = np.stack([xs, ys, np.full_like(xs, 1.12)], 1)
+        flank = _onto(R.skin, flank_src, .008, (0, 0, -1))
+        # Close the small seam between the two measured views with a projected
+        # quadratic bridge. It stays on the same lens surface through the turn.
+        t = np.linspace(0, 1, 7)[1:-1]
+        bridge0 = rear[-1] * (1 - t[:, None]) + flank[0] * t[:, None]
+        bridge0[:, 0] -= .012 * np.sin(np.pi * t)
+        bridge = project(R.skin, bridge0, steps=5, limit=.01)
+        bridge -= .008 * normals(R.skin, bridge)
+        C = np.concatenate([rear, bridge, flank], axis=0)
+        prof = rounded_rect(.0028 - .00015 * k, .0025, .0010, 3)
         bar = sweep(C, prof, lambda i, p: np.array([0, 1., 0]), caps=True)
         parts.append(('taillamp', 'tail_led', both_sides_z(bar)))
     return parts
 
 
 def headlamp_internals():
-    """Projector module with a chrome bezel, four daytime lights in a square beside it, and a light bar along the foot."""
+    """Recessed silver reflector bowl, road-facing projector and four short LED guides."""
     import roadster as R
     from wheels import lathe
     parts = []
-    # the lamp's inner floor: 60 mm under the lens; modules stand on it facing forward
-    centre = _onto(R.skin, [[2.5, .655, .74]], .045, (-1, 0, 0))[0]
-    proj = lathe([(0, .012), (.026, .012), (.030, .004), (.030, -.05)], segments=40, sharp=(1,))
-    bezel = lathe([(.030, .010), (.040, .006), (.042, -.02)], segments=40)
-    for m, fin in ((proj, 'lamp_black'), (bezel, 'lamp_chrome')):
-        V = m.V.copy()
-        m.V = np.stack([centre[0] + V[:, 2], centre[1] + V[:, 1], centre[2] + V[:, 0]], 1)
-        m.N = np.stack([m.N[:, 2], m.N[:, 1], m.N[:, 0]], 1)
-        m.T = m.T[:, ::-1]
-        parts.append(('headlamp', fin, both_sides_z(m)))
-    # four points of light: small rounded squares on the inner half of the lamp
-    dots = []
-    for dy in (-.028, .028):
-        for dz in (-.028, .028):
-            p = _onto(R.skin, [[2.5, .655 + dy, .60 + dz]], .02, (-1, 0, 0))[0]
-            dots.append(p)
-    def dotf(x, y, z):
-        s = None
-        for p in dots:
-            b = box3(x, y, z, p, (.004, .009, .009), .003)
-            s = b if s is None else np.minimum(s, b)
-        return s
-    lo = np.min(dots, 0) - .03
-    hi = np.max(dots, 0) + .03
-    V, T = mesh_solid(dotf, lo, hi, .0015, tolerance=.0001)
-    parts.append(('headlamp', 'drl', both_sides_z(Mesh(V, T).with_normals(dotf))))
-    # light bar along the foot of the lamp
-    zs = np.linspace(.54, .83, 20)
-    P = np.stack([np.full_like(zs, 2.5), .572 + .03 * (zs - .54), zs], 1)
-    C = _onto(R.skin, P, .01, (-1, 0, 0))
-    parts.append(('headlamp', 'drl', both_sides_z(sweep(C, rounded_rect(.004, .006, .0015, 2), lambda i, p: np.array([0, 1., 0])))))
+    # A silver reflector fills the cover instead of leaving a black cavity around
+    # a floating projector. The rim and stepped bowl follow the actual wing skin.
+    plan = R.HEADLAMP_PLAN
+    pc = np.array([1.650, .687])
+    rings = []
+    for scale, depth in ((.91, .018), (.77, .028), (.44, .055)):
+        xz = pc + scale * (plan - pc)
+        rings.append(_onto(R.skin, np.column_stack((xz[:, 0], np.full(len(xz), 1.2), xz[:, 1])),
+                           depth, (0, -1, 0)))
+    count = len(plan)
+    floor = _onto(R.skin, [[pc[0], 1.2, pc[1]]], .065, (0, -1, 0))
+    vertices = np.concatenate([*rings, floor])
+    faces = []
+    for row in range(2):
+        for i in range(count):
+            j = (i + 1) % count
+            a, b, c, d = row*count+i, row*count+j, (row+1)*count+i, (row+1)*count+j
+            faces.extend([(a, b, c), (b, d, c)])
+    for i in range(count):
+        faces.append((2*count+i, 2*count+(i+1)%count, 3*count))
+    bowl = Mesh(vertices, np.array(faces))
+    # Supply the skin normals: this open reflector is viewed from above the wing.
+    from mesher import normals
+    bowl.N = normals(R.skin, vertices)
+    parts.append(('headlamp', 'lamp_chrome', both_sides_z(bowl)))
+    # A projector directly below the lens, with its axis following the wing surface.
+    from mesher import normals
+    surface = _onto(R.skin, [[1.613, 1.2, .786]], 0., (0, -1, 0))[0]
+    normal = normals(R.skin, surface[None])[0]
+    # The cover sweeps up the fender. The optical barrel below it faces the road.
+    axis = np.array([1., .12, .055])
+    axis /= np.linalg.norm(axis)
+    centre = surface - .058 * normal
+    ex = np.cross([0., 1., 0.], axis); ex /= np.linalg.norm(ex)
+    ey = np.cross(axis, ex)
+    # The lathe's visible front faces run from outside diameter toward the optical centre.
+    optics = [
+        ('lamp_black', [(.068, -.025), (.068, -.008), (.064, .002), (.051, .006), (.044, -.001)]),
+        ('lamp_chrome', [(.057, -.010), (.055, .003), (.049, .008), (.042, .004), (.038, -.005)]),
+        ('lamp_black', [(.039, -.010), (.035, -.018), (0, -.018)]),
+        ('lens', [(.038, -.004), (.035, .002), (.028, .009), (.018, .015), (0, .019)]),
+    ]
+    for finish, profile in optics:
+        optic = lathe(profile, segments=48)
+        v, n = optic.V, optic.N
+        optic.V = centre + v[:, 0, None]*ex + v[:, 1, None]*ey + v[:, 2, None]*axis
+        optic.N = n[:, 0, None]*ex + n[:, 1, None]*ey + n[:, 2, None]*axis
+        parts.append(('headlamp', finish, both_sides_z(optic)))
+    # Four short bars surround the projector in its optical plane. The old
+    # luminous cubes sat above the cover on the forward half and read as dots.
+    for horizontal in (-1, 1):
+        for vertical in (-1, 1):
+            anchor = centre + .007*axis + horizontal*.044*ex + vertical*.038*ey
+            guide = np.array([anchor + t*ex for t in np.linspace(-.010, .010, 5)])
+            parts.append(('headlamp', 'drl', both_sides_z(sweep(guide,
+                rounded_rect(.009, .007, .003, 4), lambda i, p: axis, caps=True))))
+    # A narrow running light sits inside the tinted bumper housing. Keep its reflector
+    # surround dark so that the entire aperture does not become one luminous rectangle.
+    z = np.linspace(.514, .790, 30)
+    y = .427 + .003 * np.sin(np.pi * (z - z[0]) / (z[-1]-z[0]))
+    guide = _onto(R.body_base, np.column_stack((np.full_like(z, 2.4), y, z)), .004, (-1, 0, 0))
+    parts.append(('running-light', 'drl', both_sides_z(sweep(guide, rounded_rect(.003, .0055, .001, 3),
+                                                            lambda i, p: np.array([0., 1., 0.])))))
     return parts
 
 
@@ -455,9 +522,9 @@ def wipers():
 def door_handles():
     import roadster as R
     # a pull handle pressed into the skin: about half its section stands proud of the door
-    a = _onto(R.skin, [[-.14, .712, 1.2]], .001, (0, 0, -1))[0]
-    b = _onto(R.skin, [[-.39, .716, 1.2]], .001, (0, 0, -1))[0]
-    f = lambda x, y, z: capsule(x, y, z, a, b, .0095)
+    a = _onto(R.skin, [[-.23, .725, 1.2]], -.002, (0, 0, -1))[0]
+    b = _onto(R.skin, [[-.405, .729, 1.2]], -.002, (0, 0, -1))[0]
+    f = lambda x, y, z: capsule(x, y, z, a, b, .012)
     V, T = mesh_solid(f, np.minimum(a, b) - .03, np.maximum(a, b) + .03, .002, tolerance=.0001)
     return [('handle', 'paint', both_sides_z(Mesh(V, T).with_normals(f)))]
 

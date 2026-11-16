@@ -21,8 +21,28 @@ def fingerprint(material):
 FAMILY_ALIAS={'brick':'brick_modular','terracotta':'terracotta_panel','timber':'timber_tan','panel':'panel_dark','render':'render_white'}
 
 def apply(scene_path, observations_path, output):
-    start=time.monotonic();scene=trimesh.load(scene_path,force='scene',process=False)
+    start=time.monotonic()
     observations=json.loads(Path(observations_path).read_text())['observations']
+    if observations==[]:
+        # No surface decision to apply. Re-serializing the entire scene used
+        # to change its binary identity, decode every image and hold three
+        # cities in memory even though no material could change.
+        import shutil,struct
+        output=Path(output);output.mkdir(parents=True,exist_ok=True);src=Path(scene_path)
+        with src.open('rb') as f:
+            magic,version,total,jlen,jtype=struct.unpack('<4sIIII',f.read(20))
+            if magic!=b'glTF' or version!=2 or total!=src.stat().st_size or jtype!=0x4e4f534a:raise ValueError('invalid GLB')
+            meshes=len(json.loads(f.read(jlen))['meshes'])
+        dst=output/'candidate.glb';shutil.copyfile(src,dst)
+        with src.open('rb') as f:before=hashlib.file_digest(f,'sha256').hexdigest()
+        with dst.open('rb') as f:after=hashlib.file_digest(f,'sha256').hexdigest()
+        if before!=after:raise RuntimeError('unedited scene copy differs')
+        report={'revision':'0.13','counts':{'retainedWithoutNewObservation':meshes},'meshesGeometryPreserved':meshes,
+            'newStructureAssets':0,'reusedScanStructures':0,'colorVariants':0,'records':[],'imageVerifiedAssignment':False,
+            'assetMethod':'byte-identical pass through; no observations supplied','inputSha256':before,'outputSha256':after,
+            'observationSha256':hashlib.sha256(Path(observations_path).read_bytes()).hexdigest(),'elapsedSeconds':round(time.monotonic()-start,2)}
+        (output/'report.json').write_text(json.dumps(report,indent=2));print(json.dumps(report));return
+    scene=trimesh.load(scene_path,force='scene',process=False)
     by_key={r['sourceMaterialFingerprint']:r for r in observations};cache={};fingerprints={};rows=[];counts=collections.Counter(); output=Path(output);output.mkdir(parents=True,exist_ok=True)
     by_name={r['sourceMaterialName']:r for r in observations}
     derived={}

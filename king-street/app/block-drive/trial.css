@@ -1,0 +1,15 @@
+.trial-header,.trial-controls,.trial-credit{position:absolute;z-index:2;color:#23343b}
+.trial-header{top:18px;left:20px;right:20px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;pointer-events:none}
+.trial-header>div,.trial-switch,.trial-controls{background:#f8fbfcf2;border:1px solid #ffffffbd;border-radius:10px;box-shadow:0 3px 18px #15262d24}
+.trial-header>div{padding:9px 15px}.trial-header h1{margin:0;font-size:21px;line-height:1.2;font-weight:600;letter-spacing:-.025em}.trial-header small{font-size:12px;color:#50656e}
+.trial-switch{display:flex;padding:4px;gap:2px;pointer-events:auto}.trial-switch button,.trial-controls button{font:inherit;font-size:13px;border-radius:6px;padding:7px 11px;cursor:pointer}
+.trial-switch button[aria-pressed=true]{background:#164d60;color:white}.trial-switch button:disabled{opacity:.62}
+.trial-controls{left:20px;bottom:45px;width:min(385px,calc(100vw - 40px));padding:10px 12px}
+.trial-actions,.trial-angles{display:flex;align-items:center;gap:4px}.trial-actions button,.trial-angles button{background:#e5edef;padding:5px 8px}.trial-actions button:hover,.trial-angles button:hover{background:#d2e3e8}
+.trial-actions button{white-space:nowrap}.trial-distance{margin-left:auto;white-space:nowrap;font-size:11px;font-variant-numeric:tabular-nums}.trial-controls input{width:100%;accent-color:#1d5d70;margin:8px 0;display:block;cursor:pointer}
+.trial-angles span{font-size:12px;color:#49626b;margin-right:5px}.trial-angles button{padding:3px 9px}
+.trial-credit{bottom:4px;left:8px;font-size:10px;background:#f8fafad9;padding:2px 5px;border-radius:4px}.trial-credit a{text-decoration:underline}
+@media(max-width:780px){.block-drive .car-hud{right:12px;bottom:40px;width:min(140px,27vw)}.block-drive .car-hud .car-help{display:none}.block-drive .car-tach{max-width:120px}}
+@media(max-width:550px){.trial-header{flex-direction:column;top:10px;left:10px;right:10px}.trial-controls{left:10px;bottom:25px;width:250px}.block-drive .car-hud{bottom:158px}.trial-credit{font-size:8px}}
+
+.trial-header small a{text-decoration:underline;text-underline-offset:2px}

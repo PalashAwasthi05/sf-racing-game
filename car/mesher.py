@@ -407,38 +407,34 @@ def dual_contour(F, axes, f, reg=.01):
     b = np.zeros((n, 3))
     acc = np.zeros((n, 3))
     cnt = np.zeros(n)
-    crossings, owners = [], []
+    # A cell has at most one crossing on a given edge. Accumulate its plane fit
+    # directly, in bounded batches; the analytic field has many intermediates.
     for a_, b_ in _EDGES:
         pa, pb = _CORNERS[a_], _CORNERS[b_]
-        fa = F[ci + pa[0], cj + pa[1], ck + pa[2]].astype(np.float64)
-        fb = F[ci + pb[0], cj + pb[1], ck + pb[2]].astype(np.float64)
-        cross = (fa < 0) != (fb < 0)
-        idx = np.nonzero(cross)[0]
-        # false position on the true field along the edge: the grid's linear estimate is off near features
-        A_ = origin[idx] + pa * h
-        B_ = origin[idx] + pb * h
-        va, vb = fa[idx], fb[idx]
-        for _ in range(4):
-            t = va / (va - vb)
-            p = A_ + t[:, None] * (B_ - A_)
-            vp = f(p[:, 0], p[:, 1], p[:, 2])
-            same = (vp < 0) == (va < 0)
-            A_ = np.where(same[:, None], p, A_)
-            va = np.where(same, vp, va)
-            B_ = np.where(same[:, None], B_, p)
-            vb = np.where(same, vb, vp)
-        t = va / (va - vb)
-        p = A_ + t[:, None] * (B_ - A_)
-        crossings.append(p)
-        owners.append(idx)
-    P = np.concatenate(crossings)
-    own = np.concatenate(owners)
-    N = normals(f, P)
-    np.add.at(acc, own, P)
-    np.add.at(cnt, own, 1)
+        fa = F[ci + pa[0], cj + pa[1], ck + pa[2]]
+        fb = F[ci + pb[0], cj + pb[1], ck + pb[2]]
+        hits = np.flatnonzero((fa < 0) != (fb < 0))
+        for start in range(0, len(hits), 32768):
+            idx = hits[start:start + 32768]
+            A_ = origin[idx] + pa * h
+            B_ = origin[idx] + pb * h
+            va, vb = fa[idx].astype(np.float64), fb[idx].astype(np.float64)
+            for _ in range(4):
+                t = va / (va - vb)
+                p = A_ + t[:, None] * (B_ - A_)
+                vp = f(p[:, 0], p[:, 1], p[:, 2])
+                same = (vp < 0) == (va < 0)
+                A_ = np.where(same[:, None], p, A_)
+                va = np.where(same, vp, va)
+                B_ = np.where(same[:, None], B_, p)
+                vb = np.where(same, vb, vp)
+            p = A_ + (va / (va - vb))[:, None] * (B_ - A_)
+            normal = normals(f, p)
+            acc[idx] += p
+            cnt[idx] += 1
+            A[idx] += normal[:, :, None] * normal[:, None, :]
+            b[idx] += normal * (normal * p).sum(1)[:, None]
     mass = acc / cnt[:, None]
-    np.add.at(A, own, N[:, :, None] * N[:, None, :])
-    np.add.at(b, own, N * (N * P).sum(1)[:, None])
     # regularise toward the mass point (flat regions have a rank-deficient system)
     lam = reg * np.maximum(cnt, 1)
     A += lam[:, None, None] * np.eye(3)
@@ -447,7 +443,7 @@ def dual_contour(F, axes, f, reg=.01):
     lo, hi = origin - .25 * h, origin + 1.25 * h
     bad = ((X < lo) | (X > hi)).any(1)
     X[bad] = mass[bad]
-    index = np.full((nx - 1, ny - 1, nz - 1), -1, np.int64)
+    index = np.full((nx - 1, ny - 1, nz - 1), -1, np.int32)
     index[ci, cj, ck] = np.arange(n)
     quads = []
     for axis in range(3):

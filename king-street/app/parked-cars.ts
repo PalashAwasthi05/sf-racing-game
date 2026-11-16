@@ -1,3 +1,4 @@
+import {loadParkedAtlasPair} from './parked-textures.ts';
 import * as THREE from 'three';
 import {mergeGeometries,toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -135,33 +136,37 @@ export type ParkedCars = {group: THREE.Group; materials: THREE.Material[]; refle
 
 // ---------------------------------------------------------------------------------------------------------------
 // Modelled cars (public/vehicle/parked/, baked by viewer-bench/bake from "Generic passenger car pack" by Comrade1280,
-// CC BY 4.0; see CREDITS.txt there). Ten unbranded cars, each in three levels of detail; one colour atlas whose paint is
+// CC BY 4.0; see CREDITS.txt there). Nine unbranded cars, each in four levels of detail; one colour atlas whose paint is
 // neutral grey under a paint mask (the surface atlas's red channel; green roughness, blue metalness), so every parked
 // car takes its own paint and its trim, lamps and tyres keep theirs. All cars are two draws: opaque parts and glass.
 
 /** Which modelled cars stand in for each parking body type (parking.py's types). */
 const MODELS: Record<string, string[]> = {sedan: ['sedan'], hatch: ['hatchback', 'compact'], suv: ['suv', 'offroad'], wagon: ['wagon'], pickup: ['pickup'], van: ['minivan'], coupe: ['coupe']};
-/** Camera distances (m) out to which the full and the middle level of detail are drawn. */
-export const PARKED_LOD = {full: 40, middle: 140};
+/** Camera distances (m) at a 58° vertical field of view. The fourth level keeps faraway parked cars visible. */
+export const PARKED_LOD = {full: 40, middle: 140, far: 220};
+const DEPTH_LOD = {full: 12, middle: 40, far: 140};
 
 type Kit = {geometry: Map<string, THREE.BufferGeometry>; colour: THREE.Texture; surface: THREE.Texture; paintGain: number};
 
-async function loadKit(base: string): Promise<Kit | null> {
+async function loadKit(base: string, renderer?: Pick<THREE.WebGLRenderer, 'extensions'>): Promise<Kit | null> {
   try {
-    const [bin, colour, surface] = await Promise.all([
+    const [bin, [colour, surface]] = await Promise.all([
       fetch(base + 'cars.bin.gz').then(async r => {
         if (!r.ok) throw new Error('cars.bin.gz ' + r.status);
         // a server may already have undone the gzip (Content-Encoding); decompress only what still starts with its magic
         const raw = await r.arrayBuffer(), b = new Uint8Array(raw, 0, 2);
         return b[0] === 0x1f && b[1] === 0x8b ? new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer() : raw;
       }),
-      new THREE.TextureLoader().loadAsync(base + 'atlas-colour.webp'), new THREE.TextureLoader().loadAsync(base + 'atlas-surface.webp')]);
+      loadParkedAtlasPair(base, renderer)]);
     const n = new Uint32Array(bin, 0, 1)[0], head = JSON.parse(new TextDecoder().decode(new Uint8Array(bin, 4, n))), start = 4 + n + (4 - n % 4) % 4;
     const geometry = new Map<string, THREE.BufferGeometry>();
     for (const m of head.meshes as {name: string; count: number; lo: number[]; span: number[]; position: number; normal: number; uv: number; index: number; indexCount: number}[]) {
-      const P = new Int16Array(bin, start + m.position, m.count * 3), N = new Int8Array(bin, start + m.normal, m.count * 4), pos = new Float32Array(m.count * 3), nrm = new Float32Array(m.count * 3);
-      for (let i = 0; i < m.count; i++) for (let j = 0; j < 3; j++) { pos[i * 3 + j] = m.lo[j] + (P[i * 3 + j] + 32768) / 65535 * m.span[j]; nrm[i * 3 + j] = N[i * 4 + j] / 127; }
-      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3));
+      const P = new Int16Array(bin, start + m.position, m.count * 3), N = new Int8Array(bin, start + m.normal, m.count * 4), pos = new Float32Array(m.count * 3), nrm = new Int8Array(m.count * 3);
+      for (let i = 0; i < m.count; i++) for (let j = 0; j < 3; j++) { pos[i * 3 + j] = m.lo[j] + (P[i * 3 + j] + 32768) / 65535 * m.span[j]; nrm[i * 3 + j] = N[i * 4 + j]; }
+      const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      // Keep the pack's signed-byte normals: normalized upload and attribute
+      // getters apply the same N/127 conversion without a float32 expansion.
+      g.setAttribute('normal', new THREE.BufferAttribute(nrm, 3, true));
       if (m.uv >= 0) g.setAttribute('uv', new THREE.BufferAttribute(new Uint16Array(bin, start + m.uv, m.count * 2), 2, true));
       else g.setAttribute('uv', new THREE.BufferAttribute(new Uint16Array(m.count * 2), 2, true));   // glass: one material, no texture
       g.setIndex(new THREE.BufferAttribute(new Uint16Array(bin, start + m.index, m.indexCount), 1)); geometry.set(m.name, g);
@@ -198,14 +203,30 @@ function modelledCars(data: {types: Kind[]; cars: ParkedCar[]}, kit: Kit): Parke
   const group = new THREE.Group(); group.name = 'parked_cars'; group.userData.layer = 'street_objects';
   const models = [...new Set(Object.values(MODELS).flat())].filter(m => kit.geometry.has(`${m}__opaque__0`));
   const make = (part: 'opaque' | 'glass', material: THREE.Material) => {
-    let verts = 0, index = 0; for (const m of models) for (let l = 0; l < 3; l++) { const g = kit.geometry.get(`${m}__${part}__${l}`)!; verts += g.attributes.position.count; index += g.index!.count; }
+    const levels = models.map(model => [0, 1, 2, 3].map(lod => kit.geometry.get(`${model}__${part}__${lod}`) ?? kit.geometry.get(`${model}__${part}__2`)!));
+    const geometries = [...new Set(levels.flat())];
+    const verts = geometries.reduce((n, g) => n + g.attributes.position.count, 0);
+    const index = geometries.reduce((n, g) => n + g.index!.count, 0);
     const mesh = new THREE.BatchedMesh(data.cars.length, verts, index, material); mesh.name = 'parked_cars__' + part; mesh.castShadow = true; mesh.receiveShadow = true; mesh.sortObjects = false;
-    const ids = new Map(models.map(m => [m, [0, 1, 2].map(l => mesh.addGeometry(kit.geometry.get(`${m}__${part}__${l}`)!))]));
+    const geometryIds = new Map(geometries.map(g => [g, mesh.addGeometry(g)]));
+    const ids = new Map(models.map((model, i) => [model, levels[i].map(g => geometryIds.get(g)!)]));
     group.add(mesh); return {mesh, ids};
   };
   const opaque = make('opaque', paint), glass = make('glass', glassMat);
   const matrix = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(0, 0, 0, 'YZX'), one = new THREE.Vector3(1, 1, 1), at = new THREE.Vector3(), colour = new THREE.Color();
-  const circles: number[] = [], placed: {x: number; z: number; model: string; o: number; g: number; lod: number}[] = [];
+  type Placed = {sphere: THREE.Sphere; visible: boolean; at: THREE.Vector3; opaqueIds: number[]; glassIds: number[]; o: number; g: number; lod: number};
+  type Cell = {cars: Placed[]; bounds: THREE.Box3; sphere: THREE.Sphere; cullBounds: THREE.Box3; cullSphere: THREE.Sphere; intersects: boolean; lod: number};
+  const cells = new Map<string, Cell>(), circles: number[] = [];
+  const modelBounds = new Map(models.map(model => {
+    const box = new THREE.Box3();
+    for (const part of ['opaque', 'glass']) for (let lod = 0; lod < 4; lod++) {
+      const geometry = kit.geometry.get(`${model}__${part}__${lod}`);
+      if (geometry) { if (!geometry.boundingBox) geometry.computeBoundingBox(); box.union(geometry.boundingBox!); }
+    }
+    return [model, box] as const;
+  }));
+  const placedBounds = new THREE.Box3();
+  let count = 0;
   data.cars.forEach((c, n) => {
     const options = (MODELS[c.type] ?? MODELS.sedan).filter(m => models.includes(m)); if (!options.length) return;
     // a stable pick among the stand-ins, from where the car stands
@@ -213,30 +234,100 @@ function modelledCars(data: {types: Kind[]; cars: ParkedCar[]}, kit: Kit): Parke
     e.set(0, c.heading, c.pitch); q.setFromEuler(e); at.set(c.x, c.z, -c.y); matrix.compose(at, q, one);
     const o = opaque.mesh.addInstance(opaque.ids.get(model)![2]), g = glass.mesh.addInstance(glass.ids.get(model)![2]);
     opaque.mesh.setMatrixAt(o, matrix); glass.mesh.setMatrixAt(g, matrix); opaque.mesh.setColorAt(o, colour.set(c.paint));
-    placed.push({x: c.x, z: -c.y, model, o, g, lod: 2});
+    const key = Math.floor(at.x / 80) + ',' + Math.floor(at.z / 80);
+    let cell = cells.get(key);
+    if (!cell) { cell = {cars: [], bounds: new THREE.Box3(), sphere: new THREE.Sphere(), cullBounds: new THREE.Box3(), cullSphere: new THREE.Sphere(), intersects: true, lod: 2}; cells.set(key, cell); }
+    placedBounds.copy(modelBounds.get(model)!).applyMatrix4(matrix);
+    cell.cullBounds.union(placedBounds);
+    cell.cars.push({sphere: placedBounds.getBoundingSphere(new THREE.Sphere()), visible: true, at: at.clone(), opaqueIds: opaque.ids.get(model)!, glassIds: glass.ids.get(model)!, o, g, lod: 2});
+    cell.bounds.expandByPoint(at);
+    count++;
     const k = data.types.find(t => t.name === c.type)!, r = k.width / 2, ux = Math.cos(c.heading), uz = -Math.sin(c.heading);
     for (const f of [-1, 0, 1]) { const d = f * (k.length / 2 - r); circles.push(c.x + ux * d, -c.y + uz * d, r); }
   });
-  // levels of detail by distance from the viewing camera, refreshed when it has moved a metre (the shadow passes use
-  // orthographic cameras and leave them alone)
-  // (BatchedMesh draws its culled list from its own onBeforeRender, so that runs after this)
-  const last = new THREE.Vector3(Infinity, 0, 0), batchBefore = opaque.mesh.onBeforeRender.bind(opaque.mesh);
-  opaque.mesh.onBeforeRender = (renderer, scene, camera, geometry, material, group) => { updateLod(camera); batchBefore(renderer, scene, camera, geometry, material, group); };
-  const updateLod = (camera: THREE.Camera) => {
-    if (!(camera as THREE.PerspectiveCamera).isPerspectiveCamera || camera.position.distanceToSquared(last) < 1) return;
-    last.copy(camera.position); const full = PARKED_LOD.full ** 2, middle = PARKED_LOD.middle ** 2;
-    for (const p of placed) {
-      const d = (p.x - last.x) ** 2 + (p.z - last.z) ** 2, lod = d < full ? 0 : d < middle ? 1 : 2;
-      if (lod !== p.lod) { p.lod = lod; opaque.mesh.setGeometryIdAt(p.o, opaque.ids.get(p.model)![lod]); glass.mesh.setGeometryIdAt(p.g, glass.ids.get(p.model)![lod]); }
+  // Both materials share the selection. Cells entirely in the same distance band need no per-car checks
+  // until the camera reaches a band boundary. Three still frustum-culls each car in each shadow cascade.
+  for (const cell of cells.values()) { cell.bounds.getBoundingSphere(cell.sphere); cell.cullBounds.getBoundingSphere(cell.cullSphere); }
+  // Static world bounds let both materials share one spatial cull per camera.
+  // Native batching still builds draw ranges from per-instance visibility.
+  opaque.mesh.perObjectFrustumCulled = glass.mesh.perObjectFrustumCulled = false;
+  const frustum = new THREE.Frustum(), clip = new THREE.Matrix4(), previousClip = new THREE.Matrix4();
+  let previousCamera: THREE.Camera | null = null;
+  const cullStats = {passes: 0, cells: 0, cars: 0};
+  group.userData.culling = cullStats;
+  function cull(camera: THREE.Camera) {
+    clip.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    if (previousCamera === camera && clip.equals(previousClip)) return;
+    previousCamera = camera; previousClip.copy(clip);
+    frustum.setFromProjectionMatrix(clip, camera.coordinateSystem, camera.reversedDepth);
+    cullStats.passes++; cullStats.cells = cells.size; cullStats.cars = 0;
+    for (const cell of cells.values()) {
+      const intersects = frustum.intersectsSphere(cell.cullSphere);
+      if (!intersects && !cell.intersects) continue;
+      cell.intersects = intersects;
+      for (const p of cell.cars) {
+        if (intersects) cullStats.cars++;
+        const visible = intersects && frustum.intersectsSphere(p.sphere);
+        if (visible === p.visible) continue;
+        p.visible = visible;
+        opaque.mesh.setVisibleAt(p.o, visible); glass.mesh.setVisibleAt(p.g, visible);
+      }
     }
-  };
+  }
+  const last = new THREE.Vector3(Infinity, 0, 0), eye = new THREE.Vector3();
+  let lastDepth = false, lastFov = 0, lastHeightScale = 1;
+  const viewport = new THREE.Vector4();
+  function selectLod(camera: THREE.Camera, depth: boolean, renderer: THREE.WebGLRenderer) {
+    const view = camera as THREE.PerspectiveCamera;
+    if (!view.isPerspectiveCamera) return;
+    eye.setFromMatrixPosition(view.matrixWorld);
+    const fov = view.getEffectiveFOV();
+    // Reflection faces cannot resolve full-view detail. Preserve beauty/capture
+    // thresholds at 512px and above; reduce only small auxiliary target detail.
+    const heightScale = !depth && renderer.getCurrentViewport ? Math.min(1, renderer.getCurrentViewport(viewport).w / 512) : 1;
+    if (depth === lastDepth && fov === lastFov && heightScale === lastHeightScale && last.distanceToSquared(eye) < 1) return;
+    last.copy(eye); lastDepth = depth; lastFov = fov; lastHeightScale = heightScale;
+    const scale = Math.tan(THREE.MathUtils.degToRad(29)) / Math.tan(THREE.MathUtils.degToRad(fov * .5)) * heightScale;
+    const limits = depth ? DEPTH_LOD : PARKED_LOD;
+    const full = limits.full * scale, middle = limits.middle * scale, far = limits.far * scale;
+    const level = (d: number) => d < full ? 0 : d < middle ? 1 : d < far ? 2 : 3;
+    for (const cell of cells.values()) {
+      const distance = eye.distanceTo(cell.sphere.center);
+      const nearLevel = level(distance - cell.sphere.radius), farLevel = level(distance + cell.sphere.radius);
+      const uniform = nearLevel === farLevel ? nearLevel : -1;
+      if (uniform >= 0 && cell.lod === uniform) continue;
+      cell.lod = uniform;
+      for (const p of cell.cars) {
+        const lod = uniform >= 0 ? uniform : level(p.at.distanceTo(eye));
+        if (p.lod === lod) continue;
+        p.lod = lod;
+        opaque.mesh.setGeometryIdAt(p.o, p.opaqueIds[lod]);
+        glass.mesh.setGeometryIdAt(p.g, p.glassIds[lod]);
+      }
+    }
+  }
+  // Use the observer's distance for shadow detail, and the light's frustum for culling. The scene and
+  // ambient-occlusion passes can arrive in either material order after any number of shadow passes.
+  for (const mesh of [opaque.mesh, glass.mesh]) {
+    const draw = mesh.onBeforeRender.bind(mesh);
+    mesh.onBeforeRender = (renderer, scene, camera, geometry, material, group) => {
+      selectLod(camera, !!scene.overrideMaterial, renderer);
+      cull(camera);
+      draw(renderer, scene, camera, geometry, material, group);
+    };
+    mesh.onBeforeShadow = (renderer, scene, camera, lightCamera, geometry, material, group) => {
+      selectLod(camera, true, renderer);
+      cull(lightCamera);
+      draw(renderer, scene, lightCamera, geometry, material, group);
+    };
+  }
   group.updateMatrixWorld(true); group.traverse(o => { o.matrixAutoUpdate = false; });
-  return {group, materials: [paint, glassMat], reflective: [paint, glassMat], circles, count: placed.length};
+  return {group, materials: [paint, glassMat], reflective: [paint, glassMat], circles, count};
 }
 
 /** The parked cars of a world, or null when it has none. Coordinates are the world's (x east, y north, z up). */
-export async function loadParkedCars(url: string, models = '/vehicle/parked/'): Promise<ParkedCars | null> {
-  const [data, kit] = await Promise.all([fetch(url, {cache: 'no-cache'}).then(r => r.ok ? r.json() as Promise<{types: Kind[]; cars: ParkedCar[]}> : null).catch(() => null), models ? loadKit(models) : Promise.resolve(null)]);
+export async function loadParkedCars(url: string, models = '/vehicle/parked/', renderer?: Pick<THREE.WebGLRenderer, 'extensions'>): Promise<ParkedCars | null> {
+  const [data, kit] = await Promise.all([fetch(url, {cache: 'no-cache'}).then(r => r.ok ? r.json() as Promise<{types: Kind[]; cars: ParkedCar[]}> : null).catch(() => null), models ? loadKit(models, renderer) : Promise.resolve(null)]);
   if (!data || !data.cars?.length) return null;
   if (kit) return modelledCars(data, kit);
   const materials = {

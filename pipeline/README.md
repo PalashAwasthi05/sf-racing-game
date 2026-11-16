@@ -64,3 +64,58 @@ Road surfaces use densified triangulations against a common terrain interpolatio
 The source adapters remain configured for San Francisco; second-city ingestion is not validated. A Mapillary metadata adapter is supplied but has not been run with credentials. Dense automatic image extraction, calibrated multi-view depth, exact materials, sculpted ornament, collision, instancing/HLOD and independent street-view accuracy validation remain unfinished.
 
 The interchange GLB uses meters, X east / Y up / Z south and standard PBR materials. CC0 material scans include provenance and physical scales under `work/material-assets`; they are examples, not captures of these buildings. Image references are not embedded as facade textures. The browser adds raster sky/sun lighting, local shadows, GTAO and tone mapping; these renderer effects are not baked into the GLB. Four-MiB gzip parts are transfer chunks, not spatial streaming.
+
+## Reconstruction contract: evidence owns parts, parts own surfaces
+
+The reconstruction unit is a physical part and its surfaces, not one uniform
+building style. A source reading is a measurement in a particular camera and
+wall frame; it is not permission to repeat that layout on every nearby wall.
+
+1. **Preserve the measurement frame.** Record source image hashes, capture date,
+   camera placement, gravity correction and the exact crop transform. A newer
+   image can supersede an older observation only for the region it actually sees.
+   A gravity correction does not validate camera position. Changes to a frame
+   invalidate dependent metric coordinates until they are transformed or reread.
+2. **Resolve ownership before drawing.** Repeated observations of one physical
+   window, bay or roof edge must resolve to one host. Use source-space agreement,
+   visibility and independent views; shared panorama identity alone is not enough.
+   Nearby parallel planes are not interchangeable. Keep genuine setbacks and the
+   nonoverlapping portions of partial readings. Ambiguity remains explicit.
+3. **Use independently measured part extents.** A bay can rise above a lower main
+   roof. A loggia removes an owned wall volume and needs its back, returns, floor
+   and soffit. A door leaf, its casing, glazing, recess and access route are separate
+   parts. A decorative crown does not change a window's aperture shape. Do not
+   change an entire wall height to accommodate one projecting part.
+4. **Reconstruct roof topology before detail.** Fit locally supported planes,
+   recover their measured intersections, preserve real steps and courtyard holes,
+   then attach dormers and other observed parts. A bounded face recovered from
+   independent photo rays can complement sparse nadir returns; propagate corner
+   uncertainty and reject ill-conditioned triangulation. Clip a host only inside
+   a complete replacement part. Never invent a whole-building pitch from a small
+   visible fragment or regularize real height discontinuities into ramps.
+5. **Separate structure, pigment and wear.** Select or synthesize a material by
+   observed substrate, joint/bond pattern, physical module and optical finish.
+   Reuse its maps for color variants. Create a new structure only when an existing
+   structure cannot represent the observation; unknown module is not a measured
+   module. A cavity inherits its local facade zone unless independently observed.
+   Do not let procedural wear or a large-radius shading approximation repaint the
+   source-selected material. Billboards and literal legible text require their own
+   observations; a facade material classification must not absorb them.
+6. **Check the actual emitted scene.** Preserve normals, UV phase, aperture
+   boundaries and material identity through clipping, merging and export. Verify
+   both front-face visibility and opaque support behind openings. A passing
+   topology test does not establish photographic likeness. Compare source-matched
+   and held-out cameras, then drive the complete world; isolate lighting/material
+   effects when diagnosing an anomaly rather than masking it with extra geometry.
+7. **Regenerate by dependency, then integrate.** Cache readings and reusable
+   material structures by input and rule hashes. Rebuild affected parts to test a
+   rule, then regenerate the full area after substantial rule changes. Freeze
+   generation rules during a build and retain exact input hashes. Do not present
+   an old full-area build as the newly reviewed isolated candidate.
+
+Track acquired, aligned, read, compiled, rendered and visually verified coverage
+separately. Suppressing an uncertain feature does not finish its reconstruction.
+An unresolved visible feature stays in the work queue. Rules contain no geographic
+identities; external evidence uses identities only to join measurements to output.
+The automated steps are implemented incrementally: this contract is not a claim
+that source completeness, camera position or visual fidelity has been achieved.

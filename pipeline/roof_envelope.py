@@ -72,7 +72,7 @@ def base_level(rr,known,step,footprint_area,quantile=.15,band_m=1.5,minimum_shar
 PITCH_SLOPE,PITCH_MIN_AREA_M2=.15,25.
 
 
-def continuous_patches(footprint,points,step,min_slope=.015,min_area_m2=25.,min_rise_m=.6):
+def continuous_patches(footprint,points,step,min_slope=.015,min_area_m2=25.,min_rise_m=.6,refine=False):
     """Tilted roof planes the fit supports. The thresholds come from the area config's LiDAR role: a drainage
     fall of a percent or two is a flat roof, and splitting it into separately tilted planes painted the roof
     in irregular patches."""
@@ -89,6 +89,15 @@ def continuous_patches(footprint,points,step,min_slope=.015,min_area_m2=25.,min_
             xy=np.asarray(g.exterior.coords);z=evaluate(p['model'],xy)
             if z.max()-z.min()<min_rise_m:continue
             accepted.append({**p,'geometry':g})
+    # A coarse cell can straddle two small roof faces, eliminating their interior
+    # validation samples. Retry at half scale without relaxing any error/support
+    # thresholds; only the independently validated finer patches are installed.
+    if not accepted and refine and step > .75:
+        finer, detail = continuous_patches(footprint, points, max(.75, step / 2),
+                                          min_slope, min_area_m2, min_rise_m, False)
+        if finer:
+            return finer, {**detail, 'samplingCellM': max(.75, step / 2),
+                           'coarseAttempt': report, 'refinedSampling': True}
     return join_ridges(accepted,points),report
 
 
@@ -310,3 +319,23 @@ def side_materials(mesh,records,default):
             if abs(float(d@n))<=.6 and abs(float(d@t))<=half:key=mat;break
         out.setdefault(key,[]).append(i)
     return out
+
+
+def supported_eave_base(footprint, patches, base):
+    """Lower an inferred base only at an exterior edge reached by a validated slope.
+
+    Interior roof equipment cannot lower the perimeter walls. The cap and wall
+    compiler then share this level, rather than a roof-height percentile hiding
+    a measured slope behind an extra storey of wall.
+    """
+    from shapely import segmentize
+    for patch in patches:
+        if not any(np.linalg.norm(c[:2]) >= PITCH_SLOPE for c in patch['model']['planes']):
+            continue
+        edge = footprint.exterior.intersection(patch['geometry'].buffer(.15)) if footprint.geom_type == 'Polygon' else footprint.boundary.intersection(patch['geometry'].buffer(.15))
+        if edge.length < 3.: continue
+        lines = [edge] if edge.geom_type == 'LineString' else list(getattr(edge, 'geoms', []))
+        xy = [np.asarray(segmentize(line, .5).coords) for line in lines if line.geom_type == 'LineString']
+        if xy:
+            base = min(base, float(np.quantile(evaluate(patch['model'], np.concatenate(xy)), .1)))
+    return base

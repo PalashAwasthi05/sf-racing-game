@@ -301,13 +301,18 @@ def observed_colour(mat,obs,face):
  variant); designed flat colours (glass, metal, dark panels) stay, and so does the designed colour when the
  photographs do not agree. A single photograph recoloured a brick wall's upper storeys olive from shaded foliage."""
  from . import material_recipes
- base=mat.split('#')[0]
- if not obs or face.is_empty or face.area<1. or base not in material_recipes.RECIPES:return mat
+ observed=material_recipes.parse_observed_key(mat)
+ base=observed['base'] if observed else mat.split('#')[0]
+ if not obs or face.is_empty or face.area<1. or (base not in material_recipes.RECIPES and observed is None):return mat
  photos=obs.get('photos') or ([{'cells':obs['cells']}] if obs.get('cells') else [])
  cols=[c for c in (_face_colour(ph.get('cells',[]),face) for ph in photos) if c is not None]
  med=agreed_colour(cols) if cols else None
  if med is None:return mat
- return base+'#%02x%02x%02x'%tuple(int(max(0,min(255,round(v)))) for v in med)
+ hx='#%02x%02x%02x'%tuple(int(max(0,min(255,round(v)))) for v in med)
+ if observed:
+  return material_recipes.make_observed_key(base,hx,family=observed['family'],pattern=observed['pattern'],
+                                              finish=observed['finish'],moduleM=observed['moduleM'])
+ return base+hx
 
 
 def compile(ctx,c,z0,resolved):

@@ -59,14 +59,22 @@ export function buildFacadeMap(windows: GlazedWindow[], reach: number) {
   // start and count in the list, the list itself
   const colRows = Math.max(1, Math.ceil(2 * runs.length / COLS)), col = new Float32Array(COLS * colRows * 4);
   runs.forEach((r, i) => { col.set([r.ax, r.az, r.off, r.y0], 8 * i); col.set([r.u0, r.u1, r.pitch, r.count + Math.min(r.h, 9.9) / 10], 8 * i + 4); });
-  const cellData = new Float32Array(cells * cells * 4), flat: number[] = [];
-  for (const [c, l] of lists) { cellData[4 * c] = flat.length; cellData[4 * c + 1] = l.length; flat.push(...l); }
+  let minX = cells, minZ = cells, maxX = -1, maxZ = -1;
+  for (const c of lists.keys()) { const x = c % cells, z = Math.floor(c / cells); minX = Math.min(minX, x); minZ = Math.min(minZ, z); maxX = Math.max(maxX, x); maxZ = Math.max(maxZ, z); }
+  const cellWidth = maxX < 0 ? 1 : maxX - minX + 1, cellHeight = maxZ < 0 ? 1 : maxZ - minZ + 1;
+  if (maxX < 0) { minX = 0; minZ = 0; }
+  const cellData = new Float32Array(cellWidth * cellHeight * 2), flat: number[] = [];
+  for (const [c, l] of lists) {
+    const x = c % cells - minX, z = Math.floor(c / cells) - minZ, at = 2 * (z * cellWidth + x);
+    cellData[at] = flat.length; cellData[at + 1] = l.length; flat.push(...l);
+  }
   const listRows = Math.max(1, Math.ceil(flat.length / COLS)), list = new Float32Array(COLS * listRows); list.set(flat);
   const tex = (data: Float32Array, w: number, h: number, format: THREE.PixelFormat) => { const t = new THREE.DataTexture(data, w, h, format, THREE.FloatType); t.minFilter = t.magFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true; return t; };
-  const colTex = tex(col, COLS, colRows, THREE.RGBAFormat), cellTex = tex(cellData, cells, cells, THREE.RGBAFormat), listTex = tex(list, COLS, listRows, THREE.RedFormat);
+  const colTex = tex(col, COLS, colRows, THREE.RGBAFormat), cellTex = tex(cellData, cellWidth, cellHeight, THREE.RGFormat), listTex = tex(list, COLS, listRows, THREE.RedFormat);
   let longest = 0; for (const l of lists.values()) longest = Math.max(longest, l.length);
   return {
     textures: {uWmCol: colTex, uWmCell: cellTex, uWmList: listTex}, grid: new THREE.Vector4(R, CELL, cells, runs.length ? 1 : 0),
+    cellOffset: new THREE.Vector2(minX, minZ),
     stats: {windows: n, runs: runs.length, single: runs.filter(r => r.count === 1).length, stacked: runs.filter(r => r.count > 1).reduce((a, r) => a + r.count, 0), cells: lists.size, entries: flat.length, longest},
     dispose() { colTex.dispose(); cellTex.dispose(); listTex.dispose(); },
   };
@@ -76,9 +84,10 @@ export type FacadeMap = ReturnType<typeof buildFacadeMap>;
 /** GLSL: the window columns in front of which a point of wall stands (WebGL2, texelFetch). wmEntries(P) gives the start
  *  and count of its cell's list; wmRun(i) the run's two texels. */
 export const FACADEMAP_GLSL = /* glsl */`
-uniform sampler2D uWmCol;uniform sampler2D uWmCell;uniform sampler2D uWmList;uniform vec4 uWmGrid;
+uniform sampler2D uWmCol;uniform sampler2D uWmCell;uniform sampler2D uWmList;uniform vec4 uWmGrid;uniform ivec2 uWmCellOffset;
 ivec2 wmEntries(vec3 P){if(uWmGrid.w<.5)return ivec2(0);ivec2 c=ivec2(floor((P.xz+uWmGrid.x)/uWmGrid.y));int N=int(uWmGrid.z);
- if(c.x<0||c.y<0||c.x>=N||c.y>=N)return ivec2(0);vec4 e=texelFetch(uWmCell,c,0);return ivec2(int(e.x),int(e.y));}
+ if(c.x<0||c.y<0||c.x>=N||c.y>=N)return ivec2(0);c-=uWmCellOffset;ivec2 size=textureSize(uWmCell,0);
+ if(c.x<0||c.y<0||c.x>=size.x||c.y>=size.y)return ivec2(0);vec2 e=texelFetch(uWmCell,c,0).rg;return ivec2(int(e.x),int(e.y));}
 int wmListAt(int e){return int(texelFetch(uWmList,ivec2(e%${COLS},e/${COLS}),0).r);}
 vec4 wmRunA(int i){int t=2*i;return texelFetch(uWmCol,ivec2(t%${COLS},t/${COLS}),0);}
 vec4 wmRunB(int i){int t=2*i+1;return texelFetch(uWmCol,ivec2(t%${COLS},t/${COLS}),0);}

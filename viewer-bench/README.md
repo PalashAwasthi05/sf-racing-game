@@ -1,5 +1,59 @@
 # Viewer benchmark
 
+## Full neighborhood at native 1080p
+
+Run the built viewer on loopback. The circuit runner uses the installed Chrome executable in windowless mode through its debugging protocol. It verifies 60 Hz on an empty tab before loading the full map, then locks scene resolution at 1920 × 1080. The fixture steers the normal driving physics through four turns.
+
+```sh
+python3 guard_memory.py --mib 2816 --reserve-mib 3584 --timeout 135 \
+  --report /tmp/circuit-memory.json node neighborhood-circuit.mjs \
+  'http://127.0.0.1:3001/?drive=1&fps=1' \
+  ../../agent-handoff/reviews/2026-11-12/full-map-1080/route.json /tmp/circuit.json
+```
+
+The report includes untrimmed animation intervals, distance, maximum deviation from the route, tile readiness, and the exact scene and output resolution check for every frame. The browser closes automatically. The watchdog covers the browser and driver. The already-running static server is outside its process tree.
+
+Set `SF_CIRCUIT_NATIVE_DEFAULT=1` to exercise normal player settings and still check native resolution every frame. Set `SF_CIRCUIT_PRESENT=1` for compositor reports. Add `SF_CIRCUIT_PRESENT_MODE=display` to measure displayed intervals with an 8 MiB trace. Use `SF_CIRCUIT_GPU=1` for sampled GPU and CPU timings by pass and geometry memory snapshots before and after driving. ANGLE Metal timer queries can include queue delays. Use the presentation trace to evaluate delivered frames. The fixture checks the 20 crossing IDs in sequence. Partial reports preserve progress when a cutoff stops the drive.
+
+On a busy Mac, add `--wait-for-green 3600` before `--report`. Only the small watchdog runs while waiting. Eight consecutive seconds of normal pressure and the configured reserve must be available before the browser launches. The normal memory limits apply immediately after launch.
+
+## Memory-limited block drive on macOS
+
+Build the local client first with `npm run build:local` in `../king-street`. Set `PLAYWRIGHT_FROM` to a local project containing Playwright and optionally set `CHROME_EXECUTABLE` to a Chrome binary. From this directory run:
+
+```sh
+BLOCK_WIDTH=1920 python3 guard_memory.py --mib 2816 --reserve-mib 3584 --timeout 75 --report /tmp/world-memory.json node block-performance.mjs ../king-street /tmp/world-drive.json
+```
+
+The benchmark serves the prebuilt game on a temporary loopback port, opens a private Chrome process and checks its requested model chunks against the scoped block manifest. The watchdog sums macOS physical footprints for the test tree including the server and browser helpers. It stops the job on its workload limit, warning memory pressure, low free-plus-inactive pages or timeout. Sampled usage can overshoot between polls. `BLOCK_ENTRY=comparison` verifies the baseline comparison page and rejects optional photo/splat downloads. The launcher is for isolated benchmarks. It cannot enforce a limit on the user's existing browser.
+
+## Guarded streaming drive
+
+Set `STREAM_RIDE_REVIEW=1` on a guarded drive to record body pitch and roll, wheel contact height differences, and the rear deck’s projected pixel position on each displayed frame. Compare at the same native resolution, route and input schedule.
+
+Automated drives run in a windowless browser and leave desktop focus alone. On macOS the runner prefers the installed Chromium headless shell. A manually launched interactive drive opens a window for the player. Set `STREAM_VERIFY_60=1` to check 120 animation intervals in the same browser before loading the game. `STREAM_DIRECT_CDP=1` uses Node's built-in WebSocket to control the isolated browser and retains the asset allowlist and memory watchdog. For a separate visual run, `STREAM_FLASH_REVIEW=1` records canvas and compositor samples, regional dark patches with their neighboring frames, and image pairs across detail changes. `STREAM_ADAPTIVE=1` leaves automatic quality enabled. Frame readback can affect timing.
+
+The daylight chase check also counts sustained black frames on the car and samples the scene color before and after post-processing on detection. Set `STREAM_FLASH_BASELINE` to a prior visual report to capture the corrected street at the driving poses of its saved vehicle blackouts.
+
+For a two-minute manual 720p session, double-click `../king-street/Drive with memory cutoff.command` in Finder. It launches a fresh local Chrome window only if the memory preflight passes. It writes the drive and memory traces to a new temporary folder. Manual sessions may take any route. For the repeatable automatic benchmark, prepare the local client and `public/compare/drive-stream.json`, then run:
+
+```sh
+PLAYWRIGHT_FROM=/path/to/project-with-playwright python3 guard_memory.py --mib 2816 --reserve-mib 3584 --timeout 170 --report /tmp/stream-memory.json --merge-report /tmp/stream-drive.json node stream-performance.mjs ../king-street /tmp/stream-drive.json
+```
+
+This opens the real game at `/?stream=corridor&drive=1` in an isolated Chrome instance at native 1920×1080. It follows `routeEN` with throttle and steering keyboard events through the normal car physics, braking at the far endpoint and reversing heading in place only once stationary (below 0.8 km/h), so the same cells can be revisited with the same physics. Each heading reversal is explicitly logged as `stopped-turnaround`; position is preserved. It never steps the simulation or disables parked cars. The default drive lasts 110 seconds; `STREAM_SECONDS=10..125` changes that limit. A stalled car ends the run early and insufficient crossings fail validation. `STREAM_MANUAL=1` opens a visible isolated browser and leaves all controls to the user for the same measured interval. `CHROME_EXECUTABLE` can select a Chrome binary. `BUNDLE_DIR` selects an absolute path to an isolated prebuilt bundle instead of the project’s `.local-viewer`. Do not run this alongside other GPU or memory workloads.
+
+`STREAM_NEIGHBORHOOD=1` selects `/compare/neighborhood-stream.json` and the full spatial neighborhood URL; the default benchmark remains the original four-block corridor. The Finder memory-cutoff launcher defaults to the neighborhood (`STREAM_NEIGHBORHOOD=0` selects the corridor).
+
+`STREAM_WIDTH=1280` selects a clearly labelled native 1280×720 diagnostic run; the default remains 1920×1080. `STREAM_CAPTURE_FINAL=/absolute/path/final.jpg` saves a JPEG at quality 75 after timing ends.
+
+The manifest must have `version:1`, `scope:"drive-stream"`, an east/north route, and at least four cells. When `pieces` is present, detailed downloads come exclusively from those packages, each with a `parentId` pointing to one semantic block in `cells`; the parent package chunks are blocked. `crossing.id` remains the semantic destination parent and `crossing.piece` identifies its ready resident entry piece. `prepare`/`attached`/`evicted` and `active` refer to pieces. Samples retain semantic `current` and physical `piece` separately. A `base` scene manifest supplies shared road/collision `contentHash` and `chunks`, which are also allowlisted and required to download. Each cell supplies `id`, `boundsEN`, `contentHash`, byte counts, and `/world-<contentHash>-...` chunk paths; no cell may exceed 150 MiB uncompressed. The benchmark blocks world chunks outside the union of those paths and rejects network/page/console errors. The shared base and each cell may supply an optional `.gpu` package with `profile:"s3tc-v1"`, `portableHash` matching the portable `contentHash`, its own `contentHash`, `chunks`, format and byte counts. Both profiles are allowlisted, but the first request locks that package to one encoding across eviction and return; mixed requests fail. Exactly one encoding, with all its chunks, must finish for the base and every cell actually attached. `packageEncodings` records that proof; prefetch requests are retained in the report.
+
+The report contains every live frame interval, draw/triangle counts, path and renderer memory samples every 250 ms, stream events, and frame summaries within ±1 second of crossings versus steady driving. At least three crossings into three distinct destination cells must occur, with `ready:true` recorded on every crossing. At least one eviction must occur and no more than two detail cells may be active at once (shared base excluded; `STREAM_MAX_ACTIVE` overrides this limit). Each crossing includes its own FPS/p95/max summary and bracketing path samples. Preparation windows are measured from `prepare` to the matching `attached` event separately from actual boundary windows. The page must expose `__view.stream.status()` with `active`, `loading`, `ready`, and events: `crossing` events use `id` for the destination cell and `ms=performance.now()`, plus `positionEN` and destination `ready`. `__car.car.position()` supplies `[x,z,yaw]` (north is `-z`); `telemetry().speedKmh` and the live renderer debug interface are also required.
+
+For external memory correlation, the watchdog preserves its existing compact sample rows and adds `startedEpochMs` and `sampleColumns`. A watchdog sample's wall time is `startedEpochMs + 1000 * sample[0]`. Drive samples have `epochMs`; stream event wall times are `timeOriginEpochMs + event.ms`. `launchEpochMs` and `guardStartedEpochMs` are also included. The memory file accounts for the complete isolated process tree, including Chrome/GPU helpers; in-page heap and renderer counters are supplementary. The drive report is checkpointed every second using only new frame, path and event records from the page; Node merges these into the safety snapshot. `--merge-report` merges external physical memory into it after completion or cutoff, including each crossing’s memory summary and early/middle/late settled windows after eviction. Settled windows exclude two seconds around streaming events and require ready, nonloading path samples. Empty windows explicitly report null statistics. `matchedVisitMemory` separately compares median footprint for the same sorted active piece set on outbound versus first return, requiring ready/nonloading samples and more than 400 ms since attach/eviction; each pair records sample counts and return-minus-outbound MiB. New traces include macOS pressure level as the fifth sample column and write a short report even when the initial headroom check prevents launch. The watchdog also records physical memory for individual owned processes and role totals (driver/browser/renderer/GPU/server/helpers) about once per second, and attaches role summaries to crossing memory. Only process IDs, roles and memory are retained; executable names, paths and command arguments are omitted. Always inspect the memory report’s `reason` and `exit` too.
+
+
 Measures the King Street viewer (`work/king-street/app`) in headless Chromium on the machine's real GPU (ANGLE Metal),
 off to the side of the running preview: its own Vite server (port 3107), its own copies of the viewer modules, the live
 `public/` folder. Nothing here is part of the app, and editing files here never reloads the preview on :3001.

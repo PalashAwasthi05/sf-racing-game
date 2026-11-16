@@ -1,0 +1,41 @@
+// CPU preparation on real local cell geometry, textureless material stand-ins; no browser/GPU.
+import {readFile,writeFile} from 'node:fs/promises';
+import {gunzipSync} from 'node:zlib';
+import {Session} from 'node:inspector';
+import {setImmediate as yieldTurn} from 'node:timers/promises';
+import path from 'node:path';
+import * as THREE from '../king-street/node_modules/three/build/three.module.js';
+import {flatNodes,omitStaticTrees} from '../king-street/app/scene-flat.ts';
+import {prepareSceneDrawables} from '../king-street/app/scene-drawables.ts';
+import {buildDepthProxies,buildDepthProxiesAsync} from '../king-street/app/render-budget.ts';
+const root=path.resolve(import.meta.dirname,'../king-street/public');
+const manifest=JSON.parse(await readFile(path.join(root,'compare/neighborhood-stream.json'),'utf8'));
+const rows=[];const profile=new Session();profile.connect();
+const post=(method,args={})=>new Promise((resolve,reject)=>profile.post(method,args,(error,result)=>error?reject(error):resolve(result)));
+await post('Profiler.enable');await post('Profiler.setSamplingInterval',{interval:100});await post('Profiler.start');
+for(const id of process.env.CPU_CELLS?.split(',')??['grid-0--3','grid--3--2','grid--3-2'])for(const sliced of [false,true]){
+ const cell=manifest.cells.find(c=>c.id===id);if(!cell)continue;
+ const bytes=gunzipSync(Buffer.concat(await Promise.all(cell.chunks.map(c=>readFile(path.join(root,c))))));
+ const length=bytes.readUInt32LE(12),doc=JSON.parse(bytes.subarray(20,20+length).toString());
+ const classes=new Set(doc.nodes.filter(n=>n.name?.startsWith('vegetation___')).map(n=>n.name.slice('vegetation___'.length)).filter(c=>/^(leaf.*|frond|bark|wood|trunk)$/.test(c)));
+ const skipped=omitStaticTrees(doc,classes);
+ const buffers=doc.bufferViews.map((v,i)=>skipped.has(i)?undefined:bytes.buffer.slice(bytes.byteOffset+28+length+(v.byteOffset??0),bytes.byteOffset+28+length+(v.byteOffset??0)+v.byteLength));
+ const materials=doc.materials.map(m=>{const p=m.pbrMetallicRoughness??{},out=new THREE.MeshStandardMaterial({roughness:p.roughnessFactor??1,metalness:p.metallicFactor??1,side:m.doubleSided?THREE.DoubleSide:THREE.FrontSide});out.name=m.name??'';if(p.baseColorFactor)out.color.fromArray(p.baseColorFactor);return out;});
+ const parser={json:doc,createUniqueName:s=>s,getDependency:async(_kind,i)=>materials[i],assignFinalMaterial:()=>{},associations:new Map(),cache:{removeAll(){}}};
+ const plugin=flatNodes(parser,buffers,Promise.resolve());const scene=new THREE.Group();scene.add(...await Promise.all(doc.scenes[0].nodes.map(i=>plugin.loadNode(i))));plugin.afterRoot?.();
+ const shared={data:{grid:{min:-1000,step:1000,n:2},ground:[0,0,0,0]},renderer:{capabilities:{getMaxAnisotropy:()=>8},extensions:{has:()=>false}},atmosphere:{setupMaterial(){}},leafTexture:new THREE.Texture(),groundAt:()=>0,wxGround:new THREE.DataTexture(),roadField:{uRfTex:{value:null},uRfR:{value:1}},paving:{uPfTex:{value:null},uPfR:{value:1}},roadDamp:{value:0},roadReflection:{value:null},surfaceNight:{value:0}};
+ const start=performance.now();let segment=start,last=start,maxSegmentMs=0,yields=0;const stages=[];
+ const yieldCpu=sliced?async()=>{maxSegmentMs=Math.max(maxSegmentMs,performance.now()-segment);yields++;await yieldTurn();segment=performance.now();}:undefined;
+ const drawables=await prepareSceneDrawables({scene,parser},shared,{sharedFoliage:true,yieldCpu,stage:name=>{const now=performance.now();stages.push({name,ms:now-last});last=now;}});
+ const prepared=performance.now();maxSegmentMs=Math.max(maxSegmentMs,prepared-segment);
+ const layer=o=>String(o.userData.layer||o.name.split('___')[0].split('__')[0]);
+ const depthStart=performance.now();let depthSegment=depthStart,depthMaxSegmentMs=0,depthYields=0;
+ const depthYield=async()=>{depthMaxSegmentMs=Math.max(depthMaxSegmentMs,performance.now()-depthSegment);depthYields++;await yieldTurn();depthSegment=performance.now();};
+ const depth=sliced?await buildDepthProxiesAsync(drawables.renderables,layer,54,()=>false,true,depthYield):buildDepthProxies(drawables.renderables,layer,54,()=>false,true),depthMs=performance.now()-depthStart;
+ depthMaxSegmentMs=Math.max(depthMaxSegmentMs,performance.now()-depthSegment);
+ rows.push({id,sliced,vertices:cell.stats.vertices,meshes:drawables.objects.length,renderables:drawables.renderables.length,prepMs:prepared-start,maxSegmentMs,yields,stages,depthMs,depthMaxSegmentMs,depthYields,depthMeshes:depth.meshes.length});
+ depth.dispose();drawables.dispose();shared.leafTexture.dispose();shared.wxGround.dispose();
+}
+const {profile:captured}=await post('Profiler.stop');profile.disconnect();
+const output=process.argv[2]??'/tmp/drawables-cpu';await writeFile(output+'.cpuprofile',JSON.stringify(captured));
+const report={scope:'Actual full-map cell geometry and static preparation/depth proxies, with textureless material stand-ins; excludes image decoding, texture-aware merging, atmosphere hooks, GPU and browser scheduling. Single samples, not FPS.',rows};await writeFile(output+'.json',JSON.stringify(report,null,2));console.log(JSON.stringify(report,null,2));

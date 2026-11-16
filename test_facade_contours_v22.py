@@ -96,3 +96,16 @@ def test_flat_opening_path_remains_rectangular():
     outline = opening_outline(opening, 10.0, 10.0)
     assert outline.equals(box(1.0, 2.0, 4.0, 8.0))
     assert head_shape(opening['style']) is None
+
+
+def test_pointed_head_has_a_distinct_peak_and_exact_spring_endpoints():
+    opening = {'rect': [0.1, 0.2, 0.4, 0.8],
+               'style': {'head': 'pointed', 'springRatio': .7}}
+    outline = opening_outline(opening, 10., 10.)
+    points = np.asarray(outline.exterior.coords)
+    assert outline.is_valid
+    assert outline.contains(Point(2.5, 7.9))
+    assert not outline.contains(Point(2.5, 8.1))  # the crown narrows to a point
+    assert np.any(np.all(np.isclose(points, [4., 6.2]), axis=1))
+    assert np.any(np.all(np.isclose(points, [2.5, 8.]), axis=1))
+    assert np.any(np.all(np.isclose(points, [1., 6.2]), axis=1))

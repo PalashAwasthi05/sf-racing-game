@@ -2,9 +2,10 @@ import math
 import numpy as np
 import trimesh
 from shapely.geometry import Point
+from pipeline import canopy
 
 def compile(ctx):
- positions=[];put=ctx['put'];cyl=ctx['cylinder'];count=0
+ positions=[];put=ctx['put'];cyl=ctx['cylinder'];count=0;sized=0
  def blade(a,b,width,key):
   a,b=np.array(a),np.array(b);v=b-a;n=np.cross(v,[0,0,1]);n=n/max(.001,np.linalg.norm(n));mid=a+v*.55
   vv=np.array([a,mid+n*width,b,mid-n*width,mid+[0,0,width*.2]])
@@ -17,6 +18,13 @@ def compile(ctx):
   # dead ones. Drawn as feather palms they read as thin spidery ribs at a third of their height.
   fan=palm and any(s in sp for s in ['washingtonia','fan palm'])
   h=14+rng.random()*4 if fan else 9+rng.random()*3 if palm else 5+rng.random()*3
+  # A broadleaf tree the LiDAR measures is drawn at its measured height and spread (pipeline/canopy.py), as the yard
+  # trees are: a fixed 5-8 m tree stood small and generic in front of the facades the street photographs show it hiding.
+  measured=None if palm else canopy.measure_tree(ctx,x,y,[i['position'] for i in ctx['tree_placements']])
+  if measured:
+   from pipeline.tree_sizing import trunk_radius
+   dbh_radius=trunk_radius(t,dbh_unit=t.get('dbhUnit') or t.get('dbh_unit'))['radiusM']
+   canopy.draw_tree(put,cyl,x,y,z,*measured,trunk_radius_m=dbh_radius);count+=1;sized+=1;continue
   radius=item['radius'];cyl([x,y,z],[x,y,z+h],radius,'vegetation','bark',12)
   # A palm's fronds are their own material: the viewer grows broadleaf leaf-cluster cards on 'leaf' quads, and a row of
   # fan palms rendered as flat green umbrellas.
@@ -58,4 +66,4 @@ def compile(ctx):
    for k in range(270):
     d=rng.normal(size=3);d/=np.linalg.norm(d);r=rng.random()**.3;pos=np.array([x,y,z+h])+d*r*np.array([2.4,2.4,2.8]);ang=rng.uniform(0,math.tau);end=pos+np.array([math.cos(ang),math.sin(ang),rng.uniform(-.4,.4)])*.42;blade(pos,end,.15,'leaf'+str(1+k%3))
   count+=1
- ctx['counts']['trees']=count
+ ctx['counts']['trees']=count;ctx['counts']['treesLidarSized']=sized

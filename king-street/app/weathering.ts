@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {FACADEMAP_GLSL} from './facademap';
+import {FACADEMAP_GLSL} from './facademap.ts';
 
 // Weathering: what makes a wall read as built and lived with rather than printed. The generated world gives every
 // facade one material, one colour and a texture that repeats every few metres; real walls are dirtier at the foot
@@ -15,41 +15,59 @@ float wxLarge;float wxDirt;
 float wxHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 float wxNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(wxHash(i),wxHash(i+vec2(1.,0.)),f.x),mix(wxHash(i+vec2(0.,1.)),wxHash(i+vec2(1.,1.)),f.x),f.y);}
 float wxFbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*wxNoise(p);p=p*2.03+vec2(17.,9.);a*=.5;}return v;}
+// Facet normals are intentionally hard on a curved bay. Weathering must not
+// derive its coordinate frame from them: even a small normal change at city
+// coordinates shifts a tangent projection by metres and restarts the pattern.
+float wxHash3(vec3 p){return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453);}
+float wxNoise3(vec3 p){
+ vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
+ float a=wxHash3(i),b=wxHash3(i+vec3(1.,0.,0.)),c=wxHash3(i+vec3(0.,1.,0.)),d=wxHash3(i+vec3(1.,1.,0.));
+ float e=wxHash3(i+vec3(0.,0.,1.)),f0=wxHash3(i+vec3(1.,0.,1.)),g=wxHash3(i+vec3(0.,1.,1.)),h=wxHash3(i+vec3(1.,1.,1.));
+ return mix(mix(mix(a,b,f.x),mix(c,d,f.x),f.y),mix(mix(e,f0,f.x),mix(g,h,f.x),f.y),f.z);
+}
+float wxFbm3(vec3 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*wxNoise3(p);p=p*2.03+vec3(17.,9.,13.);a*=.5;}return v;}
 vec3 wxTint(vec3 albedo){
  vec3 P=vWxPos;vec3 N=normalize(vWxNrm);
  vec2 g=((vec2(P.x,-P.z)-uWxGrid.xx)/uWxGrid.y+.5)/uWxGrid.z;float h=P.y-texture2D(uWxGround,g).r;
  float wall=smoothstep(.3,.7,1.-abs(N.y));
- vec3 T=normalize(vec3(-N.z,0.,N.x)+vec3(1e-5,0.,0.));float u=dot(P.xz,T.xz);
- wxLarge=wxFbm(vec2(u,P.y)*.045+P.xz*.013);
+ // Weathering is an overlay, separate from the material's authored metric UV
+ // texture. A fixed 3D world field stays continuous across curved facets.
+ wxLarge=wxFbm3(P*.045);
  // the roof line over this point of the wall: the height map just inside the wall (sky visibility's, occlusion.ts)
  float below=8.;
  if(uWxH.y>.5){vec2 xz=P.xz-normalize(N.xz+vec2(1e-5))*.9;vec2 uv=vec2(xz.x,-xz.y)/(2.*uWxH.x)+.5;
-  if(uv.x>0.&&uv.y>0.&&uv.x<1.&&uv.y<1.)below=max(texture2D(uWxHeight,uv).r-P.y,0.);}
+  if(uv.x>0.&&uv.y>0.&&uv.x<1.&&uv.y<1.)below=max(textureLod(uWxHeight,uv,0.).r-P.y,0.);}
  // run-off: dirt washed off the roof hangs from the roof line in columns of uneven width and length
  // thin streaks (about 10-40 cm) gathered in uneven groups, each breaking up and fading at its own length
- float group=smoothstep(.35,.75,wxNoise(vec2(u*.35,7.3))*.7+wxNoise(vec2(u*1.1,1.9))*.3);
- float thin=smoothstep(.55,.9,wxNoise(vec2(u*4.2,.5))*.6+wxNoise(vec2(u*11.,2.1))*.4);
- float len=mix(1.2,8.,wxNoise(vec2(u*2.3,11.)));
- float broken=smoothstep(.25,.7,wxNoise(vec2(u*6.,P.y*.8))*.7+wxNoise(vec2(u*17.,P.y*2.1))*.3);
+ float group=smoothstep(.35,.75,wxNoise(P.xz*.35+vec2(7.3,1.9))*.7+wxNoise(P.xz*1.1+vec2(1.9,7.3))*.3);
+ float thin=smoothstep(.55,.9,wxNoise(P.xz*4.2+vec2(.5,2.1))*.6+wxNoise(P.xz*11.+vec2(2.1,.5))*.4);
+ float len=mix(1.2,8.,wxNoise(P.xz*2.3+vec2(11.,4.)));
+ float broken=smoothstep(.25,.7,wxNoise3(P*vec3(6.,.8,6.))*.7+wxNoise3(P*vec3(17.,2.1,17.))*.3);
  float runoff=group*thin*broken*exp(-below/len);
  // and a broad, faint wash over the top storeys of a wall
  float wash=exp(-below/16.);
  // splash-back and street grime at the foot, with an uneven top edge
- float grime=1.-smoothstep(0.,1.3+1.3*wxNoise(vec2(u*.6,1.)),h);
+ float grime=1.-smoothstep(0.,1.3+1.3*wxNoise(P.xz*.6+vec2(1.,3.)),h);
  // tone mottling at a metre and a few metres, which breaks a repeating texture's grid
- float mottle=wxNoise(vec2(u,P.y)*1.7)*.5+wxNoise(vec2(u,P.y)*.55+3.)*.5;
+ float mottle=wxNoise3(P*1.7)*.5+wxNoise3(P*.55+vec3(3.))*.5;
  vec3 t=vec3(mix(.91,1.07,wxLarge))*mix(vec3(.985,1.,1.025),vec3(1.025,1.,.97),wxLarge);
  t*=mix(1.,mix(.95,1.05,mottle),wall);
  wxDirt=wall*clamp(runoff*.75+wash*.16,0.,.65);
  t*=1.-wxDirt*.42;
  t*=1.-wall*.24*grime;
- // flat roofs: patched membranes, and over tens of metres a mix of dark tar-and-gravel and light membranes
+ // Horizontal orientation does not identify a roof material: it also includes
+ // cornice tops, sills, steps and painted caps. Preserve the authored albedo;
+ // weathering must not randomly convert a dark membrane into a white roof.
  float patches=wxFbm(P.xz*.08);
- float roofTone=smoothstep(.4,.8,wxFbm(P.xz*.012+3.1));
- t=mix(t*vec3(mix(.84,1.1,patches))*mix(.85,2.4,roofTone),t,wall);
+ t=mix(t*vec3(mix(.97,1.03,patches)),t,wall);
  vec3 c=albedo*t;float l=dot(c,vec3(.2126,.7152,.0722));
  // dirt and grime are a grey-brown that takes the colour out of what they cover
- return mix(c,vec3(l)*vec3(1.04,1.,.93),clamp(.28*grime*wall+wxDirt*.55,0.,.6));
+ // These streak positions are an unobserved prior, not measured facade wear.
+ // Keep them subtle; the source-selected material owns colour and any actual
+ // staining in its maps. Strong procedural washes previously repainted clean
+ // pale loggias as brown/grey cavities and changed every observed wall colour.
+ vec3 worn=mix(c,vec3(l)*vec3(1.04,1.,.93),clamp(.28*grime*wall+wxDirt*.55,0.,.6));
+ return mix(albedo,worn,.2);
 }
 
 // Surface character by kind (uWxKind: 0 none, 1 render/stucco, 2 concrete, 3 cladding panels, 4 dressed stone): what a
@@ -70,39 +88,17 @@ float wxCrackFrom(vec2 q,vec2 dir,float len,float seed,float px){
 vec3 wxSurface(vec3 albedo){
  vec3 P=vWxPos;vec3 N=normalize(vWxNrm);wxH=0.;float px=max(length(fwidth(P))*.7,1e-4);
  float wall=smoothstep(.3,.7,1.-abs(N.y));if(wall<.01||uWxKind<.5||uWxKind>3.5)return albedo;
- vec3 T=normalize(vec3(-N.z,0.,N.x)+vec3(1e-5,0.,0.));float u=dot(P.xz,T.xz),y=P.y;
- // each wall plane a slightly different tone: buildings of one material are painted, poured and weathered apart
- float plane=floor(dot(P.xz,N.xz)*2.+.5);vec2 nq=floor(N.xz*8.+.5);
- float wt=wxHash(nq*17.3+vec2(plane*.37,plane*.11));
+ // The wall normal decides whether this overlay applies, but never its
+ // coordinates. A tangent frame derived from each curved-shell facet changes
+ // abruptly at facet boundaries and restarts the apparent finish.
+ float wt=wxFbm3(P*.11);
  vec3 c=albedo*(.95+.1*wt);
- if(uWxKind<1.5){
-  // render: paint fading unevenly (0.3-1 m), now and then a repaired patch, a fine sand-float grain
-  c*=.94+.12*wxFbm(vec2(u,y)*1.3+7.7);
-  c*=.9+.2*smoothstep(.25,.75,wxFbm(vec2(u,y)*.22+3.3));                         // repainted bays and fading over metres
-  vec2 cell=floor(vec2(u,y)/vec2(2.3,1.7));float pick=wxHash(cell+nq*3.1);
-  if(pick<.08){vec2 q=fract(vec2(u,y)/vec2(2.3,1.7));vec2 lo=wxHash(cell+4.4)*vec2(.4,.4),hi=lo+vec2(.3)+wxHash(cell+8.8)*vec2(.3);
-   float inside=step(lo.x,q.x)*step(q.x,hi.x)*step(lo.y,q.y)*step(q.y,hi.y);c*=mix(1.,.9+.18*wxHash(cell+2.2),inside);}
-  float grain=wxNoise(vec2(u,y)*190.)*.6+wxNoise(vec2(u,y)*71.)*.4;
-  c*=mix(1.,.95+.1*grain,wxKeep(u,190.));wxH=grain*wxKeep(u,190.);
- }else if(uWxKind<2.5){
-  // concrete: formwork panels (2.4 x 1.2 m) with their seams, four tie holes each, each pour a different tone
-  vec2 q=vec2(u,y)/vec2(2.4,1.2);vec2 pc=floor(q);vec2 f=fract(q);
-  c*=.93+.14*wxHash(pc+nq*5.3);
-  vec2 e=min(f,1.-f)*vec2(2.4,1.2);float seam=1.-smoothstep(.004,.014,min(e.x,e.y));
-  c*=1.-.22*seam*wxKeep(u,40.);
-  vec2 th=fract(f*vec2(2.,2.))-.5;float hole=1.-smoothstep(.012,.02,length(th*vec2(1.2,.6)));
-  c*=1.-.45*hole*wxKeep(u,30.);
-  // lime bleeding from the seams, pale streaks below the horizontal ones
-  float bleed=smoothstep(.0,.25,1.-f.y)*(1.-smoothstep(.25,.6,1.-f.y))*smoothstep(.55,.85,wxNoise(vec2(u*3.,pc.y)));
-  c=mix(c,c*1.12+.015,.5*bleed);
-  float grain=wxNoise(vec2(u,y)*120.)*.6+wxNoise(vec2(u,y)*43.)*.4;c*=mix(1.,.94+.12*grain,wxKeep(u,120.));wxH=grain*wxKeep(u,120.)-seam*.6;
- }else{
-  // cladding panels: joints on a 1.2 x 3 m module, each panel a little different, a faint oil-canning shimmer
-  vec2 q=vec2(u,y)/vec2(1.2,3.);vec2 pc=floor(q);vec2 f=fract(q);
-  c*=.95+.1*wxHash(pc+nq*7.1);
-  vec2 e=min(f,1.-f)*vec2(1.2,3.);float joint=1.-smoothstep(.006,.016,min(e.x,e.y));
-  c*=1.-.5*joint*wxKeep(u,40.);wxH=-joint+.3*wxNoise(f*vec2(2.,5.)+pc);
- }
+ // Render: broad paint drift and fine sand-float grain in a fixed world
+ // field. Avoid synthetic rectangular repaint patches without source evidence.
+ c*=.94+.12*wxFbm3(P*1.3+vec3(7.7));
+ c*=.9+.2*smoothstep(.25,.75,wxFbm3(P*.22+vec3(3.3)));
+ float grain=wxNoise3(P*190.)*.6+wxNoise3(P*71.)*.4;
+ c*=mix(1.,.95+.1*grain,wxKeep(P.x,190.));wxH=grain*wxKeep(P.x,190.);
  // the windows in front of whose columns this point stands
  float streak=0.,crack=0.;ivec2 ent=wmEntries(P);
  for(int i=0;i<48;i++){
@@ -134,7 +130,7 @@ vec3 wxSurface(vec3 albedo){
  // dirt off the sills is a grey-brown: it darkens a pale wall and pales a dark one
  c=mix(c,vec3(.17,.155,.135),.48*clamp(streak,0.,1.));
  c*=1.-.45*crack;
- return mix(albedo,c,wall);
+ return mix(albedo,c,.2*wall);
 }
 vec3 wxBump(vec3 n,float h,float k){vec3 dpx=dFdx(-vViewPosition),dpy=dFdy(-vViewPosition);float hx=dFdx(h),hy=dFdy(h);
  vec3 r1=cross(dpy,n),r2=cross(n,dpx);float det=dot(dpx,r1);vec3 g=sign(det)*(hx*r1+hy*r2);return normalize(abs(det)*n-k*g);}
@@ -153,11 +149,19 @@ export function groundTexture(grid: { min: number; step: number; n: number }, gr
 /** Adds weathering to the given materials; chained after any existing onBeforeCompile (the shadow cascades'). */
 // the surface character of a wall material class (wxSurface): render and stucco, concrete, cladding panels; brick, stone,
 // timber and roofs keep their own textures
-export function surfaceKind(cls: string) { return /^(render|stucco)/.test(cls) ? 1 : /^(concrete|venue_concrete|cast_stone)/.test(cls) ? 2 : /^(panel_|terracotta_panel|curtain_panel)/.test(cls) ? 3 : /^(stone|limestone)/.test(cls) ? 4 : 0; }
+// Concrete or cast stone does not prove a 2.4 x 1.2 m formwork grid; a panel
+// class does not prove 1.2 x 3 m seams. Structural modules belong to the
+// evidence-driven material map. An unknown module keeps its authored surface.
+export function surfaceKind(cls: string) { return /^(render|stucco)/.test(cls) ? 1 : 0; }
+/** Typed observed patterns already have an authored structural texture and normal map. */
+export function hasObservedPattern(meshName: string) {
+  const token = meshName.split('___').pop()?.split('#')[0] ?? '';
+  return token.includes('~obs1~') && /(?:^|~)pat=[^~]+/.test(token);
+}
 export function weatherMaterials(materials: Iterable<THREE.MeshStandardMaterial>, tex: THREE.DataTexture, grid: { min: number; step: number; n: number }, kinds?: Map<THREE.Material, number>) {
   // the facade map's tables (facademap.ts) are set once the windows are known: setFacadeMap below
   const uniforms = { uWxGround: { value: tex }, uWxGrid: { value: new THREE.Vector4(grid.min, grid.step, grid.n, 0) }, uWxHeight: { value: null as THREE.Texture | null }, uWxH: { value: new THREE.Vector2(1, 0) },
-    uWmCol: { value: null as THREE.Texture | null }, uWmCell: { value: null as THREE.Texture | null }, uWmList: { value: null as THREE.Texture | null }, uWmGrid: { value: new THREE.Vector4() } };
+    uWmCol: { value: null as THREE.Texture | null }, uWmCell: { value: null as THREE.Texture | null }, uWmList: { value: null as THREE.Texture | null }, uWmGrid: { value: new THREE.Vector4() }, uWmCellOffset: { value: new THREE.Vector2() } };
   for (const m of materials) {
     if (m.userData.weathered) continue; m.userData.weathered = true;
     const kind = kinds?.get(m) ?? 0;
@@ -181,5 +185,5 @@ export function weatherMaterials(materials: Iterable<THREE.MeshStandardMaterial>
   /** The static world's top-down height map (occlusion.ts), for the roof line over each point of a wall. */
   return { setHeight(texture: THREE.Texture, radius: number) { uniforms.uWxHeight.value = texture; uniforms.uWxH.value.set(radius, 1); },
     /** The windows' facade map (facademap.ts), for the streaks, cracks and repainting around them. */
-    setFacadeMap(map: {textures: {uWmCol: THREE.Texture; uWmCell: THREE.Texture; uWmList: THREE.Texture}; grid: THREE.Vector4}) { uniforms.uWmCol.value = map.textures.uWmCol; uniforms.uWmCell.value = map.textures.uWmCell; uniforms.uWmList.value = map.textures.uWmList; uniforms.uWmGrid.value.copy(map.grid); } };
+    setFacadeMap(map: {textures: {uWmCol: THREE.Texture; uWmCell: THREE.Texture; uWmList: THREE.Texture}; grid: THREE.Vector4; cellOffset: THREE.Vector2}) { uniforms.uWmCol.value = map.textures.uWmCol; uniforms.uWmCell.value = map.textures.uWmCell; uniforms.uWmList.value = map.textures.uWmList; uniforms.uWmGrid.value.copy(map.grid); uniforms.uWmCellOffset.value.copy(map.cellOffset); } };
 }

@@ -75,18 +75,69 @@ def crowns(pts, elev, area, buildings, placed, cell=1., min_height=4., min_sep=4
         out.append((x, y, float(elev(x, y)), t, r))
     return out
 
-def draw_tree(put, cyl, x, y, z, height, radius):
+_TREE_INDEX = None
+
+
+def measure_tree(ctx, x, y, others=None):
+    """(height, crown radius) the LiDAR measures for a tree standing at (x, y): the non-ground returns 2.5-30 m over the
+    terrain near it, off the buildings. Height: the 95th percentile within 3 m; spread: how far returns at half that
+    height or more reach (90th percentile, within 7 m), held 0.3 m short of the nearest building. None when the returns
+    show no tree there (an inventory point the LiDAR predates, or a sapling). `others`: the other trees' (x, y)."""
+    global _TREE_INDEX
+    from scipy.spatial import cKDTree
+    if _TREE_INDEX is None:
+        pts = ctx['pts']; q = pts[pts[:, 3] == 1]
+        bld = ctx.get('all_buildings')
+        if bld is not None and not bld.is_empty: q = q[~contains_xy(bld.buffer(1.), q[:, 0], q[:, 1])]
+        h = q[:, 2] - np.asarray(ctx['elev'](q[:, 0], q[:, 1]), float); k = (h > 2.5) & (h < 30.)
+        _TREE_INDEX = (cKDTree(q[k, :2]), q[k, :2], h[k])
+    tree, xy, h = _TREE_INDEX
+    near = tree.query_ball_point([x, y], 7.)
+    if not near: return None
+    near = np.asarray(near); sample_xy = xy[near]
+    d = np.hypot(sample_xy[:, 0] - x, sample_xy[:, 1] - y); hh = h[near]
+    # a street's trees stand a few metres apart: a return belongs to the planted tree nearest it, not to every tree
+    # whose 7 m reach covers it (else each crown in a row spans its neighbours)
+    others = [p for p in (others or []) if 0 < math.hypot(p[0] - x, p[1] - y) < 14.]
+    if others:
+        o = np.asarray(others, float); do = np.min(np.hypot(xy[near, 0, None] - o[:, 0], xy[near, 1, None] - o[:, 1]), axis=1)
+        mine = d <= do; d, hh, sample_xy = d[mine], hh[mine], sample_xy[mine]
+    core = hh[d <= 3.]
+    if len(core) < 5: return None
+    height = float(np.percentile(core, 95))
+    wide = d[hh >= .5 * height]
+    radius = float(np.clip(np.percentile(wide, 90) if len(wide) >= 5 else 2., 1.5, 7.))
+    bld = ctx.get('all_buildings')
+    if bld is not None and not bld.is_empty: radius = min(radius, max(1., float(bld.distance(Point(x, y))) - .3))
+    # Tall returns concentrated on the wall-facing side can be facade returns
+    # that survived the building buffer. Keep the normal LiDAR size unless
+    # this source-neutral directional check rejects its upper tail.
+    if bld is not None and not bld.is_empty:
+        from shapely.ops import nearest_points
+        from pipeline.tree_sizing import assess_lidar_height
+        edge = nearest_points(Point(float(x), float(y)), bld)[1]
+        wall = np.array([edge.x - x, edge.y - y], dtype=float)
+        decision = assess_lidar_height(np.column_stack((sample_xy, hh)), [x, y], wall,
+                                       float(np.hypot(edge.x - x, edge.y - y)))
+        if decision['status'] == 'rejected-wall-facing-upper-tail': return None
+    return height, radius
+
+
+def draw_tree(put, cyl, x, y, z, height, radius, *, trunk_radius_m=None):
     """One broadleaf tree as the inventory's are drawn (bark trunk and limbs, leaf cards the viewer grows on the 'leaf'
     quads), standing on the ground at (x, y, z) with its crown top `height` above it and `radius` wide. The same position
     draws the same tree."""
+    # a tree's leaf cards are gathered into one mesh per leaf material: put() per card held several small arrays each, and
+    # an area of measured trees (hundreds of cards apiece) outgrew the machine's memory
+    cards = {}
     def blade(a, b, width, key):
         a, b = np.array(a), np.array(b); v = b - a; n = np.cross(v, [0, 0, 1]); n = n / max(.001, np.linalg.norm(n)); mid = a + v * .55
-        vv = np.array([a, mid + n * width, b, mid - n * width, mid + [0, 0, width * .2]])
-        put(trimesh.Trimesh(vv, [[0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]], process=False), 'vegetation', key)
+        cards.setdefault(key, []).append(np.array([a, mid + n * width, b, mid - n * width, mid + [0, 0, width * .2]]))
     rng = np.random.default_rng(int(abs(x) * 1000 + abs(y) * 7) % (2 ** 32))
     vr = min(.42 * height, max(1.6, radius * 1.05))          # the crown's vertical half-depth
     centre = np.array([x, y, z + height - vr]); trunk_top = z + max(1.8, height - 1.6 * vr)
-    cyl([x, y, z + .06], [x, y, trunk_top], min(.45, .06 + .018 * height), 'vegetation', 'bark', 12)
+    trunk = min(.45, .06 + .018 * height) if trunk_radius_m is None else float(trunk_radius_m)
+    cyl([x, y, z + .06], [x, y, trunk_top], trunk, 'vegetation', 'bark', 12)
     for k in range(7):
         ang = k * math.tau / 7; dirn = np.array([math.cos(ang), math.sin(ang), 0])
         tip = np.array([x, y, trunk_top]) + dirn * rng.uniform(.45, .8) * radius + [0, 0, rng.uniform(.4, .9) * vr]
@@ -97,6 +148,9 @@ def draw_tree(put, cyl, x, y, z, height, radius):
         pos = centre + dvec * r * np.array([radius, radius, vr]); ang = rng.uniform(0, math.tau)
         end = pos + np.array([math.cos(ang), math.sin(ang), rng.uniform(-.4, .4)]) * .42
         blade(pos, end, .15, 'leaf' + str(1 + k % 3))
+    quad = np.array([[0, 1, 4], [1, 2, 4], [2, 3, 4], [3, 0, 4]])
+    for key, vs in cards.items():
+        put(trimesh.Trimesh(np.concatenate(vs), np.concatenate([quad + 5 * i for i in range(len(vs))]), process=False), 'vegetation', key)
 
 
 def compile(ctx):
@@ -109,10 +163,16 @@ def compile(ctx):
     in_park = [(x, y) for x, y, *_ in found]
     extra = [c for c in crowns(ctx['pts'], ctx['elev'], yard, ctx.get('all_buildings'), placed + in_park) if c[3] >= 5.]
     extra.sort(key=lambda c: -c[3]); found = [(*c, 'park') for c in found] + [(*c, 'yard') for c in extra[:1500]]
+    # trees over the sidewalks the street-tree inventory does not list (privately planted, or planted since): the street
+    # photographs show them hiding whole facades, and only the inventory's trees stood there
+    walk = (ctx.get('street_plan') or {}).get('sidewalk')
+    if walk is not None and not walk.is_empty:
+        taken = placed + in_park + [(c[0], c[1]) for c in extra[:1500]]
+        found += [(*c, 'sidewalk') for c in crowns(ctx['pts'], ctx['elev'], walk, ctx.get('all_buildings'), taken) if c[3] >= 5.]
     put, cyl = ctx['put'], ctx['cylinder']; records = []
     for x, y, z, height, radius, where in found:
         draw_tree(put, cyl, x, y, z, height, radius)
         records.append({'position': [round(x, 2), round(y, 2)], 'heightM': round(height, 1), 'crownRadiusM': round(radius, 1),
-                        'source': 'LiDAR canopy peak in ' + ('mapped open ground' if where == 'park' else 'unbuilt land off the streets'), 'status': 'measured-crown, species unknown'})
-    ctx['counts']['lidarCanopyTrees'] = len(records); ctx['counts']['lidarYardTrees'] = sum(r['source'].endswith('streets') for r in records)
+                        'source': 'LiDAR canopy peak in ' + {'park': 'mapped open ground', 'sidewalk': 'a sidewalk (no inventory tree there)'}.get(where, 'unbuilt land off the streets'), 'status': 'measured-crown, species unknown'})
+    ctx['counts']['lidarCanopyTrees'] = len(records); ctx['counts']['lidarYardTrees'] = sum(r['source'].endswith('streets') for r in records); ctx['counts']['lidarSidewalkTrees'] = sum('sidewalk' in r['source'] for r in records)
     return records

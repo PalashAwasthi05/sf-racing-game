@@ -1,0 +1,32 @@
+{
+  "label": "Pine Street",
+  "routeEN": [
+    [
+      199.0053,
+      -282.3433
+    ],
+    [
+      189.6286,
+      -283.9099
+    ],
+    [
+      62.197,
+      -305.2071
+    ],
+    [
+      54.1648,
+      -306.4548
+    ]
+  ],
+  "lengthM": 146.83353847984978,
+  "observedLaneOffsetM": -0.066,
+  "manifest": "/block-trial/pacific-heights-r31-street-aa946e7555f8cd06.json",
+  "photo": "/block-trial/photo-mesh-a4785b31d36d274e.glb",
+  "splats": "/block-trial/block-splats-b8fb5d7ac0710a1c.bin",
+  "count": 55236,
+  "trainFrames": 20,
+  "heldoutFrames": 23,
+  "sourceUrl": "https://www.mapillary.com/app/?pKey=1685953545438729",
+  "attribution": "/block-trial/source-attributions-7bd915024dd339f1.json",
+  "comparisonUrl": "/block-trial/source-and-three-versions-contact-sheet-cd34fb4481b4b4ec.jpg"
+}

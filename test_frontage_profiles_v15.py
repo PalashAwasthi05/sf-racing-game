@@ -37,7 +37,7 @@ def _ctx(records):
     from shapely.geometry import Polygon
     def cube(center, size, key, material, angle=0): records.append(('cube', key, material, tuple(round(float(v), 3) for v in size), tuple(round(float(v), 3) for v in center)))
     def cylinder(a, b, r, key, material, sections=8): records.append(('cyl', key, material))
-    def put(mesh, key, material, uv=None): records.append(('put', key, material, int(len(mesh.faces))))
+    def put(mesh, key, material, uv=None): records.append(('put', key, material, int(len(mesh.faces)), mesh.bounds.copy()))
     def polys(g): return [g] if g.geom_type == 'Polygon' else list(g.geoms)
     return {'cube': cube, 'cylinder': cylinder, 'put': put, 'polys': polys}
 
@@ -75,8 +75,10 @@ def test_band_section_sweeps_a_profile_and_rollup_takes_its_colour():
                'bands': [{'height': .95, 'material': 'stone', 'section': [[0, .12, .2], [.12, .1, .35], [.22, .08, .5]]}],
                'groups': [{'region': [.1, 0., .5, .4], 'columns': 1, 'rows': 1, 'style': {'kind': 'rollup', 'material': 'greenpaint'}}]}
     facade_grammar.compile_wall(_ctx(records), c, a, b, 0., 12., profile, [])
-    steps = [r for r in records if r[0] == 'cube' and r[2] == 'stone' and abs(r[3][0] - 20.) < 1e-3]
-    assert len(steps) >= 3, steps
+    steps = [r for r in records if r[0] == 'put' and r[2] == 'stone' and abs(r[4][1,0] - r[4][0,0] - 20.) < 1e-3]
+    assert len(steps) == 3, steps
+    # Source height is preserved: proximity to a wall top must not relocate it.
+    assert np.isclose(steps[0][4][:,2].mean(), .95 * 12.)
     assert any(r[0] == 'cube' and r[2] == 'greenpaint' for r in records)
 
 def test_observed_colour_makes_a_named_variant_of_the_recipe():
@@ -164,7 +166,9 @@ def test_parapet_outline_stands_on_the_wall_top_and_a_band_follows_it():
     profile = {'id': 'pp', 'match': {'osmWayId': None}, 'normal': [0., -1.], 'sourceIds': ['s'], 'material': 'brick_modular', 'heightRefM': 10.,
                'parapets': [{'top': [[.1, 1.0], [.5, 1.2], [.9, 1.0]]}, {'top': [[.2, 1.3], [.5, 1.45], [.8, 1.3]], 'bandM': .4, 'material': 'stone'}]}
     facade_grammar.compile_wall(_ctx(records), c, a, b, 0., 10., profile, [])
-    prisms = [r for r in records if r[0] == 'put' and r[1].startswith('buildings__')]
+    # The wall skin is now one or more merged solids too; isolate the two larger
+    # parapet outlines from the ordinary wall body by their contour mesh size.
+    prisms = [r for r in records if r[0] == 'put' and r[1].startswith('buildings__') and r[3] > 12]
     assert len(prisms) == 2 and {r[2] for r in prisms} == {'brick_modular', 'stone'}, prisms
 
 def test_relief_arch_ornaments_louvre_sign_and_band_range():
@@ -181,7 +185,7 @@ def test_relief_arch_ornaments_louvre_sign_and_band_range():
     assert sum(1 for r in records if r[0] == 'cube' and r[2] == 'brick_modular' and abs(r[3][0] - .25) < 1e-6) == 20    # dentils at 1 m pitch over 20 m
     slats = [r for r in records if r[0] == 'cube' and r[2] == 'silver' and abs(r[3][2] - .02) < 1e-6]
     assert len(slats) >= 15, len(slats)                                                                                  # louvre slats
-    band = [r for r in records if r[0] == 'cube' and r[2] == 'terracotta']
-    assert len(band) == 1 and abs(band[0][3][0] - 10.) < 1e-3, band                                                       # band clipped to its x range
-    assert any(r[0] == 'cube' and r[2] == 'white' and abs(r[3][0] - 8.) < 1e-3 for r in records)                       # sign board
+    band = [r for r in records if r[0] == 'put' and r[2] == 'terracotta']
+    assert len(band) == 1 and np.allclose(band[0][4][:,0], [10.,20.]), band  # band clipped to its x range
+    assert any(r[0] == 'put' and r[2] == 'white' and np.allclose(r[4][:,0], [8.,16.]) for r in records)               # clipped sign board
     assert sum(1 for r in records if r[0] == 'put' and r[2] == 'charcoal' and r[1].startswith('facades__')) >= 4        # letters

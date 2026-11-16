@@ -223,7 +223,9 @@ type Tile = {key: unknown; w: number; h: number; x: number; y: number; draw: (c:
       g.setAttribute('uv', new THREE.BufferAttribute(out, 2)); if (!g.attributes.normal) g.computeVertexNormals(); opaque.push(g);
     }
     const o0 = mergeVertices(mergeGeometries(opaque), 1e-4), g0 = mergeVertices(mergeGeometries(glass), 1e-4);
-    const lods = [o0, simplify(o0, .26, .01), coarse(o0, 500)], glods = [g0, simplify(g0, .5, .01), coarse(g0, 24)];
+    const far = coarse(o0, 500);
+    const distant = simplify(far, 96 / (far.index!.count / 3), .2);
+    const lods = [o0, simplify(o0, .26, .01), far, distant], glods = [g0, simplify(g0, .5, .01), coarse(g0, 24)];
     lods.forEach((g, i) => { const m = new THREE.Mesh(g, plain); m.name = `${car.name}__opaque__${i}`; exportScene.add(m); });
     glods.forEach((g, i) => { const m = new THREE.Mesh(g, plain); m.name = `${car.name}__glass__${i}`; exportScene.add(m); });
     stats[car.name] = [...lods, ...glods].map(g => g.index!.count / 3).concat([+car.L.toFixed(2), +car.W.toFixed(2), +car.H.toFixed(2)]);
@@ -234,14 +236,19 @@ type Tile = {key: unknown; w: number; h: number; x: number; y: number; draw: (c:
   exportScene.children.forEach(o => {
     const g = (o as THREE.Mesh).geometry, p = g.attributes.position, n = g.attributes.normal, uv = g.attributes.uv; g.computeBoundingBox(); const bb = g.boundingBox!;
     const lo = bb.min.toArray(), span = bb.getSize(new THREE.Vector3()).toArray().map(v => Math.max(v, 1e-4));
-    const P = new Int16Array(p.count * 3), N = new Int8Array(p.count * 4), U = new Uint16Array(uv ? p.count * 2 : 0);
-    for (let i = 0; i < p.count; i++) {
-      for (let j = 0; j < 3; j++) P[i * 3 + j] = Math.round(((p.getComponent(i, j) - lo[j]) / span[j]) * 65535 - 32768);
-      for (let j = 0; j < 3; j++) N[i * 4 + j] = Math.round(THREE.MathUtils.clamp(n.getComponent(i, j), -1, 1) * 127);
-      if (uv) for (let j = 0; j < 2; j++) U[i * 2 + j] = Math.round(THREE.MathUtils.clamp(uv.getComponent(i, j), 0, 1) * 65535);
+    // Simplification changes the indices only. Store the attributes for referenced vertices once, in draw order.
+    const sourceIndex = new Uint32Array(g.index!.array);
+    const [remap, count] = MeshoptSimplifier.compactMesh(sourceIndex);
+    const P = new Int16Array(count * 3), N = new Int8Array(count * 4), U = new Uint16Array(uv ? count * 2 : 0);
+    for (let i = 0; i < remap.length; i++) {
+      const dest = remap[i];
+      if (dest === 0xffffffff) continue;
+      for (let j = 0; j < 3; j++) P[dest * 3 + j] = Math.round(((p.getComponent(i, j) - lo[j]) / span[j]) * 65535 - 32768);
+      for (let j = 0; j < 3; j++) N[dest * 4 + j] = Math.round(THREE.MathUtils.clamp(n.getComponent(i, j), -1, 1) * 127);
+      if (uv) for (let j = 0; j < 2; j++) U[dest * 2 + j] = Math.round(THREE.MathUtils.clamp(uv.getComponent(i, j), 0, 1) * 65535);
     }
-    const I = new Uint16Array(g.index!.array);
-    header.push({name: o.name, count: p.count, triangles: I.length / 3, lo, span, position: push(P), normal: push(N), uv: uv ? push(U) : -1, index: push(I), indexCount: I.length});
+    const I = new Uint16Array(sourceIndex);
+    header.push({name: o.name, count, triangles: I.length / 3, lo, span, position: push(P), normal: push(N), uv: uv ? push(U) : -1, index: push(I), indexCount: I.length});
   });
   const json = new TextEncoder().encode(JSON.stringify({version: 1, atlas: [ATLAS, usedH], paintGain: PAINT_GAIN, cars: cars.map(c => ({name: c.name, length: +c.L.toFixed(3), width: +c.W.toFixed(3), height: +c.H.toFixed(3)})), meshes: header}));
   const lenBuf = new Uint32Array([json.byteLength]), jpad = (4 - json.byteLength % 4) % 4;
