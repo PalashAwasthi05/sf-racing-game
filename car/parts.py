@@ -63,9 +63,9 @@ def windscreen():
     out -= (out @ nrm)[:, None] * nrm
     out /= np.linalg.norm(out, axis=1)[:, None]
     C = C + out * .016
-    prof = rounded_rect(.052, .030, .012, 5)
+    prof = rounded_rect(.040, .026, .010, 5)
     frame = sweep(C, prof, lambda i, p: nrm, caps=True)
-    parts.append(('frame', 'paint', frame))
+    parts.append(('frame', 'black_gloss', frame))   # the reference car's screen frame is black
     # inner trim of the frame (black) and the interior mirror
     inner = sweep(C - out * .012 - nrm * .012, rounded_rect(.04, .016, .006, 4), lambda i, p: nrm, caps=True)
     parts.append(('frame', 'black_satin', inner))
@@ -343,9 +343,9 @@ def exhaust():
     inner = [(r - .018, -.20), (r - .018, -.012), (r - .010, -.006), (r - .006, -.004)]
     # The visible rolled mouths project behind the insert. Joint fitting of the
     # two 914 mouth centres gives x=-2.101,y=.217,|z|=.337 (2.6 px residual).
-    mouth = float(R._tail(R.TIP_Y) + R._TAIL_PLAN(R.TIP_Z)) - .040
+    mouth = float(R._tail(R.TIP_Y) + R._TAIL_PLAN(R.TIP_Z)) - .022
     for zs in (R.TIP_Z, -R.TIP_Z):
-        for pr, fin in ((prof, 'black_gloss'), (inner, 'black_matte')):
+        for pr, fin in ((prof, 'steel'), (inner, 'black_matte')):
             m = lathe(pr[::-1] if fin == 'black_matte' else pr, segments=48)
             # lathe axis is z: turn it to point along -x and move it to the tip position
             V = m.V.copy()
@@ -411,7 +411,7 @@ def tail_leds():
     from mesher import normals, project
     parts = []
     for k in range(4):
-        y0 = .716 + k * .010
+        y0 = .728 + k * .010
         # The rear face narrows quickly at the corner: stop the rear run at the
         # measured overlap, then follow the actual flank surface longitudinally.
         zr = np.linspace(.59 + .004 * k, .80, 24)

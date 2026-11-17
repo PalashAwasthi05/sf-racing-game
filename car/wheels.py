@@ -153,6 +153,87 @@ def face_solid(hw_rim, lip_z, hub_z):
     return f
 
 
+def rrect(cu, cv, hu, hv, rad, n_arc=5):
+    """A rounded rectangle centred at (cu, cv), counter-clockwise from the middle of its +u side, closed."""
+    pts = []
+    for (su, sv, a0) in ((1, 1, 0), (-1, 1, np.pi / 2), (-1, -1, np.pi), (1, -1, 3 * np.pi / 2)):
+        ou, ov = cu + su * (hu - rad), cv + sv * (hv - rad)
+        for a in np.linspace(a0, a0 + np.pi / 2, n_arc):
+            pts.append((ou + rad * np.cos(a), ov + rad * np.sin(a)))
+    pts.append(pts[0])
+    return pts
+
+
+def _oriented(V, T, N):
+    """Wind each triangle so its face normal agrees with its vertex normals."""
+    a, b, c = V[T[:, 0]], V[T[:, 1]], V[T[:, 2]]
+    flip = np.einsum('ij,ij->i', np.cross(b - a, c - a), N[T[:, 0]] + N[T[:, 1]] + N[T[:, 2]]) < 0
+    T = T.copy()
+    T[flip] = T[flip][:, ::-1]
+    return Mesh(V, T, N)
+
+
+def face_parts(hw_rim, lip_z, hub_z):
+    """The spoked face as explicit surfaces (same design as face_solid): ten swept spokes in five loose pairs over a
+    concave face, a turned outer ring and hub, a centre cap and five hex lug nuts. Swept and turned surfaces carry exact
+    normals and straight, evenly spaced edges; an iso-surface of spokes 1.4 cm wide at a 3 mm grid shaded as crumpled
+    foil in every glossy finish."""
+    pairs, n_r = 5, 40
+    sec = rrect(0., 0., 1., 1., .32, 4)[:-1]      # unit section, scaled per station; 16 points
+    meshes = []
+    rs = np.linspace(.084, .246, n_r)
+    t = np.clip((rs - .088) / (.236 - .088), 0, 1)
+    zf = hub_z + (lip_z - hub_z) * t ** 1.35
+    half_w = .0068 + .0045 * (1 - t) + .003         # +3 mm: face_solid's rounding grew the blade by its radius
+    depth = .015 + .008 * (1 - t) + .003
+    for k in range(pairs):
+        for sgn in (-1, 1):
+            th = k * 2 * np.pi / pairs + sgn * np.deg2rad(11.0 + 3.0 * t)
+            C = np.stack([rs * np.cos(th), rs * np.sin(th), zf - depth], 1)
+            D = np.gradient(C, axis=0)
+            D /= np.linalg.norm(D, axis=1)[:, None]
+            L = np.cross([0, 0, 1.], D)
+            L /= np.linalg.norm(L, axis=1)[:, None]
+            U = np.cross(D, L)
+            m = len(sec)
+            V, N = [], []
+            for i in range(n_r):
+                rad = .003 / min(half_w[i], depth[i])
+                for su, sv in rrect(0., 0., 1., 1., rad, 4)[:-1]:
+                    V.append(C[i] + su * half_w[i] * L[i] + sv * depth[i] * U[i])
+                # analytic normal of the rounded rectangle at this point
+                q = np.array(rrect(0., 0., 1., 1., rad, 4)[:-1])
+                qu = np.clip(np.abs(q[:, 0]) - (1 - rad), 0, None) * np.sign(q[:, 0]) * half_w[i]
+                qv = np.clip(np.abs(q[:, 1]) - (1 - rad), 0, None) * np.sign(q[:, 1]) * depth[i]
+                nn = np.stack([qu, qv], 1)
+                ln = np.linalg.norm(nn, axis=1)
+                flat = ln < 1e-12
+                nn[flat] = np.stack([np.sign(q[flat, 0]) * (np.abs(q[flat, 0]) >= np.abs(q[flat, 1])),
+                                     np.sign(q[flat, 1]) * (np.abs(q[flat, 1]) > np.abs(q[flat, 0]))], 1)
+                nn /= np.linalg.norm(nn, axis=1)[:, None]
+                N.extend(nn[:, :1] * L[i] + nn[:, 1:] * U[i])
+            T = []
+            for i in range(n_r - 1):
+                a = i * m + np.arange(m)
+                b = i * m + (np.arange(m) + 1) % m
+                T += [np.stack([a, b, b + m], 1), np.stack([a, b + m, a + m], 1)]
+            meshes.append(_oriented(np.array(V), np.concatenate(T), np.array(N)))
+    # outer ring joining the spoke ends to the barrel, and the dished hub
+    meshes.append(lathe(rrect(.242, lip_z - .014, .012, .014, .004, 5), segments=180))
+    meshes.append(lathe([(0., hub_z - .026), (.095, hub_z - .026), (.095, hub_z - .002), (.091, hub_z + .002), (0., hub_z + .002)],
+                        segments=120, sharp=(1, 2, 3)))
+    # centre cap and hex lug nuts on a 130 mm circle, each with a seat ring
+    meshes.append(lathe([(.036, hub_z - .004), (.036, hub_z + .007), (.031, hub_z + .012), (0., hub_z + .012)], segments=72, sharp=(1, 2)))
+    for kk in range(5):
+        a = kk * 2 * np.pi / 5
+        for prof, seg, sharp in (([(.0105, hub_z - .004), (.0105, hub_z + .011), (.0085, hub_z + .013), (0., hub_z + .013)], 6, (1, 2)),
+                                 ([(.016, hub_z - .004), (.016, hub_z + .0035), (.0105, hub_z + .0035)], 36, (1,))):
+            nut = lathe(prof, segments=seg, sharp=sharp)
+            nut.V = nut.V + [.065 * np.cos(a), .065 * np.sin(a), 0]
+            meshes.append(nut)
+    return merge([_oriented(m.V, m.T, m.N) for m in meshes])
+
+
 def caliper_solid(r_disc, thick, angle, pistons_w):
     """A monobloc caliper straddling the disc edge, centred at `angle` (radians, 0 = forward)."""
     ca, sa = np.cos(angle), np.sin(angle)
@@ -185,10 +266,7 @@ def assembly(axle):
     lip_z = hw + .006
     hub_z = lip_z - (.034 if axle == 'front' else .052)
     parts = [('tyre', tyre(R, width), True), ('rim', rim_barrel(rim_w), True)]
-    f = face_solid(hw, lip_z, hub_z)
-    # dual contouring keeps the spokes' edges straight (surface nets left them sawtoothed at this grid)
-    V, T = mesh_solid_sharp(f, (-.265, -.265, hub_z - .05), (.265, .265, lip_z + .01), .003, tolerance=.0002)
-    parts.append(('rim', autosmooth(Mesh(V, T), f), True))
+    parts.append(('rim', face_parts(hw, lip_z, hub_z), True))
     ring, hat = disc(thick=disc_t)
     holes = drill_holes(thick=disc_t)
     zd = hub_z - .075

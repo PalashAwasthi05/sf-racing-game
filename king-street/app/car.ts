@@ -148,7 +148,7 @@ function finishes(){
  const f={
   wind_deflector:windDeflectorMaterial(),
   // Solid paint has a diffuse base and a dielectric clear coat.
-  paint:phys({color:'#c3c6c3',metalness:.035,roughness:.33,specularIntensity:.30,clearcoat:.70,clearcoatRoughness:.08}),
+  paint:phys({color:'#cdd0cd',metalness:.035,roughness:.38,specularIntensity:.45,clearcoat:1,clearcoatRoughness:.04}),
   hoop:phys({color:'#363839',metalness:.18,roughness:.39,clearcoat:.24,clearcoatRoughness:.18}),
   black_gloss:phys({color:'#070808',metalness:0,roughness:.42,clearcoat:.12,clearcoatRoughness:.2}),
   black_satin:std({color:'#121315',metalness:0,roughness:.55}),
@@ -163,7 +163,7 @@ function finishes(){
   tail_led:std({color:'#5a0508',emissive:'#f62018',emissiveIntensity:.50,roughness:.4}),
   reflector:phys({color:'#47090c',metalness:0,roughness:.26,clearcoat:.68,clearcoatRoughness:.05}),
   tyre:std({color:'#262729',metalness:0,roughness:.9}),
-  rim:std({color:'#36383b',metalness:.52,roughness:.36,side:THREE.DoubleSide}),   // the barrel is an open surface
+  rim:std({color:'#202225',metalness:.35,roughness:.44,side:THREE.DoubleSide}),   // the barrel is an open surface
   disc:std({color:'#a3a6aa',metalness:.55,roughness:.42}),
   hat:std({color:'#3a3c3f',metalness:.7,roughness:.45}),
   caliper:phys({color:'#b0141c',metalness:.1,roughness:.35,clearcoat:.6,clearcoatRoughness:.1}),
@@ -599,7 +599,7 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
   const targetYaw=rs.yaw+(reverseView?Math.PI:0)+slide*.45+lookYaw;
   camYaw=snap?targetYaw:lerpAngle(camYaw,targetYaw,1-Math.exp(-dt*6));
   const bx=-Math.sin(camYaw),bz=-Math.cos(camYaw);
-  const wanted=5.25+Math.min(.75,speed*.026);
+  const wanted=6.9+Math.min(.8,speed*.026);   // a longer lens from further back: at 5.25 m and 53 degrees the tail read twice the size of the cabin
   const extension=snap?wanted:THREE.MathUtils.lerp(camDist,wanted,1-Math.exp(-dt*2.5));
   camDist=freeDistance(bx,bz,extension);
   // Transport the boom and its aim with the *same* interpolated chassis position. Only orbit
@@ -610,9 +610,9 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
   camGrade=snap?roadGrade:THREE.MathUtils.lerp(camGrade,roadGrade,1-Math.exp(-dt*3));
   const lead=1.6,aimY=y+1.07;
   camLook.set(rs.x+bx*lead,aimY+camGrade*lead,rs.z+bz*lead);
-  camPos.set(rs.x-bx*camDist,aimY+.125*(camDist+lead)-camGrade*camDist,rs.z-bz*camDist);
+  camPos.set(rs.x-bx*camDist,aimY+.092*(camDist+lead)-camGrade*camDist,rs.z-bz*camDist);
   camera.position.copy(camPos);camera.up.set(0,1,0);camera.lookAt(camLook);
-  camera.fov=53+Math.min(8,speed*.17);camera.updateProjectionMatrix();
+  camera.fov=41+Math.min(8,speed*.17);camera.updateProjectionMatrix();
  }
  function pose(dt:number){
   // The body at its sprung height, pitch and roll (rideStep); each wheel stands on the surface under it within the
