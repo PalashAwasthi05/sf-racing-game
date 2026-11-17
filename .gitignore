@@ -18,6 +18,9 @@
 !/pipeline/**/*.json
 !/review/**/*.json
 !/car/reference_outline.json
+!/areas/market-street/corridor-source.json
+!/areas/market-street/config.json
+!/areas/market-street/area-source-job.json
 !/viewer-bench/index.html
 
 # Generated, downloaded or large folders; git never walks these
@@ -46,3 +49,8 @@ node_modules/
 
 # A/B copies of viewer modules made by viewer-bench/snapshot.sh
 /viewer-bench/variants/
+
+# Imported car converter (page + module the whitelist would otherwise drop)
+!/car/import/
+!/car/import/*.html
+!/car/import/*.js

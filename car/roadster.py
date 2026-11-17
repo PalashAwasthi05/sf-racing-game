@@ -116,15 +116,16 @@ def top_line(x):
 # runs from the widest point up and in to the crest over the wing or haunch (crest height and lateral position); inboard
 # of the crest the top falls to the centre (bonnet between the wings, deck between the haunches): flat over the given
 # share of the crest's lateral position, then rising in an S to the crest.
-# (2026-11-16: behind x=-1.25 the crest sits further inboard with a lower exponent and the bumper tucks under more:
+# (2026-11-16: behind x=-1.7 crest and centre follow the measured silhouette top, .78 at the lip; lamps, band and lip
+# moved down 22 mm with it. Behind x=-1.25 the crest sits further inboard with a lower exponent and the bumper tucks under more:
 # the tail read as a block from the chase camera)
 #            x     widest-y  crest  crest-z   n    centre  flat   tuck
 _SEC = np.array([
-    [-2.22,  .45,  .745,  .46,  2.0,  .730,  .50,  .70],
-    [-2.10,  .47,  .800,  .54,  2.1,  .800,  .50,  .60],
-    [-2.00,  .49,  .830,  .58,  2.15, .800,  .50,  .55],
-    [-1.85,  .52,  .854,  .61,  2.2,  .806,  .50,  .45],
-    [-1.70,  .55,  .889,  .635, 2.25, .836,  .50,  .35],
+    [-2.22,  .45,  .700,  .46,  2.0,  .700,  .50,  .70],
+    [-2.10,  .47,  .765,  .54,  2.1,  .765,  .50,  .60],
+    [-2.00,  .49,  .788,  .58,  2.15, .775,  .50,  .55],
+    [-1.85,  .52,  .824,  .61,  2.2,  .795,  .50,  .45],
+    [-1.70,  .55,  .874,  .635, 2.25, .830,  .50,  .35],
     [-1.55,  .58,  .926,  .66,  2.3,  .870,  .50,  .25],
     [-1.40,  .60,  .953,  .68,  2.35, .904,  .50,  .28],
     [-1.25,  .61,  .973,  .695, 2.4,  .940,  .50,  .30],
@@ -162,9 +163,9 @@ _tail = pchip([[.10, -2.06], [.14, -2.085], [.17, -2.097], [.21, -2.108], [.25, 
 def spoiler_lip(y, z):
     """The retracted spoiler's trailing edge: it overhangs the band between the tail lamps by about 13 mm, with a
     short flat underside and a longer ramp up into the deck."""
-    under = smoothstep((y - .784) / .008)
-    over = smoothstep((.828 - y) / .026)
-    return .013 * under * over * smoothstep((.57 - np.abs(z)) / .05)
+    under = smoothstep((y - .762) / .008)
+    over = smoothstep((.824 - y) / .044)
+    return .026 * under * over * smoothstep((.57 - np.abs(z)) / .05)
 
 
 ARCH_FRONT = (AXLE, .311, .389)
@@ -172,11 +173,14 @@ ARCH_REAR = (-AXLE, .321, .404)
 
 
 def deck_dome(x, z):
-    """The rear lid's raised centre: a panel about 20 mm proud between two creases that close in slightly toward the lip."""
-    half = .37 - .05 * smoothstep((-1.15 - x) / .8)
-    across = smoothstep((half - z) / .085)
-    along = smoothstep((x + 2.02) / .12) * smoothstep((-1.07 - x) / .06)
-    return .009 * across * along
+    """The engine lid's raised centre. On the car it is a tall hood between two valleys, highest behind the roof cover
+    and falling to the spoiler lip, with a narrower plateau on top that carries the air grille (2026-11-16: it was a
+    9 mm panel, and the flat deck read as a box from behind)."""
+    half = .40 - .08 * smoothstep((-1.15 - x) / .8)
+    hood = .036 * smoothstep((half - z) / .14) * smoothstep((x + 2.10) / .30) * smoothstep((-1.04 - x) / .10)
+    ph = .215 - .05 * smoothstep((-1.10 - x) / .5)
+    plateau = .014 * smoothstep((ph - z) / .05) * smoothstep((x + 1.62) / .30) * smoothstep((-1.09 - x) / .05)
+    return hood + plateau
 
 
 def _section_fields(x, y, z):
@@ -287,10 +291,11 @@ def side_intake(x, y, z):
     return np.maximum(SIDE_INTAKE(x, y), inner - np.abs(z))
 
 
+# (2026-11-16: corner intakes and lamp strips drawn at 82 % of their width from the inner edge: at full width the
+# opening and its black surround ran round the bumper corner as a square block; the car's corners are painted)
 # Front openings in front view (z, y): the two corner intakes under the lamps and the centre intake below the plate
 # position; they are cut back along -x from the bumper face.
-FRONT_SIDE_INTAKE = Outline(catmull([(.47, .375), (.62, .378), (.78, .372), (.835, .352), (.84, .29), (.82, .235), (.76, .222),
-                                     (.60, .224), (.545, .232), (.505, .30)], 8), (.3, .1), (1., .5))
+FRONT_SIDE_INTAKE = Outline(catmull([(0.470, 0.375), (0.593, 0.378), (0.724, 0.372), (0.769, 0.352), (0.773, 0.290), (0.757, 0.235), (0.708, 0.222), (0.577, 0.224), (0.531, 0.232), (0.499, 0.300)], 8), (.3, .1), (1., .5))
 FRONT_CENTRE_INTAKE = Outline(catmull([(0, .318), (.24, .316), (.37, .31), (.415, .285), (.39, .215), (.30, .196), (0, .192),
                                        (-.30, .196), (-.39, .215), (-.415, .285), (-.37, .31), (-.24, .316)], 8), (-.6, .1), (.6, .45))
 
@@ -324,12 +329,8 @@ def lamp_outline(x, y, z):
 # rear tip at |z|=.546,y=.753. Both profiles limit the same wrapped lens.
 # (2026-11-16: both drawn at four fifths of that height about y=.765; in the matched 914 render the lamp read as a fat
 # capsule against the photo's slim blade)
-TAIL_SIDE = Outline(catmull([(-1.594, .7810), (-1.652, .8130), (-1.724, .8226),
-                             (-1.875, .8114), (-2.20, .7850), (-2.20, .6970),
-                             (-1.922, .7122), (-1.747, .7170), (-1.649, .7362)], 8), (-2.3, .6), (-1.4, .9))
-TAIL_REAR = Outline(catmull([(.546, .7554), (.597, .7858), (.701, .8114),
-                             (.811, .8226), (.95, .8226), (.95, .7010),
-                             (.830, .7162), (.701, .7122), (.585, .7162)], 8), (.3, .6), (1.05, .9))
+TAIL_SIDE = Outline(catmull([(-1.594, 0.7590), (-1.652, 0.7910), (-1.724, 0.8006), (-1.875, 0.7894), (-2.200, 0.7630), (-2.200, 0.6750), (-1.922, 0.6902), (-1.747, 0.6950), (-1.649, 0.7142)], 8), (-2.3, .6), (-1.4, .9))
+TAIL_REAR = Outline(catmull([(0.546, 0.7334), (0.597, 0.7638), (0.701, 0.7894), (0.811, 0.8006), (0.950, 0.8006), (0.950, 0.6790), (0.830, 0.6942), (0.701, 0.6902), (0.585, 0.6942)], 8), (.3, .6), (1.05, .9))
 
 
 def tail_outline(x, y, z):
@@ -383,7 +384,7 @@ def plate_recess(x, y, z):
 
 def rear_recesses(x, y, z, s):
     za = np.abs(z)
-    band = np.maximum(np.maximum(np.abs(y - .750) - .034, za - .565), np.maximum(-(s + .014), x + 1.97))
+    band = np.maximum(np.maximum(np.abs(y - .728) - .034, za - .565), np.maximum(-(s + .014), x + 1.97))
     edge = DIFFUSER(z, y)
     # Leave a rolled 12 mm shoulder at the top of the insert and dish its face.
     dish = .010 + .024 * smoothstep((-edge - .004) / .025)
@@ -396,11 +397,11 @@ def rear_recesses(x, y, z, s):
 
 
 def deck_grille(x, y, z):
-    return np.maximum(box2(x + 1.125, z, .045, .25, .02), .95 - y)
+    return np.maximum(box2(x + 1.125, z, .045, .19, .02), .985 - y)
 
 
 # Front: the thin lamp strips above the corner intakes.
-FRONT_STRIP = Outline(catmull([(.50, .437), (.66, .441), (.79, .436), (.805, .424), (.79, .414), (.66, .413), (.51, .418), (.495, .428)], 6), (.4, .35), (.9, .5))
+FRONT_STRIP = Outline(catmull([(0.499, 0.437), (0.630, 0.441), (0.737, 0.436), (0.749, 0.424), (0.737, 0.414), (0.630, 0.413), (0.507, 0.418), (0.495, 0.428)], 6), (.4, .35), (.9, .5))
 
 
 def front_strips(x, y, z, s):
@@ -459,7 +460,7 @@ def _lower(x, y, z):
 
 
 def _band(x, y, z):
-    return np.maximum(np.maximum(np.abs(y - .750) - .0343, np.abs(z) - .56), x + 1.97)
+    return np.maximum(np.maximum(np.abs(y - .728) - .0343, np.abs(z) - .56), x + 1.97)
 
 
 def _cover(x, y, z):
@@ -487,11 +488,11 @@ def _strip(x, y, z):
 
 def _front_mask(x, y, z):
     """The black lower mask of the nose: one surround joining the corner intakes and the centre intake."""
-    return np.maximum(np.minimum(FRONT_SIDE_INTAKE(np.abs(z), y) - .04, FRONT_CENTRE_INTAKE(z, y) - .04), 1.80 - x)
+    return np.maximum(np.minimum(FRONT_SIDE_INTAKE(np.abs(z), y) - .022, FRONT_CENTRE_INTAKE(z, y) - .030), 1.80 - x)
 
 
 def _grille(x, y, z):
-    return np.maximum(box2(x + 1.125, np.abs(z), .047, .252, .02), .9 - y)
+    return np.maximum(box2(x + 1.125, np.abs(z), .047, .192, .02), .9 - y)
 
 
 # Panel gaps: 4 mm dark lines where the doors, bonnet and rear lid meet the body, and the fuel flap. Each is a band round
@@ -556,7 +557,7 @@ def gap_cuts(line):
     return near, band
 
 
-FINISH_REGIONS = [('lamp_chrome', lambda x, y, z: lamp_outline(x, y, z) - .003),
+FINISH_REGIONS = [('lamp_black', lambda x, y, z: lamp_outline(x, y, z) - .003),
                   ('lamp_black', lambda x, y, z: tail_outline(x, y, z) - .003),
                   ('black_matte', _openings), ('black_matte', _wells), ('cabin', _cabin),
                   ('black_satin', _lower), ('black_gloss', _band), ('black_satin', _cover),

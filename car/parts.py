@@ -373,15 +373,15 @@ def grille_slats():
     def f(x, y, z):
         s = None
         for xc in np.linspace(-1.158, -1.092, 5):
-            b = box3(x, y, z, (xc, .955, 0), (.0035, .012, .24), .002)
+            b = box3(x, y, z, (xc, .997, 0), (.0035, .012, .18), .002)
             s = b if s is None else np.minimum(s, b)
         return s
-    V, T = mesh_solid(f, (-1.18, .93, -.26), (-1.07, .98, .26), .003, tolerance=.0002)
+    V, T = mesh_solid(f, (-1.18, .97, -.20), (-1.07, 1.03, .20), .003, tolerance=.0002)
     parts = [('grille', 'black_satin', Mesh(V, T).with_normals(f))]
     # Two horizontal vanes give the deep corner ducts visible structure.
     import roadster as R
     for yy in (.265, .315):
-        zz = np.linspace(.565, .785, 22)
+        zz = np.linspace(.550, .728, 22)
         P = np.stack([np.full_like(zz, 2.5), np.full_like(zz, yy), zz], 1)
         C = _onto(R.skin, P, -.014, (-1, 0, 0))
         vane = sweep(C, rounded_rect(.012, .007, .002, 3), lambda i, p: np.array([0, 1., 0]), caps=True)
@@ -411,7 +411,7 @@ def tail_leds():
     from mesher import normals, project
     parts = []
     for k in range(4):
-        y0 = .728 + k * .010
+        y0 = .706 + k * .010
         # The rear face narrows quickly at the corner: stop the rear run at the
         # measured overlap, then follow the actual flank surface longitudinally.
         zr = np.linspace(.59 + .004 * k, .80, 24)
@@ -534,6 +534,6 @@ def spoiler():
     itself is part of the body)."""
     import roadster as R
     zs = np.linspace(-.24, .24, 25)
-    y = .7765
+    y = .759
     C = np.array([(float(R._tail(y)) + float(R._TAIL_PLAN(abs(z))) + .012, y, z) for z in zs])
     return [('spoiler', 'tail_led', sweep(C, rounded_rect(.004, .003, .001, 2), lambda i, p: np.array([0, 1., 0])))]

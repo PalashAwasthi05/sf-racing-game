@@ -205,11 +205,16 @@ function rearPlate(body:THREE.Mesh){
 function buildModel(source:THREE.Object3D){
  const car=new THREE.Group();const materials=finishes();
  const stopLamp=materials.tail_led.clone();stopLamp.emissiveIntensity=0;
+ const brakeLamps=new Map<THREE.MeshStandardMaterial,number>();   // an imported car's tail lamps (material `light_tail`) and their resting glow
  const wheelParts={front:[] as THREE.Mesh[],rear:[] as THREE.Mesh[]},hubParts={front:[] as THREE.Mesh[],rear:[] as THREE.Mesh[]};
  let body:THREE.Mesh|null=null;
  const meshes:THREE.Mesh[]=[];source.traverse(o=>{if(o instanceof THREE.Mesh)meshes.push(o);});
  for(const o of meshes){
-  const [part,raw='']=o.name.split('__');const finish=raw.replace(/_\d+$/,'');const material=part==='spoiler'&&finish==='tail_led'?stopLamp:materials[(finish in materials?finish:'black_satin') as Finish];
+  const [part,raw='']=o.name.split('__');const finish=raw.replace(/_\d+$/,'');
+  // `src` keeps the material the model file carries (a textured part of an imported car).
+  const own=finish==='src'&&!Array.isArray(o.material)?o.material as THREE.Material:null;
+  if(own instanceof THREE.MeshStandardMaterial&&own.name==='light_tail')brakeLamps.set(own,own.emissiveIntensity);
+  const material=own??(part==='spoiler'&&finish==='tail_led'?stopLamp:materials[(finish in materials?finish:'black_satin') as Finish]);
   o.material=part==='body'&&finish==='drl'?materials.lamp_black:material;
   if(part==='wind-deflector'){
    const position=o.geometry.attributes.position,uv=new Float32Array(2*position.count);
@@ -233,7 +238,7 @@ function buildModel(source:THREE.Object3D){
  };
  makeWheel('front',AXLE,SPEC.trackFrontM/2,SPEC.wheelRadiusFrontM);makeWheel('front',AXLE,-SPEC.trackFrontM/2,SPEC.wheelRadiusFrontM);
  makeWheel('rear',-AXLE,SPEC.trackRearM/2,SPEC.wheelRadiusM);makeWheel('rear',-AXLE,-SPEC.trackRearM/2,SPEC.wheelRadiusM);
- return {car,wheels,body,tailOn:materials.tail_led,stopLamp,materials};
+ return {car,wheels,body,tailOn:materials.tail_led,stopLamp,brakeLamps,materials};
 }
 export function buildRoadster(source:THREE.Object3D){return buildModel(source);}
 
@@ -280,7 +285,7 @@ type Contact={nx:number;nz:number;px:number;pz:number;pen:number;bias:number;jn:
 
 // ---- vehicle ----------------------------------------------------------------------------------------------
 export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.PerspectiveCamera,groundAt:(x:number,z:number)=>number,field:DistanceField|null,source:THREE.Object3D,ground:CarGround|null, worldRadiusM:number){
- const {car,wheels,body,tailOn,stopLamp}=buildModel(source);scene.add(car);
+ const {car,wheels,body,tailOn,stopLamp,brakeLamps}=buildModel(source);scene.add(car);
  const sound=new CarAudio();
  // Driver aids: traction control and stability control together, as a car's "ESC off" switch does; ABS always stays on.
  // Off, the throttle can spin the rears and hold a slide. Remembered across visits.
@@ -307,7 +312,7 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
  // State in the body frame: u forward, v left, r yaw rate (positive turns left). Heading: forward=(-sin yaw, -cos yaw).
  const s={x:0,z:0,yaw:0,u:0,v:0,r:0,steer:0,gear:1,reverse:false,ax:0,throttle:0,rpm:SPEC.idleRpm,slip:0,pitch:0,roll:0,skidF:0,skidR:0,squeal:0,ay:0};
  let trace={u:0,v:0,r:0,delta:0,alphaF:0,alphaR:0,fyFront:0,fyRear:0,fxRear:0,fxFront:0,ax:0,ay:0,rDot:0,fzFront:0,fzRear:0,gear:1,rpm:0,shift:0,sax:0,contacts:0,rideZ:0};
- let cameraMode:'chase'|'bonnet'='chase';let lookYaw=0;let hudTimer=0;let reverseHold=0;let shiftTimer=0;
+ let cameraMode:'chase'|'bonnet'='chase';let lookYaw=0;let hudTimer=0;let reverseHold=0;let shiftTimer=0;let slideHold=0;
  const camPos=new THREE.Vector3(),camLook=new THREE.Vector3();
  const {massKg:m,wheelbaseM:L,cgToFrontM:a,cgHeightM:h,yawInertia:Iz,wheelRadiusM:Rw}=SPEC;const b=L-a;
  const surfaceAt=ground?(x:number,z:number)=>ground.surface.at(x,z):groundAt;
@@ -375,8 +380,16 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
   const rearOmega=(omega[2]+omega[3])*.5,wheelRpm=Math.abs(rearOmega)*ratio*60/(2*Math.PI);let rpm=wheelRpm;
   shiftTimer=Math.max(0,shiftTimer-hdt);
   const flying=ride.air>.05,grip=ride.grip;
-  // Off the throttle the box short-shifts and holds low revs, as an automatic coasting in D does; on it, it revs out.
-  const coasting=drivePedal<.05,upAt=coasting?2800:SPEC.upshiftRpm,downAt=coasting?1300:SPEC.downshiftRpm;
+  // The box holds its gear when the driver lifts (engine braking; it used to short-shift up at 2,800 rpm the moment the
+  // throttle was released), shifts down as the revs fall, sooner under braking, and with the throttle open it shifts
+  // later the further the pedal is down: 3,400 rpm on a light pedal, the full upshift speed on the floor.
+  const coasting=drivePedal<.05,slowing=brakePedal>.05;
+  // In a slide or with the rears spinning it keeps the gear and lets the engine sit on the limiter: an upshift there
+  // drops the wheel speed and ends the drift. The hold outlasts the slide by 0.6 s so it does not shift mid-transition.
+  const spin=(Math.abs(rearOmega)*Rw-absU)/Math.max(4,absU);
+  slideHold=input.handbrake||Math.abs(v-b*r)>2.2||spin>.18?.6:Math.max(0,slideHold-hdt);
+  const upAt=coasting?SPEC.limiterRpm-150:slideHold>0?Infinity:3400+(SPEC.upshiftRpm-3400)*drivePedal;
+  const downAt=coasting?(slowing?2600:1500):1400+(SPEC.downshiftRpm-1400)*drivePedal;
   if(!s.reverse&&shiftTimer===0&&!flying){if(rpm>upAt&&s.gear<SPEC.gears.length){s.gear++;shiftTimer=.25;}else if(rpm<downAt&&s.gear>1){s.gear--;shiftTimer=.25;}}
   rpm=Math.max(SPEC.idleRpm,Math.min(SPEC.limiterRpm,rpm));
   // Pulling away the clutch slips: the engine runs at a speed set by the pedal, above what the wheels ask for, and passes
@@ -637,7 +650,7 @@ export function createCar(scene:THREE.Scene,host:HTMLElement,camera:THREE.Perspe
   pose(dt);syncCamera(dt);
   // brake lights: the tail lamps' LED bars and the third light in the spoiler brighten under braking
   const braking=(s.reverse?input.throttle:input.brake)>0;
-  tailOn.emissiveIntensity=braking?5:.50;stopLamp.emissiveIntensity=braking?5:0;
+  tailOn.emissiveIntensity=braking?5:.50;stopLamp.emissiveIntensity=braking?5:0;for(const [lamp,rest] of brakeLamps)lamp.emissiveIntensity=braking?rest*7:rest;
   // Tyre marks under sliding wheels that are on the ground; sparks where the body hit or scraped this frame.
   {const fx=-Math.sin(rs.yaw),fz=-Math.cos(rs.yaw),lx=fz,lz=-fx;
    for(let i=0;i<4;i++){const [wx,wy]=WHEELS[i],t=tracks[i];t.x=rs.x+fx*wx+lx*wy;t.z=rs.z+fz*wx+lz*wy;t.touching=wheelTouch[i]&&ride.air<.03;t.skid=wheelSkid[i];}

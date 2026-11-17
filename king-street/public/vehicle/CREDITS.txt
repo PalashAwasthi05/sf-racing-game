@@ -1,0 +1,6 @@
+Player car: "2017 Porsche 718 Boxster S" by Ddiaz Design
+https://sketchfab.com/3d-models/none-4b52cfc4ce32438aa732880fae81c047
+Licensed CC BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-nc-sa/4.0/).
+Changes: converted to glTF, soft top and side/rear glass removed, wheels darkened, repainted, wheels separated for animation.
+Front bumper and headlights from "2018 Porsche 718 Cayman GTS", rear diffuser and tailpipes from "2020 Porsche 718 Spyder",
+both by Ddiaz Design on Sketchfab, CC BY-NC-SA 4.0.

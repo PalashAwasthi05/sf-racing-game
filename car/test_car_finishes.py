@@ -9,7 +9,7 @@ CAR_TS = os.path.join(os.path.dirname(__file__), '..', 'king-street', 'app', 'ca
 def viewer_finishes():
     src = open(CAR_TS).read()
     block = src[src.index('function finishes()'):src.index('type Finish=')]
-    return set(re.findall(r'^\s{2}(\w+):(?:phys|std)\(', block, re.M))
+    return set(re.findall(r'^\s{2}(\w+):(?:phys|std|opticalCover)\(', block, re.M))
 
 
 def test_every_generated_finish_has_a_viewer_material():

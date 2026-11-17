@@ -2,16 +2,30 @@
 // world around it (tyre squeal, road roar, wind, wall scrapes, impacts, landings, kerb thumps), all made from shaped
 // noise and oscillators so nothing is downloaded. Nothing here is location specific.
 //
-// The engine is a model of what one hears from a car's exhaust rather than a stack of oscillators: each cylinder
-// firing is a pressure pulse (a short spike with combustion noise in it, larger with throttle, a little different for
-// each of the six cylinders, which gives the half-order burble of a boxer), the pulses run through two delay-line combs
-// standing in for the headers and the tail pipe, two muffler resonances and a throttle-opened low-pass, then a soft
-// clipper. A lifted throttle at high revs leaves a short window of afterfire pops; the limiter cuts the ignition in
-// bursts; a gear change cuts it for a moment.
+// The engine is a model of what one hears from a car's exhaust and intake rather than a stack of oscillators. Each
+// cylinder firing is a pressure pulse as long as the valve event (so it shortens as the revs climb), carrying
+// band-limited gas noise, a little different for each cylinder and each firing. The two sides of the engine fire
+// alternately into their own pipes (two delay-line combs, two muffler resonances, a throttle-opened low-pass) that
+// differ slightly, and are heard left and right. The intake adds a tonal howl under load: each intake stroke rings two
+// plenum resonances. A lifted throttle leaves some cylinders barely lit (the overrun burble) and a short window of
+// afterfire pops; the limiter cuts the ignition in bursts; a gear change cuts it for a moment. A short synthetic street
+// echo keeps the whole mix from sounding like it is played inside the listener's head.
+// What made the earlier version sound robotic, measured from offline renders: one harmonic 30 dB above all the others
+// (a whistle), perfectly periodic firing, white hiss from sample-rate noise, and a dry mono signal.
 
 const ENGINE_WORKLET = /* js */`
 const TAU=Math.PI*2;
-function bandpass(f,q,sr){const w=TAU*f/sr,al=Math.sin(w)/(2*q),a0=1+al;return [al/a0,0,-al/a0,-2*Math.cos(w)/a0,(1-al)/a0];}
+function bandpass(f,q,sr,c){const w=TAU*f/sr,al=Math.sin(w)/(2*q),a0=1+al;c=c||[0,0,0,0,0];c[0]=al/a0;c[1]=0;c[2]=-al/a0;c[3]=-2*Math.cos(w)/a0;c[4]=(1-al)/a0;return c;}
+function biquad(c,s,x){const y=c[0]*x+c[1]*s[0]+c[2]*s[1]-c[3]*s[2]-c[4]*s[3];s[1]=s[0];s[0]=x;s[3]=s[2];s[2]=y;return y;}
+// One side of the engine: three cylinders into one pipe. The two sides differ a little in pipe length and resonance.
+class Bank{
+ constructor(sr,tail,header,f1,f2){
+  this.imp=0;this.pa=0;this.pb=0;this.hp=0;this.hpx=0;this.nz=0;this.nz2=0;
+  this.d1=new Float32Array(1024);this.d2=new Float32Array(512);this.i1=0;this.i2=0;this.lp1=0;this.lp2=0;
+  this.D1=Math.min(1000,Math.round(sr*tail));this.D2=Math.min(500,Math.round(sr*header));
+  this.c1=bandpass(f1,1.1,sr);this.s1=[0,0,0,0];this.c2=bandpass(f2,1.5,sr);this.s2=[0,0,0,0];this.m1=0;this.m2=0;
+ }
+}
 class FlatSix extends AudioWorkletProcessor{
  static get parameterDescriptors(){return [
   {name:'rpm',defaultValue:900,minValue:0,maxValue:12000,automationRate:'k-rate'},
@@ -20,68 +34,83 @@ class FlatSix extends AudioWorkletProcessor{
  ];}
  constructor(){
   super();const sr=sampleRate;this.sr=sr;
-  this.phase=0;this.k=0;this.rpm=900;this.load=0;this.lastThr=0;
-  this.cyl=[1,.9,1.07,.95,1.04,.92];
-  this.pulse=0;this.pulseDecay=Math.exp(-1/(sr*.0011));this.env=0;
-  this.popEnv=0;this.popDecay=Math.exp(-1/(sr*.006));this.popWindow=0;
+  this.phase=0;this.k=0;this.rpm=900;this.load=0;this.lastThr=0;this.wander=0;this.idle=1;
+  this.cyl=[1,.9,1.08,.94,1.05,.91];
+  this.L=new Bank(sr,.0071,.0023,92,255);this.R=new Bank(sr,.00655,.00252,101,281);
+  this.popEnv=0;this.popDecay=Math.exp(-1/(sr*.006));this.popWindow=0;this.popBank=this.L;
   this.cut=0;this.limitCut=0;
-  this.d1=new Float32Array(8192);this.d2=new Float32Array(2048);this.i1=0;this.i2=0;this.lp1=0;this.lp2=0;
-  this.D1=Math.round(sr*.0071);this.D2=Math.round(sr*.0023);
-  this.r1=bandpass(92,1.4,sr);this.s1=[0,0,0,0];this.r2=bandpass(265,2.2,sr);this.s2=[0,0,0,0];
+  this.ci1=bandpass(430,2.2,sr);this.si1=[0,0,0,0];this.ci2=bandpass(1050,1.8,sr);this.si2=[0,0,0,0];
   this.ri=bandpass(1200,1.1,sr);this.si=[0,0,0,0];
-  this.m1=0;this.m2=0;this.dcx=0;this.dcy=0;this.mech=0;
+  this.an=0;this.env=0;this.mech=0;this.dc=[0,0,0,0];
   this.port.onmessage=e=>{const m=e.data||{};if(m.cut)this.cut=Math.max(this.cut,m.cut*sr);if(m.pops)this.popWindow=Math.max(this.popWindow,m.pops*sr);};
  }
- biquad(c,s,x){const y=c[0]*x+c[1]*s[0]+c[2]*s[1]-c[3]*s[2]-c[4]*s[3];s[1]=s[0];s[0]=x;s[3]=s[2];s[2]=y;return y;}
  fire(){
-  const k=this.k++%6,idle=Math.max(0,1-(this.rpm-900)/1600);
-  let a=this.cyl[k]*(.32+.68*this.load)*(1+(Math.random()-.5)*(.1+.25*idle));
+  const k=this.k++%6,bank=k&1?this.R:this.L;
+  // no two firings are alike, least of all at idle
+  let a=this.cyl[k]*(.45+.55*this.load)*(1+(Math.random()-.5)*(.16+.3*this.idle));
+  // overrun: with the throttle shut some cylinders barely light, which is the lumpy burble of a lifted engine
+  if(this.load<.1&&this.rpm>2000&&Math.random()<.3)a*=.3;
   const cutting=this.cut>0||this.limitCut>0;
   if(cutting)a*=.06;
   // Unburnt fuel lighting in the hot exhaust: pops after a lift, and on a cut cylinder at the limiter.
-  if((this.popWindow>0&&Math.random()<.16)||(cutting&&this.load>.5&&Math.random()<.22))this.popEnv=Math.max(this.popEnv,.6+Math.random()*.9);
-  this.pulse+=a;
+  if((this.popWindow>0&&Math.random()<Math.min(.3,240/this.rpm))||(cutting&&this.load>.5&&Math.random()<.22)){this.popEnv=Math.max(this.popEnv,.6+Math.random()*.9);this.popBank=bank;}
+  bank.imp+=a;
+ }
+ // exhaust pulse -> gas noise -> header and tail pipe -> muffler
+ pipe(b,kd,kr,rough,a,pop){
+  const w=Math.random()*2-1;
+  b.pa=b.pa*kd+b.imp;b.pb=b.pb*kr+b.imp;b.imp=0;
+  let x=b.pa-b.pb;
+  b.nz+=(w-b.nz)*.32;b.nz2+=(b.nz-b.nz2)*.03;
+  x*=1+rough*(b.nz-b.nz2)*3;x+=pop;
+  const hp=x-b.hpx+.997*b.hp;b.hpx=x;b.hp=hp;
+  // two combs with damped feedback (an open pipe end inverts the reflection)
+  let j=(b.i2-b.D2)&511;b.lp2+=(b.d2[j]-b.lp2)*.5;const h=hp+.26*b.lp2;b.d2[b.i2]=h;b.i2=(b.i2+1)&511;
+  j=(b.i1-b.D1)&1023;b.lp1+=(b.d1[j]-b.lp1)*.35;const p=h-.42*b.lp1;b.d1[b.i1]=p;b.i1=(b.i1+1)&1023;
+  const y=.6*p+.9*biquad(b.c1,b.s1,p)+.5*biquad(b.c2,b.s2,p);
+  b.m1+=(y-b.m1)*a;b.m2+=(b.m1-b.m2)*a;
+  return b.m2;
  }
  process(inputs,outputs,params){
-  const out=outputs[0]&&outputs[0][0];if(!out)return true;const n=out.length,sr=this.sr;
+  const o=outputs[0],outL=o&&o[0];if(!outL)return true;const outR=o[1]||outL,n=outL.length,sr=this.sr;
   const rpmT=params.rpm[0],thrT=params.throttle[0],limit=params.limiter[0];
   // throttle lift at high revs opens the afterfire window
   if(this.lastThr>.55&&thrT<.08&&this.rpm>3600)this.popWindow=Math.max(this.popWindow,(.45+.5*Math.min(1,(this.rpm-3600)/3500))*sr);
   this.lastThr=thrT;
   // limiter: the ignition is cut in bursts while the revs sit on it under throttle
   if(this.rpm>limit-120&&thrT>.5&&this.limitCut<=0&&Math.random()<.5)this.limitCut=sr*(.025+Math.random()*.03);
-  // muffler low-pass opens with throttle and revs; the intake band climbs with revs
-  const fc=650+2900*this.load+this.rpm*.32,a=1-Math.exp(-TAU*fc/sr);
-  this.ri=bandpass(700+this.rpm*.28,1.1,sr);
-  const intake=.22*this.load*Math.min(1,this.rpm/7000),mechLevel=.012+.03*this.rpm/8000;
-  const drive=1.5+1.6*this.load,norm=1/Math.tanh(drive);
+  const rpm=this.rpm,load=this.load,idle=this.idle=Math.max(0,1-(rpm-900)/1800);
+  // the revs never sit perfectly still: a slow wander, widest at idle
+  this.wander+=(Math.random()*2-1-this.wander)*.02;const wob=1+this.wander*(.05+.2*idle),jit=.014+.05*idle;
+  // The pulse is as long as the valve event, so it shortens as the revs climb; load sharpens its front.
+  const T=40/Math.max(500,rpm),tau=.0012+.09*T,tr=Math.max(.00015,tau*(.3-.22*load));
+  const kd=Math.exp(-1/(sr*tau)),kr=Math.exp(-1/(sr*tr)),rough=.1+.3*load;
+  // muffler low-pass opens with throttle and revs; the intake resonances climb a little with revs
+  const fc=500+2400*load+rpm*.3,a=1-Math.exp(-TAU*fc/sr);
+  bandpass(430+rpm*.012,2.2,sr,this.ci1);bandpass(1050+rpm*.04,1.8,sr,this.ci2);bandpass(700+rpm*.28,1.1,sr,this.ri);
+  const rise=Math.min(1,Math.max(0,(rpm-1800)/4500)),howl=1.3*Math.pow(load,1.5)*rise*rise*(3-2*rise);
+  const rush=.16*load*Math.min(1,rpm/7000),mechLevel=.012+.03*rpm/8000;
+  const gain=1.0*(1.25-.25*Math.min(1,rpm/3000)),drive=1.1+.8*load,norm=1/Math.tanh(drive),step=3/60/sr*wob;
+  const L=this.L,R=this.R,dc=this.dc;
   for(let i=0;i<n;i++){
    this.rpm+=(rpmT-this.rpm)*.0016;this.load+=(thrT-this.load)*.0009;
    if(this.cut>0)this.cut--;if(this.limitCut>0)this.limitCut--;if(this.popWindow>0)this.popWindow--;
-   // three firings per crank revolution
-   this.phase+=this.rpm/60/sr*3;
-   if(this.phase>=1){this.phase-=1+(Math.random()-.5)*.03*Math.max(0,1-(this.rpm-900)/1800);this.fire();}
-   const noise=Math.random()*2-1;
-   const roughness=.22+.38*this.load;
-   let x=this.pulse*(1-roughness+roughness*noise);this.pulse*=this.pulseDecay;
-   this.env+=(Math.abs(x)-this.env)*.004;
-   // afterfire: a short noisy bang
+   // three firings per crank revolution, alternating sides
+   this.phase+=this.rpm*step;
+   if(this.phase>=1){this.phase-=1+(Math.random()-.5)*jit;this.fire();}
    let pop=0;if(this.popEnv>.001){pop=this.popEnv*(Math.random()*2-1);this.popEnv*=this.popDecay;}
-   x+=pop*.7;
-   // headers and tail pipe: two combs with damped feedback (an open pipe end inverts the reflection)
-   let j=this.i2-this.D2;if(j<0)j+=this.d2.length;this.lp2+=(this.d2[j]-this.lp2)*.45;const h=x+.38*this.lp2;this.d2[this.i2]=h;this.i2=(this.i2+1)%this.d2.length;
-   j=this.i1-this.D1;if(j<0)j+=this.d1.length;this.lp1+=(this.d1[j]-this.lp1)*.3;const p=h-.6*this.lp1;this.d1[this.i1]=p;this.i1=(this.i1+1)%this.d1.length;
-   let y=.55*p+1.1*this.biquad(this.r1,this.s1,p)+.5*this.biquad(this.r2,this.s2,p);
-   this.m1+=(y-this.m1)*a;this.m2+=(this.m1-this.m2)*a;y=this.m2+pop*.25;
-   // induction roar and valvetrain, both pulsed by the firings
-   y+=intake*this.biquad(this.ri,this.si,noise*(.35+3*this.env));
-   this.mech+=(noise-this.mech)*.6;y+=mechLevel*(noise-this.mech)*(.4+6*this.env);
-   y=Math.tanh(y*drive)*norm;
-   // DC blocker
-   const dc=y-this.dcx+.996*this.dcy;this.dcx=y;this.dcy=dc;
-   out[i]=dc*.42;
+   const yl=this.pipe(L,kd,kr,rough,a,this.popBank===L?pop*.7:0)*gain,yr=this.pipe(R,kd,kr,rough,a,this.popBank===R?pop*.7:0)*gain;
+   this.env+=(Math.abs(yl+yr)-this.env)*.004;
+   // induction: each intake stroke gulps air through the plenum, which rings; under load this is the howl
+   const w=Math.random()*2-1,s=Math.sin(TAU*this.phase),g=s>0?s*s*s*s:0;
+   this.an+=(w-this.an)*.2;
+   const ind=howl*(biquad(this.ci1,this.si1,g-.19)+.8*biquad(this.ci2,this.si2,g-.19))+rush*biquad(this.ri,this.si,this.an*(.4+2.5*g));
+   // valvetrain
+   this.mech+=(w-this.mech)*.6;const common=ind+mechLevel*(w-this.mech)*(.4+3*this.env)+pop*.2;
+   let y=Math.tanh((.8*yl+.45*yr+common)*drive)*norm,d=y-dc[0]+.996*dc[1];dc[0]=y;dc[1]=d;outL[i]=d*.42;
+   if(outR!==outL){y=Math.tanh((.45*yl+.8*yr+common)*drive)*norm;d=y-dc[2]+.996*dc[3];dc[2]=y;dc[3]=d;outR[i]=d*.42;}
   }
-  for(let c=1;c<outputs[0].length;c++)outputs[0][c].set(out);
+  for(let c=2;c<o.length;c++)o[c].set(outL);
   return true;
  }
 }
@@ -136,6 +165,21 @@ registerProcessor('tyres',Tyres);`;
 
 type Loop={src:AudioBufferSourceNode;filter:BiquadFilterNode;gain:GainNode};
 
+// The sound coming back off the road and the house fronts: a few early reflections and a short dull tail, different in
+// each ear, scaled to unit energy so the wet gain alone sets its level.
+function streetEcho(ctx:BaseAudioContext){
+ const sr=ctx.sampleRate,n=Math.round(sr*.42),buf=ctx.createBuffer(2,n,sr);
+ for(let c=0;c<2;c++){
+  const d=buf.getChannelData(c);
+  for(let k=0;k<7;k++){const at=Math.round(sr*(.009+.011*k+Math.random()*.009));d[at]+=(Math.random()<.5?-1:1)*.9*Math.exp(-k*.38);}
+  let lp=0,e=0;
+  for(let i=Math.round(sr*.02);i<n;i++){lp+=(Math.random()*2-1-lp)*.22;d[i]+=lp*1.1*Math.exp(-i/(sr*.085));}
+  for(let i=0;i<n;i++)e+=d[i]*d[i];
+  const k=1/Math.sqrt(e);for(let i=0;i<n;i++)d[i]*=k;
+ }
+ return buf;
+}
+
 export type CarSoundState={rpm:number;throttle:number;speed:number;gear:number;limiterRpm:number;
  /** tyre slide, 0 to 1, loudest of the four */ skid:number;
  /** sliding speed (m/s) of the body along whatever it is scraping */ scrape:number;
@@ -166,6 +210,7 @@ export class CarAudio{
    const limiter=ctx.createDynamicsCompressor();limiter.threshold.value=-10;limiter.knee.value=6;limiter.ratio.value=8;limiter.attack.value=.002;limiter.release.value=.18;
    const out=ctx.createGain();out.gain.value=this.muted?0:1;this.out=out;limiter.connect(out);out.connect(ctx.destination);
    const master=ctx.createGain();master.gain.value=0;master.connect(limiter);this.master=master;
+   const echo=ctx.createConvolver();echo.normalize=false;echo.buffer=streetEcho(ctx);const wet=ctx.createGain();wet.gain.value=.22;master.connect(echo);echo.connect(wet);wet.connect(limiter);
    const noise=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);const data=noise.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;this.noise=noise;
    const loop=(type:BiquadFilterType,freq:number,q:number):Loop=>{const src=ctx.createBufferSource();src.buffer=noise;src.loop=true;src.loopStart=Math.random();const filter=ctx.createBiquadFilter();filter.type=type;filter.frequency.value=freq;filter.Q.value=q;const gain=ctx.createGain();gain.gain.value=0;src.connect(filter);filter.connect(gain);gain.connect(master);src.start(0,Math.random()*1.5);return {src,filter,gain};};
    this.wind=loop('lowpass',420,.6);
@@ -173,7 +218,7 @@ export class CarAudio{
    const engineGain=ctx.createGain();engineGain.gain.value=1;engineGain.connect(master);this.engineGain=engineGain;
    const url=URL.createObjectURL(new Blob([ENGINE_WORKLET,TYRE_WORKLET],{type:'text/javascript'}));
    void ctx.audioWorklet.addModule(url).then(()=>{URL.revokeObjectURL(url);if(this.ctx!==ctx)return;
-    const node=new AudioWorkletNode(ctx,'flat-six',{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[1]});node.connect(engineGain);this.engine=node;
+    const node=new AudioWorkletNode(ctx,'flat-six',{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[2]});node.connect(engineGain);this.engine=node;
     const tyres=new AudioWorkletNode(ctx,'tyres',{numberOfInputs:0,numberOfOutputs:1,outputChannelCount:[1]});tyres.connect(master);this.tyres=tyres;}).catch(()=>{});
    if(!this.engaged)void ctx.suspend();else if(ctx.state==='suspended')void ctx.resume();
   }catch{this.ctx=null;}
