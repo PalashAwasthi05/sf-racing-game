@@ -14,8 +14,14 @@ root=Path(__file__).resolve().parents[1];work=root/'work';out=root/'outputs'
 parser=argparse.ArgumentParser()
 parser.add_argument('--scene',type=Path,required=True)
 parser.add_argument('--output',type=Path,required=True)
+parser.add_argument('--bounded', action='store_true', help='Read material representatives once and stream the original geometry through.')
 args=parser.parse_args()
-scene=trimesh.load(args.scene,force='scene',process=False)
+scene_path=args.scene
+if args.bounded:
+ from pipeline import stream_materials
+ args.output.mkdir(parents=True,exist_ok=True);out=args.output
+ scene_path=out/'source-palette.glb';stream_materials.palette(args.scene,scene_path)
+scene=trimesh.load(scene_path,force='scene',process=False)
 catalog=json.loads((work/'texture-inventory-v10.json').read_text())['assets'];records={r['asset_id']:r for r in inventory()}
 # Two scan libraries feed the catalog: the category library (loaded by its manifest record) and the small
 # measured-tile set under material-assets (loaded from its map paths). Both give the same material shape.
@@ -129,19 +135,25 @@ for mesh in scene.geometry.values():
   mesh.visual.material=cache[name];updated+=1
  counts[d['action']]+=1
 candidate=args.output;candidate.mkdir(parents=True,exist_ok=True)
-scene.export(candidate/'candidate.glb')
-# The working scene is done with: freed before the two reloads below (with it held, a large area peaked past 20 GB).
-del scene,mesh;import gc;gc.collect()
-# Verify exact geometry preservation through actual export/reload, not only in memory.
-before=trimesh.load(args.scene,force='scene',process=False);after=trimesh.load(candidate/'candidate.glb',force='scene',process=False)
-assert set(before.geometry)==set(after.geometry)
-for key,m in before.geometry.items():
- n=after.geometry[key];assert np.array_equal(m.vertices,n.vertices) and np.array_equal(m.faces,n.faces),key
- if n.visual.uv is not None:assert np.isfinite(n.visual.uv).all()
-assert np.allclose(before.graph.to_flattened()[next(iter(before.graph.nodes_geometry))]['transform'],after.graph.to_flattened()[next(iter(after.graph.nodes_geometry))]['transform'])
-report={'revision':'0.10','geometryMeshesPreserved':len(before.geometry),'updatedMeshes':updated,'counts':dict(counts),'decisions':decisions,'newTextureRequests':[dict(request_key=k,**v) for k,v in requests.items()],'uniqueAssignedAssets':sorted({d['asset_id'] for d in decisions.values() if 'asset_id'in d}),'materialVariants':len(cache),'automaticAcquisitionImplemented':False,'imageVerifiedClassification':False,'newTextureRequestPolicy':'deduplicate by structure, exclude color; retain prior surface until acquired and validated'}
+if args.bounded:
+ painted=candidate/'painted-palette.glb';scene.export(painted)
+ mesh_count,updated,missing=stream_materials.apply(args.scene,painted,candidate/'candidate.glb',decisions)
+ counts['missing_uv_retained']=missing
+else:
+ scene.export(candidate/'candidate.glb')
+ # The working scene is done with: freed before the two reloads below (with it held, a large area peaked past 20 GB).
+ del scene,mesh;import gc;gc.collect()
+ # Verify exact geometry preservation through actual export/reload, not only in memory.
+ before=trimesh.load(args.scene,force='scene',process=False);after=trimesh.load(candidate/'candidate.glb',force='scene',process=False)
+ assert set(before.geometry)==set(after.geometry)
+ for key,m in before.geometry.items():
+  n=after.geometry[key];assert np.array_equal(m.vertices,n.vertices) and np.array_equal(m.faces,n.faces),key
+  if n.visual.uv is not None:assert np.isfinite(n.visual.uv).all()
+ assert np.allclose(before.graph.to_flattened()[next(iter(before.graph.nodes_geometry))]['transform'],after.graph.to_flattened()[next(iter(after.graph.nodes_geometry))]['transform'])
+ mesh_count=len(before.geometry)
+report={'revision':'0.10','geometryMeshesPreserved':mesh_count,'decisionCountUnit':'unique material names' if args.bounded else 'meshes','updatedMeshes':updated,'counts':dict(counts),'decisions':decisions,'newTextureRequests':[dict(request_key=k,**v) for k,v in requests.items()],'uniqueAssignedAssets':sorted({d['asset_id'] for d in decisions.values() if 'asset_id'in d}),'materialVariants':len(cache),'automaticAcquisitionImplemented':False,'imageVerifiedClassification':False,'newTextureRequestPolicy':'deduplicate by structure, exclude color; retain prior surface until acquired and validated'}
 (candidate/'report.json').write_text(json.dumps(report,indent=2));(out/'texture-assignment-report.json').write_text(json.dumps(report,indent=2))
-(work/'texture-inventory-v10.json').write_text(json.dumps({'schema':'reusable-material-descriptor-v10','assets':catalog},indent=2))
+if not args.bounded:(work/'texture-inventory-v10.json').write_text(json.dumps({'schema':'reusable-material-descriptor-v10','assets':catalog},indent=2))
 from PIL import ImageDraw
 # A JPEG holds at most 65,500 px a side: a long sheet (a large area recolours hundreds of materials) goes in pages.
 PAGE=290

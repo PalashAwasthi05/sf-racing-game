@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {pilotStreamRequest,pilotAreaHref,pilotStreamMatches} from './king-pilot-route.ts';
+import {pilotStreamRequest,pilotAreaHref,pilotStreamMatches,pilotStreamIndex} from './king-pilot-route.ts';
 const route=(path:string)=>pilotStreamRequest(new URL(path,'https://viewer.example'));
 test('normal launch and legacy streaming URLs open the full neighborhood',()=>{
  for(const url of ['/','/?drive=1','/?stream=1','/?stream=1&drive=1','/?stream=neighborhood','/?viewFrom=1,2,3#viewFrom=4,5,6'])assert.equal(route(url),'neighborhood',url);
@@ -24,4 +24,13 @@ test('area menu offers independent full, corridor and archive destinations',()=>
  assert.equal(pilotAreaHref('@corridor'),'/?stream=corridor&drive=1');
  assert.equal(pilotAreaHref(''),'/previous');
  assert.equal(new URL(pilotAreaHref('/compare/king-street-local.json'),'https://viewer.example').searchParams.get('manifest'),'/compare/king-street-local.json');
+});
+
+test('named archives select their own spatial package and retain source matching',()=>{
+ const index='/compare/area-stream-1234.json';
+ assert.equal(pilotStreamIndex('match-source',index),index);
+ assert.equal(pilotStreamIndex('match-source','https://invalid.example/x.json'),'/compare/neighborhood-stream.json');
+ assert.equal(pilotStreamIndex('match-source','/compare/../x.json'),'/compare/neighborhood-stream.json');
+ assert.equal(pilotStreamIndex('neighborhood',index),'/compare/neighborhood-stream.json');
+ assert.equal(pilotStreamIndex('corridor',index),'/compare/drive-stream.json');
 });

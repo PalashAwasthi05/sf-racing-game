@@ -15,12 +15,13 @@ from scipy.ndimage import median_filter, gaussian_filter, distance_transform_edt
 from rasterio.features import shapes
 from rasterio.transform import from_origin
 from pipeline.materials import Materials
+from pipeline.surface_grade import below_surface
 from pipeline import facades,streets,vegetation,signs,envelopes,lettering,surface_evidence,spatial_rules,mobility,freshness,street_space,street_ground,ground_paint,roof_envelope,landmarks,roof_forms,roof_features,facade_lint,roof_observations,roof_shell,roof_assemblies,roof_source_parts,facade_wall_domain,roof_front_ownership,roof_gable_ownership
 from general_world.roof_planes import roof_solid,evaluate as roof_evaluate
 from trimesh.visual.texture import TextureVisuals
 
 import argparse
-_args=argparse.ArgumentParser(description='Detailed pilot generator; writes a candidate (raw GLB, chunks, world.json, evidence) into --output instead of the live preview.');_args.add_argument('--output',required=True);_args.add_argument('--regen-profiles',default=None);_args.add_argument('--area',default=None);_args.add_argument('--streets-only',action='store_true',help='Emit street layers only for validated layer replacement; never publish this partial scene directly.');_args.add_argument('--massing',default=None,help='JSON {building id: {"drop": true} | {"outline": [[x, y], ...]}}: outlines the street photographs and LiDAR contradict (areas/ring/massing)');_args.add_argument('--only',default=None,help='JSON list of building ids: build only those buildings, to splice into a built area (areas/ring/splice.py); the ground model still runs');_args.add_argument('--roof-evidence',action='store_true',help='Save the exact filtered roof returns used by the generator for reconstruction review.');_args.add_argument('--experimental-roof-reconstruction',action='store_true',help='Candidate-only roof observation validation and adaptive plane sampling; visual acceptance is still pending.');_args.add_argument('--roof-shell',action='store_true',help='Build candidate roofs as continuous LiDAR-supported shells with observed roof details.');_args.add_argument('--roof-observations',default=None,help='JSON roof observation list (or an object containing observations)');_args=_args.parse_args()
+_args=argparse.ArgumentParser(description='Detailed pilot generator; writes a candidate (raw GLB, chunks, world.json, evidence) into --output instead of the live preview.');_args.add_argument('--output',required=True);_args.add_argument('--regen-profiles',default=None);_args.add_argument('--area',default=None);_args.add_argument('--streets-only',action='store_true',help='Emit street layers only for validated layer replacement; never publish this partial scene directly.');_args.add_argument('--massing',default=None,help='JSON {building id: {"drop": true} | {"outline": [[x, y], ...]}}: outlines the street photographs and LiDAR contradict (areas/ring/massing)');_args.add_argument('--only',default=None,help='JSON list of building ids: build only those buildings, to splice into a built area (areas/ring/splice.py); the ground model still runs');_args.add_argument('--roof-evidence',action='store_true',help='Save the exact filtered roof returns used by the generator for reconstruction review.');_args.add_argument('--experimental-roof-reconstruction',action='store_true',help='Candidate-only roof observation validation and adaptive plane sampling; visual acceptance is still pending.');_args.add_argument('--roof-shell',action='store_true',help='Build candidate roofs as continuous LiDAR-supported shells with observed roof details.');_args.add_argument('--roof-observations',default=None,help='JSON roof observation list (or an object containing observations)');_args.add_argument('--generic-only',action='store_true',help='Disable authored landmark and footprint decisions for a fresh area.');_args.add_argument('--bounded-scene',action='store_true',help='Spool completed feature meshes to disk and merge GLB buffers without retaining a whole city scene.');_args=_args.parse_args()
 # --only FILE: the listed buildings alone (their parts by source id). Every other outline stays a neighbour for the walls'
 # facing rules; trees, street furniture and street surfaces are skipped (the splice keeps the built area's own).
 ONLY=set(json.load(open(_args.only))) if _args.only else None;ONLY_SRC={i.split('_p')[0] for i in ONLY} if ONLY else None
@@ -116,6 +117,16 @@ if REGEN is not None:ENVELOPES=[]
 ENVELOPE_COLOURS=json.load(open(ROOT/'pipeline/envelope-colours-v32.json'))['envelopes'] if (ROOT/'pipeline/envelope-colours-v32.json').exists() else {}
 if REGEN is not None:ENVELOPE_COLOURS={}
 CONFIG=json.load(open((AREA or ROOT/'pipeline')/'config.json'));OBS=json.load(open(ROOT/'pipeline/observations.json'));facade_records=[];sign_records=[]
+if _args.generic_only:
+ if AREA is None:raise ValueError('--generic-only requires an independent --area')
+ if _args.massing:raise ValueError('--generic-only prohibits authored massing overrides')
+ landmarks.REGISTRY={'landmarks':{}}
+ facades.donor_for=lambda *a,**kw:None
+ _area_sources=(REGEN or {}).get('sources',{})
+ if isinstance(_area_sources,list):_area_sources={s['id']:s for s in _area_sources}
+ OBS={**OBS,'sources':_area_sources,'footprintDecisions':[]}
+ ENVELOPE_DATA={**ENVELOPE_DATA,'sources':[]}
+ LETTERING_DATA={**LETTERING_DATA,'sources':{}}
 if REGEN is not None:
  OBS={**OBS,'facades':[]};facades._PARAPETS=[];facades._INCUMBENTS={}
 ll=Transformer.from_crs(4326,32610,always_xy=True);inv=Transformer.from_crs(32610,4326,always_xy=True)
@@ -125,10 +136,14 @@ nodes={n.attrib['id']:(float(n.attrib['lon']),float(n.attrib['lat'])) for n in o
 raw_ways=[];way_metadata={w.attrib['id']:{'editedAt':w.attrib.get('timestamp'),'version':w.attrib.get('version'),'captureAgeKnown':False} for w in osm.findall('way')}
 for w in osm.findall('way'):
  tags={a.attrib['k']:a.attrib['v'] for a in w.findall('tag')}
+ if below_surface(tags):continue
  pts=[nodes[n.attrib['ref']] for n in w.findall('nd') if n.attrib['ref'] in nodes]
  if len(pts)>1:raw_ways.append((w.attrib['id'],tags,pts))
-target=next(w for w in raw_ways if w[0]==CONFIG['region']['addressWayId'])
-target_poly=transform(ll.transform,Polygon(target[2]));cx,cy=target_poly.centroid.coords[0];lon,lat=inv.transform(cx,cy)
+if CONFIG['region'].get('center'):
+ lon=CONFIG['region']['center']['lon'];lat=CONFIG['region']['center']['lat'];cx,cy=ll.transform(lon,lat)
+else:
+ target=next(w for w in raw_ways if w[0]==CONFIG['region']['addressWayId'])
+ target_poly=transform(ll.transform,Polygon(target[2]));cx,cy=target_poly.centroid.coords[0];lon,lat=inv.transform(cx,cy)
 def local(x,y,z=None):
  a,b=ll.transform(x,y);return np.asarray(a)-cx,np.asarray(b)-cy
 def geom(g):return transform(local,shape(g))
@@ -142,7 +157,8 @@ def lines(g):
  if g.geom_type=='LineString':return [g]
  if hasattr(g,'geoms'):return [p for a in g.geoms for p in lines(a)]
  return []
-boundary=Point(0,0).buffer(CONFIG['region']['contextRadiusM'],quad_segs=96);study=Point(0,0).buffer(CONFIG['region']['studyRadiusM'])
+boundary=geom(CONFIG['region']['contextGeometry']).buffer(0) if CONFIG['region'].get('contextGeometry') else Point(0,0).buffer(CONFIG['region']['contextRadiusM'],quad_segs=96)
+study=geom(CONFIG['region']['studyGeometry']).buffer(0) if CONFIG['region'].get('studyGeometry') else Point(0,0).buffer(CONFIG['region']['studyRadiusM'])
 ways=[]
 for id,t,p in raw_ways:
  x,y=local(*zip(*p));coords=list(zip(x,y))
@@ -150,13 +166,19 @@ for id,t,p in raw_ways:
  if not g.is_valid:g=make_valid(g)
  if g.intersects(boundary):ways.append({'id':id,'tags':t,'g':g,'metadata':way_metadata[id]})
 
-pts=np.load(DATA/'points.npz')['points'];px,py=web.transform(pts[:,0],pts[:,1]);pts[:,0]=px-cx;pts[:,1]=py-cy
+from pipeline.project_point_cloud import project_point_cloud
+pts=project_point_cloud(DATA/'points.npz',web,(cx,cy))
 ground=pts[pts[:,3]==2];_zlo,_zhi=np.quantile(ground[:,2],[.005,.995]) if AREA is not None else (5.,10.);ground=ground[(ground[:,2]>_zlo-10)&(ground[:,2]<_zhi+10)]   # the area's own ground band (a hill stands 100 m up; a fixed -5..20 m band held only the waterfront)
 base=float(np.median(ground[np.linalg.norm(ground[:,:2],axis=1)<40,2]));pts[:,2]-=base;ground[:,2]-=base
 tree=cKDTree(ground[:,:2]);STEP=3.;MIN=-math.ceil((CONFIG['region']['contextRadiusM']+2)/STEP)*STEP;N=int(round(-2*MIN/STEP))+1   # the terrain grid spans the context radius
 gx,gy=np.meshgrid(np.arange(N)*STEP+MIN,np.arange(N)*STEP+MIN)
-dist,idx=tree.query(np.c_[gx.ravel(),gy.ravel()],k=8)
-grid=np.median(ground[idx,2],axis=1).reshape(N,N);grid=gaussian_filter(grid,.8)
+grid=np.empty((N,N),dtype=ground.dtype)
+for start in range(0,N,32):
+ rows=slice(start,start+32)
+ neighbors=tree.query(np.c_[gx[rows].ravel(),gy[rows].ravel()],k=8)[1]
+ grid[rows]=np.median(ground[neighbors,2],axis=1).reshape(-1,N)
+del neighbors
+grid=gaussian_filter(grid,.8)
 def elev(x,y):
  fx=np.clip((np.asarray(x)-MIN)/STEP,0,N-1.00001);fy=np.clip((np.asarray(y)-MIN)/STEP,0,N-1.00001);ix=np.floor(fx).astype(int);iy=np.floor(fy).astype(int);fx=fx-ix;fy=fy-iy
  a,b,c,d=grid[iy,ix],grid[iy,ix+1],grid[iy+1,ix],grid[iy+1,ix+1]
@@ -175,6 +197,9 @@ def rgba(c):
  c=palette.get(c,c).lstrip('#');return [int(c[i:i+2],16) for i in (0,2,4)]+[255]
 material_bank=Materials(ROOT/'material-assets',palette)
 batches=collections.defaultdict(lambda:[[],[],[],[]]);_batch_vertices=collections.Counter()
+_scene_parts=[]
+if _args.bounded_scene:
+ _part_dir=OUT/'geometry-parts';_part_dir.mkdir(exist_ok=True)
 front_trees=[]   # (x, y, ground z, height, crown radius): small trees the facade readings stand in front of walls (facade_detail)
 CLIP=None
 def set_clip(halfspaces):
@@ -259,6 +284,40 @@ def put(mesh,key,color,uv=None):
  # kept at the GLB's own precision (float32, int32) until export: in float64 an area of rich facade readings outgrew the
  # machine's memory before its last building
  vertices.append(v.astype(np.float32));faces.append((np.arange(len(v)).reshape(-1,3)+off).astype(np.int32));uvs.append(coord.astype(np.float32));normals.append(norm.astype(np.float32));_batch_vertices[batchkey]+=len(v)
+def _flush_batches():
+ global duplicate_triangles
+ for key in list(batches):
+  v,f,uv,normals=batches.pop(key);_batch_vertices.pop(key,None)
+  if not v:continue
+  semantic,material_name=key.split('___',1);mat,_=material_bank.get(material_name)
+  mesh=trimesh.Trimesh(np.concatenate(v),np.concatenate(f),vertex_normals=np.concatenate(normals),visual=TextureVisuals(uv=np.concatenate(uv),material=mat),process=False)
+  v.clear();f.clear();uv.clear();normals.clear()   # the pieces, once joined: holding both outgrew the machine's memory
+  mesh.merge_vertices(merge_tex=False,merge_norm=False)
+  duplicate_triangles+=spatial_rules.remove_duplicate_triangles(mesh)
+  # Triangle inspection caches duplicate indexed geometry; retain only authored hard vertex normals.
+  mesh._cache.clear(exclude=['vertex_normals'])
+  layer=semantic.split('__')[0];fid=semantic.split('__')[1] if '__' in semantic else None
+  status='measured-fit' if layer in ['terrain','roofs'] else 'visual-fit' if '__observed_' in semantic else 'inferred'
+  mesh.metadata={'layer':layer,'featureId':fid,'evidence':status,'material':material_name}
+  scene.add_geometry(mesh,node_name=key,geom_name=key,metadata=mesh.metadata,transform=VIEW_FRAME)
+def _snapshot_context():
+ return {k:v for k,v in globals().items() if k not in ('outer_ctx','tier_ctx','lm_ctx')}
+def _spool_scene():
+ global scene
+ if not _args.bounded_scene or not scene.geometry:return
+ part=_part_dir/f'{len(_scene_parts):05d}.glb'
+ part.write_bytes(scene.export(file_type='glb'));_scene_parts.append(str(part))
+ scene.geometry.clear()
+ scene=trimesh.Scene()
+ # Compiler snapshots are transient; retaining one would keep its whole preceding scene and source arrays alive.
+ for name in ('outer_ctx','tier_ctx','lm_ctx'):
+  context=globals().get(name)
+  if isinstance(context,dict):context.clear()
+ import gc;gc.collect()
+def flush_vegetation():
+ if _args.bounded_scene:
+  _flush_batches();_spool_scene()
+
 def cube(center,size,key,color,angle=0):
  sx,sy,sz=size
  if min(sx,sy,sz)<=0:return
@@ -301,7 +360,7 @@ def cylinder(a,b,r,key,color,sections=8):
 # burying the lower part of a fifth of the garage doors the photographs show (Palash's review, 10-15). The grid nodes in
 # front of each door are held down to the LiDAR's own ground at its threshold, rising 5 cm a metre toward the street.
 def _hold_driveways():
- kd=cKDTree(ground[:,:2]);held=0;cap=np.full((N*3,N*3),np.inf,np.float32)   # the cap on elev, 1 m cells
+ held=0;cap=np.full((N*3,N*3),np.inf,np.float32)   # the cap on elev, 1 m cells
  for _p in PROFILES:
   try:
    n=np.asarray(_p['normal'],float)[:2];n=n/np.linalg.norm(n);t=np.array([-n[1],n[0]]);u0,u1=map(float,_p['frameU']);v=float(_p['planeV']);H=float(_p.get('heightRefM') or 0.)
@@ -311,7 +370,7 @@ def _hold_driveways():
    x0,y0,x1,y1=o['rect']
    if y0*H>.6:continue                                            # a door on an upper storey is no driveway
    a,b=u0+x0*(u1-u0),u0+x1*(u1-u0);c=n*v+t*(a+b)/2
-   q=ground[kd.query_ball_point(c+n*.8,max(1.5,(b-a)/2+.5))]
+   q=ground[tree.query_ball_point(c+n*.8,max(1.5,(b-a)/2+.5))]
    if not len(q):continue
    rel=q[:,:2]-n*v;along=rel@t;out=rel@n
    z=q[(along>a-.2)&(along<b+.2)&(out>.15)&(out<1.5),2]
@@ -337,12 +396,13 @@ def elev(x,y):
  z=_elev_free(x,y);xs=np.asarray(x,float);ys=np.asarray(y,float)
  c=_DRIVE_CAP[np.clip((ys-MIN).astype(int),0,_DRIVE_CAP.shape[0]-1),np.clip((xs-MIN).astype(int),0,_DRIVE_CAP.shape[1]-1)]
  return np.minimum(z,c)
-# Ground surface uses LiDAR elevations, with an explicit circular model boundary.
+# Ground surface uses LiDAR elevations inside the externally supplied context domain.
 vv=np.c_[gx.ravel(),gy.ravel(),grid.ravel()];ff=[]
+_terrain_inside=contains_xy(boundary,gx,gy)
 for y in range(N-1):
  for x in range(N-1):
   i=y*N+x
-  if math.hypot(gx[y,x],gy[y,x])<CONFIG['region']['contextRadiusM']:ff.extend([[i,i+1,i+N],[i+1,i+N+1,i+N]])
+  if _terrain_inside[y,x]:ff.extend([[i,i+1,i+N],[i+1,i+N+1,i+N]])
 put(trimesh.Trimesh(vv,ff,process=False),'terrain','sidewalk')
 waterways=[w['g'] for w in ways if w['tags'].get('natural')=='water' and w['g'].geom_type in ['Polygon','MultiPolygon']]
 for p in waterways:extrude(p.intersection(boundary),-base,.04,'water','water')
@@ -397,7 +457,8 @@ for c in candidates:
  _lm=landmarks.entry(c)
  if _lm and _lm.get('extendBeyondBoundary'):c['extendedBeyondBoundary']=c['clipped'];c['clipped']=False
  else:c['g']=c['g'].intersection(boundary)
-all_buildings=unary_union([c['g'] for c in candidates]);ground_kd=cKDTree(ground[:,:2])
+candidates=[{**c,'g':unary_union(polys(c['g'])).buffer(0)} for c in candidates if not c['g'].is_empty and sum(p.area for p in polys(c['g']))>=1.]
+all_buildings=unary_union([c['g'] for c in candidates]);ground_kd=tree
 # The points sorted into 8 m cells once: an outline's points are gathered from the cells under its bounds (the same
 # points, in their original order), not from a pass over every point (20 million in a larger area, read per outline).
 _GC=8.;_gx0,_gy0=float(pts[:,0].min()),float(pts[:,1].min());_gnx=int((pts[:,0].max()-_gx0)//_GC)+1;_gny=int((pts[:,1].max()-_gy0)//_GC)+1
@@ -405,11 +466,13 @@ _gkey=((pts[:,1]-_gy0)//_GC).astype(np.int64)*_gnx+((pts[:,0]-_gx0)//_GC).astype
 _gorder=np.argsort(_gkey,kind='stable');_gstart=np.searchsorted(_gkey[_gorder],np.arange(_gnx*_gny+1))
 def get_box(a,b,c,d):
  """The non-noise points with a<=x<=c and b<=y<=d, in their original order."""
+ if not np.isfinite([a,b,c,d]).all():return pts[:0]
  i0,i1=max(0,int((a-_gx0)//_GC)),min(_gnx-1,int((c-_gx0)//_GC));j0,j1=max(0,int((b-_gy0)//_GC)),min(_gny-1,int((d-_gy0)//_GC))
  if i1<i0 or j1<j0:return pts[:0]
  idx=np.sort(np.concatenate([_gorder[_gstart[j*_gnx+i0]:_gstart[j*_gnx+i1+1]] for j in range(j0,j1+1)]))
  q=pts[idx];return q[(q[:,0]>=a)&(q[:,0]<=c)&(q[:,1]>=b)&(q[:,1]<=d)&(q[:,3]!=7)&(q[:,3]!=18)]
 def get_points(g):
+ if g.is_empty:return pts[:0]
  q=get_box(*g.bounds);return q[contains_xy(g,q[:,0],q[:,1])]
 # The measured surface top on a 1 m grid (highest non-noise return per cell), for height-aware wall visibility.
 _st_x0,_st_y0=float(pts[:,0].min()),float(pts[:,1].min());_st_W=int(pts[:,0].max()-_st_x0)+2;_st_H=int(pts[:,1].max()-_st_y0)+2
@@ -508,7 +571,7 @@ for c in ([] if _args.streets_only else [c for c in candidates if ONLY is None o
  if lm:
   # A landmark's builder owns the whole footprint (surfaces, walls, field, props); observed street frontages are
   # compiled on top of it, reduced to their facade planes.
-  lm_view=landmarks.frontage_view(resolved,lm);lm_ctx=dict(globals());lm_ctx['landmarks_view']=lm_view
+  lm_view=landmarks.frontage_view(resolved,lm);lm_ctx=_snapshot_context();lm_ctx['landmarks_view']=lm_view
   built=landmarks.build(lm_ctx,c,z0,resolved,lm);landmark_sites.append(built['site']);landmark_records.append({'buildingId':id,**built['record']})
   er,ec=envelopes.compile(globals(),c,z0,lm_view);envelope_records.extend(er);facade_records.extend(er);counts['windowAssemblies']+=ec
   lettering_records.extend(lettering.compile(globals(),c,z0,LETTERING_DATA['signs'],resolved))
@@ -869,7 +932,7 @@ for c in ([] if _args.streets_only else [c for c in candidates if ONLY is None o
     # tier's, and a wall comes down to whichever roof stands in front of it.
     tier['tierBase']=base_roof;tier['tierAbove']=roof_bands[bi+1]['geometry'] if bi+1<len(roof_bands) else None
     tier['tiersBelow']=[(b['geometry'],base_roof+b['top']) for b in roof_bands[:bi]]
-    tier_ctx=dict(globals());tier_ctx['all_buildings']=all_buildings.difference(g);tier_ctx['envelopeMask']=envelope_mask.union(own_strip);tier_ctx['envelopeSpans']=envelope_spans
+    tier_ctx=_snapshot_context();tier_ctx['all_buildings']=all_buildings.difference(g);tier_ctx['envelopeMask']=envelope_mask.union(own_strip);tier_ctx['envelopeSpans']=envelope_spans
     tier_ctx['roundedZones']=rounded_zone
     rr_records,rr_components=facades.compile(tier_ctx,tier,base_roof+band['bottom'],float(band['top']-band['bottom']),height,tags,OBS['facades']);facade_records.extend(rr_records);counts['windowAssemblies']+=rr_components
     extrude(band['cap'],base_roof+band['top'],.10,'roofs__'+id,'roof');roofparts+=1
@@ -913,7 +976,7 @@ for c in ([] if _args.streets_only else [c for c in candidates if ONLY is None o
    wall_top_cap=max(_tops)+1.5
   else:wall_top_cap=None
  c['massHeightM']=float(base_roof-z0)
- outer_ctx=dict(globals());outer_ctx['venueField']=venue['field'] if (rr is not None and venue) else None;outer_ctx['wallTopCapZ']=wall_top_cap;outer_ctx['roofSamplesOwned']=bool(_args.experimental_roof_reconstruction and roof_patches and rr is not None);outer_ctx['roofSamples']=owned_roof if _args.experimental_roof_reconstruction and roof_patches and rr is not None else roof;outer_ctx['envelopeMask']=envelope_mask;outer_ctx['envelopeSpans']=envelope_spans;outer_ctx['roundedOuterCorners']=outer_rounded
+ outer_ctx=_snapshot_context();outer_ctx['venueField']=venue['field'] if (rr is not None and venue) else None;outer_ctx['wallTopCapZ']=wall_top_cap;outer_ctx['roofSamplesOwned']=bool(_args.experimental_roof_reconstruction and roof_patches and rr is not None);outer_ctx['roofSamples']=owned_roof if _args.experimental_roof_reconstruction and roof_patches and rr is not None else roof;outer_ctx['envelopeMask']=envelope_mask;outer_ctx['envelopeSpans']=envelope_spans;outer_ctx['roundedOuterCorners']=outer_rounded
  pitched=[p['geometry'] for p in roof_patches if max(float(np.linalg.norm(q[:2])) for q in p['model']['planes'])>=roof_envelope.PITCH_SLOPE]
  outer_ctx['pitchedRoof']=unary_union(pitched) if pitched else None
  outer_ctx['pitchedModels']=[(p['geometry'],p['model']) for p in roof_patches if max(float(np.linalg.norm(q[:2])) for q in p['model']['planes'])>=roof_envelope.PITCH_SLOPE]
@@ -967,8 +1030,10 @@ for c in ([] if _args.streets_only else [c for c in candidates if ONLY is None o
  observed_count=sum(r['status'] in ['visual-fit','image-layout-fit','visual-grammar','envelope-graph'] for r in records)
  if er:height=max(height,max(r['heightM'] for r in er))
  features.append({'id':id,'name':name,'height':round(height,2),'heightSource':source,'footprintSource':c['fp'],'outlineMetadata':c['osm'].get('metadata',{}) if c['osm'] else {'captureAgeKnown':False},'roofParts':roofparts,'center':[round(g.centroid.x,2),round(g.centroid.y,2),round(z0,2)],'area':round(g.area,1),'clippedAtBoundary':c['clipped'],'pointCount':len(roof),'facade':'Image-derived envelope parts capture changing heights, materials and depth. Windows belong to individual surfaces; measurements still need independent checking.' if resolved else 'Street-facing wall regions use observation-derived layouts; unseen walls remain inferred.' if observed_count else 'Detailed facade generated from an unverified architectural prior.','facadeEvidence':'Image hierarchy + LiDAR levels' if resolved else 'Image layout / visual grammar' if observed_count else 'Unverified prior','fittedWalls':observed_count,'totalWalls':len(records),'sourceUrl':'https://data.sfgov.org/d/ynuv-fyni' if c['fp'].startswith('Data') else 'https://www.openstreetmap.org/way/'+c['osm']['id'] if c['osm'] else None})
+ _flush_batches();_spool_scene()
  print(name,round(height,1),len(roof),roofparts,flush=True)
 
+print('PHASE streets',flush=True)
 # Paved carriageways use OSM centerlines and lane counts; widths are inferred.
 roads=[];rails=[];footpaths=[];road_specs={};road_polygons=[]
 for w in ways:
@@ -1012,6 +1077,8 @@ for w in rails:
   for a,b in zip(line.coords,list(line.coords)[1:]):cylinder([*a,float(elev(*a))+5.7],[*b,float(elev(*b))+5.7],.025,'street_objects','metal',5)
  counts['railSegments']+=1
 
+print('PHASE vegetation',flush=True)
+_flush_batches();_spool_scene()
 # Shared species templates replace low-detail canopy primitives.
 from pipeline.crown_clearance import CrownClearance
 _crown_clearance=CrownClearance(street_plan,elev)
@@ -1023,6 +1090,11 @@ for _t in front_trees:canopy.draw_tree(put,cylinder,*_t)
 counts['frontGardenTrees']=len(front_trees)
 canopy_records=canopy.compile(globals()) if ONLY is None else []
 counts.update(lowTravelLeafCardsRemoved=_crown_clearance.card_count,lowTravelLimbsTrimmed=_crown_clearance.limb_count)
+print('PHASE furniture; releasing source cloud/indexes',flush=True)
+LIDAR_POINT_COUNT=len(pts)
+del pts,_gkey,_gorder,_gstart,_sm,ground,ground_kd,tree
+import gc;gc.collect()
+_flush_batches();_spool_scene()
 if ONLY is None:street_space.furniture(globals())
 
 # Barriers are generated only from mapped barrier or explicit handrail evidence.
@@ -1067,19 +1139,17 @@ for profile in PROFILES:
   _,pos,w=min(ranked,key=lambda v:v[0]);tangent=(u if np.dot(u,focus-pos)>0 else -u);look=focus+tangent*8
   street_views.append({'position':np.round(pos,2).tolist(),'lookAt':[round(float(look[0]),2),round(float(look[1]),2),3.8],'label':w['tags'].get('name','Street')+' / '+profile['id']})
 street_views.sort(key=lambda v:sum(float(x)**2 for x in v['position'][:2]))
-# One mesh per material and feature; image payloads are shared by glTF.
-for key,(v,f,uv,normals) in batches.items():
- if not v:continue
- semantic,material_name=key.split('___',1);mat,_=material_bank.get(material_name)
- mesh=trimesh.Trimesh(np.concatenate(v),np.concatenate(f),vertex_normals=np.concatenate(normals),visual=TextureVisuals(uv=np.concatenate(uv),material=mat),process=False)
- v.clear();f.clear();uv.clear();normals.clear()   # the pieces, once joined: holding both outgrew the machine's memory
- mesh.merge_vertices(merge_tex=False,merge_norm=False)
- duplicate_triangles+=spatial_rules.remove_duplicate_triangles(mesh)
- layer=semantic.split('__')[0];fid=semantic.split('__')[1] if '__' in semantic else None
- status='measured-fit' if layer in ['terrain','roofs'] else 'visual-fit' if '__observed_' in semantic else 'inferred'
- mesh.metadata={'layer':layer,'featureId':fid,'evidence':status,'material':material_name}
- scene.add_geometry(mesh,node_name=key,geom_name=key,metadata=mesh.metadata,transform=VIEW_FRAME)
-counts.update(buildings=len(features),lidarPoints=len(pts),roofParts=sum(f['roofParts'] for f in features))
+# Explicit route positions are geographic observations, transformed through the same frame as all geometry.
+_route_views=[]
+for anchor in CONFIG['region'].get('routeAnchors',[]):
+ p=np.asarray(local(*anchor['position']),float);q=np.asarray(local(*anchor['lookAt']),float)
+ if boundary.covers(Point(*p)):
+  _route_views.append({'position':np.round(p,2).tolist(),'lookAt':[round(float(q[0]),2),round(float(q[1]),2),float(anchor.get('lookHeightM',3.8))],'label':anchor.get('label','Street')})
+street_views=_route_views+street_views
+print('PHASE final mesh assembly',flush=True)
+_flush_batches();_spool_scene()
+if _args.bounded_scene:(OUT/'geometry-parts.json').write_text(json.dumps(_scene_parts))
+counts.update(buildings=len(features),lidarPoints=LIDAR_POINT_COUNT,roofParts=sum(f['roofParts'] for f in features))
 coarse_signs=[]
 for s in json.load(open(DATA/'signs.json')):
  try:x,y=geom(s['shape']).coords[0]
@@ -1103,21 +1173,28 @@ audit={'freshness':freshness_records,'spatialCorrections':spatial_audit,'foundat
 (OUT/'facade-lint.json').write_text(json.dumps(LINT,indent=1))
 (OUT/'landmark-audit.json').write_text(json.dumps(landmark_records,indent=2,default=float))
 np.savez_compressed(OUT/'rooftop-structure-returns.npz',**{k+'__above':v for k,v in structure_returns.items()},**{k+'__context':v for k,v in structure_context.items()},**{k+'__rr':v[0] for k,v in structure_raster.items()},**{k+'__frame':np.array([v[1],v[2],v[3]]) for k,v in structure_raster.items()})
-glb=scene.export(file_type='glb');(PUBLIC/(CONFIG['outputPrefix']+'.glb')).write_bytes(glb);(OUT/(CONFIG['outputPrefix']+'-pilot.glb')).write_bytes(glb)
+if _args.bounded_scene:
+ from pipeline.merge_static_glbs import merge_static_glbs
+ _merged=OUT/(CONFIG['outputPrefix']+'-pilot.glb')
+ merge_static_glbs(_scene_parts,_merged)
+else:
+ _merged=OUT/(CONFIG['outputPrefix']+'-pilot.glb')
+ _merged.write_bytes(scene.export(file_type='glb'))
 (PUBLIC/'world.json').write_text(json.dumps(world,separators=(',',':')));(OUT/(CONFIG['outputPrefix']+'-evidence.json')).write_text(json.dumps({'world':world,'unresolvedSigns':coarse_signs,'freshness':freshness_records,'facadeWalls':facade_records,'signPlacements':sign_records,'envelopeGraphs':envelope_records,'observationSources':{**OBS['sources'],**{a['id']:a for a in ENVELOPE_DATA['sources']}},'footprintConsolidations':consolidations,'spatialCorrections':spatial_audit,'foundations':foundation_records,'mobility':mobility_records,'layoutFits':FITS,'profiles':PROFILES,'materials':{**material_bank.manifest,'appearanceRecipes':'pipeline/material_recipes.py; synthesized family appearance, not building-specific scans'},'boundaryFits':BOUNDARY_FITS,'facadeLettering':lettering_records,'surfaceSources':LETTERING_DATA['sources'],'ruleAudit':audit},indent=2))
-print('OUTPUT',len(glb),'bytes',dict(counts),'center',lat,lon,flush=True)
+print('OUTPUT',_merged.stat().st_size,'bytes',dict(counts),'center',lat,lon,flush=True)
 
 (PUBLIC/'facade-evidence.json').write_text(json.dumps({'walls':facade_records,'signs':sign_records,'envelopes':envelope_records,'lettering':lettering_records,'boundaryFits':BOUNDARY_FITS,'surfaceSources':LETTERING_DATA['sources'],'ruleAudit':audit,'sources':{**OBS['sources'],**{a['id']:a for a in ENVELOPE_DATA['sources']}}},separators=(',',':')))
 print('GENERATION_SECONDS',round(time.perf_counter()-START,2),flush=True)
 
-import gzip,hashlib
-with gzip.GzipFile(PUBLIC/(CONFIG['outputPrefix']+'.glb.gz'),'wb',compresslevel=7,mtime=0) as stream:stream.write(glb)
-(PUBLIC/(CONFIG['outputPrefix']+'.glb')).unlink()
+import gzip,hashlib,shutil
+with gzip.GzipFile(PUBLIC/(CONFIG['outputPrefix']+'.glb.gz'),'wb',compresslevel=7,mtime=0) as stream, _merged.open('rb') as source:shutil.copyfileobj(source,stream,1024*1024)
 # Bounded transfer chunks; raw GLB is retained only as a local interchange artifact.
-packed=(PUBLIC/(CONFIG['outputPrefix']+'.glb.gz')).read_bytes();chunks=[];digest=hashlib.sha256(glb).hexdigest()[:12]
-for i in range(0,len(packed),4*1024*1024):
- name=f"{CONFIG['outputPrefix']}-{digest}-{i//(4*1024*1024):02d}.bin";(PUBLIC/name).write_bytes(packed[i:i+4*1024*1024]);chunks.append('/'+name)
+with _merged.open('rb') as source:digest=hashlib.file_digest(source,'sha256').hexdigest()[:12]
+packed_path=PUBLIC/(CONFIG['outputPrefix']+'.glb.gz');chunks=[]
+with packed_path.open('rb') as packed:
+ for i in range(math.ceil(packed_path.stat().st_size/(4*1024*1024))):
+  name=f"{CONFIG['outputPrefix']}-{digest}-{i:02d}.bin";(PUBLIC/name).write_bytes(packed.read(4*1024*1024));chunks.append('/'+name)
 for old in PUBLIC.glob(CONFIG['outputPrefix']+'-*.bin'):
  if '/'+old.name not in chunks:old.unlink()
-(PUBLIC/'model.json').write_text(json.dumps({'compression':'gzip','contentHash':digest,'chunks':chunks,'compressedBytes':len(packed),'uncompressedBytes':len(glb)}))
-(PUBLIC/(CONFIG['outputPrefix']+'.glb.gz')).unlink()
+(PUBLIC/'model.json').write_text(json.dumps({'compression':'gzip','contentHash':digest,'chunks':chunks,'compressedBytes':packed_path.stat().st_size,'uncompressedBytes':_merged.stat().st_size}))
+packed_path.unlink()

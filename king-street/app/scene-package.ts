@@ -11,6 +11,7 @@ export type SceneManifest = {
   world?: string;
   cars?: string;
   overhead?: string;
+  spatialIndex?: string;
 };
 
 export async function loadSceneManifest() {

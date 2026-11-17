@@ -46,14 +46,14 @@ def _tilt(a, b):
     return np.eye(3) + np.sin(tau) * K + (1 - np.cos(tau)) * K @ K
 
 
-def apply_registration(cams, path, bias_fallback=True):
+def apply_registration(cams, path, bias_fallback=True, require_heldout=False, require_street=False):
     """Camera records (frontage_crops_v15.load_cameras) moved to where register_cameras placed them: position, rotation
     (the provider's rotation turned by the fitted heading and tilt: a direction the provider called compass angle t is
     truly t + dyaw) and `heightOffsetM` (the fitted camera height less the fixed eye height, for the ground the
     rectifier stands the camera on). A panorama the skyline could not place moves by the placed ones' median shift (the
     provider's shared bias) when `bias_fallback`. Returns new records; `registered` says which way each was placed."""
     import json as _json
-    reg = _json.load(open(path)); ok = {k: r for k, r in reg.items() if r.get('accepted')}
+    reg = _json.load(open(path)); ok = {k: r for k, r in reg.items() if r.get('accepted') and (not require_heldout or r.get('heldout', {}).get('passed')) and (not require_street or r.get('streetRegistrationVerified'))}
     bias = np.median([[r['dx'], r['dy']] for r in ok.values()], 0) if bias_fallback and len(ok) >= 10 else None
     out = {}
     for k, c in cams.items():
@@ -183,6 +183,42 @@ def register(cam, obs, S, G, o):
     return out, (obs, P, ob, c0)
 
 
+def register_heldout(cam, obs, S, G, o):
+    """Fit alternate 30-degree sectors; score untouched sectors independently.
+
+    This tests skyline generalization, not street-level wall registration. Keep
+    that distinction in the record: a skyline fit alone cannot certify a facade.
+    """
+    train = (np.floor((np.degrees(AZ) + 1e-9) / 30).astype(int) % 2) == 0
+    rec, fit = register(cam, np.where(train, obs, np.nan), S, G, o)
+    if fit is None:
+        rec['heldout'] = {'passed': False, 'reason': 'no fit'}
+        return rec, fit
+    deg = np.degrees(AZ)
+    # Shift the held-out mask with the observations. It must never admit a
+    # training direction merely because the fitted camera turned.
+    test = np.where(~train, obs, np.nan)
+    shifted = np.interp((deg - rec['dyawDeg']) % 360, deg, test, period=360)
+    tilt = np.radians(rec['tiltDeg'])
+    shifted -= np.cos(AZ) * tilt[0] + np.sin(AZ) * tilt[1]
+    xy = np.asarray(rec['xy'])[None]
+    h, r = predicted_heights(S, o, xy)
+    pred = skyline_of(h, r, lookup(G, o, xy[:, 0], xy[:, 1]) + rec['cameraHeightM'])
+    err, count = costs(shifted[None], pred)
+    xy0 = np.asarray(cam['xy'])[None]
+    h0, r0 = predicted_heights(S, o, xy0)
+    nominal = skyline_of(h0, r0, lookup(G, o, xy0[:, 0], xy0[:, 1]) + EYE)
+    before, _ = costs(test[None], nominal)
+    after, before = float(np.degrees(err[0, 0])), float(np.degrees(before[0, 0]))
+    passed = int(count[0, 0]) >= 100 and after <= 1.0 and after < before * .85
+    rec['heldout'] = {'passed': bool(passed), 'directions': int(count[0, 0]),
+                      'costDeg': round(after, 3), 'nominalCostDeg': round(before, 3)}
+    rec['accepted'] = bool(rec['accepted'] and passed)
+    rec['streetRegistrationVerified'] = False
+    if not passed: rec['why'] += '; held-out skyline failed'
+    return rec, fit
+
+
 def plot(path, name, obs, pred_best, ob_best, S, G, o, cam):
     """Skyline elevation against compass direction: photograph (black: nominal heading, blue: registered) and the LiDAR's
     (red: from the nominal camera, green: from the registered one)."""
@@ -203,6 +239,7 @@ def plot(path, name, obs, pred_best, ob_best, S, G, o, cam):
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser(); ap.add_argument('--poses'); ap.add_argument('--sides', help='a sides.json: every panorama its pieces were photographed from'); ap.add_argument('--images', nargs='*'); ap.add_argument('--out'); ap.add_argument('--plots')
+    ap.add_argument('--heldout', action='store_true', help='fit alternate skyline sectors and validate unused sectors; does not certify street-level alignment')
     a = ap.parse_args()
     area = Path(os.environ['SFW_AREA']); out_path = Path(a.out or area / 'imagery/registered-cameras.json')
     ids = list(a.images or [])
@@ -218,7 +255,7 @@ if __name__ == '__main__':
     for k, i in enumerate(ids):
         t1 = time.time()
         try:
-            obs, valid = observed(cams[i], seg); rec, fit = register(cams[i], obs, S, G, o)
+            obs, valid = observed(cams[i], seg); rec, fit = (register_heldout if a.heldout else register)(cams[i], obs, S, G, o)
         except Exception as e:      # one unreadable panorama is recorded and skipped, not the end of the run
             rec, fit = {'accepted': False, 'why': f'failed: {type(e).__name__}: {e}'[:200]}, None
         done[i] = rec

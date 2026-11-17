@@ -50,14 +50,29 @@ class FacadeMiddleTests(unittest.TestCase):
         data=json.loads(path.read_text())
         self.assertTrue(data['complete']);self.assertEqual(data['sourceWorldHash'],source['sourceWorldHash'])
         owners={c['id']:c for c in source['cells'] if c['stats']['buildings']}
-        self.assertEqual({c['id'] for c in data['cells']},set(owners))
+        self.assertEqual({c.get('parentId',c['id']) for c in data['cells']},set(owners))
         self.assertEqual(data['stats']['buildings'],sum(c['stats']['buildings'] for c in owners.values()))
         for cell in data['cells']:
-            self.assertEqual(cell['sourceHash'],owners[cell['id']]['contentHash'])
+            self.assertEqual(cell['sourceHash'],owners[cell.get('parentId',cell['id'])]['contentHash'])
             self.assertEqual(cell['stats']['glazingTriangles'],cell['stats']['sourceGlazingTriangles'])
             self.assertTrue((public/cell['url'].lstrip('/')).exists())
             self.assertLess(cell['stats']['quantizationErrorM'],.001)
         self.assertLess(data['stats']['triangles'],data['stats']['sourceTriangles']*.5)
+
+    def test_building_partitions_require_exact_owner_coverage(self):
+        from package_facade_middle import validate_asset
+        owner={'id':'tile','contentHash':'abc','boundsEN':[0,0,1,1],'stats':{'buildings':2,'buildingIds':['front','rear']}}
+        source={'sourceWorldHash':'world','cells':[owner]}
+        cells=[]
+        for bid in owner['stats']['buildingIds']:
+            cells.append({'id':'tile@'+bid,'parentId':'tile','buildingId':bid,'sourceHash':'abc','boundsEN':[0,0,1,1],
+                          'url':'/compare/facade-cell-'+('a'*16)+'.bin.gz','sha256':'a'*64,
+                          'stats':{'sourceGlazingTriangles':2,'glazingTriangles':2,'buildings':1}})
+        asset={'version':1,'format':'facade-middle-v1','complete':True,'sourceWorldHash':'world',
+               'sourceCells':[{'id':'tile','contentHash':'abc'}],'cells':cells}
+        validate_asset(Path('.'),asset,source,False)
+        with self.assertRaises(ValueError):validate_asset(Path('.'),{**asset,'cells':cells[:1]},source,False)
+        with self.assertRaises(ValueError):validate_asset(Path('.'),{**asset,'cells':[cells[0],cells[0]]},source,False)
 
     def test_publication_changes_only_optional_metadata_and_rejects_stale_binding(self):
         with tempfile.TemporaryDirectory() as directory:

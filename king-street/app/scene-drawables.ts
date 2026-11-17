@@ -154,7 +154,7 @@ export async function prepareSceneDrawables(model:GLTF,shared:SceneDrawableShare
   try {
   const {replaced}=await mergeTintVariants(built,o=>classOf(o.name),rankOf,loadedHash ? {
    sceneHash:loadedHash, textureIndex:t=>model.parser.associations.get(t)?.textures,
-  } : undefined);
+  } : undefined, yieldPreparation);
   const active=objects.flatMap(o=>Array.isArray(o.material)?o.material:[o.material]);
   // Earlier surface/reveal substitutions can orphan loaded materials too.
   // Include parser associations so their decoded images and texture promises
@@ -214,7 +214,7 @@ export async function prepareSceneDrawables(model:GLTF,shared:SceneDrawableShare
  // frustum culling, while picking, evidence and collision retain the sources.
  batchPaintSwatches(sourceSurfaces,getLayer,originals);
  const batchRoot=new THREE.Group();batchRoot.name='batches';root.add(batchRoot);
- const shadowClass=(o:THREE.Mesh)=>{const cls=classOf(o.name);return [NO_SUN_SHADOW.test(cls),smallShadowDetail(cls,getLayer(o)),THIN_SHADOW_DETAIL.test(cls),o.userData.streamCell??'',o.userData.class==='collision_hull'?'collision':''].join('|');};
+ const shadowClass=(o:THREE.Mesh)=>{const cls=classOf(o.name);return [NO_SUN_SHADOW.test(cls),smallShadowDetail(cls,getLayer(o)),THIN_SHADOW_DETAIL.test(cls),o.userData.middleOwner??o.userData.streamCell??'',o.userData.class==='collision_hull'?'collision':''].join('|');};
  const batches=yieldPreparation?await batchStaticWorldAsync(objects,getLayer,shadowClass,batchRoot,yieldPreparation):batchStaticWorld(objects,getLayer,shadowClass,batchRoot);
  await checkpoint('batches');
  // Dense leaf-cluster canopies grown on the pipeline's leaf quads (which are hidden; the layer toggle handles both).

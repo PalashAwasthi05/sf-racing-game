@@ -110,13 +110,18 @@ class LocalFrame:
 
 
 _GROUND = None
+def prime_ground(world):
+    """Reuse an already parsed world instead of parsing its terrain twice."""
+    global _GROUND
+    g = world.get('grid')
+    _GROUND = (float(g['min']), float(g['step']), int(g['n']), np.asarray(world['ground'], float).reshape(int(g['n']), int(g['n']))) if g and world.get('ground') else False
+
 def ground_at(xy):
     """The world's terrain height (its ground grid, the frame the buildings stand in) at a local xy, or None when the
     world carries no grid. A camera across a sloping street stands metres above or below the building's own ground."""
     global _GROUND
     if _GROUND is None:
-        w = json.load(open(WORLD_PATH)); g = w.get('grid')
-        _GROUND = (float(g['min']), float(g['step']), int(g['n']), np.asarray(w['ground'], float).reshape(int(g['n']), int(g['n']))) if g and w.get('ground') else False
+        prime_ground(json.load(open(WORLD_PATH)))
     if not _GROUND: return None
     mn, st, n, G = _GROUND
     px = min(max((float(xy[0]) - mn) / st, 0.), n - 1.00001); py = min(max((float(xy[1]) - mn) / st, 0.), n - 1.00001)
@@ -132,13 +137,14 @@ def load_world():
 
 
 def load_footprints(frame: LocalFrame) -> dict[str, Polygon]:
+    from pipeline.surface_grade import below_surface
     geoms = {}
     osm = ET.parse(OSM_PATH).getroot()
     nodes = {n.attrib['id']: (float(n.attrib['lon']), float(n.attrib['lat'])) for n in osm.findall('node')}
     for way in osm.findall('way'):
         tags = {a.attrib['k']: a.attrib['v'] for a in way.findall('tag')}
         coords = [nodes[a.attrib['ref']] for a in way.findall('nd') if a.attrib['ref'] in nodes]
-        if tags.get('building') and len(coords) > 3:
+        if tags.get('building') and len(coords) > 3 and not below_surface(tags):
             x, y = frame.local(*zip(*coords))
             poly = Polygon(np.c_[x, y]).buffer(0)
             if not poly.is_empty:
@@ -237,16 +243,19 @@ def render_perspective(pano: np.ndarray, R: np.ndarray, forward: np.ndarray, hfo
         vfov_deg = math.degrees(2.0 * math.atan((height / 2.0) / fx))
     xs = (np.arange(width) + 0.5 - width / 2.0) / fx
     ys = (np.arange(height) + 0.5 - height / 2.0) / fx
-    dirs = (right[None, None, :] * xs[None, :, None] + down[None, None, :] * ys[:, None, None] + f[None, None, :])
-    u, v = world_dirs_to_pano_uv(dirs, R, mirror_u)
     ph, pw = pano.shape[:2]
-    px = (u * pw - 0.5) % pw
-    py = np.clip(v * ph - 0.5, 0, ph - 1)
     out = np.empty((height, width, 3), dtype=np.uint8)
-    coords = np.stack([py, px])
-    for c in range(3):
-        # wrap horizontally so the seam interpolates correctly
-        out[..., c] = map_coordinates(pano[..., c], coords, order=1, mode='grid-wrap').astype(np.uint8)
+    # Only the final image scales with height; direction and sampling grids use 32-row bands.
+    for row in range(0, height, 32):
+        end = min(row + 32, height)
+        dirs = (right[None, None, :] * xs[None, :, None] + down[None, None, :] * ys[row:end, None, None] + f[None, None, :])
+        u, v = world_dirs_to_pano_uv(dirs, R, mirror_u)
+        px = (u * pw - 0.5) % pw
+        py = np.clip(v * ph - 0.5, 0, ph - 1)
+        coords = np.stack([py, px])
+        for c in range(3):
+            # wrap horizontally so the seam interpolates correctly
+            out[row:end, :, c] = map_coordinates(pano[..., c], coords, order=1, mode='grid-wrap').astype(np.uint8)
     return out, vfov_deg
 
 

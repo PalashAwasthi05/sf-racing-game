@@ -132,7 +132,7 @@ def clean(profile):
             issues.append({'rule': 'coverage', 'what': f'parts only over {lo:.2f}-{hi:.2f} of the frame ({(hi - lo) * W:.1f} of {W:.1f} m)', 'partial': [round(lo, 3), round(hi, 3)]})
             # a side the photographs barely saw (its parts over under a quarter of it) gives its colours, not its layout: the
             # wall takes the building's inferred openings like an unseen wall, not a blank wall with a scrap at one end
-            if hi - lo < .25: p['materialOnly'] = True; issues.append({'rule': 'coverage', 'what': 'under a quarter seen: colours only'})
+            if hi - lo < .25 and (p.get('reading') or {}).get('coverageMode') != 'positive-only': p['materialOnly'] = True; issues.append({'rule': 'coverage', 'what': 'under a quarter seen: colours only'})
     return p, issues
 
 

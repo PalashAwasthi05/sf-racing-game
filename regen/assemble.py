@@ -8,11 +8,12 @@ Usage: assemble.py [readings dir name, default final] [--nominal]"""
 import glob, json, pathlib, sys, os
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent)); sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import specs, remap, colours, aligncorr
+from side_pieces import load_side_pieces
 import frontage_crops_v15 as fc
 # the skyline registrations moved readings by metres where the photographs already matched the walls (a side's windows
 # came out 2.5 m left and 1.8 m low): off until a registration is checked against the wall it is used for
 USE_REGISTRATION = False      # the old per-panorama registration (registration*.json, remap.py): superseded below
-root = pathlib.Path(os.environ.get('REGEN_ROOT', 'regen/v1')); byid = {p['id']: p for p in json.load(open(root / 'sides/sides.json'))['pieces']}
+root = pathlib.Path(os.environ.get('REGEN_ROOT', 'regen/v1')); byid = {p['id']: p for p in load_side_pieces(root / 'sides')}
 reg = {}
 # sides built of tier walls but rectified from the street (tier_sides.py measures them from their own base)
 RETIRED = set(json.load(open(root / 'retired-tier-sides.json'))) if (root / 'retired-tier-sides.json').exists() else set()
@@ -24,7 +25,8 @@ REGCAMS = None
 if '--nominal' not in sys.argv and AREA is not None and (AREA / 'imagery/registered-cameras.json').exists():
     from register_cameras import apply_registration
     from remap_readings import WallMap, remap as remap_reading
-    REGCAMS = apply_registration(cams, AREA / 'imagery/registered-cameras.json', bias_fallback=False)
+    REGCAMS = apply_registration(cams, AREA / 'imagery/registered-cameras.json', bias_fallback=False,
+                                 require_heldout=True, require_street=True)
 VA = json.load(open(root / 'views-agree.json')) if (root / 'views-agree.json').exists() else None
 def split_views(pid):
     if VA is None or pid not in VA['A'] or pid not in VA['B']: return False

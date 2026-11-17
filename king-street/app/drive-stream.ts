@@ -6,8 +6,8 @@ export type DriveCell = DrivePackage & {
   stats?: {buildingIds?:string[];residency?:{geometryBytes:number;portableMipBytes:number;gpuMipBytes:number}};
 };
 export type DriveStream = {
-  scope: 'drive-stream'|'neighborhood-stream'; version: 1; sourceWorldHash: string; world: string; distantExteriors?:string; facadeMiddle?:string;
-  base: DrivePackage; routeEN: number[][]; cells: DriveCell[]; pieces?: DriveCell[]; cars?: string; overhead?: string; windingCorrections?:string;
+  scope: 'drive-stream'|'neighborhood-stream'; version: 1; sourceWorldHash: string; world: string; compactTerrain?:{world:string;ground:string}; distantExteriors?:string; facadeMiddle?:string;
+  base: DrivePackage; driveFromRouteStart?:boolean; boundsEN?:number[]; routeEN: number[][]; cells: DriveCell[]; pieces?: DriveCell[]; cars?: string; overhead?: string; windingCorrections?:string;
 };
 
 export function driveDisplayPackage(source:DrivePackage,s3tc:boolean) {
@@ -25,7 +25,7 @@ export function validateDriveStream(value: DriveStream) {
   if(value?.facadeMiddle!==undefined && (typeof value.facadeMiddle!=='string' || !/^\/compare\/[\w.-]+\.json$/.test(value.facadeMiddle)))throw Error('Invalid middle facade asset');
   if(value?.scope==='neighborhood-stream'){
     const box=(b?:number[])=>b?.length===4&&b.every(Number.isFinite)&&b[0]<b[2]&&b[1]<b[3];
-    if(value.version!==1||!/^\/compare\/[\w.-]+\.json$/.test(value.world)||!validPackage(value.base)||
+    if(value.version!==1||!/^\/compare\/[\w.-]+\.json$/.test(value.world)||!validPackage(value.base)||(value.boundsEN!==undefined&&!box(value.boundsEN))||
       !Array.isArray(value.routeEN)||value.routeEN.length<2||!value.routeEN.every(p=>Array.isArray(p)&&p.length>=2&&p.slice(0,2).every(Number.isFinite))||
       !Array.isArray(value.cells)||!value.cells.length||new Set(value.cells.map(c=>c.id)).size!==value.cells.length||
       !value.cells.every(c=>!!c.id&&validPackage(c)&&box(c.boundsEN)&&box(c.tileEN)))throw Error('Incomplete neighborhood tiles');

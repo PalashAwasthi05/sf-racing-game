@@ -1,0 +1,74 @@
+{
+  "routeSegmentIds": [
+    "8738201",
+    "8739101",
+    "8739201",
+    "8740101",
+    "8740201",
+    "8741101",
+    "8741201",
+    "8742101",
+    "8742201",
+    "8742202",
+    "8742203",
+    "8743101",
+    "8743201",
+    "8744101",
+    "8744102",
+    "8744201",
+    "8744202",
+    "8745101",
+    "8745201",
+    "8746101",
+    "8746102",
+    "8746103",
+    "8746201",
+    "8747101",
+    "8747102",
+    "8747103",
+    "8737101",
+    "8737102",
+    "8737201",
+    "8738101"
+  ],
+  "endpointIncludePoints": [
+    [
+      -122.4074299673,
+      37.7851177998
+    ]
+  ],
+  "fetchBoxSouthWestNorthEast": [
+    37.7815,
+    -122.413,
+    37.798,
+    -122.389
+  ],
+  "retrievedDate": "2026-11-16",
+  "blockSource": {
+    "dataset": "p2fw-hsrv",
+    "name": "Census 2020 Blocks for San Francisco",
+    "geometry": "multipolygon"
+  },
+  "selectionRoute": "route-physical.geojson",
+  "projectedCrs": "EPSG:32610",
+  "blockSampleSpacingM": 5,
+  "minimumCityBlockAreaM2": 1000,
+  "blockSearchReachM": 160,
+  "minimumBlockFrontageM": 25,
+  "blockRayStartM": 14,
+  "routeRowHalfWidthM": 24,
+  "contextMarginM": 25,
+  "terminalFootprintIdField": "sf16_bldgid",
+  "terminalFootprintId": "201006.0000866",
+  "routeStartLabel": "Market at Steuart; Embarcadero waterfront",
+  "routeEndLabel": "Flood Building far Market frontage",
+  "mappedRoadName": "Market Street",
+  "routeStartWgs84": [
+    -122.3943238,
+    37.7948674
+  ],
+  "routeSearchEndWgs84": [
+    -122.40785,
+    37.7842
+  ]
+}

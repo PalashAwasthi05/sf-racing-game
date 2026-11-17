@@ -15,6 +15,7 @@ import numpy as np
 from shapely.geometry import LineString, Point
 sys.path.insert(0, str(Path(__file__).resolve().parent)); sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import frontage_crops_v15 as fc
+from pipeline.surface_grade import below_surface
 from parking import roads_outline, kerbs, garage_doors, surface, ground_triangles, inputs, COMPARE
 
 STREETS = ('trunk', 'trunk_link', 'primary', 'secondary', 'tertiary', 'residential', 'unclassified', 'living_street', 'primary_link', 'secondary_link', 'tertiary_link')
@@ -34,7 +35,7 @@ def main():
     ways, use = [], {}
     for w in root.iter('way'):
         tags = {t.get('k'): t.get('v') for t in w.iter('tag')}
-        if tags.get('highway') not in STREETS: continue
+        if tags.get('highway') not in STREETS or below_surface(tags): continue
         refs = [nd.get('ref') for nd in w.iter('nd') if nd.get('ref') in nodes]
         if len(refs) < 2: continue
         ways.append((tags, refs))

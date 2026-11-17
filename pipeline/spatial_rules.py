@@ -538,6 +538,9 @@ def perimeter_strip(ctx,c,profiles,depth=1.0):
  from .envelopes import matches,frame
  strips=[]
  for p in profiles:
+  # A surface colour or a punched opening is compiled into the wall skin.
+  # Neither reading displaces the surveyed roof or claims a metre of its slab.
+  if p.get('materialOnly') or (p.get('reading') or {}).get('coverageMode')=='positive-only':continue
   if not matches(c,p):continue
   try:f=frame(c,p)
   except ValueError:continue

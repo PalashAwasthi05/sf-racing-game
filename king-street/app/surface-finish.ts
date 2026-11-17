@@ -142,6 +142,7 @@ function loadWallLayers() {
     const context = canvas.getContext('2d', {willReadFrequently: true}); if (!context || image.height !== size * WALL_LAYERS) return;
     context.drawImage(image, 0, 0);
     const t = new THREE.DataArrayTexture(new Uint8Array(context.getImageData(0, 0, size, size * WALL_LAYERS).data.buffer), size, size, WALL_LAYERS);
+    canvas.width=canvas.height=1;image.src='';
     t.format = THREE.RGBAFormat; t.type = THREE.UnsignedByteType; t.colorSpace = THREE.NoColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter; t.generateMipmaps = true; t.anisotropy = 4; t.needsUpdate = true;
     wallLayers.value.dispose(); wallLayers.value = t;

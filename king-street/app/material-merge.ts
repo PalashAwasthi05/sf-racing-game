@@ -115,7 +115,7 @@ function tintMemo(options?: TintMemoOptions) {
 }
 /** Replaces tint-only copies of each class's material (see above). `classOf` names a mesh's surface class. Returns the
  *  materials replaced (their maps can be disposed) and per class how many copies were merged into one. */
-export async function mergeTintVariants(meshes: THREE.Mesh[], classOf: (o: THREE.Mesh) => string, rankOf: (o: THREE.Mesh) => number = () => 0, options?: TintMemoOptions) {
+export async function mergeTintVariants(meshes: THREE.Mesh[], classOf: (o: THREE.Mesh) => string, rankOf: (o: THREE.Mesh) => number = () => 0, options?: TintMemoOptions, yieldCpu?: () => Promise<void>) {
   // every mesh of a material (a building's window reveals take its wall material under another class name), and the
   // material's class: the one most of its meshes carry
   const users = new Map<THREE.MeshStandardMaterial, THREE.Mesh[]>(), blocked = new Set<THREE.Material>();
@@ -138,6 +138,7 @@ export async function mergeTintVariants(meshes: THREE.Mesh[], classOf: (o: THREE
   const thumbnail = thumbnails();
   const memo = tintMemo(options);
   for (const [cls, mats] of byClass) {
+    if(yieldCpu)await yieldCpu();
     if (mats.size < 2) continue;
     // the class's most used copy carries the others
     const ref = [...mats.entries()].sort((a, b) => b[1].length - a[1].length)[0][0];
@@ -155,6 +156,7 @@ export async function mergeTintVariants(meshes: THREE.Mesh[], classOf: (o: THREE
     }
     const into: [THREE.MeshStandardMaterial, number[]][] = [];
     for (const m of mats.keys()) {
+      if(yieldCpu)await yieldCpu();
       if (m === ref || !sameSettings(m, ref) || !(await sameMap(m.normalMap, ref.normalMap, thumbnail)) || !(await sameMap(m.roughnessMap, ref.roughnessMap, thumbnail)) || !(await sameMap(m.metalnessMap, ref.metalnessMap, thumbnail)) || !(await sameMap(m.aoMap, ref.aoMap, thumbnail))) continue;
       const materialKey = memo.key(m.map);
       const pairKey = refKey && materialKey ? refKey + '|' + materialKey : undefined;
@@ -183,8 +185,8 @@ export async function mergeTintVariants(meshes: THREE.Mesh[], classOf: (o: THREE
     }
     if (!into.length) continue;
     const paint = (o: THREE.Mesh, t: number[]) => { const n = o.geometry.attributes.position.count, a = new Float32Array(n * 3); for (let i = 0; i < n; i++) { a[3 * i] = t[0]; a[3 * i + 1] = t[1]; a[3 * i + 2] = t[2]; } o.geometry.setAttribute('color', new THREE.BufferAttribute(a, 3)); };
-    for (const o of mats.get(ref)!) paint(o, [1, 1, 1]);
-    for (const [m, t] of into) { for (const o of mats.get(m)!) { paint(o, t); o.material = ref; } replaced.push(m); }
+    for (const o of mats.get(ref)!) { if(yieldCpu)await yieldCpu(); paint(o, [1, 1, 1]); }
+    for (const [m, t] of into) { for (const o of mats.get(m)!) { if(yieldCpu)await yieldCpu(); paint(o, t); o.material = ref; } replaced.push(m); }
     ref.vertexColors = true; ref.needsUpdate = true;
     merged[cls] = (merged[cls] ?? 0) + into.length + 1;
   }

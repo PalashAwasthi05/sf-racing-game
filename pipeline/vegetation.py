@@ -11,6 +11,7 @@ def compile(ctx):
   vv=np.array([a,mid+n*width,b,mid-n*width,mid+[0,0,width*.2]])
   put(trimesh.Trimesh(vv,[[0,1,4],[1,2,4],[2,3,4],[3,0,4]],process=False),'vegetation',key)
  for item in ctx['tree_placements']:
+  if count and count%40==0 and ctx.get('flush_vegetation'):ctx['flush_vegetation']()
   t=item['record'];x,y=item['position'];positions.append((x,y))
   z=float(ctx['elev'](x,y))+.095;seed=int(float(t.get('treeid',0)));rng=np.random.default_rng(seed)
   sp=t.get('qspecies','').lower();palm=any(s in sp for s in ['palm','phoenix','washingtonia'])

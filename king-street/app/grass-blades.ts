@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {lawnCoverage} from './grass-coverage.ts';
+import {roadFieldLayout} from './roadfield.ts';
 
 // Real blades on the lawns near the camera. A lawn drawn as one flat green surface has no depth however it is textured;
 // here every blade is a small curved, tapered strip standing on the lawn, leaning its own way and moving in the wind.
@@ -15,7 +17,7 @@ const FIELD_VERTEX = /* glsl */`varying float vY;void main(){vec4 w=modelMatrix*
 const FIELD_FRAGMENT = /* glsl */`varying float vY;uniform float uLawn;void main(){gl_FragColor=vec4(vY*uLawn,uLawn,0.,1.);}`;
 
 const HEADER = /* glsl */`
-uniform sampler2D uGbField;uniform float uGbR,uGbCell,uGbGrid,uGbTime,uGbReach,uGbInner,uGbWidth;uniform vec3 uGbEye;
+uniform sampler2D uGbField;uniform vec4 uGbExtent;uniform float uGbCell,uGbGrid,uGbTime,uGbReach,uGbInner,uGbWidth;uniform vec3 uGbEye;
 varying float vGbT;varying float vGbLong;varying vec3 vGbTint;
 float gbHash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
 vec2 gbHash2(vec2 p){return fract(sin(vec2(dot(p,vec2(127.1,311.7)),dot(p,vec2(269.5,183.3))))*43758.5453);}
@@ -24,7 +26,9 @@ vec3 gbNormal;
 vec3 gbBlade(vec2 corner){
  float id=float(gl_InstanceID);vec2 cell=floor(uGbEye.xz/uGbCell)+vec2(mod(id,uGbGrid),floor(id/uGbGrid))-uGbGrid*.5;
  vec2 r=gbHash2(cell),q=gbHash2(cell+19.7);vec2 xz=(cell+r)*uGbCell;
- vec4 field=textureLod(uGbField,vec2(xz.x,-xz.y)/(2.*uGbR)+.5,0.);
+ vec2 fieldUv=(vec2(xz.x,-xz.y)-uGbExtent.xy)/uGbExtent.zw;
+ vec4 field=textureLod(uGbField,clamp(fieldUv,0.,1.),0.);
+ if(any(lessThan(fieldUv,vec2(0.)))||any(greaterThan(fieldUv,vec2(1.))))field=vec4(0.);
  float far=length(xz-uGbEye.xz)/uGbReach;
  // fewer, wider blades with distance; none past the reach or off the lawn
  float thin=smoothstep(.3,.9,far);
@@ -68,8 +72,12 @@ export type GrassBlades = ReturnType<typeof buildGrassBlades>;
  *  buildings). `reach`: the half width of the area in metres. `setup` adds the viewer's lighting hooks to the material. */
 export function buildGrassBlades(renderer: THREE.WebGLRenderer, scene: THREE.Scene, lawns: THREE.Object3D[], covers: THREE.Object3D[], reach: number, colour: THREE.Color, setup: (material: THREE.MeshStandardMaterial) => void) {
   const R = reach, N = 2048, LAYER = 9;
-  const field = new THREE.WebGLRenderTarget(N, N, {type: THREE.FloatType, format: THREE.RGBAFormat, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: true});
-  const cam = new THREE.OrthographicCamera(-R, R, R, -R, 1, 4000); cam.position.set(0, 2000, 0); cam.up.set(0, 0, -1); cam.lookAt(0, 0, 0); cam.layers.set(LAYER); cam.updateMatrixWorld(true); cam.updateProjectionMatrix();
+  const coverage=lawnCoverage(lawns),b=coverage.bounds;
+  const layout=roadFieldLayout(b.isEmpty()?null:[b.min.x,-b.max.z,b.max.x,-b.min.z],R,N);
+  const {minE,minN,spanE,spanN}=layout;
+  const extent=new THREE.Vector4(minE,minN,spanE,spanN);
+  const field = new THREE.WebGLRenderTarget(layout.width, layout.height, {type: THREE.FloatType, format: THREE.RGFormat, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: true});
+  const cam = new THREE.OrthographicCamera(-spanE/2, spanE/2, spanN/2, -spanN/2, 1, 4000); cam.position.set(minE+spanE/2, 2000, -minN-spanN/2); cam.up.set(0, 0, -1); cam.lookAt(cam.position.x, 0, cam.position.z); cam.layers.set(LAYER); cam.updateMatrixWorld(true); cam.updateProjectionMatrix();
   const mat = new THREE.ShaderMaterial({vertexShader: FIELD_VERTEX, fragmentShader: FIELD_FRAGMENT, uniforms: {uLawn: {value: 1}}, side: THREE.DoubleSide});
   const previous = {override: scene.overrideMaterial, background: scene.background, fog: scene.fog, target: renderer.getRenderTarget(), auto: renderer.shadowMap.autoUpdate, autoClear: renderer.autoClear, color: renderer.getClearColor(new THREE.Color()), alpha: renderer.getClearAlpha()};
   scene.overrideMaterial = mat; scene.background = null; scene.fog = null; renderer.shadowMap.autoUpdate = false; renderer.autoClear = false; renderer.setClearColor(0x000000, 0);
@@ -100,7 +108,7 @@ export function buildGrassBlades(renderer: THREE.WebGLRenderer, scene: THREE.Sce
   // Two tiers: fine blades out to 9 m, then tufts three times as wide and as far apart out to 34 m.
   const tiers = [{grid: 440, cell: .042, inner: 0, width: .0062}, {grid: 440, cell: .16, inner: 7.6, width: .022}].map(({grid, cell, inner, width}) => {
     const geometry = blade(); geometry.instanceCount = grid * grid;
-    const uniforms = {uGbField: {value: field.texture}, uGbR: {value: R}, uGbCell: {value: cell}, uGbGrid: {value: grid}, uGbTime: time, uGbReach: {value: grid * cell * .5}, uGbInner: {value: inner}, uGbWidth: {value: width}, uGbEye: {value: eye}};
+    const uniforms = {uGbField: {value: field.texture}, uGbExtent: {value: extent}, uGbCell: {value: cell}, uGbGrid: {value: grid}, uGbTime: time, uGbReach: {value: grid * cell * .5}, uGbInner: {value: inner}, uGbWidth: {value: width}, uGbEye: {value: eye}};
     const material = new THREE.MeshStandardMaterial({color: colour.clone(), roughness: .82, metalness: 0, side: THREE.DoubleSide}); material.name = 'grass_blades';
     setup(material);
     const chained = material.onBeforeCompile.bind(material);
@@ -129,7 +137,10 @@ export function buildGrassBlades(renderer: THREE.WebGLRenderer, scene: THREE.Sce
   const mesh = new THREE.Group(); mesh.name = 'grass_blades'; tiers.forEach(t => mesh.add(t.mesh)); scene.add(mesh);
   return {mesh, field,
     /** per frame: the point the grid follows (the camera) and the time in seconds (wind) */
-    update(at: THREE.Vector3, seconds: number) { eye.copy(at); time.value = seconds; },
+    update(at: THREE.Vector3, seconds: number) { eye.copy(at); time.value = seconds;
+      // Linear filtering reaches across one texel at lawn edges. Keep blades
+      // there, with a small extra margin for the grid snap and leaning tips.
+      for(const tier of tiers)tier.mesh.visible=coverage.touches(at.x,at.z,tier.uniforms.uGbReach.value+2*layout.texelM+1); },
     /** 0..1: the share of blades per metre drawn (the frame budget may lower it). The grid keeps its reach: fewer,
      *  wider-spaced and slightly wider blades, so a lawn thins evenly instead of losing a strip. */
     density(share: number) { for (const t of tiers) { const s = Math.max(.2, Math.min(1, share)), grid = Math.round(t.grid * s);

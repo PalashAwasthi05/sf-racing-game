@@ -1,3 +1,4 @@
+import {gpuAllocationReport} from './gpu-allocation';
 import {ProgressiveProbe} from './progressive-probe.ts';
 import {createSceneImagePool,releaseParserImageSources} from './scene-image-pool';
 import {driveDisplayPackage,manageDriveCells, type DriveCell, type DriveStream} from './drive-stream';
@@ -81,7 +82,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
    loadedHash = source.contentHash;
    return parseSceneStream(sceneStream(source,onProgress,undefined,streamIndex?.sourceWorldHash),source.uncompressedBytes,preparing,{imagePool});
   };
-  const candidates=[...new Set([display,sceneForDisplay(archive),archive])];
+  const candidates=[...new Set(streamIndex?[display,streamIndex.base]:[display,sceneForDisplay(archive),archive])];
   for(let i=0;i<candidates.length;i++){
    try{return await parse(candidates[i]);}
    catch(error){if(i===candidates.length-1)throw error;}
@@ -97,6 +98,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  // No canvas antialiasing: the canvas only receives the output pass's full-screen quad (the 3D image is antialiased in
  // its own multisampled target below), so canvas samples were memory and a resolve every frame for nothing.
  const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:'high-performance'});
+ const gpuAllocations=new URLSearchParams(location.search).get('profileStream')==='1'?gpuAllocationReport(renderer.getContext() as WebGL2RenderingContext):null;
  // Render scale adapts to the frame time between 0.7 and the device ratio (capped at 1.25); everything sized from it.
  // The most it renders is 1.25 render pixels per CSS pixel and four million pixels in all: a maximised window on a 5K
  // display at 1.25 was 5.3 million, and the frame's cost grows with them (antialiasing, occlusion, post-processing).
@@ -148,13 +150,15 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  stage('atmosphere');
  const manifest = await manifestLoad;
  const compareAsset = (url?: string): url is string => !!url && /^\/compare\/[\w.-]+\.json$/.test(url);
- const [model, parked, overhead, horizon, reviewData, distant] = await Promise.all([
+ const sceneryErrors:string[]=[];
+ const [model, parked, overhead, horizon, reviewData, distant, middleIndex] = await Promise.all([
   modelLoad,
   compareAsset(manifest?.cars) ? loadParkedCars(manifest.cars,'/vehicle/parked/',renderer) : null,
   compareAsset(manifest?.overhead) ? loadOverhead(manifest.overhead,renderer.extensions.has('WEBGL_multi_draw')) : null,
   loadHorizon(data.center,m=>atmosphere.setupMaterial(m),(scene.fog as THREE.FogExp2).color,atmosphere.skyEnvironment).catch(()=>null),
   streamIndex ? {routes:[streamIndex.routeEN]} : trial ? {routes:[trial.routeEN]} : fetch('/review-routes.json').then(r=>r.ok?r.json():{routes:[]}).catch(()=>({routes:[]})) as Promise<{routes:number[][][]}>,
   streamIndex?.distantExteriors ? loadDriveResiduals(streamIndex,undefined,leafTexture) : null,
+  streamIndex?.facadeMiddle ? loadFacadeMiddleIndex(streamIndex.facadeMiddle,streamIndex).catch(e=>{sceneryErrors.push(String(e));return null;}) : null,
  ]);
  stage('assets');
  const wxGround=groundTexture(data.grid,data.ground);
@@ -162,8 +166,16 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  const drawableShared={data,renderer,atmosphere,leafTexture,groundAt,wxGround,roadField,paving,roadDamp,roadReflection,surfaceNight};
  let syncCellCoverage:(id:string)=>void=()=>{};
  let sceneryTime=0;
+ const facadeChildren=new Map<string,string[]>(),facadeParents=new Map<string,string>();
+ for(const cell of middleIndex?.cells??[])if(cell.parentId){
+   const ids=facadeChildren.get(cell.parentId)??[];ids.push(cell.id);facadeChildren.set(cell.parentId,ids);facadeParents.set(cell.id,cell.parentId);
+ }
+ const facadeId=(parent:string,feature:string)=>facadeChildren.has(parent)?parent+'@'+feature:parent;
  const transitions=streamIndex?.scope==='neighborhood-stream'&&!distant
-   ?createStreamTransitions(streamIndex.cells.map(cell=>cell.id),id=>syncCellCoverage(id),()=>sceneryTime):null;
+   ?createStreamTransitions([...streamIndex.cells.map(cell=>cell.id),...facadeParents.keys()],id=>syncCellCoverage(id),()=>sceneryTime):null;
+ function fullDetail(id:string,on:boolean,snap=false){
+   return Promise.all([id,...facadeChildren.get(id)??[]].map(key=>transitions!.target(key,'detail',on,snap)));
+ }
  function baseTier(mesh:THREE.Mesh){
    const source=(mesh.userData.members as THREE.Mesh[]|undefined)?.[0]??mesh;
    const layer=getLayer(source);
@@ -172,8 +184,14 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  function tagBaseMesh(mesh:THREE.Mesh){
    const source=(mesh.userData.members as THREE.Mesh[]|undefined)?.[0]??mesh;
    if(source.userData.class==='distant_exterior'&&source.userData.streamCell)
-     transitions?.tag(mesh,source.userData.streamCell,baseTier(mesh));
+     transitions?.tag(mesh,source.userData.middleOwner??source.userData.streamCell,baseTier(mesh));
  }
+ if(facadeChildren.size)model.scene.traverse(object=>{
+   const owner=object.userData.streamCell;
+   if(object instanceof THREE.Mesh && object.userData.class==='distant_exterior' && baseTier(object)===drawTier.baseFacade && facadeChildren.has(owner)){
+     const key=facadeId(owner,getId(object));if(facadeParents.has(key))object.userData.middleOwner=key;
+   }
+ });
  const drawables=await prepareSceneDrawables(model,drawableShared,{sceneHash:loadedHash,prepareRenderable:transitions?tagBaseMesh:undefined,stage:name=>{if(name==='materials')stage(name);}});
  const {objects,originals,renderables,submissionMeshes,submissions,probeMaterials,batchRoot,batches,foliageBatches,glazedWindows,weathering}=drawables;
  // Startup light-field bakes temporarily replace individual source materials.
@@ -319,7 +337,18 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  const keys=new Set<string>();let targetPosition:THREE.Vector3|null=null,targetLook:THREE.Vector3|null=null;
  function view(v:string){driving=false;if(car&&mode==='car')car.stop();mode=v;controls.enabled=v!=='street';keys.clear();
   if(v==='street'){targetPosition=null;targetLook=null;const p=data.streetViews?.[station];const x=p?.position[0]??37,z=-(p?.position[1]??-38);camera.position.set(x,groundAt(x,z)+1.25,z);camera.rotation.order='YXZ';if(p){camera.lookAt(p.lookAt[0],groundAt(p.lookAt[0],-p.lookAt[1])+p.lookAt[2],-p.lookAt[1]);yaw=camera.rotation.y;pitch=camera.rotation.x;}else{yaw=-.785;pitch=.025;camera.rotation.set(pitch,yaw,0);}highlight.visible=false;}
-  else if(v==='top'){controls.maxPolarAngle=Math.PI*.49;targetPosition=new THREE.Vector3(0,490,.1);targetLook=new THREE.Vector3(0,0,0)}
+  else if(v==='top'){
+   controls.maxPolarAngle=Math.PI*.49;
+   const box=streamIndex?.driveFromRouteStart?streamIndex.boundsEN:undefined;
+   if(box){
+    const cx=(box[0]+box[2])*.5,cz=-(box[1]+box[3])*.5;
+    const visibleSpan=Math.max(box[3]-box[1],(box[2]-box[0])/camera.aspect);
+    const height=.56*visibleSpan/Math.tan(THREE.MathUtils.degToRad(camera.fov*.5));
+    controls.maxDistance=Math.max(controls.maxDistance,height*1.15);
+    targetLook=new THREE.Vector3(cx,groundAt(cx,cz),cz);
+    targetPosition=targetLook.clone().add(new THREE.Vector3(0,height,.1));
+   }else{targetPosition=new THREE.Vector3(0,490,.1);targetLook=new THREE.Vector3(0,0,0);}
+  }
   else{controls.maxPolarAngle=Math.PI*.49;targetPosition=new THREE.Vector3(150,115,185);targetLook=new THREE.Vector3(15,5,-8)}
  }
  function select(id:string){const f=data.buildings.find(b=>b.id===id);if(!f)return;highlightId(id);mode='orbit';controls.enabled=true;targetLook=new THREE.Vector3(f.center[0],f.center[2]+f.height*.35,-f.center[1]);targetPosition=targetLook.clone().add(new THREE.Vector3(65,40,75));}
@@ -354,6 +383,14 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  function resetCar(){
   if(!car)return;
   if(streamIndex?.scope==='drive-stream'){const [p,q]=streamIndex.routeEN;car.placeAt(p[0],-p[1],routeHeading(p,q));return;}
+  if(streamIndex?.driveFromRouteStart && !carPlaced && roads){
+   const [first,next]=streamIndex.routeEN;
+   if(onRoad(roads,first[0],-first[1])&&spawnClear(first[0],-first[1])){
+    car.placeAt(first[0],-first[1],routeHeading(first,next));return;
+   }
+   const spot=spawnOnRoad(roads,first[0],-first[1],spawnClear,routeHeading(first,next));
+   if(spot){car.placeAt(...spot);return;}
+  }
   if(streamIndex?.scope==='neighborhood-stream'&&roads){
    const [x,z,heading]=carPlaced?car.position():[camera.position.x,camera.position.z,0];
    const spot=spawnOnRoad(roads,x,z,spawnClear,heading);
@@ -585,7 +622,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  const supportsDetailCompression=supportsStartupS3tc(renderer);
  const driveSight={cameraStation:0,lookStation:0,revision:0,visible:(cell:DriveCell)=>sightFrustum.intersectsBox(sightBounds.get(cell)!),
    nearFrontage:(cell:DriveCell)=>frontageBounds.get(cell)?.near??Infinity,
-   hasWindowGeometry:(cell:DriveCell)=>!!middle?.groupFor(cell.id)&&!!transitions&&transitions.value(cell.id,'facade')>.98,
+   hasWindowGeometry:(cell:DriveCell)=>(facadeChildren.get(cell.id)??[cell.id]).every(id=>!!middle?.groupFor(id)&&!!transitions&&transitions.value(id,'facade')>.98),
    residentCost:(cell:DriveCell)=>{
      const cost=cell.stats?.residency;
      if(!cost)return cell.uncompressedBytes??0;
@@ -663,7 +700,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  const hulls=new Map<string,THREE.Mesh[]>();
  for(const mesh of renderables){
    const source=(mesh.userData.members as THREE.Mesh[]|undefined)?.[0]??mesh;
-   const owner=source.userData.streamCell;
+   const owner=source.userData.middleOwner??source.userData.streamCell;
    if(owner && (hasExteriorProxy?exteriorMesh(mesh):hullMesh(mesh))){
      const group=hulls.get(owner)??[];group.push(mesh);hulls.set(owner,group);
      if(distant)mesh.visible=false;
@@ -692,7 +729,6 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  let middle:ReturnType<typeof createFacadeMiddleController>|null=null;
  const independentTrees=new Set<string>(),fullIds=new Set<string>(),handoffs=new Set<string>(),middleGroups=new Map<string,THREE.Group>();
  const setupMid=new WeakSet<THREE.Material>();
- const sceneryErrors:string[]=[];
  const stagingLights=collectWarmupLights(scene);
  const stageGeometry=async(meshes:THREE.Mesh[],signal:AbortSignal)=>{
    await yieldCell();signal.throwIfAborted();
@@ -738,7 +774,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
        treeLayer=layer;scene.add(layer.root);
        for(const id of layer.availableCells)transitions.independentTree(id);
      }).catch(e=>sceneryErrors.push(String(e))),
-     streamIndex.facadeMiddle&&loadFacadeMiddleIndex(streamIndex.facadeMiddle,streamIndex).then(index=>{
+     middleIndex&&Promise.resolve(middleIndex).then(index=>{
        middle=createFacadeMiddleController(index,{scene,yieldTask:yieldCell,
          prepare:async(mesh,signal)=>{
            for(const material of Array.isArray(mesh.material)?mesh.material:[mesh.material])if(!setupMid.has(material)){
@@ -764,9 +800,10 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
  }
  const middleEye=new THREE.Vector3(Infinity,Infinity,Infinity),middleLook=new THREE.Vector3();
  const frontageById=new Map([...frontageBounds].map(([cell,frontages])=>[cell.id,frontages]));
- const projectedDemand=(cell:{id:string})=>{
-   const owner=frontageById.get(cell.id);let largest=0;
+ const projectedDemand=(cell:{id:string;parentId?:string;buildingId?:string})=>{
+   const owner=frontageById.get(cell.parentId??cell.id);let largest=0;
    if(owner)for(const feature of owner.owners){
+     if(cell.buildingId && cell.buildingId!==feature.id)continue;
      if(sightFrustum.intersectsBox(feature.box))largest=Math.max(largest,frontageScreenFraction(feature.box,sightClip,camera.near));
      if(predictFrontages && previewFrustum.intersectsBox(feature.box))largest=Math.max(largest,.7*frontageScreenFraction(feature.box,previewClip,camera.near));
    }
@@ -821,7 +858,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
        if(pendingTextureWarmup.length){pendingTextureWarmup=pendingTextureWarmup.slice(textureWarmAt).filter(t=>!next.textures.has(t));textureWarmAt=0;}
        removeFrom(objects,next.objects);
        if(distant)distant.setResident(liveCells.keys());
-       else if(transitions)void transitions.target(cell.id,'detail',false,true);
+       else if(transitions)void fullDetail(cell.id,false,true);
        else for(const proxy of hulls.get(cell.id)??[])proxy.visible=layerState.get(getLayer(proxy))!==false;
        syncStreamWindows?.();
      }
@@ -876,7 +913,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
        for(const m of next.probeMaterials)if(localReflection){m.envMap=localReflection.texture;m.envMapIntensity=m.userData.envIntensity??.7;}
        if(transitions){
          transitions.independentTree(cell.id,!!separateTreeClasses?.size || !!treeLayer?.availableCells.has(cell.id));
-         void transitions.target(cell.id,'detail',true,openingCells);
+         void fullDetail(cell.id,true,openingCells);
        }
        else for(const proxy of hulls.get(cell.id)??[])proxy.visible=false;
        distant?.setResident(liveCells.keys());
@@ -894,13 +931,14 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
        // an on-screen middle facade, keep full coverage through GPU preparation.
        if(middle){
          updateScenery(performance.now());
-         const ready=await middle.waitForPresentation(cell.id,request.signal);
-         if(request.signal.aborted)return;
-         if(ready)await transitions.target(cell.id,'facade',true,transitions.value(cell.id,'detail')===1);
+         await Promise.all((facadeChildren.get(cell.id)??[cell.id]).map(async id=>{
+           const ready=await middle!.waitForPresentation(id,request.signal);
+           if(!request.signal.aborted&&ready)await transitions.target(id,'facade',true,transitions.value(id,'detail')===1);
+         }));
        }
-       if(!request.signal.aborted)await transitions.target(cell.id,'detail',false);
+       if(!request.signal.aborted)await fullDetail(cell.id,false);
      }:undefined,
-       restore:transitions?()=>{retirement?.abort();handoffs.delete(cell.id);fullIds.add(cell.id);fullRevision++;void transitions.target(cell.id,'detail',true);}:undefined,dispose:release};
+       restore:transitions?()=>{retirement?.abort();handoffs.delete(cell.id);fullIds.add(cell.id);fullRevision++;void fullDetail(cell.id,true);}:undefined,dispose:release};
    }catch(error){release();throw error;}
  }):null;
  if(stream && drivePath && streamIndex){
@@ -908,7 +946,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
    updateDriveSight();stream.update(drivePath.project(pos[0],pos[1]),pos[0],-pos[1],0,false,driveSight);await stream.waitForCurrent();openingCells=false;updateScenery(performance.now());
  }
  onProgress('Preparing shaders and textures…');await new Promise(r=>setTimeout(r,0));
- {applySize();contact?.(mode==='car'&&!!car?.group.visible);streetLights.headlights(mode==='car'&&car?car.group:null);atmosphere.update(performance.now());patchUniforms();
+ {applySize();grass?.update(camera.position,performance.now()/1000);contact?.(mode==='car'&&!!car?.group.visible);streetLights.headlights(mode==='car'&&car?car.group:null);atmosphere.update(performance.now());patchUniforms();
   // The first reflection needs the street shadows. A small unlit pass fills
   // those full-resolution maps without compiling the temporary sky-lit street.
   const shadowPrimer = new THREE.MeshBasicMaterial({colorWrite:false, depthWrite:false});
@@ -937,6 +975,9 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
   const carVisible=car?.group.visible??false;
   if(car)car.group.visible=true;
   const compileObjects=warmupCompileObjects(scene);
+  // The opening street can have no lawns. Compile the two blade materials
+  // here so reaching the first actual lawn never triggers a shader compile.
+  if(grass)for(const tier of grass.mesh.children)if(!tier.visible)compileObjects.push(tier);
   compileView.traverse=callback=>compileObjects.forEach(callback);
   await renderer.compileAsync(compileView,camera,scene);stage('compile');
   // Upload nearby textures and buffers while loading is still visible. Distant
@@ -1098,11 +1139,12 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
      if(entry.near>1)continue;
      const resident=liveCells.has(cell.id),walls=detailWalls.get(cell.id);
      const detailCover=transitions?.value(cell.id,'detail')??(resident?1:0);
-     const middleCover=middleGroups.get(cell.id)?.visible?(1-detailCover)*(transitions?.value(cell.id,'facade')??0):0;
-     const middleVisible=middleCover>0;
-     const exteriorVisible=(hulls.get(cell.id)??[]).some(mesh=>getLayer(originalMesh(mesh))==='facades'&&shown(mesh));
      for(const feature of entry.owners){
        if(feature.revision!==driveSight.revision||feature.priority>1)continue;
+       const id=facadeId(cell.id,feature.id);
+       const middleCover=middleGroups.get(id)?.visible?(1-detailCover)*(transitions?.value(id,'facade')??0):0;
+       const middleVisible=middleCover>0;
+       const exteriorVisible=(hulls.get(id)??[]).some(mesh=>getLayer(originalMesh(mesh))==='facades'&&shown(mesh));
        const meshes=walls?.get(feature.id);
        const detailVisible=detailCover>0&&!!meshes&&[...meshes].some(shown);
        owners.push({id:feature.id,cell:cell.id,nearM:feature.distance,resident,detailVisible,middleVisible,exteriorVisible,
@@ -1113,7 +1155,7 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
    for(const detail of liveCells.values())correctedExteriorFaces+=detail.model.scene.userData.correctedExteriorFaces??0;
    return {owners,correctedExteriorFaces};
  }
- const reviewView={grass:()=>grass,sunEffects,stream,scenery:()=>({facades:middle?.status(),trees:treeLayer?.stats,transitions:transitions?.status(),errors:sceneryErrors}),coverage,frontageCoverage,streamTimings:()=>cellTrace?.read()??[],imagePool:()=>imagePool?.stats(),quality:(scale?:number,lock=true)=>{qualityLocked=lock;if(scale){renderScale=scale;level=LEVELS.reduce((best,_,i)=>Math.abs(scaleAt(i)-scale)<Math.abs(scaleAt(best)-scale)?i:best,0);resizePending=true;}return {renderScale,maxScale,level,workMs:+workMs.toFixed(1),ao:ao.enabled,bloom:grade.bloom.enabled,shafts:sunEffects?.shafts??false,grass:grassShare};},exposure:()=>grade.exposure.read(renderer),pose:(from:number[],at:number[])=>{grade.snap();temporal.reset();mode='orbit';controls.enabled=true;controls.maxPolarAngle=Math.PI*.98;targetPosition=null;targetLook=null;highlight.visible=false;camera.position.set(from[0],from[2],-from[1]);controls.target.set(at[0],at[2],-at[1]);controls.update();},
+ const reviewView={allocations:()=>gpuAllocations?.snapshot(renderer,scene),grass:()=>grass,sunEffects,stream,scenery:()=>({facades:middle?.status(),trees:treeLayer?.stats,transitions:transitions?.status(),errors:sceneryErrors}),coverage,frontageCoverage,streamTimings:()=>cellTrace?.read()??[],imagePool:()=>imagePool?.stats(),quality:(scale?:number,lock=true)=>{qualityLocked=lock;if(scale){renderScale=scale;level=LEVELS.reduce((best,_,i)=>Math.abs(scaleAt(i)-scale)<Math.abs(scaleAt(best)-scale)?i:best,0);resizePending=true;}return {renderScale,maxScale,level,workMs:+workMs.toFixed(1),ao:ao.enabled,bloom:grade.bloom.enabled,shafts:sunEffects?.shafts??false,grass:grassShare};},exposure:()=>grade.exposure.read(renderer),pose:(from:number[],at:number[])=>{grade.snap();temporal.reset();mode='orbit';controls.enabled=true;controls.maxPolarAngle=Math.PI*.98;targetPosition=null;targetLook=null;highlight.visible=false;camera.position.set(from[0],from[2],-from[1]);controls.target.set(at[0],at[2],-at[1]);controls.update();},
   capture:(w=1800,h=1125)=>new Promise<Blob|null>(resolve=>{qualityLocked=true;fullQuality();grade.snap();temporal.reset();
    renderer.setDrawingBufferSize(w,h,1);composer.setSize(w,h);outputW=sceneW=0;camera.aspect=w/h;camera.updateProjectionMatrix();atmosphere.resize();
    // the animation loop may be throttled (hidden pane): place the shadow cascades and the reflection probe for this pose
@@ -1188,5 +1230,5 @@ export async function createWorldView(host:HTMLDivElement,data:World,onSelect:(i
   for(const material of materials)for(const value of Object.values(material))if(value instanceof THREE.Texture&&!value.isRenderTargetTexture)textures.add(value);
   disposeOwnedTextures(textures);deferredTextures.clear();pendingTextureWarmup=[];
  }
- return {view,select,lighting,damp,nextStreet,drive,car:driveCar,block,layer,evidence,dispose:()=>{if(disposed)return;disposed=true;document.removeEventListener('visibilitychange',resetMeter);meter?.remove();stream?.dispose();treeLayer?.dispose();void middle?.dispose();transitions?.dispose();stagePressure.dispose();distant?.dispose();cellWarmTarget.dispose();disposeActiveTextures();releaseParserImageSources(model.parser);bakedRoad?.dispose();bakedPaving?.dispose();facadeMap?.dispose();horizon?.dispose();if(debug.__view===reviewView)delete debug.__view;if(debug.__car?.car===car)delete debug.__car;cancelAnimationFrame(frame);visibility.dispose();submissions.dispose();streetLights.dispose();comparison?.dispose();car?.dispose();parked?.group.children.forEach(m=>(m as THREE.BatchedMesh).dispose());parked?.materials.forEach(m=>m.dispose());overhead?.group.traverse(o=>{if(o instanceof THREE.BatchedMesh)o.dispose();else if(o instanceof THREE.InstancedMesh){o.dispose();o.geometry.dispose();}else if(o instanceof THREE.Mesh)o.geometry.dispose();});overhead?.materials.forEach(m=>m.dispose());resize.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',down);window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',blur);window.removeEventListener('hashchange',linkedView);objects.forEach(o=>o.geometry.dispose());batches.forEach(b=>{b.geometry.dispose();b.removeFromParent();if(b.name==='vegetation___foliage'&&b===foliageBatches.find(mesh=>mesh.name===b.name)){const m=b.userData.original as THREE.MeshStandardMaterial;m.dispose();}});wxGround.dispose();new Set([...originals.values()].flat()).forEach(m=>m.dispose());evidences.forEach(m=>m.dispose());localReflection?.dispose();probeSpare?.dispose();reflectionProbe.dispose();if(reflectionFilter!==atmosphere.environmentFilter)reflectionFilter.dispose();bounce?.dispose();skyVis.dispose();depth.dispose();temporal.dispose();scenePass.dispose();disposeOcclusionResolve();ao.dispose();grass?.dispose();grade.dispose();sunEffects?.dispose();composer.dispose();atmosphere.dispose();ring.geometry.dispose();(ring.material as THREE.Material).dispose();highlight.geometry.dispose();(highlight.material as THREE.Material).dispose();renderer.dispose();renderer.domElement.remove();}};
+ return {view,select,lighting,damp,nextStreet,drive,car:driveCar,block,layer,evidence,dispose:()=>{if(disposed)return;disposed=true;document.removeEventListener('visibilitychange',resetMeter);meter?.remove();stream?.dispose();treeLayer?.dispose();void middle?.dispose();transitions?.dispose();stagePressure.dispose();distant?.dispose();cellWarmTarget.dispose();disposeActiveTextures();releaseParserImageSources(model.parser);bakedRoad?.dispose();bakedPaving?.dispose();facadeMap?.dispose();horizon?.dispose();if(debug.__view===reviewView)delete debug.__view;if(debug.__car?.car===car)delete debug.__car;cancelAnimationFrame(frame);visibility.dispose();submissions.dispose();streetLights.dispose();comparison?.dispose();car?.dispose();parked?.group.children.forEach(m=>(m as THREE.BatchedMesh).dispose());parked?.materials.forEach(m=>m.dispose());overhead?.group.traverse(o=>{if(o instanceof THREE.BatchedMesh)o.dispose();else if(o instanceof THREE.InstancedMesh){o.dispose();o.geometry.dispose();}else if(o instanceof THREE.Mesh)o.geometry.dispose();});overhead?.materials.forEach(m=>m.dispose());resize.disconnect();controls.dispose();renderer.domElement.removeEventListener('pointerdown',down);window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);window.removeEventListener('keydown',keydown);window.removeEventListener('keyup',keyup);window.removeEventListener('blur',blur);window.removeEventListener('hashchange',linkedView);objects.forEach(o=>o.geometry.dispose());batches.forEach(b=>{b.geometry.dispose();b.removeFromParent();if(b.name==='vegetation___foliage'&&b===foliageBatches.find(mesh=>mesh.name===b.name)){const m=b.userData.original as THREE.MeshStandardMaterial;m.dispose();}});wxGround.dispose();new Set([...originals.values()].flat()).forEach(m=>m.dispose());evidences.forEach(m=>m.dispose());localReflection?.dispose();probeSpare?.dispose();reflectionProbe.dispose();if(reflectionFilter!==atmosphere.environmentFilter)reflectionFilter.dispose();bounce?.dispose();skyVis.dispose();depth.dispose();temporal.dispose();scenePass.dispose();disposeOcclusionResolve();ao.dispose();grass?.dispose();grade.dispose();sunEffects?.dispose();composer.dispose();atmosphere.dispose();ring.geometry.dispose();(ring.material as THREE.Material).dispose();highlight.geometry.dispose();(highlight.material as THREE.Material).dispose();renderer.dispose();gpuAllocations?.dispose();renderer.domElement.remove();}};
 }

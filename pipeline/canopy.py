@@ -172,6 +172,7 @@ def compile(ctx):
     put, cyl = ctx['put'], ctx['cylinder']; records = []
     for x, y, z, height, radius, where in found:
         draw_tree(put, cyl, x, y, z, height, radius)
+        if len(records)%40==39 and ctx.get('flush_vegetation'):ctx['flush_vegetation']()
         records.append({'position': [round(x, 2), round(y, 2)], 'heightM': round(height, 1), 'crownRadiusM': round(radius, 1),
                         'source': 'LiDAR canopy peak in ' + {'park': 'mapped open ground', 'sidewalk': 'a sidewalk (no inventory tree there)'}.get(where, 'unbuilt land off the streets'), 'status': 'measured-crown, species unknown'})
     ctx['counts']['lidarCanopyTrees'] = len(records); ctx['counts']['lidarYardTrees'] = sum(r['source'].endswith('streets') for r in records); ctx['counts']['lidarSidewalkTrees'] = sum('sidewalk' in r['source'] for r in records)

@@ -9,6 +9,7 @@ import numpy as np
 from shapely.geometry import Point, LineString, Polygon, GeometryCollection
 from shapely.ops import unary_union, nearest_points, polygonize
 from .mobility import number, length_m
+from .surface_grade import below_surface
 
 
 def prepare(ctx):
@@ -90,6 +91,17 @@ def prepare(ctx):
             options=[g.offset_curve(side*(width/2+.25)) for side in [-1,1]]
             edge=min(options,key=lambda a:a.distance(line))
             edge=edge.difference(crossing.buffer(1.2)).intersection(boundary)
+            # Protected tracks lose their posts where they cross another moving
+            # carriageway. A curb inventory line may span the whole junction.
+            for road_way,_,_ in ctx['roads']:
+                road_line=road_way['g']
+                if not edge.intersects(road_line):continue
+                crossing_point=nearest_points(edge,road_line)[1]
+                station=road_line.project(crossing_point)
+                tangent=np.asarray(road_line.interpolate(min(road_line.length,station+2)).coords[0])-np.asarray(road_line.interpolate(max(0,station-2)).coords[0])
+                if abs(float(u@tangent))<.85*np.linalg.norm(u)*np.linalg.norm(tangent):
+                    from .mobility import road_polygon, spec
+                    edge=edge.difference(road_polygon(road_line,spec(road_way['tags'])).buffer(.28))
             separators.append({'geometry':edge,'sourceId':record.get('objectid'),'wayId':w['id']})
     separator_area=unary_union([x['geometry'].buffer(.28,cap_style=2) for x in separators])
     road,sidewalk,curb_evidence=curb_from_trees(ctx,road,sidewalk,crossing)
@@ -233,6 +245,7 @@ def furniture(ctx):
             items.append(('inventory:'+str(item['objectid']),{'amenity':'waste_basket'},x,y,'municipal inventory'))
     for node in ctx['osm'].findall('node'):
         t={a.attrib['k']:a.attrib['v'] for a in node.findall('tag')}
+        if below_surface(t):continue
         x,y=ctx['local'](float(node.attrib['lon']),float(node.attrib['lat']))
         items.append((node.attrib['id'],t,x,y,'OSM'))
     bins=[]

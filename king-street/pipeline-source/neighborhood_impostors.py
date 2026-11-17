@@ -269,8 +269,8 @@ def build_facade_impostors(source, plan, writer, nodes, meshes):
             'extras': {'class': 'distant_exterior', 'bakedAppearance': True, 'layer': 'facades'}})
         by_owner = {}
         for record in selected:
-            by_owner.setdefault(record['owner'], []).append(record)
-        for owner, walls in sorted(by_owner.items()):
+            by_owner.setdefault((record['owner'],record['building']), []).append(record)
+        for (owner, feature), walls in sorted(by_owner.items()):
             cell = plan.cells[owner]['id']
             positions, normals, uvs, indices = [], [], [], []
             for record in walls:
@@ -292,7 +292,7 @@ def build_facade_impostors(source, plan, writer, nodes, meshes):
                                      [(x+w)/PAGE, y/PAGE], [x/PAGE, y/PAGE]], dtype='<f4'))
                 indices.append(index+offset)
             p, normal, uv, index = map(np.concatenate, (positions, normals, uvs, indices))
-            extra = {'class': 'distant_exterior', 'streamCell': cell, 'bakedAppearance': True, 'layer': 'facades'}
+            extra = {'class': 'distant_exterior', 'streamCell': cell, 'featureId':feature, 'bakedAppearance': True, 'layer': 'facades'}
             attrs = {'POSITION': writer.accessor(p, {'componentType': 5126, 'type': 'VEC3', 'min': [], 'max': []}),
                      'NORMAL': writer.accessor(normal.astype('<f4'), {'componentType': 5126, 'type': 'VEC3'}),
                      'TEXCOORD_0': writer.accessor(uv, {'componentType': 5126, 'type': 'VEC2'})}

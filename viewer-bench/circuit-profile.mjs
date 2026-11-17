@@ -130,7 +130,10 @@ export async function startPresentation(connection,options={}) {
           if(elapsed>25)delays.push({atMs:report.startMs+(times[i]-start)/1000,intervalMs:elapsed});
         }
         gaps.sort((x,y)=>x-y);
-        return {updates:times.length,fps:gaps.length?gaps.length*1e6/(times.at(-1)-times[0]):null,
+        const tail=gaps.slice(-Math.max(1,Math.ceil(gaps.length*.01)));
+        const p50=gaps[Math.ceil(gaps.length*.5)-1]??null;
+        return {updates:times.length,p50Ms:p50,medianFps:p50?1000/p50:null,
+          onePercentLowFps:tail.length?1000*tail.length/tail.reduce((total,ms)=>total+ms,0):null,fps:gaps.length?gaps.length*1e6/(times.at(-1)-times[0]):null,
           p99Ms:gaps[Math.ceil(gaps.length*.99)-1]??null,longestMs:gaps.at(-1)??null,over25:delays.length,delays:delays.sort((a,b)=>b.intervalMs-a.intervalMs).slice(0,32)};
       };
       const presented=display(start,end);
@@ -138,6 +141,7 @@ export async function startPresentation(connection,options={}) {
         complete:hasBothMarkers&&!dataLossOccurred&&presented.updates>0,dataLossOccurred:!!dataLossOccurred,hasBothMarkers,
         ...window(start,end),traceSpanMs:hasBothMarkers?(end-start)/1000:null,display:presented,
         turns:report.turns.map(t=>({turn:t.turn,...window(ts(t.startMs-500),ts(t.endMs+500)),display:display(ts(t.startMs-500),ts(t.endMs+500))})),
+        streetCrossings:report.streetCrossings?.map(e=>({stationM:e.stationM,streets:e.streets,display:display(ts(e.ms-500),ts(e.ms+500))})),
         crossings:report.crossings.map(e=>({id:e.id,...window(ts(e.ms-500),ts(e.ms+500)),display:display(ts(e.ms-500),ts(e.ms+500))}))};
     }finally{connection.off('protocol-event',collect);}
   };

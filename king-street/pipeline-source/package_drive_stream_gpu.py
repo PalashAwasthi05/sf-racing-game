@@ -8,6 +8,7 @@ import copy
 import hashlib
 import io
 import json
+import re
 from pathlib import Path
 import shutil
 import struct
@@ -33,10 +34,13 @@ def view_bytes(source,index):
     start,length=source.view_range(index);source.stream.seek(source.offset+start);return source.stream.read(length)
 
 
-def package(public,report,stream='drive-stream'):
+def package(public,report,stream='drive-stream',alias=None):
     if stream not in ('drive-stream','neighborhood-stream'):
         raise ValueError('Unrecognized spatial package')
-    started=time.monotonic();public=Path(public).resolve();path=public/'compare'/(stream+'.json');before=path.read_bytes();manifest=json.loads(before)
+    alias=alias or stream
+    if not re.fullmatch(r'[a-z0-9][a-z0-9-]*-stream',alias) or (alias!=stream and stream!='neighborhood-stream'):
+        raise ValueError('Invalid spatial package alias')
+    started=time.monotonic();public=Path(public).resolve();path=public/'compare'/(alias+'.json');before=path.read_bytes();manifest=json.loads(before)
     if manifest['scope'] != stream:
         raise ValueError('Manifest scope mismatch')
     gpu=json.loads(local_path(public,'/startup-gpu-'+manifest['sourceWorldHash']+'.json').read_text())
@@ -104,8 +108,8 @@ def package(public,report,stream='drive-stream'):
         annotate_manifest(public, manifest)
         if path.read_bytes()!=before:raise RuntimeError('Portable stream manifest changed during GPU repack')
         immutable=write_json(public,stream,manifest)
-        alias=temp/'manifest.json';alias.write_bytes(json_bytes(manifest));alias.replace(path)
-    result={'manifest':'/compare/'+stream+'.json','immutableManifest':immutable,'sourceGpuHash':gpu['contentHash'],
+        updated=temp/'manifest.json';updated.write_bytes(json_bytes(manifest));updated.replace(path)
+    result={'manifest':'/compare/'+alias+'.json','immutableManifest':immutable,'sourceGpuHash':gpu['contentHash'],
             'quality':'Exact stored source DDS mip bytes; source profile s3tc-v1 algorithm3 quality gate reused. Original image companions retained.',
             'seconds':round(time.monotonic()-started,2),'parts':reports,
             'estimates':'Texture resident bytes include complete mip chains and uncompressed fallbacks; excludes renderer geometry, targets, driver overhead and transient image companions.'}
@@ -123,4 +127,5 @@ def package(public,report,stream='drive-stream'):
 if __name__=='__main__':
     cli=argparse.ArgumentParser(description=__doc__);cli.add_argument('public',type=Path);cli.add_argument('--report',type=Path,required=True)
     cli.add_argument('--stream',choices=['drive-stream','neighborhood-stream'],default='drive-stream')
-    args=cli.parse_args();print(json.dumps(package(args.public,args.report,args.stream),indent=2))
+    cli.add_argument('--alias',help='Separate area package alias')
+    args=cli.parse_args();print(json.dumps(package(args.public,args.report,args.stream,args.alias),indent=2))

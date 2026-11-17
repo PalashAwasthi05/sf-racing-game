@@ -232,7 +232,21 @@ def merge_drive_report(destination, memory):
     destination.write_text(json.dumps(drive))
 
 
-def await_headroom(reserve_bytes, wait_seconds):
+def small_cpu_batch_allowed(command, cap_mib, reserve_mib):
+    """A narrow exception for measured small CPU work, never the game/build."""
+    if cap_mib > 384 or reserve_mib < 3584 or len(command) < 2:
+        return False
+    expected = Path(__file__).resolve().parents[1] / 'regen/sides.py'
+    if Path(command[1]).resolve() != expected:
+        return False
+    try:
+        pos = command.index('--max-buildings')
+        return command[pos + 1] == '1'
+    except (ValueError, IndexError):
+        return False
+
+
+def await_headroom(reserve_bytes, wait_seconds, maximum_pressure=1):
     deadline = time.monotonic() + wait_seconds
     green_since = None
     while True:
@@ -240,7 +254,7 @@ def await_headroom(reserve_bytes, wait_seconds):
         now = time.monotonic()
         if not wait_seconds:
             return level, available, True
-        if level == 1 and available >= reserve_bytes:
+        if 1 <= level <= maximum_pressure and available >= reserve_bytes:
             if green_since is None:
                 green_since = now
             if now - green_since >= 8:
@@ -263,18 +277,26 @@ def main():
                      help='Optionally require extra available memory at launch without changing the running cutoff')
     cli.add_argument('--report', type=Path, required=True)
     cli.add_argument('--merge-report', type=Path, help='Merge physical memory into an existing drive report, including after cutoff')
+    cli.add_argument('--small-cpu-batch', action='store_true',
+                     help='Only a single-building photo reader, <=384MiB: tolerate existing yellow pressure, never worsening pressure or a smaller system reserve')
     cli.add_argument('command', nargs=argparse.REMAINDER)
     args = cli.parse_args()
     if not args.command or args.mib <= 0 or args.reserve_mib <= 0 or args.timeout <= 0 or args.wait_for_green < 0 or args.launch_headroom_mib < 0:
         cli.error('Positive limits and a command are required')
+    if args.small_cpu_batch and not small_cpu_batch_allowed(args.command, args.mib, args.reserve_mib):
+        cli.error('Small CPU mode requires sides.py --max-buildings 1, <=384MiB cap and >=3584MiB reserve; never a browser or full build')
     monitor_ready = footprint(os.getpid()) is not None
     if args.wait_for_green and monitor_ready:
-        print('Waiting for sustained normal pressure before launching the workload', flush=True)
+        print('Waiting for sustained safe headroom before launching the workload', flush=True)
     launch_min = max(args.reserve_mib, args.launch_headroom_mib)*MIB
-    pressure, available, settled = await_headroom(launch_min, args.wait_for_green if monitor_ready else 0)
+    if args.small_cpu_batch:
+        launch_min = max(launch_min, (args.reserve_mib + args.mib + 128)*MIB)
+    maximum_pressure = 2 if args.small_cpu_batch else 1
+    pressure, available, settled = await_headroom(launch_min, args.wait_for_green if monitor_ready else 0, maximum_pressure)
     started_epoch_ms = round(time.time() * 1000)
-    preflight = {'pressureLevel': pressure, 'availableMiB': round(available/MIB), 'monitorReady': monitor_ready}
-    if not settled or not monitor_ready or pressure != 1 or available < launch_min:
+    preflight = {'pressureLevel': pressure, 'availableMiB': round(available/MIB), 'monitorReady': monitor_ready,
+                 'policy': 'single-building CPU' if args.small_cpu_batch else 'normal-pressure'}
+    if not settled or not monitor_ready or not 1 <= pressure <= maximum_pressure or available < launch_min:
         report = {'reason': 'preflight stopped', 'exit': 75, 'preflight': preflight, 'startedEpochMs': started_epoch_ms,
                   'limitMiB': args.mib, 'reserveMiB': args.reserve_mib, 'peakMiB': 0, 'samples': [], 'processRoleSamples': []}
         args.report.write_text(json.dumps(report))
@@ -287,6 +309,7 @@ def main():
                             "SF_GUARD_STARTED_EPOCH_MS": str(started_epoch_ms)})
     start, peak, known, samples, reason = time.monotonic(), 0, {}, [], 'completed'
     role_samples, last_role_time = [], -1.
+    maximum_pressure = pressure  # once green, a return to yellow also stops this batch
     try:
         while proc.poll() is None:
             measured = {}
@@ -300,12 +323,13 @@ def main():
                 last_role_time = elapsed
             if total >= args.mib*MIB:
                 reason = 'workload footprint cutoff'
-            elif pressure != 1 or available < args.reserve_mib*MIB:
+            elif not 1 <= pressure <= maximum_pressure or available < args.reserve_mib*MIB:
                 reason = 'system headroom cutoff'
             elif elapsed >= args.timeout:
                 reason = 'time cutoff'
             if reason != 'completed':
                 break
+            maximum_pressure = min(maximum_pressure, pressure)
             time.sleep(.15)
     except BaseException:
         reason = 'monitor interrupted'

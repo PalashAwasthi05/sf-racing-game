@@ -2,14 +2,14 @@
 import {useEffect,useRef,useState} from 'react';
 import {loadSceneManifest, downloadScene, type SceneManifest} from './scene-package';
 import {validateDriveStream, type DriveStream} from './drive-stream';
-import {pilotStreamRequest,pilotAreaHref,pilotStreamMatches} from './king-pilot-route';
+import {pilotStreamRequest,pilotAreaHref,pilotStreamMatches,pilotStreamIndex} from './king-pilot-route';
 import {Button} from '@/components/ui/button';
 import {Switch} from '@/components/ui/switch';
 import {Sheet,SheetContent,SheetTitle,SheetDescription} from '@/components/ui/sheet';
 import {DropdownMenu,DropdownMenuTrigger,DropdownMenuContent,DropdownMenuGroup,DropdownMenuLabel,DropdownMenuRadioGroup,DropdownMenuRadioItem} from '@/components/ui/dropdown-menu';
 import {ArrowDownToLine,ArrowUpRight,Car,ChevronDown,ChevronRight,Droplets,Moon,Sun,Sunset,CloudSun,X,Compass,Focus,Layers3,MapPin,PersonStanding,RotateCcw,Route} from 'lucide-react';
 export type Feature={id:string;name:string;height:number;heightSource:string;footprintSource:string;roofParts:number;center:number[];area:number;facade:string;pointCount:number;sourceUrl:string;facadeEvidence:string;fittedWalls:number;totalWalls:number};
-export type World={label?:string;studyRadiusM?:number;contextRadiusM?:number;previewRevision?:string;updateSummary?:string;streetViews?:{position:number[];lookAt:number[];label:string}[];center:{lat:number;lon:number};buildings:Feature[];counts:Record<string,number>;ground:number[];grid:{min:number;step:number;n:number};sources:{name:string;date:string;detail:string;url:string}[]};
+export type World={label?:string;studyRadiusM?:number;contextRadiusM?:number;previewRevision?:string;updateSummary?:string;streetViews?:{position:number[];lookAt:number[];label:string}[];center:{lat:number;lon:number};buildings:Feature[];counts:Record<string,number>;ground:number[]|Float32Array;grid:{min:number;step:number;n:number};sources:{name:string;date:string;detail:string;url:string}[]};
 const LIGHTS=[['afternoon','Afternoon sun'],['golden','Golden hour'],['overcast','Overcast'],['night','Night drive']] as const;
 export default function KingPilot(){
  const mount=useRef<HTMLDivElement>(null);
@@ -45,7 +45,7 @@ export default function KingPilot(){
     const request=pilotStreamRequest(new URL(window.location.href));
     if(request==='match-source'||!request)archive=await loadSceneManifest();
     if(request){
-      const index=await fetch(request==='corridor'?'/compare/drive-stream.json':'/compare/neighborhood-stream.json',{cache:'no-cache'})
+      const index=await fetch(pilotStreamIndex(request,archive?.spatialIndex),{cache:'no-cache'})
        .catch(error=>{if(request==='match-source')return null;throw error;});
       if(!index?.ok&&request!=='match-source')throw new Error('The neighborhood is unavailable.');
       if(index?.ok){
@@ -57,17 +57,31 @@ export default function KingPilot(){
        }
       }
     }
+    if(request==='match-source' && archive?.spatialIndex && !stream)
+      throw new Error('The driving map could not load its building tiles. Reload to retry.');
     const manifest=stream?{...stream.base,world:stream.world,cars:stream.cars??stream.base.cars,overhead:stream.overhead??stream.base.overhead}:archive!;
     const worldPath=manifest.world && /^\/compare\/[\w.-]+\.json$/.test(manifest.world) ? manifest.world : '/world.json';
-    const response=await fetch(worldPath,{cache:'no-cache'});
-    if(!response.ok)throw new Error('Model data unavailable');
-    const data:World=await response.json();
+    const terrain=stream?.compactTerrain;
+    let data:World;
+    if(terrain && /^\/compare\/stream-terrain-world-[a-f0-9]{16}\.json$/.test(terrain.world) &&
+       /^\/compare\/terrain-[a-f0-9]{16}\.bin$/.test(terrain.ground)){
+      const [metadata,field]=await Promise.all([fetch(terrain.world),fetch(terrain.ground)]);
+      if(!metadata.ok || !field.ok)throw new Error('Terrain data unavailable');
+      const [world,bytes]=await Promise.all([metadata.json() as Promise<Omit<World,'ground'>>,field.arrayBuffer()]);
+      if(!Number.isSafeInteger(world.grid?.n) || world.grid.n<=0 || bytes.byteLength!==4*world.grid.n**2)
+        throw new Error('Terrain dimensions do not match the map.');
+      data={...world,ground:new Float32Array(bytes)};
+    }else{
+      const response=await fetch(worldPath,{cache:'no-cache'});
+      if(!response.ok)throw new Error('Model data unavailable');
+      data=await response.json();
+    }
     return {manifest,data,stream};
    })(), import('./world-view')]);
    if(cancelled||!mount.current)return;
    setWorld(data);
    if(stream){
-    setHere(stream.scope==='neighborhood-stream'?'@neighborhood':'@corridor');
+    setHere(new URL(window.location.href).searchParams.get('manifest') || (stream.scope==='neighborhood-stream'?'@neighborhood':'@corridor'));
     const boxes=stream.cells.map(c=>c.tileEN??c.boundsEN);
     const width=Math.max(...boxes.map(b=>b[2]))-Math.min(...boxes.map(b=>b[0]));
     const height=Math.max(...boxes.map(b=>b[3]))-Math.min(...boxes.map(b=>b[1]));

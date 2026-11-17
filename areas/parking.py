@@ -20,6 +20,7 @@ from shapely.ops import unary_union
 WORK = Path(__file__).resolve().parents[1]; COMPARE = WORK / 'king-street/public/compare'
 sys.path.insert(0, str(WORK))
 import frontage_crops_v15 as fc
+from pipeline.surface_grade import below_surface
 
 ROADS = ('trunk', 'trunk_link', 'primary', 'secondary', 'tertiary', 'residential', 'unclassified', 'living_street', 'service', 'primary_link', 'secondary_link', 'tertiary_link')
 PARKED_BY_DEFAULT = ('secondary', 'tertiary', 'residential', 'unclassified', 'living_street')
@@ -113,6 +114,11 @@ def side_rule(tags, side, highway):
         if v in ALLOWED:
             o = tags.get(f'parking:{side}:orientation', tags.get('parking:both:orientation', v if v in ('parallel', 'diagonal', 'perpendicular') else 'parallel'))
             return o if o in ('parallel', 'diagonal', 'perpendicular') else 'parallel'
+    # A mapped parking bay supplies its own evidence. For default curb parking,
+    # check the most specific private-car access tag before inferring parked cars.
+    access = next((tags[k] for k in ('motorcar','motor_vehicle','vehicle','access') if k in tags), None)
+    if access in {'no','private','delivery','customers','permit','agricultural','forestry'}:
+        return None
     return 'parallel' if highway in PARKED_BY_DEFAULT else None
 
 
@@ -138,7 +144,7 @@ def main():
     ways = []
     for w in root.iter('way'):
         tags = {t.get('k'): t.get('v') for t in w.iter('tag')}
-        if tags.get('highway') not in ROADS: continue
+        if tags.get('highway') not in ROADS or below_surface(tags): continue
         refs = [nd.get('ref') for nd in w.iter('nd') if nd.get('ref') in nodes]
         if len(refs) >= 2: ways.append((tags, refs))
     use = {}

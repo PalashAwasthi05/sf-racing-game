@@ -12,10 +12,22 @@ Problems that matter:
 - a missing entry, shopfront, garage door, bay window, cornice or string course that the photo clearly shows;
 - a wrong main material family (brick, render, stone, concrete, metal-panel, glass, timber, tile, terracotta) or a
   colour clearly different in daylight;
-- parts of another building, a tree or a vehicle read as this building.
-Ignore small offsets (under a third of an opening), sign text, and anything hidden in both views.
+- parts of another building, a tree or a vehicle read as this building;
+- wrong window head shapes, mullion divisions, doors mistaken for windows, or a shadow mistaken for a recess;
+- missing changes in material, setbacks, projecting caps, cornices, or ground-floor structure;
+- legible sign text that is missing, invented, misspelled, or placed on a different sign.
+
+Assess placement at the source image's resolution. A systematic shift of many openings is a registration problem,
+even when each shift is less than a third of an opening's width. Report it once as a whole-reading problem, rather
+than moving individual windows to disguise the alignment error. Treat every material zone separately; a correct
+main wall color does not validate the rest of the facade. Do not infer the contents of areas hidden in every view.
+List those areas as unverified. An unusable photograph or ambiguous building identity cannot receive a pass.
+
+This review checks the reading against its source photograph. It does not establish that generated geometry
+matches a separately held-out camera or the real building in world coordinates; those checks remain separate.
 
 Write to the side's `out` path, valid JSON:
 {"id": "<id>", "verdict": "pass" | "minor" | "major",
- "problems": [{"element": "B1", "problem": "5 columns in the photo, 4 drawn"}], "missing": ["arched entry near 12 m"]}
+ "problems": [{"element": "B1", "problem": "5 columns in the photo, 4 drawn"}], "missing": ["arched entry near 12 m"],
+ "unverified": ["ground-floor doors behind parked truck"]}
 pass: nothing that matters is wrong. minor: 1-2 small problems. major: counts, materials or several openings wrong.

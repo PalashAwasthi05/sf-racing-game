@@ -128,3 +128,39 @@ def test_compile_keeps_near_host_reading_and_does_not_replace_rejected_plane_wit
     assert all(r['status'] == 'unresolved' and r['floors'] == 0 for r in far_fronts)
     assert all('host plane' in ' '.join(r['unresolved']) for r in far_fronts)
     assert cube_calls
+
+
+def test_panorama_patch_does_not_transfer_to_parallel_tier_or_other_end():
+    p = _profile(sourceWallMidpointEN=[5, 0], sourceWallLengthM=10,
+                 reading={'observedZRangeM': [1, 14]})
+    assert facades.source_patch_owns_edge(p, (2, 0), (7, 0))
+    assert not facades.source_patch_owns_edge(p, (2, 3), (7, 3))
+    assert not facades.source_patch_owns_edge(p, (11, 0), (20, 0))
+    assert not facades.source_patch_owns_edge(p, (2, 0), (7, 0), 15)
+
+
+def test_partial_photo_preserves_unseen_upper_storeys_as_inferred():
+    p = _profile(heightRefM=30, openings=[{'rect':[.3,.1,.6,.2]}],
+                 reading={'observedZRangeM':[0,12]})
+    style = dict(floorHeightM=3, groundHeightM=3, bayWidthM=3, openingRatio=.6,
+                 openingHeightRatio=.7, mullions=1)
+    result = facades.complete_partial_profile(p, style, 30)
+    inferred = result['openings'][1:]
+    assert inferred and all(o['evidence']=='inferred' and o['rect'][1]*30>=12 for o in inferred)
+    assert result['openings'][0] == p['openings'][0] and len(p['openings'])==1
+
+
+def test_sparse_entrance_reading_retains_measured_opening():
+    from pipeline.facade_lint import clean
+    profile = _profile(heightRefM=30, sourceIds=['osm:node:example'],
+                       reading={'coverageMode':'positive-only','observedZRangeM':[0,2.2]},
+                       groups=[],openings=[{'rect':[.42,0,.52,.07],'style':{'kind':'entry'}}])
+    cleaned, _ = clean(profile)
+    assert not cleaned.get('materialOnly')
+    completed = facades.complete_partial_profile(cleaned,dict(floorHeightM=3,groundHeightM=3,
+             bayWidthM=3,openingRatio=.65,openingHeightRatio=.7,mullions=1),30)
+    measured = completed['openings'][0]['rect']
+    for opening in completed['openings'][1:]:
+        x0,y0,x1,y1=opening['rect']
+        a,b,c,d=measured
+        assert min(x1,c)<=max(x0,a) or min(y1,d)<=max(y0,b)

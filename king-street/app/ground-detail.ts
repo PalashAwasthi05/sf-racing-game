@@ -33,9 +33,16 @@ float gdHeight;float gdRough;vec2 gdSlope;
 // 6 and 7 are 8 m tiles of old asphalt and old concrete (cracks, sealant, stains) for what reads from a moving car.
 // Each texel: the surface's slope along the tile's x and y (as a normal's xy) and its tone about 0.5.
 const LAYER_COUNT = 8;
+/** Keep the height beside the slope/tone channels sampled at identical UVs. */
+export function packGroundLayers(surface:Uint8ClampedArray<ArrayBuffer>,height:Uint8ClampedArray<ArrayBuffer>|null){
+  const data=new Uint8Array(surface.buffer,surface.byteOffset,surface.byteLength);
+  const matches=height?.length===surface.length;
+  for(let i=3;i<data.length;i+=4)data[i]=matches?height![i-3]:255;
+  return data;
+}
 function flatLayers() {
-  const data = new Uint8Array(8 * LAYER_COUNT); for (let i = 0; i < 2 * LAYER_COUNT; i++) data.set(i < LAYER_COUNT ? [128, 128, 128, 255] : [255, 255, 255, 255], 4 * i);
-  const t = new THREE.DataArrayTexture(data, 1, 1, 2 * LAYER_COUNT); t.needsUpdate = true; return t;
+  const data = new Uint8Array(4 * LAYER_COUNT); for (let i = 0; i < LAYER_COUNT; i++) data.set([128,128,128,255],4*i);
+  const t = new THREE.DataArrayTexture(data, 1, 1, LAYER_COUNT); t.needsUpdate = true; return t;
 }
 const layers: {value: THREE.DataArrayTexture} = {value: flatLayers()};
 /** The sun's direction (world), for the shadows the ground's own relief casts; the viewer sets it with the lighting. */
@@ -43,22 +50,22 @@ export const groundSun = {value: new THREE.Vector3(0, 1, 0)};
 let layersRequested = false;
 function loadLayers() {
   if (layersRequested || typeof Image === 'undefined' || typeof document === 'undefined' || typeof (document as Document).createElementNS !== 'function') return; layersRequested = true;
-  // layers 0..7: slope and tone; 8..15: the same layers' heights (in red)
-  const load = (url: string) => new Promise<Uint8ClampedArray | null>(resolve => {
+  // Eight RGBA layers contain slope/tone RGB and the matching height in alpha.
+  const load = (url: string) => new Promise<Uint8ClampedArray<ArrayBuffer> | null>(resolve => {
     const image = new Image();
     image.onerror = () => resolve(null);
     image.onload = () => {
       const size = image.width, canvas = document.createElement('canvas'); canvas.width = size; canvas.height = size * LAYER_COUNT;
       const context = canvas.getContext('2d', {willReadFrequently: true}); if (!context || image.height !== size * LAYER_COUNT) { resolve(null); return; }
-      context.drawImage(image, 0, 0); resolve(context.getImageData(0, 0, size, size * LAYER_COUNT).data);
+      context.drawImage(image, 0, 0); const pixels=context.getImageData(0,0,size,size*LAYER_COUNT).data;
+      canvas.width=canvas.height=1;image.src='';resolve(pixels);
     };
     image.src = url;
   });
   void Promise.all([load('/materials/ground-layers.png'), load('/materials/ground-layers-height.png')]).then(([surface, height]) => {
     if (!surface) return;
-    const size = Math.round(Math.sqrt(surface.length / 4 / LAYER_COUNT)), data = new Uint8Array(surface.length * 2);
-    data.set(surface); if (height && height.length === surface.length) data.set(height, surface.length); else data.fill(255, surface.length);
-    const t = new THREE.DataArrayTexture(data, size, size, 2 * LAYER_COUNT);
+    const size = Math.round(Math.sqrt(surface.length / 4 / LAYER_COUNT)), data = packGroundLayers(surface,height);
+    const t = new THREE.DataArrayTexture(data, size, size, LAYER_COUNT);
     t.format = THREE.RGBAFormat; t.type = THREE.UnsignedByteType; t.colorSpace = THREE.NoColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
     t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter; t.generateMipmaps = true; t.anisotropy = 8; t.needsUpdate = true;
     layers.value.dispose(); layers.value = t;
@@ -84,7 +91,7 @@ vec3 gdLayer(vec2 p,float layer){return gdLayer(p,layer,vec2(0.));}
 //  depth       the relief's full depth in layer units (y up)           amount        0 turns it off (far away)
 // Returns the shift to add to uv; shade is 1 in the relief's own shadow.
 uniform vec3 uGdSun;
-float gdHeightAt(vec2 uv,float layer,vec2 dx,vec2 dy){return textureGrad(uGdLayers,vec3(uv,layer+8.),dx,dy).r;}
+float gdHeightAt(vec2 uv,float layer,vec2 dx,vec2 dy){return textureGrad(uGdLayers,vec3(uv,layer),dx,dy).a;}
 vec2 gdRelief(vec2 uv,vec2 dx,vec2 dy,float layer,vec3 toEye,vec3 toSun,float depth,float amount,out float shade){
  shade=0.;if(amount<.01)return vec2(0.);
  vec2 run=-toEye.xz/max(toEye.y,.14)*depth*amount;                 // the lookup's travel from the top of the relief to its floor

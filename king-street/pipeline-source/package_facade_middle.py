@@ -106,12 +106,12 @@ def write_batch(output, batch, glazing):
             'residentBytes': len(p)*18+len(ix)*2}
 
 
-def compile_cell(source, cell, output, simplifier):
+def compile_cell(source, cell, output, simplifier, feature=None):
     groups = {False: [], True: []}; cache = {}; buildings = set()
     stats = dict(sourceTriangles=0, triangles=0, vertices=0, sourceGlazingTriangles=0, glazingTriangles=0, residentBytes=0, batches=0, quantizationErrorM=0.)
     for node, matrix in flat_nodes(source.model):
         mesh = source.model['meshes'][node['mesh']]; bid = building_id(node, mesh)
-        if not bid or layer_of(node, mesh) not in ('buildings', 'facades', 'facade'): continue
+        if (feature is not None and bid != feature) or not bid or layer_of(node, mesh) not in ('buildings', 'facades', 'facade'): continue
         buildings.add(bid)
         for primitive in mesh['primitives']:
             if primitive.get('mode', 4) != 4: continue
@@ -142,8 +142,45 @@ def compile_cell(source, cell, output, simplifier):
             stats['quantizationErrorM'] = max(stats['quantizationErrorM'], record['quantizationErrorM'])
     stats.update(batches=len(batches), buildings=len(buildings))
     if stats['sourceGlazingTriangles'] != stats['glazingTriangles']: raise ValueError('Glazing topology lost')
-    if sorted(buildings) != sorted(cell['stats']['buildingIds']): raise ValueError('Facade owner coverage differs from source cell')
+    if sorted(buildings) != ([feature] if feature is not None else sorted(cell['stats']['buildingIds'])): raise ValueError('Facade owner coverage differs from source cell')
     return batches, stats
+
+
+def over_budget(entry, owner_count):
+    batches = entry['batches']
+    largest = max((batches[i+1]['offset'] if i+1<len(batches) else entry['byteLength'])-b['offset'] for i,b in enumerate(batches))
+    stats = entry['stats']
+    return (2*entry['compressedBytes']+largest+1024**2 > 6*1024**2
+            or stats['residentBytes']+stats['vertices']*(2 if owner_count<4096 else 4) > 16*1024**2
+            or stats['triangles']>300000 or len(batches)>40)
+
+
+def compile_entries(source, cell, temp, public, simplifier, owner_count, feature=None, allow_split=True):
+    packed=temp/'facades.bin'
+    with packed.open('wb') as out:
+        batches,stats=compile_cell(source,cell,out,simplifier,feature)
+    compressed=temp/'facades.gz'
+    with packed.open('rb') as src, compressed.open('wb') as target:
+        with gzip.GzipFile(fileobj=target,mode='wb',mtime=0,filename='') as dst:
+            shutil.copyfileobj(src,dst,1024*1024)
+    raw=compressed.read_bytes()
+    digest=hashlib.sha256(raw).hexdigest()
+    url='/compare/facade-cell-'+digest[:16]+'.bin.gz'
+    entry={k:cell[k] for k in ('id','boundsEN','tileEN')}
+    entry.update(sourceHash=cell['contentHash'],url=url,sha256=digest,compressedBytes=len(raw),byteLength=packed.stat().st_size,batches=batches,stats=stats)
+    if allow_split and feature is None and len(cell['stats']['buildingIds'])>1 and over_budget(entry,owner_count):
+        for bid in sorted(cell['stats']['buildingIds']):
+            yield from compile_entries(source,cell,temp,public,simplifier,owner_count,bid)
+        return
+    if feature is not None:
+        entry.update(id=cell['id']+'@'+feature,parentId=cell['id'],buildingId=feature)
+        # Tight conservative bounds of this feature's packed positions. The
+        # per-axis step is the full unquantized range divided by 65535.
+        lo=np.min([b['min'] for b in batches],axis=0)
+        hi=np.max([np.asarray(b['min'])+np.asarray(b['step'])*65535 for b in batches],axis=0)
+        entry['boundsEN']=[float(lo[0]),float(-hi[2]),float(hi[0]),float(-lo[2])]
+    immutable_write(local_path(public,url),raw)
+    yield entry
 
 
 def package(public, index_url='/compare/neighborhood-stream.json', limit=None):
@@ -156,21 +193,12 @@ def package(public, index_url='/compare/neighborhood-stream.json', limit=None):
             temp=Path(scratch)
             cells=[c for c in manifest['cells'] if c['stats'].get('buildings')]
             for cell in cells[:limit]:
-                packed=temp/'facades.bin'
-                with tempfile.TemporaryFile() as source_file, packed.open('wb') as output:
-                    unpack_portable(public, cell, source_file)
-                    batches, stats=compile_cell(Source(source_file), cell, output, simplifier)
-                compressed=temp/'facades.gz'
-                with packed.open('rb') as src, compressed.open('wb') as target:
-                    with gzip.GzipFile(fileobj=target, mode='wb', mtime=0, filename='') as dst: shutil.copyfileobj(src,dst,1024*1024)
-                raw=compressed.read_bytes(); digest=hashlib.sha256(raw).hexdigest()
-                url='/compare/facade-cell-'+digest[:16]+'.bin.gz'
-                immutable_write(local_path(public,url),raw)
-                entry={k:cell[k] for k in ('id','boundsEN','tileEN')}
-                entry.update(sourceHash=cell['contentHash'],url=url,sha256=digest,compressedBytes=len(raw),byteLength=packed.stat().st_size,batches=batches,stats=stats)
-                entries.append(entry)
-                for k in totals: totals[k] += len(raw) if k=='compressedBytes' else stats[k]
-                print(json.dumps({'cell':cell['id'],**stats,'compressedBytes':len(raw)}),flush=True)
+                with tempfile.TemporaryFile() as source_file:
+                    unpack_portable(public,cell,source_file)
+                    for entry in compile_entries(Source(source_file),cell,temp,public,simplifier,len(manifest['cells']),allow_split=manifest.get('middlePartitions')=='building-v1'):
+                        entries.append(entry)
+                        for k in totals: totals[k] += entry['compressedBytes'] if k=='compressedBytes' else entry['stats'][k]
+                        print(json.dumps({'cell':entry['id'],**entry['stats'],'compressedBytes':entry['compressedBytes']}),flush=True)
     finally: simplifier.close()
     result={'version':VERSION,'format':'facade-middle-v1','sourceWorldHash':manifest['sourceWorldHash'],
             'sourceCells':[{ 'id':c['id'],'contentHash':c['contentHash']} for c in manifest['cells']],
@@ -192,13 +220,20 @@ def validate_asset(public, asset, manifest, verify_files=True):
         or len(asset['sourceCells']) != len(expected)):
         raise ValueError('Facade index differs from current source world/detail cells')
     owners={c['id']:c for c in manifest['cells'] if c['stats'].get('buildings')}
-    if {c['id'] for c in asset['cells']} != set(owners) or len(asset['cells']) != len(owners):
-        raise ValueError('Facade asset does not cover every building owner')
+    groups={}
+    for entry in asset['cells']:groups.setdefault(entry.get('parentId',entry['id']),[]).append(entry)
+    if set(groups)!=set(owners):raise ValueError('Facade coverage incomplete')
+    for owner,parts in groups.items():
+        if len(parts)==1 and parts[0]['id']==owner and 'parentId' not in parts[0]:continue
+        if sorted(p.get('buildingId','') for p in parts)!=sorted(owners[owner]['stats']['buildingIds']):
+            raise ValueError('Incomplete building partition')
+        if any(p['id']!=owner+'@'+p['buildingId'] for p in parts):raise ValueError('Invalid building partition ID')
     for cell in asset['cells']:
-        owner=owners[cell['id']]
-        if (cell['sourceHash'] != owner['contentHash'] or cell['boundsEN'] != owner['boundsEN']
+        owner=owners[cell.get('parentId',cell['id'])]
+        split='parentId' in cell
+        if (cell['sourceHash'] != owner['contentHash'] or (not split and cell['boundsEN'] != owner['boundsEN'])
             or cell['stats']['glazingTriangles'] != cell['stats']['sourceGlazingTriangles']
-            or cell['stats']['buildings'] != owner['stats']['buildings']):
+            or cell['stats']['buildings'] != (1 if split else owner['stats']['buildings'])):
             raise ValueError('Facade owner identity/topology mismatch')
         if cell['url'] != '/compare/facade-cell-'+cell['sha256'][:16]+'.bin.gz':
             raise ValueError('Unpinned facade data URL')
@@ -209,6 +244,41 @@ def validate_asset(public, asset, manifest, verify_files=True):
             if count != cell['compressedBytes'] or digest.hexdigest() != cell['sha256']:
                 raise ValueError('Facade data length/hash mismatch')
     return asset
+
+
+def repartition(public,index_url):
+    """Reuse checked small owners when upgrading an already generated archive."""
+    manifest=json.loads(local_path(public,index_url).read_bytes())
+    if manifest.get('middlePartitions')!='building-v1':raise ValueError('Base facade atlas must retain per-building identities before partitioning')
+    url=manifest['facadeMiddle']
+    asset=json.loads(local_path(public,url).read_bytes())
+    validate_asset(public,asset,manifest)
+    owners={c['id']:c for c in manifest['cells']}
+    split={c['id'] for c in asset['cells'] if not c.get('parentId') and c['stats']['buildings']>1 and over_budget(c,len(owners))}
+    if not split:return asset,url
+    entries=[]
+    simplifier=SolidSimplifier()
+    try:
+        with tempfile.TemporaryDirectory(prefix='facade-split-') as tmp:
+            for old in asset['cells']:
+                if old['id'] not in split:
+                    entries.append(old);continue
+                owner=owners[old['id']]
+                with tempfile.TemporaryFile() as src:
+                    unpack_portable(public,owner,src)
+                    source=Source(src)
+                    for bid in sorted(owner['stats']['buildingIds']):
+                        entries.extend(compile_entries(source,owner,Path(tmp),public,simplifier,len(owners),bid))
+    finally:simplifier.close()
+    totals={k:sum(c['compressedBytes'] if k=='compressedBytes' else c['stats'][k] for c in entries) for k in asset['stats']}
+    # Every source face and glazing triangle belongs to exactly one component.
+    for key in ('buildings','sourceTriangles','sourceGlazingTriangles','glazingTriangles','triangles'):
+        if totals[key]!=asset['stats'][key]:raise ValueError('Partition lost source geometry')
+    result={**asset,'cells':entries,'stats':totals}
+    validate_asset(public,result,manifest)
+    data=json_bytes(result);url='/compare/neighborhood-facades-'+hashlib.sha256(data).hexdigest()[:16]+'.json'
+    immutable_write(local_path(public,url),data)
+    return result,url
 
 
 def publish(public, index_url='/compare/neighborhood-stream.json', asset_url=None):
@@ -256,9 +326,10 @@ def audit(public, asset_url, index_url='/compare/neighborhood-stream.json'):
     for cell in asset['cells']:
         expected=[]
         with tempfile.TemporaryFile() as source_file:
-            unpack_portable(public,original[cell['id']],source_file);source=Source(source_file)
+            unpack_portable(public,original[cell.get('parentId',cell['id'])],source_file);source=Source(source_file)
             for node,matrix in flat_nodes(source.model):
                 mesh=source.model['meshes'][node['mesh']]
+                if cell.get('buildingId') and cell['buildingId']!=building_id(node,mesh):continue
                 if not building_id(node,mesh) or layer_of(node,mesh) not in ('buildings','facades','facade'):continue
                 for primitive in mesh['primitives']:
                     material=source.model['materials'][primitive['material']]
@@ -297,10 +368,14 @@ if __name__=='__main__':
     cli.add_argument('--publish',action='store_true',help='Atomically set facadeMiddle on the matching mutable neighborhood alias')
     cli.add_argument('--asset',help='Reuse this completed immutable facade index instead of rebuilding')
     cli.add_argument('--audit',action='store_true',help='Compare every real source glazing triangle against the completed asset')
+    cli.add_argument('--repartition',action='store_true',help='Emit an immutable middle index partitioning existing oversized owners')
     args=cli.parse_args()
     if args.limit is not None and args.publish:cli.error('Partial builds cannot publish')
     if args.asset and not (args.publish or args.audit):cli.error('--asset requires --publish or --audit')
-    if args.audit:
+    if args.repartition:
+        result,url=repartition(args.public.resolve(),args.index)
+        print(json.dumps({'index':url,'parts':len(result['cells']),'splitParts':sum('parentId' in c for c in result['cells'])}))
+    elif args.audit:
         if not args.asset:cli.error('--audit requires --asset')
         audit(args.public,args.asset,args.index)
     elif args.publish:print(json.dumps(publish(args.public,args.index,args.asset),indent=2))

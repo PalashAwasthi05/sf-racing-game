@@ -7,8 +7,6 @@ footprints, as a 0.5 m height grid). A shift along the wall, a shift up, and a s
 fit is kept only when it clearly beats no correction and the skyline has enough shape to fix the shift. Geometry only."""
 import argparse, json, pathlib, sys, time, os
 import numpy as np
-from pyproj import Transformer
-from shapely import contains_xy
 from shapely.ops import unary_union
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import frontage_crops_v15 as fc, auto_read_frontages_v24 as ar
@@ -17,17 +15,9 @@ from panorama_balance import road_gain
 PPM, EXT_U, EXT_Z, CELL = 12., 6., 12., .5
 
 def dsm(frame):
-    pts = np.load(fc.DATA_DIR / 'points.npz')['points']
-    web = Transformer.from_crs(3857, 32610, always_xy=True); x, y = web.transform(pts[:, 0], pts[:, 1]); x = x - frame.cx; y = y - frame.cy; z = pts[:, 2]; c = pts[:, 3]
-    # the datum is the area's own ground near its centre (a fixed -5..20 m band held only the waterfront: on a hill no
-    # ground point passed it, the datum was NaN and every fit failed)
-    g = c == 2; base = float(np.median(z[g & (np.hypot(x, y) < 40)])); z = z - base
+    from regen.bounded_dsm import build_dsm
     fp = unary_union(list(fc.load_footprints(frame).values())).buffer(.3)
-    keep = (c == 1); keep[keep] = contains_xy(fp, x[keep], y[keep])
-    x, y, z = x[keep], y[keep], z[keep]
-    x0, y0 = x.min(), y.min(); ix = ((x - x0) / CELL).astype(int); iy = ((y - y0) / CELL).astype(int)
-    G = np.full((ix.max() + 1, iy.max() + 1), -np.inf, np.float32); np.maximum.at(G, (ix, iy), z.astype(np.float32))
-    return G, x0, y0
+    return build_dsm(fc.DATA_DIR / 'points.npz', frame, fp, CELL)
 
 def predicted(G, x0, y0, C, eye, W, dist):
     """Skyline height on the wall plane at each wall point W (n,2) seen from C at eye height."""

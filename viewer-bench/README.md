@@ -129,3 +129,16 @@ Traps:
   more.
 - The load leaves ~1 GB of garbage (heap ~1.6 GB, ~0.6 GB live; `heap.mjs` lists the allocators). It is not what
   stalls the probe: `--gc` (a full collection before the drive) left those frames as they were.
+
+### Named area background smoke (no visible windows)
+
+Prepare the named area stream and run its existing local viewer server first. This script starts only one headless browser and never starts a server. It validates the named archive, its immutable spatialIndex, matching sourceWorldHash/contentHash, loaded area world and platform base assets, and active cells, checks manifest route endpoints against the real WGS84 route projected to the configured UTM10N center, checks waterfront carriageway spawn, probes real keyboard acceleration for3seconds, then samples17 debug car/driver-height camera placements along the route. This is projected route visibility QA, **not** a full physics-driven corridor traversal. Normal compositor screenshots are written at start, midpoint, endpoint, all native1920×1080. Runtime visibility/scenery evidence, advancement, errors, scope and source manifest are preserved in report.json. The memory watchdog supplies external process-tree measurements and terminates at2816MiB.
+
+From the project root, after the Market stream is ready:
+
+```sh
+mkdir -p work/areas/market-street/drive-smoke
+work/geoenv/bin/python work/viewer-bench/guard_memory.py --mib 2816 --reserve-mib 3584 --timeout 240 --report work/areas/market-street/drive-smoke/memory.json --merge-report work/areas/market-street/drive-smoke/report.json node work/viewer-bench/area-drive-smoke.mjs http://127.0.0.1:3001/ work/areas/market-street work/areas/market-street/drive-smoke
+```
+
+Change the local port to the existing server if needed. The URL used is the regular `/?manifest=/compare/market-street.json&drive=1` entry. `node --check` is safe preparation and starts no browser.

@@ -29,12 +29,22 @@ def rectify(wall,cam,z0,pano,base=0.):
     L=float(wall['lengthM']);H=float(wall['heightM'])
     W=max(8,int(L*PPM));Hp=max(8,int(H*PPM))
     xs=(np.arange(W)+.5)/PPM-L/2;zs=H-(np.arange(Hp)+.5)/PPM
-    P=np.empty((Hp,W,3));P[...,0]=(m[0]+t[0]*xs)[None,:]+n[0]*.05;P[...,1]=(m[1]+t[1]*xs)[None,:]+n[1]*.05;P[...,2]=(z0+float(base)+zs)[:,None]
     # the camera stands at eye height over its own ground when that is known (cam['groundZ']), else over the wall's
-    C=np.array([cam['xy'][0],cam['xy'][1],(cam['groundZ'] if cam.get('groundZ') is not None else z0)+fc.EYE_HEIGHT_M]);d=P-C
-    u,v=fc.world_dirs_to_pano_uv(d,cam['R']);ph,pw=pano.shape[:2]
-    img=np.stack([map_coordinates(pano[...,k],[v*(ph-1),u*(pw-1)],order=1,mode='wrap',output=np.float32) for k in range(3)],-1)
-    return img/255.,H,L
+    C=np.array([cam['xy'][0],cam['xy'][1],(cam['groundZ'] if cam.get('groundZ') is not None else z0)+fc.EYE_HEIGHT_M+float(cam.get('heightOffsetM',0))])
+    ph,pw=pano.shape[:2]
+    img=np.empty((Hp,W,3),dtype=np.float32)
+    # Keep projection temporaries bounded to 32 rows without changing pixel centres or sampling.
+    for row in range(0,Hp,32):
+        end=min(row+32,Hp)
+        P=np.empty((end-row,W,3));P[...,0]=(m[0]+t[0]*xs)[None,:]+n[0]*.05;P[...,1]=(m[1]+t[1]*xs)[None,:]+n[1]*.05;P[...,2]=(z0+float(base)+zs[row:end])[:,None]
+        P-=C
+        u,v=fc.world_dirs_to_pano_uv(P,cam['R'])
+        coords=np.stack([v*(ph-1),u*(pw-1)])
+        for k in range(3):
+            map_coordinates(pano[...,k],coords,order=1,mode='wrap',output=img[row:end,:,k])
+        img[row:end]/=255.
+    return img,H,L
+
 def period(profile,lo,hi):
     """Strongest autocorrelation period (in samples) between lo and hi, with its correlation."""
     p=profile-profile.mean()

@@ -199,6 +199,57 @@ def band_agreed(p):
  r=p.get('reading') or {}
  return r.get('aboveOwnPart') is not None and int((r.get('consensus') or {}).get('agreeing') or 0)>=2
 
+def source_patch_owns_edge(profile, a, b, base_height=0.):
+ """Constrain a panorama sample to the mapped wall and elevations it could see."""
+ midpoint=profile.get('sourceWallMidpointEN')
+ if midpoint is None:return True
+ n=np.asarray(profile['normal'],float)
+ n=n/np.linalg.norm(n)
+ tangent=np.array([-n[1],n[0]])
+ offsets=np.asarray([a,b],float)-np.asarray(midpoint,float)
+ if abs(float(offsets.mean(axis=0)@n))>1.5:return False
+ start,end=sorted(offsets@tangent)
+ width=float(profile['sourceWallLengthM'])
+ overlap=min(end,width/2)-max(start,-width/2)
+ if overlap<=0 or overlap<.5*(end-start):return False
+ observed=(profile.get('reading') or {}).get('observedZRangeM')
+ return not observed or base_height<float(observed[1])
+
+
+def complete_partial_profile(profile, style, wall_height):
+ """Keep inferred storeys outside the vertical span of a measured photo patch."""
+ reading=profile.get('reading') or {}
+ observed=reading.get('observedZRangeM')
+ if not observed or not profile.get('frameU') or not profile.get('heightRefM'):return profile
+ lo,hi=map(float,observed)
+ width=profile['frameU'][1]-profile['frameU'][0]
+ height=float(profile['heightRefM'])
+ if width<=0 or hi<=lo:return profile
+ ground,rows,pitch=inferred_storeys(wall_height,style['floorHeightM'],style['groundHeightM'],True)
+ cols=max(1,round(width/style['bayWidthM']))
+ sparse=reading.get('coverageMode')=='positive-only'
+ measurements=np.asarray([op['rect'] for op in profile.get('openings',[]) if op.get('rect')],float).reshape(-1,4)
+ extra=[]
+ for row in range(rows+1):
+  bottom=0 if row==0 else ground+(row-1)*pitch
+  rh=ground if row==0 else pitch
+  oh=rh*style['openingHeightRatio']
+  sill=bottom+.48*(rh-oh)
+  if not sparse and sill+oh>lo and sill<hi:continue
+  for col in range(cols):
+   margin=(1-style['openingRatio'])/2
+   rect=[(col+margin)/cols,sill/height,(col+1-margin)/cols,(sill+oh)/height]
+   if sparse and len(measurements):
+    # Opening plus reveal owns this space. Failed feature detection elsewhere
+    # is not evidence of an opaque wall.
+    if np.any((measurements[:,0]<rect[2]+.15/width)&(measurements[:,2]>rect[0]-.15/width)&
+              (measurements[:,1]<rect[3]+.15/height)&(measurements[:,3]>rect[1]-.15/height)):continue
+   extra.append({'rect':rect,
+                 'style':{'kind':'window','mullionFractions':[k/(style['mullions']+1) for k in range(1,style['mullions']+1)],
+                          'transomFractions':[style.get('transomRatio',.7)]},'evidence':'inferred'})
+ return dict(profile,openings=[*profile.get('openings',[]),*extra]) if extra else profile
+
+
 def observed_material(profiles,c,height=None,mass=None):
  """Unobserved walls continue the material of the building's observed frontages.
 
@@ -217,7 +268,7 @@ def observed_material(profiles,c,height=None,mass=None):
   if p['match'].get('partId') is not None or height is None or not p.get('heightRefM'):return True
   return float(height)<=float(p['heightRefM'])*(1+PART_HEIGHT_SHARE)
  # A reading kept only because no better one exists (reader v34 marks it unsupported) draws its own wall and nothing more.
- matches=[p for p in profiles if belongs(p,c,height,mass) and of_this_mass(p) and (float((p.get('reading') or {}).get('visibleShare',1.))>=.4 or band_agreed(p))
+ matches=[p for p in profiles if belongs(p,c,height,mass) and of_this_mass(p) and (not p.get('sourceWallMidpointEN') or p.get('materialEvidence',{}).get('scope')=='whole-envelope') and (float((p.get('reading') or {}).get('visibleShare',1.))>=.4 or band_agreed(p))
           and not ((p.get('reading') or {}).get('consensus') or {}).get('unsupported')]
  if not matches:return None
  whole=[p for p in matches if p.get('materialEvidence',{}).get('scope')=='whole-envelope']
@@ -319,10 +370,25 @@ DEFAULTS={
  'venue':dict(material='brick_modular',archetype='venue',floorHeightM=4.8,groundHeightM=4.5,bayWidthM=6.,openingRatio=.65,openingHeightRatio=.66,frameProjectionM=.04,frameWidthM=.1,mullions=3,transomRatio=.72,ground='entry')}
 
 def prior(tags,height,area):
- if tags.get('leisure')=='stadium' or area>18000:return DEFAULTS['venue'].copy()
- if tags.get('building') in ['apartments','residential','hotel']:return DEFAULTS['residential'].copy()
- if tags.get('building') in ['commercial','office','retail'] or height>23:return DEFAULTS['commercial'].copy()
- return DEFAULTS['masonry'].copy()
+ kind='venue' if tags.get('leisure')=='stadium' or area>18000 else 'residential' if tags.get('building') in ['apartments','residential','hotel'] else 'commercial' if tags.get('building') in ['commercial','office','retail'] or height>23 else 'masonry'
+ style=DEFAULTS[kind].copy()
+ # Mapped attributes constrain the prior; direct image observations still replace it later.
+ material=tags.get('building:material') or tags.get('facade:material')
+ material={'brick':'brick_modular','stone':'stone','limestone':'limestone','concrete':'concrete','plaster':'stucco','stucco':'stucco','metal':'panel_silver','glass':'glass_blue','wood':'timber_tan'}.get(str(material).lower())
+ if material:style['material']=material
+ if material=='glass_blue':style.update(curtain=True,ribbon=True,bayWidthM=1.5,openingRatio=.96,openingHeightRatio=.84,mullions=0,frameWidthM=.05,frameProjectionM=.03)
+ try:
+  levels=float(tags.get('building:levels',''))
+  pitch=float(height)/levels
+  if levels>=1 and 2.4<=pitch<=6.:style.update(floorHeightM=pitch,groundHeightM=pitch,mappedLevelCount=levels)
+ except (ValueError,TypeError,ZeroDivisionError):pass
+ colour=tags.get('building:colour') or tags.get('building:color')
+ if colour:
+  from PIL import ImageColor
+  try:
+   rgb=ImageColor.getrgb(colour);style['material']+='#'+''.join(f'{c:02x}' for c in rgb[:3])
+  except (ValueError,TypeError):pass
+ return style
 
 def area_donor(profiles,fid,height):
  """A measured facade of this area to lend its character to a building no photograph covers: among the
@@ -910,13 +976,15 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
     # A colour-only reading colours every wall of its facing when it saw most of its wall; one that saw under 40 %
     # colours only the wall its frame covers (a quarter-seen corner wall's brick had spread along a whole facade).
     facing=next((p for p in profiles if p.get('materialOnly') and (belongs(p,c,main_height,mass)) and np.dot(n,p['normal'])>.95
-                 and (float((p.get('reading') or {}).get('visibleShare',1.))>=.4 or band_agreed(p) or (p.get('frameU') and frame_overlap(p,a,b)>=.5*length
+                 and source_patch_owns_edge(p,a,b,zs-z0+c.get('elevationOffset',0.))
+                 and (p.get('sourceWallMidpointEN') is not None or float((p.get('reading') or {}).get('visibleShare',1.))>=.4 or band_agreed(p) or (p.get('frameU') and frame_overlap(p,a,b)>=.5*length
                       and (p.get('planeV') is None or plane_gap(p)<=1.5)))),None)
     if facing:style['material']=resolve_material(facing)   # this facing's measured material, the prior's openings
     # A reading measured on one plane draws only walls standing in it (the grammar's own 2.5 m frontage tolerance): the
     # face of a block set back behind its podium is read on its own plane and must not land on the podium wall below,
     # nor the podium's reading on the block.
     candidates=[p for p in profiles if not p.get('materialOnly') and (belongs(p,c,main_height,mass)) and np.dot(n,p['normal'])>.95
+                and source_patch_owns_edge(p,a,b,zs-z0+c.get('elevationOffset',0.))
                 and (p.get('planeV') is None or plane_gap(p)<=2.5)]
     plane_decisions={id(p):(profile_plane_binding(p,c.get('g'),a,b)
                             if EXPERIMENTAL_PROFILE_HOST_BINDING else (True,'experimental-disabled'))
@@ -960,6 +1028,9 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
       # A parapet is a thin wall the roof-return statistics do not see; a photograph shows where the frontage
       # ends. The observed top may raise the wall above the LiDAR level, by at most 3 m; it never lowers it.
       wall_top=min(max(wall_top,float(profile['observedWallTopM'])),wall_top+3.)
+     if profile.get('sourceWallMidpointEN') is not None and not profile.get('materialEvidence') and not profile.get('material'):
+      profile=dict(profile,material=style['material'] if facing else continuity or style['material'])
+     profile=complete_partial_profile(profile,style,wall_top)
      fitted=facade_grammar.compile_wall(ctx,c,a,b,zs,wall_top,{**profile,'heightRefM':round(frame,2),'gableEnd':gable_planes is not None},fits)
      if _TRACE is not None:_TRACE[-1]['fitted']=bool(fitted)
      if fitted:
@@ -978,7 +1049,7 @@ def compile(ctx,c,z0,main_height,height,tags,observations):
     exposure=wall_exposure(ctx,c,mid,n,zs,main_height)
     # A facing a street camera photographed is seen from the street, whatever the mapped streets say (plazas and wide
     # set-backs put the corridor beyond reach); a touching neighbour still makes a party wall.
-    if exposure in ('secondary','gap') and any(np.dot(n,p['normal'])>.95 and (belongs(p,c,main_height,mass)) for p in profiles):exposure='street'
+    if exposure in ('secondary','gap') and any(np.dot(n,p['normal'])>.95 and (belongs(p,c,main_height,mass)) and source_patch_owns_edge(p,a,b,zs-z0+c.get('elevationOffset',0.)) for p in profiles):exposure='street'
     visible=(length>=3.5 or edge in arc_ids or (parent_len is not None and parent_len[edge]>=3.5 and length>=1.2)) and exposure in ('street','own-podium','secondary') and ctx['boundary'].boundary.distance(Point(*mid))>.5
     if exposure=='secondary':style=dict(style,bayWidthM=style['bayWidthM']*2,openingRatio=style['openingRatio']*.6)
     if ctx.get('venueField') is not None and ctx['venueField'].distance(Point(*mid))<6.:

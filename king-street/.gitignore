@@ -60,3 +60,4 @@ __pycache__/
 /public/compare/*.gz
 /public/startup-*.json
 /public/.drive-stream-gpu-*/
+/public/.neighborhood-stream-*/

@@ -11,6 +11,7 @@ import hashlib
 import itertools
 import json
 import math
+import re
 from pathlib import Path
 import shutil
 import struct
@@ -24,7 +25,7 @@ from package_drive_residuals import material_color
 from package_route_block import (Source, flat_nodes, node_bounds, building_id,
     en_positions, local_path, json_bytes, write_json, unpack_portable)
 
-VERSION = 5
+VERSION = 6
 SUPPORT = {'terrain', 'roads', 'sidewalks', 'markings', 'landscape', 'paths', 'foundations'}
 
 
@@ -423,8 +424,32 @@ class NeighborhoodPlan:
         print(json.dumps({'phase': 'static-colliders', **self.collider_stats}), flush=True)
 
 
-def package(public, source_url='/compare/current.json', seed_url='/compare/drive-stream.json', tile_size=55):
+def compact_terrain(public, world):
+    """Ship the original float32 terrain directly, without decimal parsing in the viewer."""
+    samples = world.get('ground')
+    n = world.get('grid', {}).get('n', 0)
+    if not samples or len(samples) < 65536 or len(samples) != n*n:
+        return {}
+    field = np.asarray(samples, dtype='<f4')
+    if not np.isfinite(field).all() or not np.array_equal(field.astype(float), samples):
+        return {}
+    raw = field.tobytes()
+    digest = hashlib.sha256(raw).hexdigest()[:16]
+    ground = f'/compare/terrain-{digest}.bin'
+    with tempfile.NamedTemporaryFile(dir=(public/'compare'), delete=False) as f:
+        f.write(raw)
+        tmp = Path(f.name)
+    tmp.chmod(0o644)
+    tmp.replace(local_path(public, ground))
+    metadata = {k:v for k,v in world.items() if k!='ground'}
+    return {'compactTerrain': {'ground':ground, 'world':write_json(public, 'stream-terrain-world', metadata)}}
+
+
+def package(public, source_url='/compare/current.json', seed_url='/compare/drive-stream.json', tile_size=55, alias_name='neighborhood-stream'):
     public = Path(public).resolve()
+    if not re.fullmatch(r'[a-z0-9][a-z0-9-]*-stream', alias_name):
+        raise ValueError('Expected a neighborhood stream alias')
+    alias_url = '/compare/' + alias_name + '.json'
     source_path, seed_path = local_path(public, source_url), local_path(public, seed_url)
     original_bytes, seed_bytes = source_path.read_bytes(), seed_path.read_bytes()
     original, seed = json.loads(original_bytes), json.loads(seed_bytes)
@@ -443,7 +468,8 @@ def package(public, source_url='/compare/current.json', seed_url='/compare/drive
     if len(route) < 2 or not all(len(p) == 2 and np.isfinite(p).all() for p in route):
         raise ValueError('Valid existing driving seed route required')
     # Preserve a short real-road route without inventing a neighborhood-specific spawn.
-    route = route[:2]
+    if not seed.get('driveFromRouteStart'):
+        route = route[:2]
     world_path = local_path(public, original['world'])
     world_bytes = world_path.read_bytes()
     world = json.loads(world_bytes)
@@ -492,14 +518,14 @@ def package(public, source_url='/compare/current.json', seed_url='/compare/drive
                 print(json.dumps({'phase': name, 'compressedBytes': descriptor['compressedBytes'], **stats}), flush=True)
         # Metadata is the complete current world, never corridor-scoped.
         world.update(scope='neighborhood-stream', boundsEN=plan.box)
-        urls = {'world': write_json(public, 'neighborhood-stream-world', world)}
+        urls = {'world': write_json(public, 'neighborhood-stream-world', world), **compact_terrain(public, world)}
         metadata_inputs = []
         for key in ('cars', 'overhead'):
             if key in original:
                 path = local_path(public, original[key]); data = path.read_bytes()
                 metadata_inputs.append((path, data))
                 urls[key] = write_json(public, 'neighborhood-stream-' + key, json.loads(data))
-        descriptor = {'version': 1, 'scope': 'neighborhood-stream', 'compilerVersion': VERSION,
+        descriptor = {'version': 1, 'scope': 'neighborhood-stream', 'middlePartitions':'building-v1', 'compilerVersion': VERSION,
             'sourceWorldHash': source_hash, 'sourcePortableHash': portable['contentHash'],
             'routeEN': route, 'tileSizeM': tile_size, 'boundsEN': plan.box, 'base': base, 'cells': outputs, **urls,
             'ownership': {'buildings': 'all complete source layers owned by full feature bounds center',
@@ -507,6 +533,8 @@ def package(public, source_url='/compare/current.json', seed_url='/compare/drive
                 'batches': 'anonymous triangle centers and source foliage centers owned exclusively by half-open grid',
                 'support': 'complete original roads/ground/sidewalks/markings/paths/landscape/foundations in base',
                 'proxies': 'source-foundation collision hulls and original building/roof exteriors; source diffuse means and vertex tints; hide both classes by streamCell when detail attaches'}}
+        if seed.get('driveFromRouteStart'):
+            descriptor['driveFromRouteStart'] = True
         if source_path.read_bytes() != original_bytes or seed_path.read_bytes() != seed_bytes or world_path.read_bytes() != world_bytes:
             raise RuntimeError('Pinned source or driving seed changed; alias not published')
         if portable_path and portable_path.read_bytes() != portable_bytes:
@@ -523,8 +551,8 @@ def package(public, source_url='/compare/current.json', seed_url='/compare/drive
         annotate_manifest(public, descriptor, tree_detail)
         immutable = write_json(public, 'neighborhood-stream', descriptor)
         alias = temp / 'alias.json'; alias.write_bytes(json_bytes(descriptor))
-        alias.replace(public / 'compare/neighborhood-stream.json')
-    return {'manifest': '/compare/neighborhood-stream.json', 'immutableManifest': immutable, 'treeDetail': tree_detail,
+        alias.replace(local_path(public, alias_url))
+    return {'manifest': alias_url, 'immutableManifest': immutable, 'treeDetail': tree_detail,
             'cells': len(outputs), 'buildings': len(plan.owners), 'baseCompressedBytes': base['compressedBytes'],
             'cellsCompressedBytes': sum(c['compressedBytes'] for c in outputs)}
 
@@ -610,15 +638,18 @@ if __name__ == '__main__':
     cli = argparse.ArgumentParser(description=__doc__)
     cli.add_argument('public', type=Path)
     cli.add_argument('--source', default='/compare/current.json')
+    cli.add_argument('--alias', default='neighborhood-stream', help='Publish a separately named area stream')
     cli.add_argument('--seed', default='/compare/drive-stream.json')
     cli.add_argument('--tile', type=float, default=55)
     cli.add_argument('--refresh-base', action='store_true', help='Rebuild only base and preserve existing cell chunks')
     cli.add_argument('--candidate', action='store_true', help='Stage the refreshed base for a drive before publishing')
     cli.add_argument('--facade-middle', action='store_true', help='Build/publish bounded texture-free facade cells after this neighborhood build')
     args = cli.parse_args()
+    if args.refresh_base and args.alias != 'neighborhood-stream':
+        cli.error('A named area stream should be rebuilt with its source and seed')
     if args.candidate and not args.refresh_base:
         cli.error('--candidate requires --refresh-base')
-    result = refresh_base(args.public, args.source, not args.candidate) if args.refresh_base else package(args.public, args.source, args.seed, args.tile)
+    result = refresh_base(args.public, args.source, not args.candidate) if args.refresh_base else package(args.public, args.source, args.seed, args.tile, args.alias)
     if args.facade_middle:
         from package_facade_middle import publish
         result.update(publish(args.public, result['manifest']))

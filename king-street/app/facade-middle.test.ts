@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import {gzipSync} from 'node:zlib';
 import * as THREE from 'three';
 import {createFacadeMiddleController,decodeFacadeBatch,validateFacadeMiddleIndex,loadFacadeMiddleIndex,type FacadeCell,type FacadeMiddleIndex} from './facade-middle.ts';
 
@@ -37,6 +38,27 @@ test('index loading authenticates the hash-pinned metadata before accepting cell
  const original=globalThis.fetch;globalThis.fetch=async()=>new Response(bytes);
  try{assert.equal((await loadFacadeMiddleIndex('/compare/neighborhood-facades-'+hash.slice(0,16)+'.json',source)).cells[0].id,cell.id);
   await assert.rejects(()=>loadFacadeMiddleIndex('/compare/neighborhood-facades-'+('0'.repeat(16))+'.json',source),/hash mismatch/);
+ }finally{globalThis.fetch=original;}
+});
+
+test('bounded gzip reader stages multiple aligned batches and rejects excess or missing payload before attach',async()=>{
+ const {cell,raw}=fixture();cell.batches.push({...cell.batches[0],offset:raw.length});cell.byteLength=raw.length*2;
+ const original=globalThis.fetch;
+ try{
+  for(const length of [cell.byteLength,cell.byteLength+1,cell.byteLength-1]){
+   const payload=Buffer.concat([raw,raw,Buffer.alloc(1)]).subarray(0,length);
+   const gzip=gzipSync(payload);cell.compressedBytes=gzip.length;
+   cell.sha256=Buffer.from(await crypto.subtle.digest('SHA-256',gzip)).toString('hex');
+   globalThis.fetch=async()=>new Response(new Uint8Array(gzip));
+   let prepared=0,disposed=0;
+   const controller=createFacadeMiddleController(index([cell]),{scene:new THREE.Group(),yieldTask:async()=>{},prepare:async mesh=>{
+    assert.deepEqual([...mesh.geometry.index!.array],[0,1,2]);prepared++;mesh.geometry.addEventListener('dispose',()=>disposed++);
+   }});
+   controller.update(sight());await controller.waitForIdle();
+   if(length===cell.byteLength){assert.deepEqual(controller.status().active,['a']);assert.equal(prepared,2);}
+   else {assert.deepEqual(controller.status().active,[]);assert.match(controller.status().lastError,/exceeds|Incomplete/);}
+   await controller.dispose();assert.equal(disposed,prepared);
+  }
  }finally{globalThis.fetch=original;}
 });
 
@@ -127,5 +149,19 @@ test('a visible handoff keeps the outgoing owner through the actual upload and c
  assert.equal(await returning,false);await tick();assert.equal(published,false);
  finish();await prepared;assert.equal(published,true);
  assert.equal(await controller.waitForPresentation('near',pending.signal),false);
+ await controller.dispose();
+});
+
+test('building partitions validate complete parent coverage and inherit parent demand',async()=>{
+ const a=fixture('p@front',0),b=fixture('p@back',90);
+ for(const [item,id] of [[a,'front'],[b,'back']] as const){item.cell.parentId='p';item.cell.buildingId=id;}
+ const data={...index([a.cell,b.cell]),sourceCells:[{id:'p',contentHash:a.cell.sourceHash}]};
+ const source={sourceWorldHash:'source',cells:[{id:'p',contentHash:a.cell.sourceHash,stats:{buildingIds:['front','back']}}]};
+ validateFacadeMiddleIndex(data,source);
+ assert.throws(()=>validateFacadeMiddleIndex({...data,cells:[a.cell]},source),/partition/);
+ const controller=createFacadeMiddleController(data,{scene:new THREE.Group(),maxCells:1,maxDistanceM:25,load:async()=>a.raw,prepare:async()=>{},yieldTask:async()=>{}});
+ controller.update({...sight(),detailed:new Set(['p'])});await controller.waitForIdle();assert.equal(controller.status().active.length,0);
+ controller.update({...sight(),handoffs:new Set(['p'])});await controller.waitForIdle();assert.deepEqual(controller.status().active,['p@front']);
+ controller.update({...sight(90),handoffs:new Set(['p'])});await controller.waitForIdle();assert.deepEqual(controller.status().active,['p@back']);
  await controller.dispose();
 });

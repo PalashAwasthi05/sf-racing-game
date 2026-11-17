@@ -2,15 +2,13 @@
 building, `--per` pieces a job. A set-back tier (baseM) carries the note that its bottom edge is a roof.
 Skips pieces that already have a reading. Usage: make_drafts.py [--per 10] [--min-area 30]   (REGEN_ROOT selects the area)"""
 import argparse, json, os, pathlib
+from side_pieces import load_side_pieces
 ap = argparse.ArgumentParser(); ap.add_argument('--per', type=int, default=10); ap.add_argument('--min-area', type=float, default=30.)
 ap.add_argument('--prefix', default='draft', help='job file prefix (a later pass keeps its own files)')
 ap.add_argument('--exclude', default=None, help='glob of earlier job files whose pieces are left out')
 a = ap.parse_args()
 root = pathlib.Path(os.environ.get('REGEN_ROOT', 'regen/v1')).resolve()
-S = json.load(open(root / 'sides/sides.json'))['pieces']
-for f in ('sides-tiers.json',):
-    if (root / 'sides' / f).exists():
-        have = {p['id'] for p in S}; S += [p for p in json.load(open(root / 'sides' / f))['pieces'] if p['id'] not in have]
+S = load_side_pieces(root / 'sides')
 (root / 'readings').mkdir(exist_ok=True); (root / 'jobs').mkdir(exist_ok=True)
 queued = {i['id'] for f in root.glob('jobs/' + a.exclude) for i in json.load(open(f))} if a.exclude else set()
 P = [p for p in S if p['views'] and p['lengthM'] * p['heightM'] >= a.min_area and p['id'] not in queued and not (root / 'readings' / f"{p['id']}.json").exists()]
@@ -23,7 +21,7 @@ for p in P:
             'out': str(root / 'readings' / f"{p['id']}.json")}
     if p.get('baseM'):
         item['context'] = (f"This wall is a set-back upper tier: it stands on a lower roof {p['baseM']:.0f} m above the street, so its bottom edge is "
-                           "that roof, not the street. It has no shopfronts, entries or garage doors; storey 0 is its lowest storey above that roof.")
+                           "that roof, not the street. Heights and storey 0 use this roof datum. Record visible openings and access features from the photographs.")
     cur.append(item)
     if len(cur) == a.per: jobs.append(cur); cur = []
 if cur: jobs.append(cur)
